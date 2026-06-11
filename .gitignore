@@ -1,0 +1,14 @@
+node_modules/
+dist/
+dist-electron/
+release/
+*.exe
+*.dmg
+*.AppImage
+__pycache__/
+*.pyc
+.venv/
+.env
+data/
+!.env.example
+portable-python/

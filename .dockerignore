@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-electron/
+release/
+out/
+__pycache__/
+*.pyc
+.venv/
+.env
+data/
+!.env.example
