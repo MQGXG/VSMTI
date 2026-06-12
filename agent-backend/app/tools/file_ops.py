@@ -3,16 +3,12 @@
 import os
 from pathlib import Path
 from app.tools.base import BaseTool, ToolParam, ToolResult
-
-WORKDIR = Path(__file__).resolve().parent.parent.parent.parent
+from app.core.workspace import workspace
 
 
 def _resolve_path(path: str) -> Path:
     """解析路径：绝对路径原样，相对路径以工作目录为基准"""
-    p = Path(path)
-    if p.is_absolute():
-        return p.resolve()
-    return (WORKDIR / p).resolve()
+    return workspace.resolve(path)
 
 
 class FileReadTool(BaseTool):
@@ -81,7 +77,7 @@ class FileListTool(BaseTool):
 
     async def execute(self, path: str = "", **kwargs) -> ToolResult:
         try:
-            target = _resolve_path(path) if path else WORKDIR
+            target = _resolve_path(path) if path else workspace.path
             if not target.exists():
                 return ToolResult(success=False, output="", error=f"目录不存在: {target}")
             if not target.is_dir():

@@ -46,6 +46,10 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
 
   // 加载会话历史消息
   useEffect(() => {
+    if (!sessionId) {
+      setMessages([]);
+      return;
+    }
     const loadHistory = async () => {
       try {
         const status = await window.electronAPI.getPythonStatus();
@@ -176,7 +180,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
 
   const sendMessage = useCallback(async () => {
     const content = input.trim();
-    if (!content || isLoading) return;
+    if (!content || isLoading || !sessionId) return;
     setInput("");
 
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content };
@@ -342,8 +346,14 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-3">
               <h1 className="text-3xl font-light tracking-tight text-gray-900 dark:text-neutral-100">OmniAgent</h1>
-              <p className="text-gray-500 dark:text-neutral-500 text-sm">全能 AI 助手，有什么可以帮你？</p>
-              <p className="text-xs text-gray-400 dark:text-neutral-600">拖拽文件到窗口让 Agent 分析</p>
+              {!sessionId ? (
+                <p className="text-gray-500 dark:text-neutral-500 text-sm">请从左侧选择一个项目开始</p>
+              ) : (
+                <>
+                  <p className="text-gray-500 dark:text-neutral-500 text-sm">全能 AI 助手，有什么可以帮你？</p>
+                  <p className="text-xs text-gray-400 dark:text-neutral-600">拖拽文件到窗口让 Agent 分析</p>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -438,6 +448,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         <ChatInput
           input={input}
           isLoading={isLoading}
+          disabled={!sessionId}
           onInput={setInput}
           onSend={sendMessage}
         />

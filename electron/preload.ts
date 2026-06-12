@@ -11,6 +11,7 @@ const electronAPI = {
   restartPython: () => ipcRenderer.invoke("python:restart"),
 
   openFile: () => ipcRenderer.invoke("dialog:openFile"),
+  openDirectory: () => ipcRenderer.invoke("dialog:openDirectory"),
   saveFile: (name: string) => ipcRenderer.invoke("dialog:saveFile", name),
 
   notify: (title: string, body: string) => ipcRenderer.invoke("notify", title, body),

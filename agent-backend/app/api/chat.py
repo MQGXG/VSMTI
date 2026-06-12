@@ -1,4 +1,5 @@
 import json
+import logging
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -9,6 +10,7 @@ from app.core.modes import AgentMode
 from app.core.permission_store import respond as respond_permission
 from app.core.question_store import answer_question
 from app.core.permission_config import permission_config
+from app.core.workspace import workspace
 from app.tools import tool_registry
 
 router = APIRouter()
@@ -24,9 +26,19 @@ class ChatRequest(BaseModel):
     mode: str = "assistant"  # assistant / expert / action / safe
 
 
-import logging
-
 logger = logging.getLogger(__name__)
+
+
+def _switch_workspace_for_session(session_id: str):
+    """根据会话记录切换工作目录"""
+    info = memory_system.get_session_info(session_id)
+    ws = (info or {}).get("workspace_path", "")
+    if ws:
+        try:
+            workspace.path = ws
+            logger.info("[Chat] 已切换工作目录: %s", ws)
+        except Exception as e:
+            logger.warning("[Chat] 切换工作目录失败: %s", e)
 
 
 @router.post("/api/chat")
@@ -50,6 +62,9 @@ async def chat(request: ChatRequest):
         mode = AgentMode(request.mode)
     except ValueError:
         mode = AgentMode.ASSISTANT
+
+    # 切换到该会话绑定的任务目录
+    _switch_workspace_for_session(request.session_id)
 
     agent = Agent(llm, tool_registry, mode=mode)
     history = memory_system.get_history(request.session_id)

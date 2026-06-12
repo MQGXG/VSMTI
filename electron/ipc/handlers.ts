@@ -18,6 +18,15 @@ export function registerIPCHandlers(pythonManager: PythonManager): void {
   });
 
   // 文件对话框
+  ipcMain.handle("dialog:openDirectory", async () => {
+    const win = getMainWindow();
+    if (!win) return [];
+    const result = await dialog.showOpenDialog(win, {
+      properties: ["openDirectory"],
+    });
+    return result.filePaths;
+  });
+
   ipcMain.handle("dialog:openFile", async () => {
     const win = getMainWindow();
     if (!win) return [];

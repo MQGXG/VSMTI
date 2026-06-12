@@ -13,6 +13,7 @@ export interface ElectronAPI {
   clearPythonLogs: () => Promise<void>;
   restartPython: () => Promise<{ status: string; port: number; url: string; error?: string }>;
   openFile: () => Promise<string[]>;
+  openDirectory: () => Promise<string[]>;
   saveFile: (name: string) => Promise<string>;
   notify: (title: string, body: string) => Promise<void>;
   encryptApiKey: (text: string) => Promise<string>;

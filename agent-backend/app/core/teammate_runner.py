@@ -11,6 +11,7 @@ from typing import Any
 from app.core.team_bus import bus
 from app.core.task_system import list_tasks, claim_task, complete_task, can_start
 from app.core import worktree_manager as wt
+from app.core.workspace import workspace
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ def _get_cwd(teammate_name: str) -> str:
         wt_entry = wt.get(wt_name)
         if wt_entry and wt_entry.get("path"):
             return wt_entry["path"]
-    return str(Path.cwd())
+    return str(workspace.path)
 
 
 def _execute_teammate_tool(name: str, args: dict, teammate_name: str) -> str:

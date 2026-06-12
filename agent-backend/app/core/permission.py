@@ -4,10 +4,9 @@ import logging
 from pathlib import Path
 
 from app.core.permission_config import permission_config, HARD_DENY, SENSITIVE_DIRS
+from app.core.workspace import workspace
 
 logger = logging.getLogger(__name__)
-
-WORKDIR = Path(__file__).resolve().parent.parent.parent.parent
 
 
 def _in_hard_deny(command: str) -> bool:
@@ -26,15 +25,7 @@ def _is_sensitive_path(path: str) -> bool:
 
 
 def _is_outside_workspace(path: str) -> bool:
-    p = Path(path)
-    if p.is_absolute():
-        resolved = p.resolve()
-    else:
-        resolved = (WORKDIR / p).resolve()
-    try:
-        return not resolved.is_relative_to(WORKDIR)
-    except ValueError:
-        return True
+    return not workspace.is_inside(workspace.resolve(path))
 
 
 def need_user_approval(tool_name: str, args: dict) -> str | None:

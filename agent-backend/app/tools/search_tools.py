@@ -4,10 +4,9 @@ import logging
 import subprocess
 from pathlib import Path
 from app.tools.base import BaseTool, ToolParam, ToolResult
+from app.core.workspace import workspace
 
 logger = logging.getLogger(__name__)
-
-WORKDIR = Path(__file__).resolve().parent.parent.parent.parent
 
 
 class GrepTool(BaseTool):
@@ -30,7 +29,7 @@ class GrepTool(BaseTool):
     async def execute(self, **kwargs) -> ToolResult:
         pattern = kwargs.get("pattern", "")
         include = kwargs.get("include", "")
-        search_path = kwargs.get("path", str(WORKDIR))
+        search_path = kwargs.get("path", str(workspace.path))
 
         if not pattern:
             return ToolResult(success=False, error="需要搜索模式")
@@ -88,7 +87,7 @@ class GlobTool(BaseTool):
 
     async def execute(self, **kwargs) -> ToolResult:
         pattern = kwargs.get("pattern", "")
-        search_path = kwargs.get("path", str(WORKDIR))
+        search_path = kwargs.get("path", str(workspace.path))
 
         if not pattern:
             return ToolResult(success=False, error="需要 glob 模式")
@@ -105,7 +104,7 @@ class GlobTool(BaseTool):
             lines = []
             for f in matches[:200]:
                 try:
-                    rel = f.relative_to(WORKDIR)
+                    rel = workspace.get_relative(f)
                     size = f.stat().st_size if f.is_file() else 0
                     lines.append(f"{'📁' if f.is_dir() else '📄'} {rel} ({size} bytes)" if size else f"{'📁' if f.is_dir() else '📄'} {rel}")
                 except ValueError:

@@ -26,6 +26,7 @@ from app.tools.registry import ToolRegistry
 from app.tools.todo_write import CURRENT_TODOS
 from app.tools.task_tool import TaskTool
 from app.core.skill_manager import list_skills
+from app.core.workspace import workspace
 from app.prompts.system import SYSTEM_PROMPT
 from app.core import background as bg
 from app.tools.question_tool import drain_pending_questions
@@ -81,7 +82,7 @@ class Agent:
         skills_catalog = list_skills()
         prompt = prompt_builder.assemble_system_prompt(
             tools_desc=tools_desc,
-            workspace=f"工作目录: {os.getcwd()}",
+            workspace=f"工作目录: {workspace.path}",
             skills_catalog=skills_catalog,
             mode_suffix=suffix,
             todos=CURRENT_TODOS if CURRENT_TODOS else None,

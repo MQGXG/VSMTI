@@ -3,15 +3,26 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api import chat, sessions, files, models
+from app.api import chat, sessions, files, models, workspace_api, projects
 from app.core.hooks_setup import setup_default_hooks
 from app.core.cron_scheduler import start_scheduler as start_cron
 
 
+from app.core.memory import memory_system
+from app.core.workspace import workspace
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 启动时注册默认钩子
+    # 注册默认钩子
     setup_default_hooks()
+    # 如果没有项目，创建一个默认项目指向当前工作目录
+    if not memory_system.list_projects():
+        memory_system.create_project(
+            name=workspace.path.name or "默认项目",
+            workspace_path=str(workspace.path),
+        )
+        print(f"[Startup] 创建默认项目: {workspace.path}", flush=True)
     # 启动 Cron 调度器
     start_cron()
     # 启动完成信号
@@ -40,9 +51,11 @@ app.add_middleware(
 )
 
 app.include_router(chat.router)
+app.include_router(projects.router)
 app.include_router(sessions.router)
 app.include_router(files.router)
 app.include_router(models.router)
+app.include_router(workspace_api.router)
 
 
 @app.get("/api/health")
