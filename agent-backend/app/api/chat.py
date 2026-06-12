@@ -7,6 +7,8 @@ from app.core.llm import get_llm
 from app.core.memory import memory_system
 from app.core.modes import AgentMode
 from app.core.permission_store import respond as respond_permission
+from app.core.question_store import answer_question
+from app.core.permission_config import permission_config
 from app.tools import tool_registry
 
 router = APIRouter()
@@ -92,3 +94,21 @@ class PermissionResponse(BaseModel):
 async def permission_respond(body: PermissionResponse):
     ok = respond_permission(body.request_id, body.approved)
     return {"ok": ok}
+
+
+class QuestionResponse(BaseModel):
+    request_id: str
+    answer: str
+
+
+@router.post("/api/question/respond")
+async def question_respond(body: QuestionResponse):
+    ok = answer_question(body.request_id, body.answer)
+    return {"ok": ok}
+
+
+@router.post("/api/permission/reload")
+async def reload_permission():
+    """重新加载权限配置"""
+    permission_config.reload()
+    return {"status": "reloaded", "rules": len(permission_config._rules)}

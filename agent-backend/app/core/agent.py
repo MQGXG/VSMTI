@@ -28,6 +28,8 @@ from app.tools.task_tool import TaskTool
 from app.core.skill_manager import list_skills
 from app.prompts.system import SYSTEM_PROMPT
 from app.core import background as bg
+from app.tools.question_tool import drain_pending_questions
+from app.core.question_store import wait_for_answer as wait_question_answer
 
 logger = logging.getLogger(__name__)
 
@@ -193,11 +195,9 @@ class Agent:
             current_content = ""
             finish_reason = None
             llm_error = None
-            max_tokens = 8000
-
             while True:
                 try:
-                    async for event in self.llm.chat_stream(clean_messages, tools=tools, max_tokens=max_tokens):
+                    async for event in self.llm.chat_stream(clean_messages, tools=tools):
                         sse = self._convert_llm_event(event)
                         if sse:
                             yield sse
@@ -225,16 +225,14 @@ class Agent:
                 decision = choose_recovery(finish_reason, llm_error, self.recovery)
 
                 if decision["kind"] == "escalate":
-                    logger.info("[Recovery] escalate max_tokens 8K→64K")
+                    logger.info("[Recovery] escalate max_tokens")
                     self.recovery.has_escalated = True
-                    max_tokens = 64000
                     continue
 
                 if decision["kind"] == "continue":
                     logger.info("[Recovery] continue (attempt %d/3)", self.recovery.continuation_attempts + 1)
                     self.recovery.continuation_attempts += 1
                     clean_messages.append({"role": "user", "content": CONTINUE_MESSAGE})
-                    max_tokens = 64000
                     continue
 
                 if decision["kind"] == "compact":
@@ -331,6 +329,14 @@ class Agent:
                     logger.warning(err_output)
                     yield StreamEvent(type="tool_error", data={"name": name, "error": err_output})
                     messages.append({"role": "tool", "tool_call_id": tc["id"], "content": err_output})
+
+                # 排空 question 工具产生的待处理问题
+                pending_questions = drain_pending_questions()
+                for q in pending_questions:
+                    yield StreamEvent.question(q["question"], q["options"], q["request_id"])
+                    answer = await wait_question_answer(q["request_id"])
+                    if answer:
+                        yield StreamEvent.question_result(q["request_id"], answer)
 
             # 每轮结束提取记忆
             await memory.extract_memories(messages, self._llm_summary_call)

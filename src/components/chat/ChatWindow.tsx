@@ -9,13 +9,14 @@ import { useChatStream } from "./useChatStream";
 import type { Message, AgentMode } from "./types";
 import { FileUp, X, GitBranch } from "lucide-react";
 import { PermissionDialog } from "./PermissionDialog";
+import { QuestionDialog } from "./QuestionDialog";
 
 interface Props {
   sessionId: string;
   onSessionChange?: (id: string) => void;
 }
 
-export function ChatWindow({ sessionId }: Props) {
+export function ChatWindow({ sessionId, onSessionChange }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +28,11 @@ export function ChatWindow({ sessionId }: Props) {
     tool_name: string;
     args: Record<string, unknown>;
     reason: string;
+    request_id: string;
+  } | null>(null);
+  const [questionReq, setQuestionReq] = useState<{
+    question: string;
+    options: string[];
     request_id: string;
   } | null>(null);
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -206,6 +212,9 @@ export function ChatWindow({ sessionId }: Props) {
         onContent: (text) => {
           setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: m.content + text } : m));
         },
+        onQuestion: (q) => {
+          setQuestionReq(q);
+        },
         onToolStart: (_id, name, args) => {
           setMessages((prev) => prev.map((m) => m.id === assistantId ? {
             ...m, toolCalls: [...(m.toolCalls || []), { name, args, argsText: "", status: "running" as const }],
@@ -229,7 +238,15 @@ export function ChatWindow({ sessionId }: Props) {
         onPermissionRequest: (req) => {
           setPermissionReq(req);
         },
-        onError: (message) => console.error("SSE error:", message),
+        onError: (message) => {
+          console.error("SSE error:", message);
+          setMessages((prev) => prev.map((m) => m.id === assistantId
+            ? { ...m, content: m.content || `\n\n⚠️ ${message}`, toolCalls: m.toolCalls || [] }
+            : m
+          ));
+          if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+          setIsLoading(false);
+        },
         onFinish: () => {
           if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
           setIsLoading(false);
@@ -246,6 +263,24 @@ export function ChatWindow({ sessionId }: Props) {
       setIsLoading(false);
     }
   }, [input, isLoading, sessionId, selectedModel, agentMode, streamChat]);
+
+  const handleQuestionAnswer = useCallback(async (answer: string) => {
+    const req = questionReq;
+    if (!req) return;
+    setQuestionReq(null);
+    try {
+      const status = await window.electronAPI.getPythonStatus();
+      if (status.status === "running") {
+        await fetch(`${status.url}/api/question/respond`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ request_id: req.request_id, answer }),
+        });
+      }
+    } catch (err) {
+      console.error("Question response failed:", err);
+    }
+  }, [questionReq]);
 
   const handlePermission = useCallback(async (approved: boolean) => {
     const req = permissionReq;
@@ -357,6 +392,15 @@ export function ChatWindow({ sessionId }: Props) {
         )}
         <div ref={bottomRef} />
       </div>
+
+      {/* 提问弹窗 */}
+      {questionReq && (
+        <QuestionDialog
+          question={questionReq.question}
+          options={questionReq.options}
+          onSubmit={handleQuestionAnswer}
+        />
+      )}
 
       {/* 权限审批弹窗 */}
       {permissionReq && (

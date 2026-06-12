@@ -16,11 +16,16 @@ from app.tools.team_tools import (
     SpawnTeammateTool, SendMessageTool, CheckInboxTool,
     RequestShutdownTool, RequestPlanTool, ReviewPlanTool,
 )
+from app.tools.question_tool import QuestionTool
+from app.tools.search_tools import GrepTool, GlobTool
 from app.tools.worktree_tools import (
     CreateWorktreeTool, WorktreeEnterTool, WorktreeRunTool,
     WorktreeCloseoutTool, WorktreeListTool,
 )
 
+tool_registry.register(QuestionTool())
+tool_registry.register(GrepTool())
+tool_registry.register(GlobTool())
 tool_registry.register(WebSearchTool())
 tool_registry.register(TodoWriteTool())
 tool_registry.register(LoadSkillTool())

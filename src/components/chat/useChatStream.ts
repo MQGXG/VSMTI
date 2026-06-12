@@ -8,6 +8,12 @@ interface PermissionRequest {
   request_id: string;
 }
 
+interface QuestionEvent {
+  question: string;
+  options: string[];
+  request_id: string;
+}
+
 interface ChatStreamOptions {
   assistantId: string;
   onContent: (text: string) => void;
@@ -16,6 +22,7 @@ interface ChatStreamOptions {
   onToolResult: (name: string, output: string, success: boolean) => void;
   onToolError: (name: string, error: string) => void;
   onPermissionRequest?: (req: PermissionRequest) => void;
+  onQuestion?: (q: QuestionEvent) => void;
   onError: (message: string) => void;
   onFinish: () => void;
 }
@@ -91,6 +98,15 @@ export function useChatStream() {
                     tool_name: data.tool_name,
                     args: data.args || {},
                     reason: data.reason,
+                    request_id: data.request_id,
+                  });
+                }
+                break;
+              case "question":
+                if (opts.onQuestion) {
+                  opts.onQuestion({
+                    question: data.question,
+                    options: data.options || [],
                     request_id: data.request_id,
                   });
                 }

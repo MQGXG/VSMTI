@@ -119,6 +119,21 @@ class StreamEvent:
             "approved": approved,
         })
 
+    @staticmethod
+    def question(question: str, options: list[str], request_id: str) -> "StreamEvent":
+        return StreamEvent(type="question", data={
+            "question": question,
+            "options": options,
+            "request_id": request_id,
+        })
+
+    @staticmethod
+    def question_result(request_id: str, answer: str) -> "StreamEvent":
+        return StreamEvent(type="question_result", data={
+            "request_id": request_id,
+            "answer": answer,
+        })
+
     def to_sse(self) -> str:
         import json
         return f"data: {json.dumps({'type': self.type, **self.data}, ensure_ascii=False)}\n\n"
