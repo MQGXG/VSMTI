@@ -5,7 +5,14 @@
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: #262626 transparent;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
@@ -22,4 +29,128 @@
   .no-drag {
     -webkit-app-region: no-drag;
   }
+}
+
+/* 滚动条样式 - 亮色模式 */
+html:not(.dark) * {
+  scrollbar-color: #d4d4d4 transparent;
+}
+
+html:not(.dark) pre::-webkit-scrollbar-thumb {
+  background-color: #d4d4d4;
+  border-radius: 3px;
+}
+
+html:not(.dark) .overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: #e5e5e5;
+  border-radius: 3px;
+}
+
+html:not(.dark) .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: #d4d4d4;
+}
+
+/* 滚动条样式 - 暗色模式 */
+html.dark * {
+  scrollbar-color: #262626 transparent;
+}
+
+html.dark pre::-webkit-scrollbar-thumb {
+  background-color: #404040;
+  border-radius: 3px;
+}
+
+html.dark .overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: #262626;
+  border-radius: 3px;
+}
+
+html.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: #404040;
+}
+
+pre {
+  -ms-overflow-style: auto;
+}
+
+pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+code {
+  font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
+}
+
+/* 代码块语法关键词高亮 */
+.language-py .keyword,
+code.keyword {
+  color: #ff79c6;
+}
+.language-py .string,
+code.string {
+  color: #f1fa8c;
+}
+.language-py .comment,
+code.comment {
+  color: #6272a4;
+}
+.language-py .function,
+code.function {
+  color: #50fa7b;
+}
+
+/* 行内代码块样式 - 亮色 */
+html:not(.dark) code:not(pre code) {
+  background: #f3f4f6;
+  color: #ea580c;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.875em;
+}
+
+/* 行内代码块样式 - 暗色 */
+html.dark code:not(pre code) {
+  background: #1e1e1e;
+  color: #7ec699;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.875em;
+}
+
+/* 消息气泡样式 - 亮色 */
+html:not(.dark) .message-user {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+html:not(.dark) .message-assistant {
+  background-color: #f9fafb;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
+}
+
+/* 消息气泡样式 - 暗色 */
+html.dark .message-user {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #d1fae5;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+html.dark .message-assistant {
+  background-color: #171717;
+  color: #e5e5e5;
+  border: 1px solid #262626;
 }

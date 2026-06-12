@@ -27,12 +27,10 @@ if (-not (Test-Path "$pythonDir\Scripts\python.exe")) {
     
     python -m venv $pythonDir
     Write-Host "  安装核心依赖..." -ForegroundColor Yellow
-    & "$pythonDir\Scripts\pip.exe" install fastapi uvicorn openai anthropic python-multipart duckduckgo_search -q
+    & "$pythonDir\Scripts\pip.exe" install fastapi uvicorn openai anthropic python-multipart duckduckgo_search pydantic-settings -q
     
-    if ($full) {
-        Write-Host "  安装完整依赖（含数据分析、图表）..." -ForegroundColor Yellow
-        & "$pythonDir\Scripts\pip.exe" install pandas matplotlib chromadb playwright -q
-    }
+    Write-Host "  安装可选依赖（数据分析、向量搜索）..." -ForegroundColor Yellow
+    & "$pythonDir\Scripts\pip.exe" install pandas matplotlib chromadb -q 2>&1 | Out-Null
     
     Write-Host "✅ 便携 Python 已创建" -ForegroundColor Green
 } else {

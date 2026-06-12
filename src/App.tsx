@@ -8,7 +8,7 @@ export function App() {
   const [activeSession, setActiveSession] = useState("default");
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0a] text-neutral-100 overflow-hidden select-none">
+    <div className="h-screen flex flex-col bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-neutral-100 overflow-hidden select-none transition-colors duration-200">
       <TitleBar />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -18,7 +18,10 @@ export function App() {
           onSessionChange={setActiveSession}
         />
         <main className="flex-1 overflow-hidden">
-          <ChatWindow sessionId={activeSession} />
+          <ChatWindow
+            sessionId={activeSession}
+            onSessionChange={setActiveSession}
+          />
         </main>
       </div>
     </div>

@@ -1,116 +1,172 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Loader2, ChevronDown, CheckCircle2, XCircle, Search, Code, FileText, Image, Globe, Cpu } from "lucide-react";
-import { getSettings } from "@/components/sidebar/SettingsDialog";
-
-const MODEL_OPTIONS = [
-  { label: "GPT-4o", value: "gpt-4o", provider: "openai" },
-  { label: "GPT-4o-mini", value: "gpt-4o-mini", provider: "openai" },
-  { label: "Claude Sonnet 4", value: "claude-sonnet-4-20250514", provider: "claude" },
-  { label: "Claude Haiku", value: "claude-haiku-20241022", provider: "claude" },
-  { label: "DeepSeek V3", value: "deepseek-chat", provider: "custom" },
-  { label: "DeepSeek R1", value: "deepseek-reasoner", provider: "custom" },
-  { label: "Ollama (本地)", value: "llama3.1", provider: "local" },
-  { label: "自定义", value: "", provider: "custom" },
-];
-
-function loadModelChoice() {
-  if (typeof window === "undefined") return MODEL_OPTIONS[0];
-  try {
-    const saved = localStorage.getItem("chat_model");
-    if (saved) return JSON.parse(saved);
-  } catch { /* ignore */ }
-  return MODEL_OPTIONS[0];
-}
-
-interface ToolCallInfo {
-  name: string;
-  args: Record<string, unknown>;
-  result?: string;
-  status: "running" | "done" | "error";
-}
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  toolCalls?: ToolCallInfo[];
-}
-
-const toolIcons: Record<string, typeof Code> = {
-  web_search: Search,
-  run_code: Code,
-  read_file: FileText,
-  write_file: FileText,
-  data_analysis: Code,
-  image_generate: Image,
-  browse_web: Globe,
-};
-
-function ToolCall({ info }: { info: ToolCallInfo }) {
-  const [expanded, setExpanded] = useState(false);
-  const Icon = toolIcons[info.name] || Code;
-
-  return (
-    <div className="ml-4 mt-2 border-l-2 border-neutral-700 pl-4">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
-      >
-        {info.status === "running" ? (
-          <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
-        ) : info.status === "done" ? (
-          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-        ) : (
-          <XCircle className="w-4 h-4 text-red-500" />
-        )}
-        <Icon className="w-4 h-4" />
-        <span className="font-mono text-xs">{info.name}</span>
-        <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
-      </button>
-      {expanded && (
-        <div className="mt-2 space-y-2">
-          <div className="bg-neutral-900 rounded-md p-3 text-xs">
-            <div className="text-neutral-500 mb-1">参数：</div>
-            <pre className="text-neutral-300 overflow-x-auto">{JSON.stringify(info.args, null, 2)}</pre>
-          </div>
-          {info.result && (
-            <div className="bg-neutral-900 rounded-md p-3 text-xs">
-              <div className="text-neutral-500 mb-1">结果：</div>
-              <pre className="text-neutral-300 overflow-x-auto max-h-48 overflow-y-auto">{info.result}</pre>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+import { getProviderById } from "@/components/sidebar/SettingsDialog";
+import { MarkdownRenderer } from "./MarkdownRenderer";
+import { ToolCallView } from "./ToolCallView";
+import { ModelSelector, loadModelChoice, loadModeChoice } from "./ModelSelector";
+import type { ModelOption } from "./ModelSelector";
+import { ChatInput } from "./ChatInput";
+import { useChatStream } from "./useChatStream";
+import type { Message, AgentMode } from "./types";
+import { FileUp, X, GitBranch } from "lucide-react";
+import { PermissionDialog } from "./PermissionDialog";
 
 interface Props {
   sessionId: string;
+  onSessionChange?: (id: string) => void;
 }
 
 export function ChatWindow({ sessionId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(loadModelChoice);
-  const [modelOpen, setModelOpen] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<ModelOption>(loadModelChoice);
+  const [agentMode, setAgentMode] = useState<AgentMode>(loadModeChoice);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ name: string; path: string }>>([]);
+  const [permissionReq, setPermissionReq] = useState<{
+    tool_name: string;
+    args: Record<string, unknown>;
+    reason: string;
+    request_id: string;
+  } | null>(null);
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const modelRef = useRef<HTMLDivElement>(null);
+  const dragCounter = useRef(0);
+  const { streamChat } = useChatStream();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 加载会话历史消息
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (modelRef.current && !modelRef.current.contains(e.target as Node)) {
-        setModelOpen(false);
+    const loadHistory = async () => {
+      try {
+        const status = await window.electronAPI.getPythonStatus();
+        if (status.status !== "running") return;
+        
+        const res = await fetch(`${status.url}/api/sessions/${encodeURIComponent(sessionId)}/messages`);
+        if (!res.ok) {
+          setMessages([]);
+          return;
+        }
+        
+        const data = await res.json();
+        const historyMessages = data.messages || [];
+        
+        const formattedMessages: Message[] = historyMessages.map((msg: any) => ({
+          id: crypto.randomUUID(),
+          dbId: msg.id,
+          role: msg.role,
+          content: msg.content,
+        }));
+        
+        setMessages(formattedMessages);
+      } catch {
+        setMessages([]);
       }
     };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    
+    loadHistory();
+    setUploadedFiles([]);
+  }, [sessionId]);
+
+  // 拖拽事件处理
+  const handleDragEnter = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
   }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(async (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
+
+    const files = e.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const status = await window.electronAPI.getPythonStatus();
+      if (status.status !== "running") {
+        throw new Error("Python 后端未启动");
+      }
+
+      const uploaded: Array<{ name: string; path: string }> = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch(`${status.url}/api/files/upload`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`上传失败: ${file.name}`);
+        }
+
+        const data = await response.json();
+        uploaded.push({ name: file.name, path: data.path || data.filename });
+      }
+
+      setUploadedFiles((prev) => [...prev, ...uploaded]);
+
+      // 自动发送消息让 Agent 分析文件（带上路径）
+      const fileDetails = uploaded.map((f) => `"${f.name}" (路径: ${f.path})`).join("、");
+      const message = `我刚刚上传了文件：${fileDetails}。请用 read_file 读取这些文件并分析内容。`;
+      
+      // 使用 setTimeout 确保状态更新后再发送
+      setTimeout(() => {
+        setInput(message);
+      }, 100);
+    } catch (err: any) {
+      console.error("文件上传失败:", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: `⚠️ 文件上传失败：${err?.message || String(err)}`,
+        },
+      ]);
+    }
+  }, []);
+
+  useEffect(() => {
+    const dropZone = document.body;
+    dropZone.addEventListener("dragenter", handleDragEnter);
+    dropZone.addEventListener("dragleave", handleDragLeave);
+    dropZone.addEventListener("dragover", handleDragOver);
+    dropZone.addEventListener("drop", handleDrop);
+
+    return () => {
+      dropZone.removeEventListener("dragenter", handleDragEnter);
+      dropZone.removeEventListener("dragleave", handleDragLeave);
+      dropZone.removeEventListener("dragover", handleDragOver);
+      dropZone.removeEventListener("drop", handleDrop);
+    };
+  }, [handleDragEnter, handleDragLeave, handleDragOver, handleDrop]);
 
   const sendMessage = useCallback(async () => {
     const content = input.trim();
@@ -119,123 +175,182 @@ export function ChatWindow({ sessionId }: Props) {
 
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content };
     const assistantId = crypto.randomUUID();
-    setMessages((prev) => [
-      ...prev,
-      userMsg,
-      { id: assistantId, role: "assistant", content: "", toolCalls: [] },
-    ]);
+    setMessages((prev) => [...prev, userMsg, { id: assistantId, role: "assistant", content: "", toolCalls: [] }]);
     setIsLoading(true);
+    if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+    loadingTimeoutRef.current = setTimeout(() => {
+      setIsLoading(false);
+      setMessages((prev) => prev.map((m) => m.id === assistantId
+        ? { ...m, content: m.content || "\n\n⚠️ 请求超时，请重试。", toolCalls: m.toolCalls || [] }
+        : m
+      ));
+    }, 120000);
 
     try {
       const status = await window.electronAPI.getPythonStatus();
-      const settings = getSettings();
-      const response = await fetch(`${status.url}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: content,
-          session_id: sessionId,
-          model: selectedModel.provider,
-          model_name: selectedModel.value || settings.modelName,
-          api_key: settings.apiKey || undefined,
-          api_url: settings.apiUrl,
-        }),
-      });
-
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop()!;
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const data = JSON.parse(line.slice(6));
-
-          switch (data.type) {
-            case "content":
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, content: m.content + data.text } : m
-                )
-              );
-              break;
-            case "tool_start":
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? {
-                        ...m,
-                        toolCalls: [
-                          ...(m.toolCalls || []),
-                          { name: data.name, args: data.args, status: "running" as const },
-                        ],
-                      }
-                    : m
-                )
-              );
-              break;
-            case "tool_result":
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? {
-                        ...m,
-                        toolCalls: m.toolCalls?.map((tc) =>
-                          tc.name === data.name ? { ...tc, result: data.output, status: "done" as const } : tc
-                        ),
-                      }
-                    : m
-                )
-              );
-              break;
-          }
-        }
+      if (status.status !== "running") {
+        throw new Error(`后端状态异常: ${status.status} — ${status.error || ""}`);
       }
-    } catch (err) {
+      const provider = await getProviderById(selectedModel.provider);
+
+      await streamChat(status.url, {
+        message: content,
+        session_id: sessionId,
+        model: selectedModel.provider,
+        model_name: selectedModel.value,
+        api_key: provider?.apiKey || undefined,
+        api_url: provider?.apiUrl || "",
+        mode: agentMode,
+      }, {
+        assistantId,
+        onContent: (text) => {
+          setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: m.content + text } : m));
+        },
+        onToolStart: (_id, name, args) => {
+          setMessages((prev) => prev.map((m) => m.id === assistantId ? {
+            ...m, toolCalls: [...(m.toolCalls || []), { name, args, argsText: "", status: "running" as const }],
+          } : m));
+        },
+        onToolDelta: (id, delta) => {
+          setMessages((prev) => prev.map((m) => m.id === assistantId ? {
+            ...m, toolCalls: m.toolCalls?.map((tc) => (tc.name === id || tc.name === id) ? { ...tc, argsText: (tc.argsText || "") + delta } : tc),
+          } : m));
+        },
+        onToolResult: (name, output, success) => {
+          setMessages((prev) => prev.map((m) => m.id === assistantId ? {
+            ...m, toolCalls: m.toolCalls?.map((tc) => tc.name === name ? { ...tc, result: output, status: success ? "done" : "error" } : tc),
+          } : m));
+        },
+        onToolError: (name, error) => {
+          setMessages((prev) => prev.map((m) => m.id === assistantId ? {
+            ...m, toolCalls: m.toolCalls?.map((tc) => tc.name === name ? { ...tc, result: error, status: "error" } : tc),
+          } : m));
+        },
+        onPermissionRequest: (req) => {
+          setPermissionReq(req);
+        },
+        onError: (message) => console.error("SSE error:", message),
+        onFinish: () => {
+          if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+          setIsLoading(false);
+        },
+      });
+    } catch (err: any) {
       console.error("Chat error:", err);
+      setMessages((prev) => prev.map((m) => m.id === assistantId
+        ? { ...m, content: `\n\n⚠️ 发送失败：${err?.message || String(err)}`, toolCalls: [] }
+        : m
+      ));
     } finally {
+      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
       setIsLoading(false);
     }
-  }, [input, isLoading, sessionId, selectedModel]);
+  }, [input, isLoading, sessionId, selectedModel, agentMode, streamChat]);
+
+  const handlePermission = useCallback(async (approved: boolean) => {
+    const req = permissionReq;
+    if (!req) return;
+    setPermissionReq(null);
+    try {
+      const status = await window.electronAPI.getPythonStatus();
+      if (status.status === "running") {
+        await fetch(`${status.url}/api/permission/respond`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ request_id: req.request_id, approved }),
+        });
+      }
+    } catch (err) {
+      console.error("Permission response failed:", err);
+    }
+  }, [permissionReq]);
+
+  const handleFork = useCallback(async (forkAtMessageId: number | undefined) => {
+    try {
+      const status = await window.electronAPI.getPythonStatus();
+      if (status.status !== "running") return;
+
+      const res = await fetch(`${status.url}/api/sessions/${encodeURIComponent(sessionId)}/fork`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, fork_at_message_id: forkAtMessageId ?? null }),
+      });
+      if (!res.ok) throw new Error("分叉失败");
+      const data = await res.json();
+      if (data.session && onSessionChange) {
+        onSessionChange(data.session.session_id);
+      }
+    } catch (err) {
+      console.error("Fork error:", err);
+    }
+  }, [sessionId, onSessionChange]);
+
+  const removeUploadedFile = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
+      {/* 拖拽遮罩 */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-emerald-500/10 border-2 border-dashed border-emerald-500/50 rounded-lg flex items-center justify-center backdrop-blur-sm">
+          <div className="text-center space-y-2">
+            <FileUp className="w-12 h-12 text-emerald-500 dark:text-emerald-400 mx-auto" />
+            <p className="text-emerald-700 dark:text-emerald-300 text-lg font-medium">释放以上传文件</p>
+            <p className="text-emerald-600/60 dark:text-emerald-400/60 text-sm">支持任意文本文件</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl mx-auto w-full">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-3">
-              <h1 className="text-3xl font-light tracking-tight text-neutral-100">OmniAgent</h1>
-              <p className="text-neutral-500 text-sm">全能 AI 助手，有什么可以帮你？</p>
-              <p className="text-xs text-neutral-600">拖拽文件到窗口让 Agent 分析</p>
+              <h1 className="text-3xl font-light tracking-tight text-gray-900 dark:text-neutral-100">OmniAgent</h1>
+              <p className="text-gray-500 dark:text-neutral-500 text-sm">全能 AI 助手，有什么可以帮你？</p>
+              <p className="text-xs text-gray-400 dark:text-neutral-600">拖拽文件到窗口让 Agent 分析</p>
             </div>
           </div>
         )}
 
-        {messages.map((msg) => (
-          <div key={msg.id} className="mb-6">
+        {messages.map((msg, idx) => (
+          <div key={msg.id} className="group mb-6 relative">
             <div className={`flex w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                  msg.role === "user"
-                    ? "bg-emerald-600/20 text-emerald-50 border border-emerald-500/20"
-                    : "bg-neutral-900 text-neutral-200 border border-neutral-800"
-                }`}
-              >
-                {msg.content || <span className="text-neutral-500 italic">思考中...</span>}
+              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                msg.role === "user"
+                  ? "message-user"
+                  : "message-assistant"
+              }`}>
+                {msg.content ? (
+                  msg.role === "assistant" ? (
+                    <MarkdownRenderer content={msg.content} />
+                  ) : (
+                    <span className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</span>
+                  )
+                ) : (
+                  <span className="text-gray-400 dark:text-neutral-500 italic">思考中...</span>
+                )}
               </div>
             </div>
-            {msg.toolCalls?.map((tc, i) => <ToolCall key={i} info={tc} />)}
+            {msg.toolCalls?.map((tc, i) => <ToolCallView key={i} info={tc} />)}
+
+            {/* 分叉按钮：从该消息处分叉出新会话 */}
+            {msg.role === "assistant" && msg.content && (
+              <div className="absolute -left-8 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => handleFork(msg.dbId)}
+                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-400 hover:text-emerald-500 transition-all"
+                  title="从此处分叉新会话"
+                >
+                  <GitBranch className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         ))}
 
         {isLoading && messages[messages.length - 1]?.content === "" && (
-          <div className="flex items-center gap-2 text-neutral-500">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-neutral-500">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
             <span className="text-sm">思考中...</span>
           </div>
@@ -243,75 +358,51 @@ export function ChatWindow({ sessionId }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-neutral-800 p-4 max-w-3xl mx-auto w-full">
-        <div className="flex items-end gap-2 bg-neutral-900 rounded-2xl border border-neutral-800 px-4 py-3 focus-within:border-emerald-500/40 transition-colors">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-              }
-            }}
-            placeholder="输入消息... (Ctrl+Shift+A 全局唤出)"
-            rows={1}
-            className="flex-1 bg-transparent text-sm text-neutral-200 placeholder-neutral-600 outline-none resize-none leading-relaxed"
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim() || isLoading}
-            className="flex-shrink-0 w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 disabled:text-neutral-600 text-white flex items-center justify-center transition-all"
-          >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </button>
-        </div>
+      {/* 权限审批弹窗 */}
+      {permissionReq && (
+        <PermissionDialog
+          toolName={permissionReq.tool_name}
+          args={permissionReq.args}
+          reason={permissionReq.reason}
+          onAllow={() => handlePermission(true)}
+          onDeny={() => handlePermission(false)}
+        />
+      )}
 
-        {/* 模型选择 */}
-        <div className="flex items-center gap-2 mt-2">
-          <div className="relative" ref={modelRef}>
-            <button
-              onClick={() => setModelOpen(!modelOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 transition-colors border border-transparent hover:border-neutral-700"
-            >
-              <Cpu className="w-3 h-3" />
-              <span>{selectedModel.label}</span>
-              <ChevronDown className={`w-3 h-3 transition-transform ${modelOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            {modelOpen && (
-              <div className="absolute bottom-full left-0 mb-1 w-56 bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden z-50 animate-fade-in">
-                <div className="max-h-60 overflow-y-auto py-1">
-                  {MODEL_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => {
-                        setSelectedModel(opt);
-                        localStorage.setItem("chat_model", JSON.stringify(opt));
-                        setModelOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                        selectedModel.value === opt.value
-                          ? "bg-emerald-600/10 text-emerald-400"
-                          : "text-neutral-300 hover:bg-neutral-800"
-                      }`}
-                    >
-                      <div className="font-medium">{opt.label}</div>
-                      <div className="text-neutral-500 text-[10px] mt-0.5">
-                        {opt.provider === "openai" ? "OpenAI" : opt.provider === "claude" ? "Anthropic" : opt.provider === "local" ? "本地" : "自定义"}
-                        {opt.value && ` · ${opt.value}`}
-                      </div>
-                    </button>
-                  ))}
-                </div>
+      <div className="border-t border-gray-200 dark:border-neutral-800 p-4 max-w-3xl mx-auto w-full">
+        {/* 已上传文件 */}
+        {uploadedFiles.length > 0 && (
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            {uploadedFiles.map((file, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-600/10 border border-emerald-200 dark:border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-400"
+              >
+                <FileUp className="w-3 h-3" />
+                <span className="max-w-[150px] truncate">{file.name}</span>
+                <button
+                  onClick={() => removeUploadedFile(index)}
+                  className="p-0.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
               </div>
-            )}
+            ))}
           </div>
+        )}
 
-          <span className="text-[10px] text-neutral-600">
-            {selectedModel.provider === "custom" ? "自定义 API" : selectedModel.provider === "local" ? "本地运行" : "云端 API"}
-          </span>
-        </div>
+        <ChatInput
+          input={input}
+          isLoading={isLoading}
+          onInput={setInput}
+          onSend={sendMessage}
+        />
+        <ModelSelector
+          selectedModel={selectedModel}
+          onModelChange={setSelectedModel}
+          agentMode={agentMode}
+          onModeChange={setAgentMode}
+        />
       </div>
     </div>
   );

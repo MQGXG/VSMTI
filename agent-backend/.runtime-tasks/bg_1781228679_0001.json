@@ -1,0 +1,9 @@
+{
+  "id": "bg_1781228679_0001",
+  "name": "test",
+  "status": "completed",
+  "started_at": 1781228679.2525678,
+  "completed_at": 1781228679.2555668,
+  "result_preview": "test result 123",
+  "output_file": "D:\\开发\\VSMTI\\agent-backend\\.runtime-tasks\\bg_1781228679_0001.log"
+}

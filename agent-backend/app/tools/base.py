@@ -37,6 +37,7 @@ class BaseTool(ABC):
         pass
 
     def to_openai_schema(self) -> dict:
+        """OpenAI / 通用兼容格式"""
         props = {}
         required = []
         for p in self.parameters:
@@ -54,5 +55,24 @@ class BaseTool(ABC):
                     "properties": props,
                     "required": required,
                 },
+            },
+        }
+
+    def to_claude_schema(self) -> dict:
+        """Claude 格式（name / description / input_schema）"""
+        props = {}
+        required = []
+        for p in self.parameters:
+            props[p.name] = {"type": p.type, "description": p.description}
+            if p.required:
+                required.append(p.name)
+
+        return {
+            "name": self.name,
+            "description": self.description,
+            "input_schema": {
+                "type": "object",
+                "properties": props,
+                "required": required,
             },
         }
