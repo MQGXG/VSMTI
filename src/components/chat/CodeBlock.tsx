@@ -27,7 +27,7 @@ export function CodeBlock({ code, language }: CodeBlockProps) {
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-300 transition-colors opacity-0 group-hover:opacity-100"
+          className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
         >
           {copied ? (
             <>

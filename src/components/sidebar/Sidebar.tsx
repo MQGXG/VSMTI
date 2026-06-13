@@ -12,6 +12,7 @@ import {
   CheckSquare,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { SettingsDialog } from "./SettingsDialog";
 import { NewTaskDialog } from "./NewTaskDialog";
 
@@ -116,10 +117,10 @@ export function Sidebar({
 
   if (!isOpen) {
     return (
-      <div className="border-r border-neutral-800 p-2 flex flex-col items-center gap-2">
+      <div className="border-r border-glass-border p-2 flex flex-col items-center gap-2 bg-surface-950/30">
         <button
           onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-neutral-800 transition-colors"
+          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
           title="展开侧边栏"
         >
           <PanelLeft className="w-4 h-4 text-neutral-400" />
@@ -129,21 +130,20 @@ export function Sidebar({
   }
 
   return (
-    <div className="w-64 border-r border-gray-200 dark:border-neutral-800 flex flex-col bg-gray-50 dark:bg-neutral-950/50 transition-colors duration-200">
-      {/* 项目头部 */}
-      <div className="p-4 border-b border-gray-200 dark:border-neutral-800">
+    <div className="w-64 border-r border-glass-border flex flex-col glass transition-all duration-250">
+      <div className="p-4 border-b border-glass-border">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <h2 className="font-semibold text-gray-900 dark:text-neutral-100 truncate">
               {project?.name || "未选择项目"}
             </h2>
             {project?.workspace_path && (
-              <p className="text-xs text-gray-500 dark:text-neutral-500 truncate mt-0.5">
+              <p className="text-xs text-neutral-500 truncate mt-0.5">
                 {project.workspace_path}
               </p>
             )}
           </div>
-          <button onClick={onToggle} className="p-1.5 rounded hover:bg-neutral-800 transition-colors shrink-0">
+          <button onClick={onToggle} className="p-1.5 rounded hover:bg-white/10 transition-colors shrink-0">
             <PanelLeftClose className="w-4 h-4 text-neutral-400" />
           </button>
         </div>
@@ -151,14 +151,14 @@ export function Sidebar({
         <div className="grid grid-cols-2 gap-2 mt-4">
           <button
             onClick={onNewSession}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-gray-900 dark:text-neutral-100 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-white/5 hover:bg-white/10 text-gray-900 dark:text-neutral-100 transition-colors border border-glass-border"
           >
             <MessageSquarePlus className="w-4 h-4" />
             新建会话
           </button>
           <button
             onClick={() => setNewTaskOpen(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm btn-gradient text-white"
           >
             <FolderPlus className="w-4 h-4" />
             新建任务
@@ -166,15 +166,14 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* 会话/任务列表 */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {sessions.map((session) => (
           <div
             key={session.session_id}
-            className={`group flex items-center rounded-lg text-sm transition-colors ${
+            className={`group flex items-center rounded-lg text-sm transition-all duration-200 ${
               activeSession === session.session_id
-                ? "bg-gray-200 dark:bg-neutral-800"
-                : "hover:bg-gray-100 dark:hover:bg-neutral-800/50"
+                ? "bg-white/10 shadow-[inset_3px_0_0_-0px_rgba(99,102,241,0.6)]"
+                : "hover:bg-white/5"
             }`}
           >
             <button
@@ -182,20 +181,20 @@ export function Sidebar({
               className={`flex-1 text-left px-3 py-2 min-w-0 ${
                 activeSession === session.session_id
                   ? "text-gray-900 dark:text-neutral-100"
-                  : "text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-200"
+                  : "text-neutral-400 hover:text-neutral-200"
               }`}
             >
               <div className="flex items-center gap-2.5">
                 {session.kind === "task" ? (
                   <CheckSquare className="w-4 h-4 shrink-0 text-emerald-500" />
                 ) : (
-                  <MessageSquare className="w-4 h-4 shrink-0 text-neutral-400" />
+                  <MessageSquare className="w-4 h-4 shrink-0 text-neutral-500" />
                 )}
                 <div className="min-w-0">
                   <div className="truncate font-medium">
                     {session.title || (session.kind === "task" ? "未命名任务" : "新会话")}
                   </div>
-                  <div className="truncate text-xs text-gray-400 dark:text-neutral-500">
+                  <div className="truncate text-xs text-neutral-600">
                     {session.kind === "task"
                       ? session.workspace_path.split(/[/\\]/).pop() || "任务目录"
                       : `${session.message_count || 0} 条消息 · ${formatTime(session.updated_at)}`}
@@ -226,7 +225,7 @@ export function Sidebar({
                   console.error("分叉失败:", err);
                 }
               }}
-              className="p-2 opacity-0 group-hover:opacity-100 hover:text-emerald-400 transition-all shrink-0"
+              className="p-2 opacity-0 group-hover:opacity-100 hover:text-emerald-400 transition-all duration-200 shrink-0"
               title="分叉"
             >
               <GitBranch className="w-3.5 h-3.5" />
@@ -240,6 +239,7 @@ export function Sidebar({
                     await fetch(`${status.url}/api/sessions/${encodeURIComponent(session.session_id)}`, {
                       method: "DELETE",
                     });
+                    loadSessions();
                   }
                 } catch (err) {
                   console.error("删除失败:", err);
@@ -248,7 +248,7 @@ export function Sidebar({
                   onNewSession();
                 }
               }}
-              className="p-2 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all shrink-0"
+              className="p-2 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all duration-200 shrink-0"
               title="删除"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -269,17 +269,16 @@ export function Sidebar({
         )}
       </div>
 
-      {/* 底部 */}
-      <div className="p-3 border-t border-gray-200 dark:border-neutral-800 space-y-2">
+      <div className="p-3 border-t border-glass-border space-y-2">
         <button
           onClick={() => setSettingsOpen(true)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-400 hover:bg-neutral-800 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-400 hover:bg-white/10 hover:text-neutral-200 transition-colors"
         >
           <Settings className="w-4 h-4" />
           <span>设置</span>
         </button>
 
-        <div className="px-3 py-2 rounded-lg bg-neutral-900/50 space-y-1">
+        <div className="px-3 py-2 rounded-lg bg-white/5 space-y-1">
           <div className="flex items-center gap-2 text-xs text-neutral-500">
             <Cpu className="w-3 h-3" />
             <span>后端: {systemInfo?.status || "..."}</span>
@@ -290,7 +289,10 @@ export function Sidebar({
           </div>
         </div>
       </div>
-      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      {createPortal(
+        <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />,
+        document.body
+      )}
       <NewTaskDialog
         open={newTaskOpen}
         onClose={() => setNewTaskOpen(false)}

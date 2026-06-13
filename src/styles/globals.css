@@ -3,6 +3,15 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --accent-start: #6366f1;
+    --accent-end: #06b6d4;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --error: #f43f5e;
+    --info: #22d3ee;
+  }
+
   * {
     scrollbar-width: thin;
   }
@@ -22,6 +31,75 @@
   }
 }
 
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .glass-heavy {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .glow {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 40px rgba(6, 182, 212, 0.1);
+  }
+
+  .glow-sm {
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+  }
+
+  .btn-gradient {
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    transition: all 0.2s ease;
+  }
+
+  .btn-gradient:hover {
+    filter: brightness(1.1);
+    transform: scale(1.02);
+  }
+
+  .btn-gradient:active {
+    transform: scale(0.98);
+  }
+}
+
 @layer utilities {
   .drag-region {
     -webkit-app-region: drag;
@@ -31,42 +109,60 @@
   }
 }
 
-/* 滚动条样式 - 亮色模式 */
+html.dark .glass {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+html:not(.dark) .glass {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(16px);
+}
+
+html:not(.dark) .glass-light {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.04);
+}
+
+html:not(.dark) .glass-heavy {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
 html:not(.dark) * {
-  scrollbar-color: #d4d4d4 transparent;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
-html:not(.dark) pre::-webkit-scrollbar-thumb {
-  background-color: #d4d4d4;
-  border-radius: 3px;
-}
-
-html:not(.dark) .overflow-y-auto::-webkit-scrollbar-thumb {
-  background-color: #e5e5e5;
-  border-radius: 3px;
-}
-
-html:not(.dark) .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background-color: #d4d4d4;
-}
-
-/* 滚动条样式 - 暗色模式 */
 html.dark * {
-  scrollbar-color: #262626 transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }
 
 html.dark pre::-webkit-scrollbar-thumb {
-  background-color: #404040;
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 
 html.dark .overflow-y-auto::-webkit-scrollbar-thumb {
-  background-color: #262626;
+  background-color: rgba(255, 255, 255, 0.06);
   border-radius: 3px;
 }
 
 html.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background-color: #404040;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+html:not(.dark) pre::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+
+html:not(.dark) .overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: #e2e8f0;
+  border-radius: 3px;
+}
+
+html:not(.dark) .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: #cbd5e1;
 }
 
 pre {
@@ -93,64 +189,59 @@ code {
   font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
 }
 
-/* 代码块语法关键词高亮 */
 .language-py .keyword,
 code.keyword {
-  color: #ff79c6;
+  color: #c084fc;
 }
 .language-py .string,
 code.string {
-  color: #f1fa8c;
+  color: #fde68a;
 }
 .language-py .comment,
 code.comment {
-  color: #6272a4;
+  color: #64748b;
 }
 .language-py .function,
 code.function {
-  color: #50fa7b;
+  color: #6ee7b7;
 }
 
-/* 行内代码块样式 - 亮色 */
 html:not(.dark) code:not(pre code) {
-  background: #f3f4f6;
-  color: #ea580c;
+  background: #eef2ff;
+  color: #6366f1;
   padding: 1px 5px;
   border-radius: 3px;
   font-size: 0.875em;
 }
 
-/* 行内代码块样式 - 暗色 */
 html.dark code:not(pre code) {
-  background: #1e1e1e;
-  color: #7ec699;
+  background: rgba(99, 102, 241, 0.1);
+  color: #a5b4fc;
   padding: 1px 5px;
   border-radius: 3px;
   font-size: 0.875em;
 }
 
-/* 消息气泡样式 - 亮色 */
 html:not(.dark) .message-user {
-  background-color: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
+  background: linear-gradient(135deg, #eef2ff, #ecfeff);
+  color: #1e1b4b;
+  border: 1px solid #c7d2fe;
 }
 
 html:not(.dark) .message-assistant {
-  background-color: #f9fafb;
-  color: #1f2937;
-  border: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.7);
+  color: #0f172a;
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-/* 消息气泡样式 - 暗色 */
 html.dark .message-user {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: #d1fae5;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.15));
+  color: #e0e7ff;
+  border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 html.dark .message-assistant {
-  background-color: #171717;
-  color: #e5e5e5;
-  border: 1px solid #262626;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }

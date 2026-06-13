@@ -1,10 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { Cpu, ChevronDown, Shield, Zap, Brain } from "lucide-react";
+import { Cpu, ChevronDown, Shield, Zap, Brain, Sparkles } from "lucide-react";
 import type { AgentMode } from "./types";
 
-// ============================================
-// 模型配置层（由 Settings 管理）
-// ============================================
 interface StoredProvider {
   id: string;
   name: string;
@@ -31,8 +28,6 @@ function loadProviders(): StoredProvider[] {
         })) || [],
       }));
     }
-    
-    // 兼容旧版本
     const oldData = localStorage.getItem("providers");
     if (oldData) {
       const parsed = JSON.parse(oldData);
@@ -53,7 +48,6 @@ function loadProviders(): StoredProvider[] {
 function getEnabledModels(): ModelOption[] {
   const providers = loadProviders();
   const options: ModelOption[] = [];
-  
   for (const p of providers) {
     if (!p.enabled) continue;
     for (const m of p.models) {
@@ -65,23 +59,19 @@ function getEnabledModels(): ModelOption[] {
       });
     }
   }
-  
   return options.length > 0 ? options : [DEFAULT_MODEL];
 }
 
-// ============================================
-// 模型选择层（由对话框独立管理）
-// ============================================
 export interface ModelOption {
   label: string;
   value: string;
   provider: string;
 }
 
-const DEFAULT_MODEL: ModelOption = { 
-  label: "OpenAI · GPT-4o", 
-  value: "gpt-4o", 
-  provider: "openai" 
+const DEFAULT_MODEL: ModelOption = {
+  label: "OpenAI · GPT-4o",
+  value: "gpt-4o",
+  provider: "openai",
 };
 
 const MODE_OPTIONS: { value: AgentMode; label: string; icon: typeof Brain; desc: string }[] = [
@@ -91,26 +81,17 @@ const MODE_OPTIONS: { value: AgentMode; label: string; icon: typeof Brain; desc:
   { value: "safe", label: "安全", icon: Shield, desc: "只读模式" },
 ];
 
-/**
- * 加载用户上次选择的模型
- * 如果该模型当前不可用，返回第一个可用模型
- */
 export function loadModelChoice(): ModelOption {
   if (typeof window === "undefined") return DEFAULT_MODEL;
-  
   try {
     const saved = localStorage.getItem("chat_model");
     if (saved) {
       const parsed: ModelOption = JSON.parse(saved);
       const available = getEnabledModels();
-      
       const stillAvailable = available.find(m => m.value === parsed.value);
       if (stillAvailable) return stillAvailable;
-      
-      console.log(`[Model] Saved model ${parsed.value} no longer available, using fallback`);
     }
   } catch { /* ignore */ }
-  
   return getEnabledModels()[0] || DEFAULT_MODEL;
 }
 
@@ -121,9 +102,6 @@ export function loadModeChoice(): AgentMode {
   } catch { return "assistant"; }
 }
 
-/**
- * 保存用户选择的模型（独立持久化）
- */
 export function saveModelChoice(model: ModelOption): void {
   localStorage.setItem("chat_model", JSON.stringify(model));
 }
@@ -157,7 +135,7 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
         <div className="relative" ref={modelRef}>
           <button
             onClick={() => setModelOpen(!modelOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-gray-500 dark:text-neutral-400 hover:text-gray-800 dark:hover:text-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors border border-transparent hover:border-gray-300 dark:hover:border-neutral-700"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-neutral-400 hover:text-neutral-200 hover:bg-white/10 transition-colors border border-transparent hover:border-glass-border"
           >
             <Cpu className="w-3 h-3" />
             <span>{selectedModel.label}</span>
@@ -165,7 +143,7 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
           </button>
 
           {modelOpen && (
-            <div className="absolute bottom-full left-0 mb-1 w-56 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl shadow-2xl overflow-hidden z-50">
+            <div className="absolute bottom-full left-0 mb-1 w-56 glass-heavy rounded-xl shadow-2xl overflow-hidden z-50 animate-scale-in">
               <div className="max-h-60 overflow-y-auto py-1">
                 {availableModels.map((opt) => (
                   <button
@@ -177,8 +155,8 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
                     }}
                     className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                       selectedModel.value === opt.value
-                        ? "bg-emerald-50 dark:bg-emerald-600/10 text-emerald-700 dark:text-emerald-400"
-                        : "text-gray-700 dark:text-neutral-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
+                        ? "bg-accent-500/10 text-accent-400"
+                        : "text-neutral-300 hover:bg-white/10"
                     }`}
                   >
                     <div className="font-medium">{opt.label}</div>
@@ -197,12 +175,12 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
           )}
         </div>
 
-        <span className="text-[10px] text-gray-400 dark:text-neutral-600">
+        <span className="text-[10px] text-neutral-600">
           {selectedModel.provider === "custom" ? "自定义 API" : selectedModel.provider === "ollama" ? "本地运行" : "云端 API"}
         </span>
       </div>
 
-      <div className="flex items-center gap-1 bg-gray-100 dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-0.5">
+      <div className="flex items-center gap-1 glass rounded-lg border border-glass-border p-0.5">
         {MODE_OPTIONS.map((m) => {
           const Icon = m.icon;
           const active = agentMode === m.value;
@@ -216,8 +194,8 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
               title={`${m.label} — ${m.desc}`}
               className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors ${
                 active
-                  ? "bg-emerald-50 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30"
-                  : "text-gray-500 dark:text-neutral-500 hover:text-gray-700 dark:hover:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800"
+                  ? "bg-accent-500/20 text-accent-400 border border-accent-500/30"
+                  : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
               }`}
             >
               <Icon className="w-3 h-3" />

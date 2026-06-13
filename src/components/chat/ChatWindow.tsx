@@ -7,9 +7,45 @@ import type { ModelOption } from "./ModelSelector";
 import { ChatInput } from "./ChatInput";
 import { useChatStream } from "./useChatStream";
 import type { Message, AgentMode } from "./types";
-import { FileUp, X, GitBranch } from "lucide-react";
+import { FileUp, X, GitBranch, Sparkles, Wrench } from "lucide-react";
 import { PermissionDialog } from "./PermissionDialog";
 import { QuestionDialog } from "./QuestionDialog";
+import type { ToolResult } from "@/types/electron";
+
+/** 前端工具路由 — 关键词匹配用户输入到 TypeScript 工具 */
+function routeToolMessage(input: string, tools: Array<{ name: string; description: string; parameters: Record<string, unknown> }>): { name: string; args: Record<string, unknown> } | null {
+  const lower = input.toLowerCase().trim();
+  for (const t of tools) {
+    if (lower.startsWith("read ") || lower.startsWith("open ") || lower.startsWith("show ") || lower.startsWith("cat ")) {
+      if (t.name === "read_file") {
+        const path = lower.replace(/^(read|open|show|cat)\s+/i, "").trim();
+        return { name: "read_file", args: { path } };
+      }
+    }
+    if (lower.startsWith("search ") || lower.startsWith("find ") || lower.startsWith("查找") || lower.startsWith("搜索")) {
+      if (t.name === "web_search") {
+        const query = lower.replace(/^(search|find|查找|搜索)\s+/i, "").trim();
+        return { name: "web_search", args: { query } };
+      }
+    }
+    if (lower.startsWith("ls ") || lower.startsWith("list ") || lower.startsWith("dir ") || lower === "ls" || lower === "list" || lower === "dir") {
+      if (t.name === "list_files") return { name: "list_files", args: {} };
+    }
+    if (lower.includes("grep ") || lower.startsWith("grep") || lower.startsWith("查找内容") || lower.startsWith("搜索内容")) {
+      if (t.name === "grep") {
+        const pattern = lower.replace(/^grep\s+/i, "").trim().split(/\s+/)[0];
+        return { name: "grep", args: { pattern } };
+      }
+    }
+    if (lower.startsWith("run ") || lower.startsWith("运行") || lower.startsWith("执行")) {
+      if (t.name === "run_code") {
+        const code = input.replace(/^(run|运行|执行)\s+/i, "").trim();
+        return { name: "run_code", args: { code } };
+      }
+    }
+  }
+  return null;
+}
 
 interface Props {
   sessionId: string;
@@ -35,53 +71,62 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     options: string[];
     request_id: string;
   } | null>(null);
+  const [backendRunning, setBackendRunning] = useState(false);
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const dragCounter = useRef(0);
   const { streamChat } = useChatStream();
 
   useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const status = await window.electronAPI.getPythonStatus();
+        setBackendRunning(status.status === "running");
+      } catch {
+        setBackendRunning(false);
+      }
+    };
+    checkStatus();
+    const timer = setInterval(checkStatus, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 加载会话历史消息
   useEffect(() => {
     if (!sessionId) {
-      setMessages([]);
+      if (backendRunning) setMessages([]);
       return;
     }
     const loadHistory = async () => {
       try {
+        if (!backendRunning) return;
         const status = await window.electronAPI.getPythonStatus();
         if (status.status !== "running") return;
-        
         const res = await fetch(`${status.url}/api/sessions/${encodeURIComponent(sessionId)}/messages`);
         if (!res.ok) {
           setMessages([]);
           return;
         }
-        
         const data = await res.json();
         const historyMessages = data.messages || [];
-        
         const formattedMessages: Message[] = historyMessages.map((msg: any) => ({
           id: crypto.randomUUID(),
           dbId: msg.id,
           role: msg.role,
           content: msg.content,
         }));
-        
         setMessages(formattedMessages);
       } catch {
         setMessages([]);
       }
     };
-    
     loadHistory();
     setUploadedFiles([]);
   }, [sessionId]);
 
-  // 拖拽事件处理
   const handleDragEnter = useCallback((e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -142,11 +187,9 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
 
       setUploadedFiles((prev) => [...prev, ...uploaded]);
 
-      // 自动发送消息让 Agent 分析文件（带上路径）
       const fileDetails = uploaded.map((f) => `"${f.name}" (路径: ${f.path})`).join("、");
       const message = `我刚刚上传了文件：${fileDetails}。请用 read_file 读取这些文件并分析内容。`;
-      
-      // 使用 setTimeout 确保状态更新后再发送
+
       setTimeout(() => {
         setInput(message);
       }, 100);
@@ -180,7 +223,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
 
   const sendMessage = useCallback(async () => {
     const content = input.trim();
-    if (!content || isLoading || !sessionId) return;
+    if (!content || isLoading) return;
     setInput("");
 
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content };
@@ -190,83 +233,181 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
     loadingTimeoutRef.current = setTimeout(() => {
       setIsLoading(false);
-      setMessages((prev) => prev.map((m) => m.id === assistantId
-        ? { ...m, content: m.content || "\n\n⚠️ 请求超时，请重试。", toolCalls: m.toolCalls || [] }
-        : m
-      ));
     }, 120000);
 
     try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") {
-        throw new Error(`后端状态异常: ${status.status} — ${status.error || ""}`);
-      }
       const provider = await getProviderById(selectedModel.provider);
+      const apiKey = provider?.apiKey || "";
+      const apiUrl = provider?.apiUrl || "";
 
-      await streamChat(status.url, {
-        message: content,
-        session_id: sessionId,
-        model: selectedModel.provider,
-        model_name: selectedModel.value,
-        api_key: provider?.apiKey || undefined,
-        api_url: provider?.apiUrl || "",
-        mode: agentMode,
-      }, {
-        assistantId,
-        onContent: (text) => {
-          setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: m.content + text } : m));
-        },
-        onQuestion: (q) => {
-          setQuestionReq(q);
-        },
-        onToolStart: (_id, name, args) => {
+      // Path 1: Python 后端在线 → 使用完整后端 Agent（支持所有 Provider + 工具 + 持久化）
+      const status = await window.electronAPI.getPythonStatus();
+      if (status.status === "running") {
+        const body = {
+          message: content,
+          session_id: sessionId,
+          model: selectedModel.provider,
+          model_name: selectedModel.value,
+          api_key: apiKey,
+          api_url: apiUrl,
+          mode: agentMode,
+        };
+
+        await streamChat(status.url, body, {
+          onContent: (text) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, content: m.content + text } : m
+              )
+            );
+          },
+          onToolStart: (_id, name, args) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? {
+                      ...m,
+                      toolCalls: m.toolCalls?.some((tc) => tc.name === name)
+                        ? m.toolCalls.map((tc) =>
+                            tc.name === name ? { ...tc, args, argsText: JSON.stringify(args) } : tc
+                          )
+                        : [...(m.toolCalls || []), { name, args, argsText: "", status: "running" as const }],
+                    }
+                  : m
+              )
+            );
+          },
+          onToolDelta: (id, delta) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? {
+                      ...m,
+                      toolCalls: m.toolCalls?.map((tc) =>
+                        tc.name === id || (m.toolCalls?.length ?? 0) > 0
+                          ? { ...tc, argsText: (tc.argsText || "") + delta }
+                          : tc
+                      ),
+                    }
+                  : m
+              )
+            );
+          },
+          onToolResult: (name, output, success) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? {
+                      ...m,
+                      toolCalls: m.toolCalls?.map((tc) =>
+                        tc.name === name
+                          ? { ...tc, result: output, status: (success ? "done" : "error") as "done" | "error" }
+                          : tc
+                      ),
+                    }
+                  : m
+              )
+            );
+          },
+          onToolError: (name, error) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? {
+                      ...m,
+                      toolCalls: m.toolCalls?.map((tc) =>
+                        tc.name === name ? { ...tc, result: error, status: "error" as const } : tc
+                      ),
+                    }
+                  : m
+              )
+            );
+          },
+          onPermissionRequest: (req) => setPermissionReq(req),
+          onQuestion: (q) => setQuestionReq(q),
+          onError: (msg) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId
+                  ? { ...m, content: m.content + `\n\n⚠️ ${msg}` }
+                  : m
+              )
+            );
+          },
+          onFinish: () => {
+            setIsLoading(false);
+          },
+        });
+        return;
+      }
+
+      // Path 2: 有 API Key → TS Agent Core + LLM Function Calling
+      if (apiKey) {
+        const workspace = window.electronAPI.platform === "win32" ? "C:\\" : "/";
+        const config = {
+          sessionID: sessionId || `offline-${crypto.randomUUID()}`,
+          workspace,
+          model: selectedModel.value,
+          apiKey,
+          apiUrl,
+          mode: agentMode,
+        };
+        const history = messages
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .map((m) => ({ role: m.role, content: m.content }));
+        const events = await window.electronAPI.agent.chat(config, content, history);
+        for (const evt of events) {
+          if (evt.type === "content" && evt.text) {
+            setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: m.content + evt.text! } : m));
+          } else if (evt.type === "tool_start" && evt.name) {
+            setMessages((prev) => prev.map((m) => m.id === assistantId ? {
+              ...m, toolCalls: [...(m.toolCalls || []), { name: evt.name!, args: evt.args || {}, argsText: "", status: "running" as const }],
+            } : m));
+          } else if (evt.type === "tool_result" && evt.name && evt.output) {
+            setMessages((prev) => prev.map((m) => m.id === assistantId ? {
+              ...m, toolCalls: m.toolCalls?.map((tc) => tc.name === evt.name ? { ...tc, result: evt.output!, status: "done" as const } : tc),
+            } : m));
+          } else if (evt.type === "error" && evt.message) {
+            setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: m.content + `\n\n⚠️ ${evt.message}` } : m));
+          }
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // Path 3: 无 API Key → 关键词路由 → 直调 TypeScript 工具
+      const tools = await window.electronAPI.agent.listTools().catch(() => []);
+      if (tools.length > 0) {
+        const toolRoute = routeToolMessage(content, tools);
+        if (toolRoute) {
+          const result = await window.electronAPI.agent.executeTool(toolRoute.name, toolRoute.args);
           setMessages((prev) => prev.map((m) => m.id === assistantId ? {
-            ...m, toolCalls: [...(m.toolCalls || []), { name, args, argsText: "", status: "running" as const }],
+            ...m,
+            content: result.success
+              ? `✅ **${toolRoute.name}** 执行成功\n\n${result.output}`
+              : `❌ **${toolRoute.name}** 执行失败\n\n${result.error || "未知错误"}`,
           } : m));
-        },
-        onToolDelta: (id, delta) => {
-          setMessages((prev) => prev.map((m) => m.id === assistantId ? {
-            ...m, toolCalls: m.toolCalls?.map((tc) => (tc.name === id || tc.name === id) ? { ...tc, argsText: (tc.argsText || "") + delta } : tc),
-          } : m));
-        },
-        onToolResult: (name, output, success) => {
-          setMessages((prev) => prev.map((m) => m.id === assistantId ? {
-            ...m, toolCalls: m.toolCalls?.map((tc) => tc.name === name ? { ...tc, result: output, status: success ? "done" : "error" } : tc),
-          } : m));
-        },
-        onToolError: (name, error) => {
-          setMessages((prev) => prev.map((m) => m.id === assistantId ? {
-            ...m, toolCalls: m.toolCalls?.map((tc) => tc.name === name ? { ...tc, result: error, status: "error" } : tc),
-          } : m));
-        },
-        onPermissionRequest: (req) => {
-          setPermissionReq(req);
-        },
-        onError: (message) => {
-          console.error("SSE error:", message);
-          setMessages((prev) => prev.map((m) => m.id === assistantId
-            ? { ...m, content: m.content || `\n\n⚠️ ${message}`, toolCalls: m.toolCalls || [] }
-            : m
-          ));
-          if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
           setIsLoading(false);
-        },
-        onFinish: () => {
-          if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-          setIsLoading(false);
-        },
-      });
+          return;
+        }
+      }
+
+      // Path 4: 都匹配不到
+      setMessages((prev) => prev.map((m) => m.id === assistantId ? {
+        ...m,
+        content: "未识别到工具命令。请使用 🔧 工具面板手动执行，或在设置中配置 API Key 启用 AI 对话。",
+      } : m));
     } catch (err: any) {
       console.error("Chat error:", err);
       setMessages((prev) => prev.map((m) => m.id === assistantId
-        ? { ...m, content: `\n\n⚠️ 发送失败：${err?.message || String(err)}`, toolCalls: [] }
+        ? { ...m, content: `⚠️ 发送失败：${err?.message || String(err)}`, toolCalls: [] }
         : m
       ));
     } finally {
       if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
       setIsLoading(false);
     }
-  }, [input, isLoading, sessionId, selectedModel, agentMode, streamChat]);
+  }, [input, isLoading, sessionId, selectedModel, agentMode, messages, streamChat]);
 
   const handleQuestionAnswer = useCallback(async (answer: string) => {
     const req = questionReq;
@@ -328,15 +469,28 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleToolResult = useCallback((toolName: string, result: ToolResult) => {
+    const icon = toolName === "read_file" ? "📄" : toolName === "web_search" ? "🔍" : toolName === "write_file" ? "✏️" : "🔧"
+    const header = `${icon} **${toolName}**`
+    const content = result.success
+      ? `${header}\n\n${result.output}`
+      : `${header}\n\n⚠️ ${result.error || "执行失败"}`
+    const msg: Message = {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content,
+    }
+    setMessages((prev) => [...prev, msg])
+  }, [])
+
   return (
     <div className="flex flex-col h-full relative">
-      {/* 拖拽遮罩 */}
       {isDragging && (
-        <div className="absolute inset-0 z-50 bg-emerald-500/10 border-2 border-dashed border-emerald-500/50 rounded-lg flex items-center justify-center backdrop-blur-sm">
+        <div className="absolute inset-0 z-50 glass-heavy border-2 border-dashed border-accent-400/50 rounded-lg flex items-center justify-center animate-fade-in-up">
           <div className="text-center space-y-2">
-            <FileUp className="w-12 h-12 text-emerald-500 dark:text-emerald-400 mx-auto" />
-            <p className="text-emerald-700 dark:text-emerald-300 text-lg font-medium">释放以上传文件</p>
-            <p className="text-emerald-600/60 dark:text-emerald-400/60 text-sm">支持任意文本文件</p>
+            <FileUp className="w-12 h-12 text-accent-400 mx-auto" />
+            <p className="text-accent-300 text-lg font-medium">释放以上传文件</p>
+            <p className="text-accent-400/60 text-sm">支持任意文本文件</p>
           </div>
         </div>
       )}
@@ -345,13 +499,24 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-3">
-              <h1 className="text-3xl font-light tracking-tight text-gray-900 dark:text-neutral-100">OmniAgent</h1>
-              {!sessionId ? (
-                <p className="text-gray-500 dark:text-neutral-500 text-sm">请从左侧选择一个项目开始</p>
+              <div className="flex items-center justify-center gap-2">
+                <Sparkles className="w-6 h-6 text-accent-400" />
+                <h1 className="text-3xl font-light tracking-tight gradient-text">OmniAgent</h1>
+              </div>
+              {!backendRunning ? (
+                <>
+                  <p className="text-neutral-500 text-sm">离线模式：配置 API Key 后即可 AI 对话</p>
+                  <p className="text-xs text-neutral-600">当前使用 TypeScript Agent，工具面板也可直接使用</p>
+                </>
+              ) : !sessionId ? (
+                <>
+                  <p className="text-neutral-500 text-sm">点击下方 🔧 按钮直接使用工具</p>
+                  <p className="text-xs text-neutral-600">无需 Python 后端，读文件、搜网络、查内容</p>
+                </>
               ) : (
                 <>
-                  <p className="text-gray-500 dark:text-neutral-500 text-sm">全能 AI 助手，有什么可以帮你？</p>
-                  <p className="text-xs text-gray-400 dark:text-neutral-600">拖拽文件到窗口让 Agent 分析</p>
+                  <p className="text-neutral-500 text-sm">全能 AI 助手，有什么可以帮你？</p>
+                  <p className="text-xs text-neutral-600">拖拽文件到窗口让 Agent 分析 · 也可用 🔧 工具面板</p>
                 </>
               )}
             </div>
@@ -359,9 +524,9 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         )}
 
         {messages.map((msg, idx) => (
-          <div key={msg.id} className="group mb-6 relative">
+          <div key={msg.id} className="group mb-6 relative animate-fade-in-up">
             <div className={`flex w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed select-text ${
                 msg.role === "user"
                   ? "message-user"
                   : "message-assistant"
@@ -373,18 +538,17 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
                     <span className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</span>
                   )
                 ) : (
-                  <span className="text-gray-400 dark:text-neutral-500 italic">思考中...</span>
+                  <span className="text-neutral-500 italic">思考中...</span>
                 )}
               </div>
             </div>
             {msg.toolCalls?.map((tc, i) => <ToolCallView key={i} info={tc} />)}
 
-            {/* 分叉按钮：从该消息处分叉出新会话 */}
             {msg.role === "assistant" && msg.content && (
               <div className="absolute -left-8 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => handleFork(msg.dbId)}
-                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-400 hover:text-emerald-500 transition-all"
+                  className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-emerald-400 transition-all"
                   title="从此处分叉新会话"
                 >
                   <GitBranch className="w-3.5 h-3.5" />
@@ -395,15 +559,18 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         ))}
 
         {isLoading && messages[messages.length - 1]?.content === "" && (
-          <div className="flex items-center gap-2 text-gray-500 dark:text-neutral-500">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          <div className="flex items-center gap-3 text-neutral-500 px-1">
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-accent-400 rounded-full animate-bounce-dot" style={{ animationDelay: "0s" }} />
+              <span className="w-2 h-2 bg-accent-400 rounded-full animate-bounce-dot" style={{ animationDelay: "0.2s" }} />
+              <span className="w-2 h-2 bg-accent-400 rounded-full animate-bounce-dot" style={{ animationDelay: "0.4s" }} />
+            </div>
             <span className="text-sm">思考中...</span>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
-      {/* 提问弹窗 */}
       {questionReq && (
         <QuestionDialog
           question={questionReq.question}
@@ -412,7 +579,6 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         />
       )}
 
-      {/* 权限审批弹窗 */}
       {permissionReq && (
         <PermissionDialog
           toolName={permissionReq.tool_name}
@@ -423,20 +589,19 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         />
       )}
 
-      <div className="border-t border-gray-200 dark:border-neutral-800 p-4 max-w-3xl mx-auto w-full">
-        {/* 已上传文件 */}
+      <div className="border-t border-glass-border p-4 max-w-3xl mx-auto w-full">
         {uploadedFiles.length > 0 && (
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             {uploadedFiles.map((file, index) => (
               <div
                 key={index}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-600/10 border border-emerald-200 dark:border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-400"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md glass-light text-xs text-accent-400"
               >
                 <FileUp className="w-3 h-3" />
                 <span className="max-w-[150px] truncate">{file.name}</span>
                 <button
                   onClick={() => removeUploadedFile(index)}
-                  className="p-0.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
+                  className="p-0.5 rounded hover:bg-white/10 transition-colors"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -448,9 +613,10 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         <ChatInput
           input={input}
           isLoading={isLoading}
-          disabled={!sessionId}
+          disabled={isLoading || (backendRunning && !sessionId)}
           onInput={setInput}
           onSend={sendMessage}
+          onToolResult={handleToolResult}
         />
         <ModelSelector
           selectedModel={selectedModel}

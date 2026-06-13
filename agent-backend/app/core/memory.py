@@ -382,9 +382,12 @@ class MemorySystem:
         return new_id
 
     def delete_session(self, session_id: str):
-        self.conn.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
-        self.conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
-        self.conn.commit()
+        self.conn.executescript(f"""
+            PRAGMA synchronous = OFF;
+            DELETE FROM messages WHERE session_id = '{session_id}';
+            DELETE FROM sessions WHERE session_id = '{session_id}';
+            PRAGMA synchronous = FULL;
+        """)
 
     def update_title(self, session_id: str, title: str):
         self.conn.execute("UPDATE sessions SET title = ? WHERE session_id = ?", (title, session_id))

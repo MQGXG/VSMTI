@@ -17,6 +17,19 @@ PROMPT_SECTIONS = {
     "skills": "",  # 动态填充
 }
 
+# 工具使用指南：告诉 LLM 何时使用特定工具
+TOOL_USAGE_GUIDE = """
+## 工具使用指南
+当用户提到以下需求时，请主动使用对应工具：
+- 用户要求读取、查看、分析本地文件 → 使用 read_file
+- 用户要求列出目录内容 → 使用 list_files
+- 用户要求搜索文件内容 → 使用 grep
+- 用户要求按模式查找文件 → 使用 glob
+- 用户要求执行代码 → 使用 run_code
+- 用户要求搜索网络信息 → 使用 web_search
+- 用户上传文件后要求分析 → 使用 read_file 读取文件内容后分析
+"""
+
 
 def assemble_system_prompt(
     tools_desc: str,
@@ -34,6 +47,9 @@ def assemble_system_prompt(
 
     if tools_desc:
         sections.append("## 工具\n" + tools_desc)
+
+    # 工具使用指南
+    sections.append(TOOL_USAGE_GUIDE)
 
     if workspace:
         sections.append("## 工作区\n" + workspace)

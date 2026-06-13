@@ -23,10 +23,12 @@ from app.core.recovery import RecoveryState, choose_recovery, retry_delay, CONTI
 from app.core.permission_store import create_request as create_perm_request
 from app.core.permission_store import wait_for_response as wait_perm_response
 from app.tools.registry import ToolRegistry
+from app.tools.base import ToolContext
 from app.tools.todo_write import CURRENT_TODOS
 from app.tools.task_tool import TaskTool
 from app.core.skill_manager import list_skills
 from app.core.workspace import workspace
+from app.core.memory import memory_system
 from app.prompts.system import SYSTEM_PROMPT
 from app.core import background as bg
 from app.tools.question_tool import drain_pending_questions
@@ -76,8 +78,26 @@ class Agent:
         if cached:
             return cached
 
-        tool_names = [t.get("function", {}).get("name", "?") for t in (self._get_available_tools() or [])]
-        tools_desc = "\n".join(f"- {name}" for name in tool_names) if tool_names else "无"
+        available_tools = self._get_available_tools() or []
+        tool_lines = []
+        for t in available_tools:
+            fn = t.get("function", {})
+            name = fn.get("name", "?")
+            desc = fn.get("description", "")
+            params = fn.get("parameters", {})
+            required = params.get("required", [])
+            props = params.get("properties", {})
+            
+            param_info = ""
+            if required:
+                param_parts = []
+                for r in required:
+                    p_desc = props.get(r, {}).get("description", "")
+                    param_parts.append(f"{r}({p_desc})" if p_desc else r)
+                param_info = f" [必需: {', '.join(param_parts)}]"
+            
+            tool_lines.append(f"- {name}{param_info}: {desc}" if desc else f"- {name}{param_info}")
+        tools_desc = "\n".join(tool_lines) if tool_lines else "无"
         suffix = self.config.system_prompt_suffix or ""
         skills_catalog = list_skills()
         prompt = prompt_builder.assemble_system_prompt(
@@ -156,7 +176,7 @@ class Agent:
         ]
 
         tools = self._get_available_tools()
-        max_iter = self.config.max_iterations
+        max_iter = min(self.config.max_iterations, 25)
         consolidation_counter = 0
         self.recovery = RecoveryState()  # 每次 run 重置恢复状态
 
@@ -284,7 +304,8 @@ class Agent:
                 ]
             messages.append(assistant_msg)
 
-            # 执行工具
+            # 执行工具（先记录再执行，支持并发）
+            tool_tasks = []
             for tc in pending_tool_calls:
                 name = tc["name"]
                 try:
@@ -296,40 +317,58 @@ class Agent:
                     messages.append({"role": "tool", "tool_call_id": tc["id"], "content": f"Error: {err_msg}"})
                     continue
 
-                # PreToolUse hook（权限闸门）
                 blocked = await hooks.trigger("PreToolUse", tc)
                 if blocked:
-                    logger.warning("工具需要审批: %s — %s", name, blocked)
                     req_id = create_perm_request()
                     yield StreamEvent.permission_request(name, args, str(blocked), req_id)
                     approved = await wait_perm_response(req_id)
                     if not approved:
-                        logger.warning("工具调用被拒绝: %s", name)
                         yield StreamEvent(type="tool_error", data={"name": name, "error": f"权限拒绝: {blocked}"})
                         messages.append({"role": "tool", "tool_call_id": tc["id"], "content": f"Error: 权限拒绝: {blocked}"})
                         continue
 
-                # 执行工具
-                logger.info("Executing tool: %s", name)
-                result = await self.tools.execute(name, args)
+                ctx = ToolContext(
+                    mode=self.mode.value,
+                    workspace_path=str(workspace.path),
+                    metadata={"session_id": tc.get("id", "")},
+                )
 
-                # PostToolUse hook
-                await hooks.trigger("PostToolUse", tc, result)
+                tool_tasks.append((name, tc, args, ctx))
 
-                # TodoWrite 计数
-                if name == "todo_write":
-                    self.todo_rounds_since_update = 0
-                else:
-                    self.todo_rounds_since_update += 1
+            # 并行执行工具
+            if tool_tasks:
+                import asyncio
+                async def run_one(name, tc, args, ctx):
+                    result = await self.tools.execute(name, args, context=ctx)
+                    await hooks.trigger("PostToolUse", tc, result)
+                    return name, tc, result
 
-                if result.success:
-                    yield StreamEvent.tool_result(name, result.output)
-                    messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result.output})
-                else:
-                    err_output = f"Error executing {name}: {result.error or 'Unknown error'}"
-                    logger.warning(err_output)
-                    yield StreamEvent(type="tool_error", data={"name": name, "error": err_output})
-                    messages.append({"role": "tool", "tool_call_id": tc["id"], "content": err_output})
+                results = await asyncio.gather(
+                    *(run_one(n, t, a, c) for n, t, a, c in tool_tasks),
+                    return_exceptions=True,
+                )
+
+                for item in results:
+                    if isinstance(item, Exception):
+                        logger.error(f"工具并发执行异常: {item}")
+                        continue
+                    name, tc, result = item
+
+                    if name == "todo_write":
+                        self.todo_rounds_since_update = 0
+                    else:
+                        self.todo_rounds_since_update += 1
+
+                    tool = self.tools.get(name)
+                    model_output = tool.to_model_output(result) if tool else result.output
+                    if result.success:
+                        yield StreamEvent.tool_result(name, result.output)
+                        messages.append({"role": "tool", "tool_call_id": tc["id"], "content": model_output})
+                    else:
+                        err_output = f"Error executing {name}: {result.error or 'Unknown error'}"
+                        logger.warning(err_output)
+                        yield StreamEvent(type="tool_error", data={"name": name, "error": err_output})
+                        messages.append({"role": "tool", "tool_call_id": tc["id"], "content": err_output})
 
                 # 排空 question 工具产生的待处理问题
                 pending_questions = drain_pending_questions()
@@ -339,13 +378,11 @@ class Agent:
                     if answer:
                         yield StreamEvent.question_result(q["request_id"], answer)
 
-            # 每轮结束提取记忆
             await memory.extract_memories(messages, self._llm_summary_call)
             consolidation_counter += 1
             if consolidation_counter % 5 == 0:
                 await memory.consolidate_memories(self._llm_summary_call)
 
-            # 重置退避计数（成功一轮）
             self.recovery.reset_backoff()
 
         yield StreamEvent.error(f"达到最大迭代次数 ({max_iter})，任务未完成。")

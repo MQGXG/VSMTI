@@ -15,10 +15,9 @@ interface QuestionEvent {
 }
 
 interface ChatStreamOptions {
-  assistantId: string;
   onContent: (text: string) => void;
   onToolStart: (id: string, name: string, args: Record<string, unknown>) => void;
-  onToolDelta: (id: string, delta: string) => void;
+  onToolDelta?: (id: string, delta: string) => void;
   onToolResult: (name: string, output: string, success: boolean) => void;
   onToolError: (name: string, error: string) => void;
   onPermissionRequest?: (req: PermissionRequest) => void;
@@ -83,7 +82,7 @@ export function useChatStream() {
               }
               case "tool_delta": {
                 const tcId = data.id || data.name;
-                opts.onToolDelta(tcId, data.arguments_delta || "");
+                if (opts.onToolDelta) opts.onToolDelta(tcId, data.arguments_delta || "");
                 break;
               }
               case "tool_result":

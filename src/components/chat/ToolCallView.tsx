@@ -22,10 +22,10 @@ export function ToolCallView({ info }: Props) {
   const isStreamingArgs = info.status === "running" && info.argsText !== undefined;
 
   return (
-    <div className="ml-4 mt-2 border-l-2 border-neutral-700 pl-4">
+    <div className="ml-8 mt-2 glass rounded-xl border border-glass-border overflow-hidden animate-fade-in-up">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
       >
         {info.status === "running" ? (
           <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
@@ -39,23 +39,23 @@ export function ToolCallView({ info }: Props) {
         {isStreamingArgs && (
           <span className="text-[10px] text-amber-500 animate-pulse">接收参数...</span>
         )}
-        <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
       {expanded && (
-        <div className="mt-2 space-y-2">
-          <div className="bg-neutral-900 rounded-md p-3 text-xs">
+        <div className="px-3 pb-3 space-y-2 border-t border-glass-border pt-2">
+          <div className="bg-surface-950/50 rounded-lg p-3 text-xs">
             <div className="text-neutral-500 mb-1">参数：</div>
             {isStreamingArgs ? (
               <pre className="text-neutral-300 overflow-x-auto font-mono">
                 {info.argsText}
-                <span className="inline-block w-2 h-4 bg-amber-500/50 ml-0.5 animate-pulse" />
+                <span className="inline-block w-2 h-4 bg-accent-400/50 ml-0.5 animate-pulse" />
               </pre>
             ) : (
               <pre className="text-neutral-300 overflow-x-auto">{JSON.stringify(info.args, null, 2)}</pre>
             )}
           </div>
           {info.result && (
-            <div className="bg-neutral-900 rounded-md p-3 text-xs">
+            <div className="bg-surface-950/50 rounded-lg p-3 text-xs">
               <div className="text-neutral-500 mb-1">结果：</div>
               <pre className="text-neutral-300 overflow-x-auto max-h-48 overflow-y-auto">{info.result}</pre>
             </div>

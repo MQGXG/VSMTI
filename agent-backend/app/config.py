@@ -1,4 +1,35 @@
+import os
+from pathlib import Path
 from pydantic_settings import BaseSettings
+
+
+def _find_and_load_env():
+    """按优先级查找 .env 文件并加载到环境变量"""
+    root_dir = Path(__file__).resolve().parent.parent.parent  # 项目根目录
+    backend_dir = Path(__file__).resolve().parent.parent      # agent-backend 目录
+
+    candidates = [
+        root_dir / ".env",
+        backend_dir / ".env",
+        root_dir / ".env.example",
+    ]
+
+    for env_file in candidates:
+        if env_file.exists():
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip("\"'")
+                if value and key not in os.environ:
+                    os.environ[key] = value
+            break
+
+
+_find_and_load_env()
+
 
 class Settings(BaseSettings):
     openai_api_key: str = ""
@@ -17,5 +48,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"
+
 
 settings = Settings()

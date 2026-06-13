@@ -24,14 +24,24 @@ export function App() {
   const loadProjects = useCallback(async () => {
     try {
       const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") return;
-      const res = await fetch(`${status.url}/api/projects`);
-      const data = await res.json();
-      setProjects(data.projects || []);
-    } catch (err) {
-      console.error("加载项目失败:", err);
-    }
-  }, []);
+      if (status.status === "running") {
+        const res = await fetch(`${status.url}/api/projects`);
+        const data = await res.json();
+        setProjects(data.projects || []);
+        return;
+      }
+    } catch { /* Python offline */ }
+
+    // 离线模式：创建本地虚拟项目
+    const localProject: Project = {
+      project_id: "local",
+      name: "本地模式",
+      workspace_path: window.electronAPI.platform === "win32" ? "C:\\" : "/",
+      color: "from-indigo-500 to-cyan-500",
+    };
+    setProjects([localProject]);
+    if (!activeProject) setActiveProject("local");
+  }, [activeProject]);
 
   useEffect(() => {
     loadProjects();
@@ -167,7 +177,7 @@ export function App() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-[#0a0a0a] text-gray-900 dark:text-neutral-100 overflow-hidden select-none transition-colors duration-200">
+    <div className="h-screen flex flex-col bg-surface-50 dark:bg-surface-950 text-gray-900 dark:text-neutral-100 overflow-hidden transition-colors duration-200">
       <TitleBar />
       <div className="flex flex-1 overflow-hidden">
         <ProjectBar

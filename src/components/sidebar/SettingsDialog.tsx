@@ -18,7 +18,7 @@ async function encryptApiKey(key: string): Promise<string> {
     const encrypted = await window.electronAPI.encryptApiKey(key);
     return ENCRYPTED_PREFIX + encrypted;
   } catch {
-    return key; // 加密失败则回退到明文
+    return key;
   }
 }
 
@@ -29,44 +29,31 @@ async function decryptApiKey(key: string): Promise<string> {
       const encrypted = key.slice(ENCRYPTED_PREFIX.length);
       return await window.electronAPI.decryptApiKey(encrypted);
     } catch {
-      return key; // 解密失败则返回原值
+      return key;
     }
   }
-  return key; // 明文直接返回
+  return key;
 }
 
 async function encryptProviders(list: Provider[]): Promise<Provider[]> {
   const encrypted = await Promise.all(
-    list.map(async (p) => ({
-      ...p,
-      apiKey: await encryptApiKey(p.apiKey),
-    }))
+    list.map(async (p) => ({ ...p, apiKey: await encryptApiKey(p.apiKey) }))
   );
   return encrypted;
 }
 
 async function decryptProviders(list: Provider[]): Promise<Provider[]> {
   const decrypted = await Promise.all(
-    list.map(async (p) => ({
-      ...p,
-      apiKey: await decryptApiKey(p.apiKey),
-    }))
+    list.map(async (p) => ({ ...p, apiKey: await decryptApiKey(p.apiKey) }))
   );
   return decrypted;
 }
 
 const defaultProviders: Provider[] = [
   {
-    id: "openai",
-    name: "OpenAI",
-    displayName: "OpenAI",
-    apiKey: "",
-    baseUrl: "https://api.openai.com/v1",
-    enabled: true,
-    website: "https://openai.com",
-    apiFormat: "openai",
-    headers: {},
-    options: {},
+    id: "openai", name: "OpenAI", displayName: "OpenAI",
+    apiKey: "", baseUrl: "https://api.openai.com/v1", enabled: true,
+    website: "https://openai.com", apiFormat: "openai", headers: {}, options: {},
     models: [
       { id: "gpt-4o", name: "GPT-4o", enabled: true },
       { id: "gpt-4o-mini", name: "GPT-4o Mini", enabled: true },
@@ -74,48 +61,27 @@ const defaultProviders: Provider[] = [
     ],
   },
   {
-    id: "claude",
-    name: "Claude",
-    displayName: "Anthropic Claude",
-    apiKey: "",
-    baseUrl: "https://api.anthropic.com",
-    enabled: false,
-    website: "https://anthropic.com",
-    apiFormat: "anthropic",
-    headers: {},
-    options: {},
+    id: "claude", name: "Claude", displayName: "Anthropic Claude",
+    apiKey: "", baseUrl: "https://api.anthropic.com", enabled: false,
+    website: "https://anthropic.com", apiFormat: "anthropic", headers: {}, options: {},
     models: [
       { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", enabled: true },
       { id: "claude-haiku-20241022", name: "Claude Haiku", enabled: true },
     ],
   },
   {
-    id: "deepseek",
-    name: "DeepSeek",
-    displayName: "DeepSeek",
-    apiKey: "",
-    baseUrl: "https://api.deepseek.com",
-    enabled: false,
-    website: "https://deepseek.com",
-    apiFormat: "openai",
-    headers: {},
-    options: {},
+    id: "deepseek", name: "DeepSeek", displayName: "DeepSeek",
+    apiKey: "", baseUrl: "https://api.deepseek.com", enabled: false,
+    website: "https://deepseek.com", apiFormat: "openai", headers: {}, options: {},
     models: [
       { id: "deepseek-chat", name: "DeepSeek V3", enabled: true },
       { id: "deepseek-reasoner", name: "DeepSeek R1", enabled: true },
     ],
   },
   {
-    id: "ollama",
-    name: "Ollama",
-    displayName: "Ollama (本地)",
-    apiKey: "",
-    baseUrl: "http://localhost:11434",
-    enabled: false,
-    website: "https://ollama.com",
-    apiFormat: "openai",
-    headers: {},
-    options: {},
+    id: "ollama", name: "Ollama", displayName: "Ollama (本地)",
+    apiKey: "", baseUrl: "http://localhost:11434", enabled: false,
+    website: "https://ollama.com", apiFormat: "openai", headers: {}, options: {},
     models: [
       { id: "llama3.1", name: "Llama 3.1", enabled: true },
       { id: "qwen2.5", name: "Qwen 2.5", enabled: true },
@@ -131,9 +97,7 @@ function migrateProviders(data: any[]): Provider[] {
     headers: p.headers || {},
     options: p.options || {},
     models: p.models?.map((m: any) => ({
-      id: m.id,
-      name: m.name,
-      enabled: m.enabled !== false,
+      id: m.id, name: m.name, enabled: m.enabled !== false,
     })) || [],
   }));
 }
@@ -146,8 +110,6 @@ async function loadProviders(): Promise<Provider[]> {
       const parsed = migrateProviders(JSON.parse(data));
       return await decryptProviders(parsed);
     }
-    
-    // 尝试读取旧版本数据并迁移
     const oldData = localStorage.getItem("providers");
     if (oldData) {
       const migrated = migrateProviders(JSON.parse(oldData));
@@ -155,7 +117,6 @@ async function loadProviders(): Promise<Provider[]> {
       localStorage.setItem("providers_v2", JSON.stringify(encrypted));
       return migrated;
     }
-    
     return defaultProviders;
   } catch { return defaultProviders; }
 }
@@ -175,7 +136,7 @@ function ThemeSelector() {
   ];
 
   return (
-    <div className="p-4 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800">
+    <div className="p-4 rounded-xl glass border border-glass-border">
       <div className="text-sm text-gray-900 dark:text-neutral-200 mb-3">外观</div>
       <div className="flex gap-2">
         {options.map((option) => {
@@ -187,8 +148,8 @@ function ThemeSelector() {
               onClick={() => setTheme(option.value)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
                 isActive
-                  ? "bg-emerald-50 dark:bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20"
-                  : "bg-white dark:bg-neutral-800 text-gray-600 dark:text-neutral-400 border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-700"
+                  ? "bg-accent-500/20 text-accent-400 border border-accent-500/30"
+                  : "glass-light text-neutral-400 hover:text-neutral-200 hover:bg-white/10"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -197,7 +158,7 @@ function ThemeSelector() {
           );
         })}
       </div>
-      <p className="text-xs text-gray-400 dark:text-neutral-600 mt-2">
+      <p className="text-xs text-neutral-600 mt-2">
         当前: {resolvedTheme === "dark" ? "暗色模式" : "浅色模式"} ({theme === "system" ? "跟随系统" : "手动设置"})
       </p>
     </div>
@@ -234,45 +195,45 @@ export function SettingsDialog({ open, onClose }: Props) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-[#0a0a0a] flex" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="w-56 border-r border-gray-200 dark:border-neutral-800 flex flex-col bg-white dark:bg-[#0d0d0d]">
-        <div className="px-4 py-5 border-b border-neutral-800">
+    <div className="fixed inset-0 z-50 bg-surface-950 flex" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="w-56 border-r border-glass-border flex flex-col glass-heavy">
+        <div className="px-4 py-5 border-b border-glass-border">
           <h2 className="text-sm font-medium text-neutral-200">设置</h2>
         </div>
         <div className="flex-1 overflow-y-auto py-2 space-y-1">
           {tabs.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors rounded-lg mx-2 ${
-                tab === t.id ? "bg-neutral-800 text-neutral-100" : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50"
+                tab === t.id ? "bg-accent-500/10 text-accent-400" : "text-neutral-400 hover:text-neutral-200 hover:bg-white/5"
               }`}>
               <t.icon className="w-4 h-4" /> {t.label}
             </button>
           ))}
         </div>
-        <div className="p-3 border-t border-neutral-800">
+        <div className="p-3 border-t border-glass-border">
           <div className="text-[10px] text-neutral-600 text-center">修改即时保存</div>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-end px-4 py-3 border-b border-gray-200 dark:border-neutral-800">
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-neutral-800 transition-colors">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <div className="flex items-center justify-end px-4 py-3 border-b border-glass-border shrink-0">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
             <X className="w-4 h-4 text-neutral-500" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-8 min-h-0">
           {tab === "general" && (
             <div className="max-w-2xl space-y-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-200">通用设置</h3>
               <ThemeSelector />
               <div className="space-y-4">
                 {["开机自动启动", "关闭时最小化到托盘", "流式输出"].map((name) => (
-                  <div key={name} className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800">
+                  <div key={name} className="flex items-center justify-between p-4 rounded-xl glass border border-glass-border">
                     <div>
                       <div className="text-sm text-gray-900 dark:text-neutral-200">{name}</div>
-                      <div className="text-xs text-gray-500 dark:text-neutral-500 mt-1">设置说明</div>
+                      <div className="text-xs text-neutral-500 mt-1">设置说明</div>
                     </div>
-                    <div className="w-11 h-6 bg-emerald-600 rounded-full relative cursor-pointer">
+                    <div className="w-11 h-6 bg-accent-600 rounded-full relative cursor-pointer">
                       <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow" />
                     </div>
                   </div>
@@ -291,9 +252,9 @@ export function SettingsDialog({ open, onClose }: Props) {
                   { name: "发送消息", key: "Enter" },
                   { name: "换行", key: "Shift + Enter" },
                 ].map((item) => (
-                  <div key={item.name} className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800">
-                    <span className="text-sm text-gray-700 dark:text-neutral-300">{item.name}</span>
-                    <span className="text-xs font-mono text-gray-500 dark:text-neutral-500 bg-gray-100 dark:bg-neutral-800 px-2 py-1 rounded">{item.key}</span>
+                  <div key={item.name} className="flex items-center justify-between p-4 rounded-xl glass border border-glass-border">
+                    <span className="text-sm text-neutral-300">{item.name}</span>
+                    <span className="text-xs font-mono text-neutral-500 bg-white/5 px-2 py-1 rounded">{item.key}</span>
                   </div>
                 ))}
               </div>
@@ -308,18 +269,18 @@ export function SettingsDialog({ open, onClose }: Props) {
           {tab === "about" && (
             <div className="max-w-2xl space-y-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-200">关于 OmniAgent</h3>
-              <div className="p-6 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 space-y-4">
+              <div className="p-6 rounded-xl glass border border-glass-border space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-600/20 flex items-center justify-center">
-                    <Cpu className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
+                  <div className="w-12 h-12 rounded-xl bg-accent-500/20 flex items-center justify-center">
+                    <Cpu className="w-6 h-6 text-accent-500" />
                   </div>
                   <div>
                     <div className="text-lg font-medium text-gray-900 dark:text-neutral-200">OmniAgent</div>
-                    <div className="text-xs text-gray-500 dark:text-neutral-500">版本 1.0.0</div>
+                    <div className="text-xs text-neutral-500">版本 1.0.0</div>
                   </div>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-neutral-400 leading-relaxed">全能 AI 助手桌面应用，支持多模型切换、工具调用、文件分析。</div>
-                <div className="text-xs text-gray-400 dark:text-neutral-600 space-y-1">
+                <div className="text-sm text-neutral-400 leading-relaxed">全能 AI 助手桌面应用，支持多模型切换、工具调用、文件分析。</div>
+                <div className="text-xs text-neutral-600 space-y-1">
                   <div>Electron 31 · React 18 · Python 3.10</div>
                   <div>OpenAI SDK · Anthropic SDK · FastAPI</div>
                 </div>

@@ -23,31 +23,30 @@ class ModeConfig:
 
 
 # 模式定义
+# 所有模式均可使用全部工具，模式仅影响系统提示和迭代次数
 MODE_CONFIGS: dict[AgentMode, ModeConfig] = {
     AgentMode.ASSISTANT: ModeConfig(
         name="助手",
         description="日常问答、写作、分析",
-        allowed_tools=["web_search", "read_file", "list_files",
-                       "run_code", "data_analysis"],
+        allowed_tools=[],
         system_prompt_suffix="你是一个通用AI助手。请提供准确、有用的回答。",
-        max_iterations=5,
-        allow_file_write=False,
-        allow_system_command=False,
+        max_iterations=10,
+        allow_file_write=True,
+        allow_system_command=True,
     ),
     AgentMode.EXPERT: ModeConfig(
         name="专家",
         description="深度研究、数据分析",
-        allowed_tools=["web_search", "read_file", "list_files",
-                       "run_code", "data_analysis", "browse_web"],
+        allowed_tools=[],
         system_prompt_suffix="你是领域专家。你可以运行代码和深度分析数据来回答复杂问题。",
         max_iterations=15,
-        allow_file_write=False,
-        allow_system_command=False,
+        allow_file_write=True,
+        allow_system_command=True,
     ),
     AgentMode.ACTION: ModeConfig(
         name="执行",
         description="自动化任务、批量处理",
-        allowed_tools=[],  # 空表示全部允许
+        allowed_tools=[],
         system_prompt_suffix="你是任务执行专家。你可以读写文件、批量处理数据、自动化工作流程。",
         max_iterations=20,
         allow_file_write=True,
@@ -56,9 +55,9 @@ MODE_CONFIGS: dict[AgentMode, ModeConfig] = {
     AgentMode.SAFE: ModeConfig(
         name="安全",
         description="只读探索、不修改任何内容",
-        allowed_tools=["web_search", "read_file", "list_files"],
+        allowed_tools=[],
         system_prompt_suffix="你处于只读模式。你可以搜索信息和读取文件，但**绝对不允许**修改、删除或创建任何文件。",
-        max_iterations=5,
+        max_iterations=10,
         allow_file_write=False,
         allow_system_command=False,
     ),

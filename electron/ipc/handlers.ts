@@ -1,8 +1,10 @@
 import { ipcMain, dialog, Notification, safeStorage } from "electron";
 import { PythonManager } from "../python-manager";
 import { getMainWindow, minimizeWindow, toggleMaximizeWindow, hideWindow } from "../managers/window-manager";
+import { registerAgentIPCHandlers } from "../agent-core/ipc-bridge";
 
 export function registerIPCHandlers(pythonManager: PythonManager): void {
+  registerAgentIPCHandlers();
   // 窗口控制
   ipcMain.on("window:minimize", () => minimizeWindow());
   ipcMain.on("window:maximize", () => toggleMaximizeWindow());

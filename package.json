@@ -12,9 +12,10 @@
     "package:linux": "electron-vite build && electron-builder --linux"
   },
   "dependencies": {
+    "lucide-react": "^0.400.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "lucide-react": "^0.400.0"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

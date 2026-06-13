@@ -4,6 +4,18 @@ export interface LogEntry {
   message: string;
 }
 
+export interface ToolInfo {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+}
+
+export interface ToolResult {
+  success: boolean;
+  output: string;
+  error?: string;
+}
+
 export interface ElectronAPI {
   minimizeWindow: () => void;
   maximizeWindow: () => void;
@@ -20,6 +32,14 @@ export interface ElectronAPI {
   decryptApiKey: (encrypted: string) => Promise<string>;
   isEncryptionAvailable: () => Promise<boolean>;
   platform: string;
+
+  // TypeScript Agent Core
+  agent: {
+    executeTool: (name: string, args: Record<string, unknown>) => Promise<ToolResult>;
+    listTools: () => Promise<ToolInfo[]>;
+    chat: (config: Record<string, unknown>, message: string, history: Array<{ role: string; content: string }>) =>
+      Promise<Array<{ type: string; text?: string; name?: string; args?: Record<string, unknown>; output?: string; message?: string; reason?: string }>>;
+  };
 }
 
 declare global {
