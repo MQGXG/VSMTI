@@ -36,11 +36,27 @@ export class PermissionSet {
     return false
   }
 
+  evaluate(action: string, permission?: string): "allow" | "deny" | "ask" {
+    const actionName = permission || action
+    for (let i = this.rules.length - 1; i >= 0; i--) {
+      const rule = this.rules[i]
+      if (this.match(rule.action, actionName)) {
+        return rule.effect
+      }
+    }
+    return "allow" // 默认允许
+  }
+
   private match(pattern: string, value: string): boolean {
     if (pattern === "*") return true
     // 简单通配符匹配
     const regex = new RegExp("^" + pattern.replace(/\*/g, ".*").replace(/\?/g, ".") + "$")
     return regex.test(value)
+  }
+
+  /** 获取所有规则 */
+  getAll(): PermissionRule[] {
+    return [...this.rules]
   }
 
   /** 从配置对象创建 */

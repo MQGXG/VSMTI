@@ -65,6 +65,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     args: Record<string, unknown>;
     reason: string;
     request_id: string;
+    channel?: string;
   } | null>(null);
   const [questionReq, setQuestionReq] = useState<{
     question: string;
@@ -76,6 +77,19 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const dragCounter = useRef(0);
   const { streamChat } = useChatStream();
+  const offlineSessionIdRef = useRef<string | null>(null);
+  function getOfflineSessionId(): string {
+    if (offlineSessionIdRef.current) return offlineSessionIdRef.current;
+    const stored = localStorage.getItem('offlineSessionId');
+    if (stored) {
+      offlineSessionIdRef.current = stored;
+      return stored;
+    }
+    const id = `offline-${crypto.randomUUID()}`;
+    localStorage.setItem('offlineSessionId', id);
+    offlineSessionIdRef.current = id;
+    return id;
+  }
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -161,38 +175,56 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
 
     try {
       const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") {
-        throw new Error("Python 后端未启动");
-      }
 
-      const uploaded: Array<{ name: string; path: string }> = [];
+      if (status.status === "running") {
+        // Path A: Python 后端在线 → 上传文件到后端
+        const uploaded: Array<{ name: string; path: string }> = [];
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const formData = new FormData();
-        formData.append("file", file);
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const formData = new FormData();
+          formData.append("file", file);
 
-        const response = await fetch(`${status.url}/api/files/upload`, {
-          method: "POST",
-          body: formData,
-        });
+          const response = await fetch(`${status.url}/api/files/upload`, {
+            method: "POST",
+            body: formData,
+          });
 
-        if (!response.ok) {
-          throw new Error(`上传失败: ${file.name}`);
+          if (!response.ok) {
+            throw new Error(`上传失败: ${file.name}`);
+          }
+
+          const data = await response.json();
+          uploaded.push({ name: file.name, path: data.path || data.filename });
         }
 
-        const data = await response.json();
-        uploaded.push({ name: file.name, path: data.path || data.filename });
+        setUploadedFiles((prev) => [...prev, ...uploaded]);
+
+        const fileDetails = uploaded.map((f) => `"${f.name}" (路径: ${f.path})`).join("、");
+        const message = `我刚刚上传了文件：${fileDetails}。请用 read_file 读取这些文件并分析内容。`;
+
+        setTimeout(() => {
+          setInput(message);
+        }, 100);
+      } else {
+        // Path B: 后端离线 → 直接用 Electron 本地路径
+        const localFiles: Array<{ name: string; path: string }> = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          // Electron 中拖拽文件可以获取到完整路径
+          const filePath = (file as any).path || file.name;
+          localFiles.push({ name: file.name, path: filePath });
+        }
+
+        setUploadedFiles((prev) => [...prev, ...localFiles]);
+
+        const fileDetails = localFiles.map((f) => `"${f.name}" (路径: ${f.path})`).join("、");
+        const message = `我刚刚添加了文件：${fileDetails}。请使用 read_file 读取这些文件并分析内容。`;
+
+        setTimeout(() => {
+          setInput(message);
+        }, 100);
       }
-
-      setUploadedFiles((prev) => [...prev, ...uploaded]);
-
-      const fileDetails = uploaded.map((f) => `"${f.name}" (路径: ${f.path})`).join("、");
-      const message = `我刚刚上传了文件：${fileDetails}。请用 read_file 读取这些文件并分析内容。`;
-
-      setTimeout(() => {
-        setInput(message);
-      }, 100);
     } catch (err: any) {
       console.error("文件上传失败:", err);
       setMessages((prev) => [
@@ -341,11 +373,11 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         return;
       }
 
-      // Path 2: 有 API Key → TS Agent Core + LLM Function Calling
+      // Path 2: 有 API Key → TS Agent Core + LLM Function Calling（实时流式，支持权限确认）
       if (apiKey) {
         const workspace = window.electronAPI.platform === "win32" ? "C:\\" : "/";
         const config = {
-          sessionID: sessionId || `offline-${crypto.randomUUID()}`,
+          sessionID: sessionId || getOfflineSessionId(),
           workspace,
           model: selectedModel.value,
           apiKey,
@@ -354,12 +386,13 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
           headers: provider?.headers || {},
           options: provider?.options || {},
         };
-        const events = await window.electronAPI.agent.runAgentStream(sessionId, content, config);
-        for (const event of events) {
+
+        const channel = await window.electronAPI.agent.startStream(sessionId || getOfflineSessionId(), content, config);
+        const cleanup = window.electronAPI.agent.onEvent(channel, (event: any) => {
           if (event.type === "content") {
             setMessages((prev) => {
               const last = prev[prev.length - 1];
-              if (last?.role === "assistant") {
+              if (last?.role === "assistant" && last.content !== "") {
                 return [...prev.slice(0, -1), { ...last, content: last.content + event.text }];
               }
               return [...prev, { id: crypto.randomUUID(), role: "assistant", content: event.text }];
@@ -380,11 +413,22 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
                 : `❌ Error: ${event.result.error}`,
               isToolCall: true,
             }]);
+          } else if (event.type === "permission_request") {
+            setPermissionReq({
+              tool_name: event.action,
+              args: event.toolCall?.input || {},
+              reason: `需要权限执行操作: ${event.action}`,
+              request_id: event.id,
+              channel,
+            });
           } else if (event.type === "error") {
             setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: `Error: ${event.message}` }]);
+          } else if (event.type === "finish") {
+            setIsLoading(false);
+            cleanup();
+            window.electronAPI.agent.stopStream(channel);
           }
-        }
-        setIsLoading(false);
+        });
         return;
       }
 
@@ -440,11 +484,20 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     }
   }, [questionReq]);
 
-  const handlePermission = useCallback(async (approved: boolean) => {
+  const handlePermission = useCallback(async (approved: boolean | "always") => {
     const req = permissionReq;
     if (!req) return;
     setPermissionReq(null);
     try {
+      if (req.channel) {
+        // TS Agent Core 实时流式通道
+        await window.electronAPI.agent.replyPermission(
+          req.channel,
+          req.request_id,
+          approved === "always" ? "always" : approved ? "allow" : "deny",
+        );
+        return;
+      }
       const status = await window.electronAPI.getPythonStatus();
       if (status.status === "running") {
         await fetch(`${status.url}/api/permission/respond`, {
@@ -599,6 +652,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
           reason={permissionReq.reason}
           onAllow={() => handlePermission(true)}
           onDeny={() => handlePermission(false)}
+          onAlways={permissionReq.channel ? () => handlePermission("always") : undefined}
         />
       )}
 

@@ -24,12 +24,16 @@ export {
   codeExecTool, bashTool, editFileTool,
 } from "./tools/index"
 
+// Skill 工具
+export { skillsListTool, skillViewTool } from "./skill/skill-tools"
+
 import { ToolRegistry } from "./registry"
 import { defaultPermissions } from "./permission"
 import {
   readFileTool, writeFileTool, listFilesTool,
   webSearchTool, grepTool, globTool, codeExecTool, bashTool, editFileTool,
 } from "./tools/index"
+import { skillsListTool, skillViewTool } from "./skill/skill-tools"
 
 /** 创建预注册了所有默认工具的注册表 */
 export function createDefaultRegistry(): ToolRegistry {
@@ -43,5 +47,8 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(codeExecTool)
   registry.register(bashTool)
   registry.register(editFileTool)
+  // Skill 工具
+  registry.register(skillsListTool)
+  registry.register(skillViewTool)
   return registry
 }

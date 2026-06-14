@@ -1,14 +1,67 @@
 /**
  * IPC 桥接 — 将 Agent Core 暴露给渲染进程
+ * 支持实时事件流（用于权限请求/问题等交互式流程）
  */
 
-import { ipcMain } from "electron"
-import { createDefaultRegistry, defaultPermissions, Agent } from "./index"
-import type { AgentConfig, AgentEvent } from "./agent"
+import { ipcMain, BrowserWindow } from "electron"
+import { createDefaultRegistry, defaultPermissions, PermissionSet, Agent } from "./index"
+import type { AgentConfig, AgentEvent, PermissionReply } from "./agent"
+import { DEFAULT_SYSTEM } from "./agent"
+import { loadWorkspacePermissions, saveWorkspacePermission } from "./permission-store"
+import { buildInstructionSystemPrompt } from "./instruction-context"
+import { matchSkillCommand, buildSkillInvocationMessage } from "./skill/skill-commands"
+import { scanSkills, loadSkill } from "./skill/skill-loader"
 
 const registry = createDefaultRegistry()
 
+/** 合并默认权限与已保存的持久化规则 */
+function buildPermissions(workspace: string, configOverride?: PermissionSet): PermissionSet {
+  const savedRules = loadWorkspacePermissions(workspace)
+  if (savedRules.length === 0 && !configOverride) return defaultPermissions
+
+  // 合并：默认规则在后（优先级低于持久化），持久化规则附加
+  const allRules = [...savedRules, ...defaultPermissions.getAll()]
+  return new PermissionSet(allRules)
+}
+
+/** 每个 agent 会话的实时连接上下文 */
+interface AgentSession {
+  agent: Agent
+  channel: string
+  sender: Electron.WebContents
+  config: AgentConfig
+}
+
+const activeSessions = new Map<string, AgentSession>()
+
+/** 生成唯一通道 ID */
+function generateChannelId(): string {
+  return `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+/** 处理 slash 命令注入 — 构建 skill invocation message */
+function processSkillCommand(message: string): { processed: string; skillLoaded: boolean } {
+  const result = matchSkillCommand(message)
+  if (!result) return { processed: message, skillLoaded: false }
+
+  // 尝试加载 skill
+  if (loadSkill(result.name)) {
+    const invocation = buildSkillInvocationMessage(result.name, result.rest)
+    return { processed: invocation, skillLoaded: true }
+  }
+
+  return { processed: message, skillLoaded: false }
+}
+
 export function registerAgentIPCHandlers(): void {
+  // 列出所有可用 Skill
+  ipcMain.handle("skill:listSkills", () => {
+    return scanSkills().map((s) => ({
+      name: s.name,
+      description: s.description,
+      category: s.category,
+    }))
+  })
   // 执行工具（直接调用，不走 LLM）
   ipcMain.handle("agent:executeTool", async (_, toolName: string, args: Record<string, unknown>) => {
     const ctx = {
@@ -46,13 +99,93 @@ export function registerAgentIPCHandlers(): void {
     return results
   })
 
-  // Agent 流式消息 → 返回事件数组（Phase 1 简化版，Phase 5 迁移 MessageChannel）
+  // 启动实时 Agent 流 — 通过 channel 发送事件，支持交互式权限回复
+  ipcMain.handle("agent:startStream", async (event, sessionId: string, message: string, config: AgentConfig) => {
+    const channel = generateChannelId()
+    const agent = new Agent(registry)
+    const workspace = config.workspace || process.cwd()
+
+    // 处理 slash 命令
+    const { processed } = processSkillCommand(message)
+    const effectiveMessage = processed
+
+    // 构建权限：持久化规则 + 调用方权限覆盖
+    const permissions = config.permissions || buildPermissions(workspace)
+
+    // 构建系统提示：基础 prompt + 指令上下文
+    const instructions = buildInstructionSystemPrompt(workspace)
+    const baseSystem = config.systemPrompt || DEFAULT_SYSTEM
+    const systemPrompt = instructions
+      ? `[指令上下文]\n${instructions}\n\n[Agent 基础指令]\n${baseSystem}`
+      : baseSystem
+
+    // 准备完整配置：注入合并后的权限和持久化回调
+    const effectiveConfig: AgentConfig = {
+      ...config,
+      sessionID: sessionId,
+      systemPrompt,
+      permissions,
+      onPermissionSave: (rules) => {
+        for (const rule of rules) {
+          saveWorkspacePermission(workspace, rule)
+        }
+      },
+    }
+
+    const session: AgentSession = { agent, channel, sender: event.sender, config: effectiveConfig }
+    activeSessions.set(channel, session)
+
+    // 在后台运行 generator，事件通过 channel 发送
+    runAgentInBackground(session, sessionId, effectiveMessage, effectiveConfig)
+
+    return channel
+  })
+
+  // 回复权限请求
+  ipcMain.handle("agent:replyPermission", (_, channel: string, requestId: string, reply: PermissionReply) => {
+    const session = activeSessions.get(channel)
+    if (!session) throw new Error(`Session not found: ${channel}`)
+    session.agent.replyPermission(requestId, reply)
+  })
+
+  // 清理会话
+  ipcMain.handle("agent:stopStream", (_, channel: string) => {
+    const session = activeSessions.get(channel)
+    if (session) {
+      activeSessions.delete(channel)
+    }
+  })
+
+  // 向后兼容：旧版流式消息 → 返回事件数组（支持非交互场景）
   ipcMain.handle("run-agent-stream", async (_, sessionId: string, message: string, config: AgentConfig) => {
     const agent = new Agent(registry)
+    const workspace = config.workspace || process.cwd()
+    const { processed } = processSkillCommand(message)
+    const permissions = config.permissions || buildPermissions(workspace)
+    const instructions = buildInstructionSystemPrompt(workspace)
+    const baseSystem = config.systemPrompt || DEFAULT_SYSTEM
+    const systemPrompt = instructions
+      ? `[指令上下文]\n${instructions}\n\n[Agent 基础指令]\n${baseSystem}`
+      : baseSystem
+    const effectiveConfig: AgentConfig = {
+      ...config,
+      sessionID: sessionId,
+      systemPrompt,
+      permissions,
+      onPermissionSave: (rules) => {
+        for (const rule of rules) {
+          saveWorkspacePermission(workspace, rule)
+        }
+      },
+    }
     const events: AgentEvent[] = []
     try {
-      for await (const evt of agent.run(message, [], { ...config, sessionID: sessionId })) {
+      for await (const evt of agent.run(processed, [], effectiveConfig)) {
         events.push(evt)
+        // 如果遇到交互事件，无法继续（没有前端回复），直接返回
+        if (evt.type === "permission_request") {
+          break
+        }
       }
     } catch (e) {
       events.push({ type: "error", message: String(e) })
@@ -73,4 +206,40 @@ export function registerAgentIPCHandlers(): void {
     }
     return events
   })
+}
+
+/** 在后台运行 Agent generator，通过 IPC channel 实时发送事件 */
+async function runAgentInBackground(
+  session: AgentSession,
+  sessionId: string,
+  message: string,
+  config: AgentConfig,
+): Promise<void> {
+  const { agent, channel, sender } = session
+
+  try {
+    for await (const evt of agent.run(message, [], { ...config, sessionID: sessionId })) {
+      if (sender.isDestroyed()) break
+
+      // 通过 IPC 发送事件到渲染进程
+      sender.send("agent:event", channel, evt)
+
+      // 如果遇到交互事件（权限请求），暂停并等待前端回复
+      if (evt.type === "permission_request") {
+        // 等待 replyPermission 被调用 — agent.run 内部已通过 Promise 暂停
+        // 这里的 for-await 循环自然暂停在 yield 位置
+        // replyPermission 会 resolve pending Promise，让 generator 继续
+      }
+    }
+  } catch (e) {
+    if (!sender.isDestroyed()) {
+      sender.send("agent:event", channel, { type: "error", message: String(e) })
+    }
+  } finally {
+    // 发送完成事件
+    if (!sender.isDestroyed()) {
+      sender.send("agent:event", channel, { type: "finish", reason: "completed" })
+    }
+    activeSessions.delete(channel)
+  }
 }

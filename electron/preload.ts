@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 
 const electronAPI = {
   minimizeWindow: () => ipcRenderer.send("window:minimize"),
@@ -31,6 +31,29 @@ const electronAPI = {
       ipcRenderer.invoke("agent:chat", config, message, history),
     runAgentStream: (sessionId: string, message: string, config: Record<string, unknown>) =>
       ipcRenderer.invoke("run-agent-stream", sessionId, message, config),
+
+    /** 实时流式 Agent（支持交互式权限确认） */
+    startStream: (sessionId: string, message: string, config: Record<string, unknown>) =>
+      ipcRenderer.invoke("agent:startStream", sessionId, message, config),
+
+    /** 回复权限请求 */
+    replyPermission: (channel: string, requestId: string, reply: "allow" | "deny" | "always") =>
+      ipcRenderer.invoke("agent:replyPermission", channel, requestId, reply),
+
+    /** 停止 Agent 流 */
+    stopStream: (channel: string) => ipcRenderer.invoke("agent:stopStream", channel),
+
+    /** 列出可用 Skill */
+    listSkills: () => ipcRenderer.invoke("skill:listSkills"),
+
+    /** 监听 Agent 事件 */
+    onEvent: (channel: string, callback: (event: any) => void) => {
+      const handler = (_event: IpcRendererEvent, evtChannel: string, ...args: any[]) => {
+        if (evtChannel === channel) callback(args[0])
+      }
+      ipcRenderer.on("agent:event", handler)
+      return () => ipcRenderer.removeListener("agent:event", handler)
+    },
   },
 };
 

@@ -7,9 +7,10 @@ interface Props {
   reason: string;
   onAllow: () => void;
   onDeny: () => void;
+  onAlways?: () => void;
 }
 
-export function PermissionDialog({ toolName, args, reason, onAllow, onDeny }: Props) {
+export function PermissionDialog({ toolName, args, reason, onAllow, onDeny, onAlways }: Props) {
   return (
     <Modal open={true} onClose={onDeny} maxWidth="max-w-md">
       <div className="px-6 pt-5 pb-3 border-b border-glass-border">
@@ -56,6 +57,14 @@ export function PermissionDialog({ toolName, args, reason, onAllow, onDeny }: Pr
         >
           拒绝
         </button>
+        {onAlways && (
+          <button
+            onClick={onAlways}
+            className="px-4 py-2.5 rounded-xl border border-emerald-500/30 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+          >
+            始终允许
+          </button>
+        )}
         <button
           onClick={onAllow}
           className="flex-1 px-4 py-2.5 rounded-xl btn-gradient text-sm font-medium text-white"
