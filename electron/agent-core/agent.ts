@@ -8,6 +8,7 @@ import { ToolContext } from './tool'
 import { AgentEvent } from './types'
 import { IterationBudget } from './iteration-budget'
 import { createLLMClient, LLMMessage } from './llm-client'
+import { repairMessageSequence, truncateToBudget } from './message-utils'
 
 export interface AgentConfig {
   sessionID: string
@@ -83,6 +84,8 @@ export class Agent {
     const budget = new IterationBudget(config.maxSteps || 10)
 
     while (budget.consume()) {
+      messages = repairMessageSequence(messages)
+      messages = truncateToBudget(messages, config.maxContextTokens || 8000)
       const stream = client.stream({ messages, tools: toolDefs, stream: true })
       let currentText = ''
       const pendingToolCalls: Map<string, { name: string; args: string; complete: boolean }> = new Map()
