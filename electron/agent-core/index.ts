@@ -3,11 +3,14 @@
  * TypeScript 工具系统 + Agent 循环，在 Electron 主进程运行
  */
 
+export { Agent } from "./agent"
+export type { AgentConfig } from "./agent"
+export type { AgentEvent } from "./types"
 export { ToolRegistry } from "./registry"
 export { make, withPermission, toOpenAISchema, settle } from "./tool"
 export { PermissionSet, defaultPermissions } from "./permission"
-export { Agent } from "./agent"
-export type { AgentConfig, AgentEvent } from "./agent"
+export { createLLMClient } from "./llm-client"
+export type { ClientConfig } from "./llm-client"
 export type { ToolDef, ToolContext, ToolResult, ToolCall, Content, Settlement } from "./tool"
 
 // 工具
