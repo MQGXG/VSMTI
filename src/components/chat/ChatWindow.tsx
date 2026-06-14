@@ -350,7 +350,9 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
           model: selectedModel.value,
           apiKey,
           apiUrl,
-          mode: agentMode,
+          provider: selectedModel.provider,
+          headers: provider?.headers || {},
+          options: provider?.options || {},
         };
         const history = messages
           .filter((m) => m.role === "user" || m.role === "assistant")

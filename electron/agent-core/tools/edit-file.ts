@@ -61,7 +61,7 @@ export const editFileTool = make({
 
     // Perform replacement
     const replaced = input.replaceAll
-      ? normalized.replaceAll(oldNorm, newNorm)
+      ? normalized.split(oldNorm).join(newNorm)
       : normalized.replace(oldNorm, newNorm)
 
     // Restore original line endings

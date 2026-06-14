@@ -12,6 +12,9 @@ export interface AgentConfig {
   model: string        // e.g. "gpt-4o-mini"
   apiKey: string
   apiUrl: string       // e.g. "https://api.openai.com/v1"
+  provider?: string    // openai / claude / deepseek / ollama / custom
+  headers?: Record<string, string>
+  options?: Record<string, unknown>
   systemPrompt?: string
   maxSteps?: number
 }
@@ -131,7 +134,7 @@ export class Agent {
         const result = await this.registry.execute(call.function.name, args, ctx)
 
         if (result.success) {
-          yield { type: "tool_result", name: call.function.name, output: result.output }
+          yield { type: "tool_result", name: call.function.name, output: result.output || "" }
         } else {
           yield { type: "error", message: `${call.function.name}: ${result.error}` }
         }
@@ -152,20 +155,36 @@ export class Agent {
     tools: Record<string, unknown>[],
     config: AgentConfig,
   ): Promise<any> {
-    const baseUrl = (config.apiUrl || "https://api.openai.com/v1").replace(/\/+$/, "")
+    const provider = config.provider || "openai"
+
+    // Claude 需要独立的 API 格式，离线模式暂不支持的更完整实现
+    if (provider === "claude") {
+      throw new Error("Claude 暂不支持离线模式。请启动 Python 后端，或切换到 OpenAI / DeepSeek / Ollama / 自定义 OpenAI 兼容接口。")
+    }
+
+    // OpenAI 兼容接口：确保 baseUrl 以 /v1 结尾（OpenAI 官方通常已包含）
+    let baseUrl = (config.apiUrl || "https://api.openai.com/v1").replace(/\/+$/, "")
+    if (provider !== "openai" && !baseUrl.endsWith("/v1")) {
+      baseUrl += "/v1"
+    }
+
     const body: Record<string, unknown> = {
       model: config.model || "gpt-4o-mini",
       messages,
       stream: false,
+      ...(config.options || {}),
     }
     if (tools.length > 0) body.tools = tools
 
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.apiKey}`,
+      ...(config.headers || {}),
+    }
+
     const resp = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiKey}`,
-      },
+      headers,
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(60000),
     })

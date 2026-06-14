@@ -171,12 +171,11 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
 
               <p className="text-xs text-neutral-500">{selectedTool.description}</p>
 
-              {selectedTool.parameters?.properties && (() => {
-                const props = selectedTool.parameters.properties as Record<string, { type: string; description?: string }>
-                const required = (selectedTool.parameters.required || []) as string[]
-                return (
-                  <div className="space-y-2">
-                    {Object.entries(props).map(([key, prop]) => (
+              {!!selectedTool.parameters?.properties && (
+                <div className="space-y-2">
+                  {Object.entries(selectedTool.parameters.properties as Record<string, { type: string; description?: string }>).map(([key, prop]) => {
+                    const required = (selectedTool.parameters?.required || []) as string[]
+                    return (
                       <div key={key}>
                         <label className="text-xs text-neutral-500 block mb-1">
                           {key}
@@ -200,10 +199,10 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                           />
                         )}
                       </div>
-                    ))}
-                  </div>
-                )
-              })()}
+                    )
+                  })}
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <button onClick={handleExecute} disabled={loading}
