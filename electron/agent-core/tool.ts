@@ -120,7 +120,9 @@ export async function settle(
   call: ToolCall,
   ctx: ToolContext
 ): Promise<Settlement> {
-  const parseResult = def.inputSchema.safeParse(call.input)
+  const schema = getJsonSchema(def)
+  const coercedInput = coerceToolArgs(def.name, call.input, schema)
+  const parseResult = def.inputSchema.safeParse(coercedInput)
   if (!parseResult.success) {
     return {
       result: { success: false, error: `Invalid input: ${parseResult.error.message}` },
@@ -138,8 +140,8 @@ export async function settle(
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
     return {
-      result: { success: false, error: message },
-      content: [{ type: "text", text: `Error: ${message}` }],
+      result: { success: false, error: sanitizeToolError(message) },
+      content: [{ type: "text", text: sanitizeToolError(message) }],
     }
   }
 }
@@ -148,3 +150,53 @@ export const withPermission = <I, O>(def: ToolDef<I, O>, permission: string): To
   ...def,
   permission,
 })
+
+const ROLE_TAG_RE = /<\/?(?:tool_call|function_call|result|response|output|input|system|assistant|user)>/gi
+const FENCE_OPEN_RE = /^\s*```(?:json|xml|html|markdown)?\s*/gim
+const FENCE_CLOSE_RE = /\s*```\s*$/gim
+const CDATA_RE = /<!\[CDATA\[.*?\]\]>/gis
+const MAX_TOOL_ERROR_LEN = 2000
+
+export function sanitizeToolError(errorMsg: string): string {
+  if (!errorMsg) return '[TOOL_ERROR] '
+  let s = errorMsg
+    .replace(ROLE_TAG_RE, '')
+    .replace(FENCE_OPEN_RE, '')
+    .replace(FENCE_CLOSE_RE, '')
+    .replace(CDATA_RE, '')
+  if (s.length > MAX_TOOL_ERROR_LEN) s = s.slice(0, MAX_TOOL_ERROR_LEN - 3) + '...'
+  return `[TOOL_ERROR] ${s}`
+}
+
+function coerceValue(value: string, expected: string | string[]): unknown {
+  if (Array.isArray(expected)) {
+    for (const t of expected) {
+      const c = coerceValue(value, t)
+      if (c !== value) return c
+    }
+    return value
+  }
+  if (expected === 'integer' || expected === 'number') {
+    const f = parseFloat(value)
+    if (!Number.isNaN(f)) return Number.isInteger(f) ? Math.trunc(f) : f
+  }
+  if (expected === 'boolean') {
+    const low = value.trim().toLowerCase()
+    if (low === 'true') return true
+    if (low === 'false') return false
+  }
+  return value
+}
+
+export function coerceToolArgs(name: string, args: Record<string, unknown>, schema: Record<string, unknown>): Record<string, unknown> {
+  const props = (schema.properties || {}) as Record<string, any>
+  const out = { ...args }
+  for (const [key, value] of Object.entries(out)) {
+    if (typeof value !== 'string') continue
+    const prop = props[key]
+    if (!prop || !prop.type) continue
+    const coerced = coerceValue(value, prop.type)
+    if (coerced !== value) out[key] = coerced
+  }
+  return out
+}
