@@ -46,7 +46,21 @@ export function registerAgentIPCHandlers(): void {
     return results
   })
 
-  // Agent 消息 → LLM → 自动调用工具 → 返回事件流
+  // Agent 流式消息 → 返回事件数组（Phase 1 简化版，Phase 5 迁移 MessageChannel）
+  ipcMain.handle("run-agent-stream", async (_, sessionId: string, message: string, config: AgentConfig) => {
+    const agent = new Agent(registry)
+    const events: AgentEvent[] = []
+    try {
+      for await (const evt of agent.run(message, [], { ...config, sessionID: sessionId })) {
+        events.push(evt)
+      }
+    } catch (e) {
+      events.push({ type: "error", message: String(e) })
+    }
+    return events
+  })
+
+  // 保留旧版 chat handler 以兼容现有调用
   ipcMain.handle("agent:chat", async (_, config: AgentConfig, message: string, history: Array<{ role: string; content: string }>) => {
     const agent = new Agent(registry)
     const events: AgentEvent[] = []

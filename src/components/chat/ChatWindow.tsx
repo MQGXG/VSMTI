@@ -354,23 +354,34 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
           headers: provider?.headers || {},
           options: provider?.options || {},
         };
-        const history = messages
-          .filter((m) => m.role === "user" || m.role === "assistant")
-          .map((m) => ({ role: m.role, content: m.content }));
-        const events = await window.electronAPI.agent.chat(config, content, history);
-        for (const evt of events) {
-          if (evt.type === "content" && evt.text) {
-            setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: m.content + evt.text! } : m));
-          } else if (evt.type === "tool_start" && evt.name) {
-            setMessages((prev) => prev.map((m) => m.id === assistantId ? {
-              ...m, toolCalls: [...(m.toolCalls || []), { name: evt.name!, args: evt.args || {}, argsText: "", status: "running" as const }],
-            } : m));
-          } else if (evt.type === "tool_result" && evt.name && evt.output) {
-            setMessages((prev) => prev.map((m) => m.id === assistantId ? {
-              ...m, toolCalls: m.toolCalls?.map((tc) => tc.name === evt.name ? { ...tc, result: evt.output!, status: "done" as const } : tc),
-            } : m));
-          } else if (evt.type === "error" && evt.message) {
-            setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: m.content + `\n\n⚠️ ${evt.message}` } : m));
+        const events = await window.electronAPI.agent.runAgentStream(sessionId, content, config);
+        for (const event of events) {
+          if (event.type === "content") {
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last?.role === "assistant") {
+                return [...prev.slice(0, -1), { ...last, content: last.content + event.text }];
+              }
+              return [...prev, { id: crypto.randomUUID(), role: "assistant", content: event.text }];
+            });
+          } else if (event.type === "tool_start") {
+            setMessages((prev) => [...prev, {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: `🔧 Using tool **${event.name}** with ${JSON.stringify(event.args)}`,
+              isToolCall: true,
+            }]);
+          } else if (event.type === "tool_result") {
+            setMessages((prev) => [...prev, {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: event.result.success
+                ? `✅ Result: ${event.result.output?.slice(0, 500) || ""}`
+                : `❌ Error: ${event.result.error}`,
+              isToolCall: true,
+            }]);
+          } else if (event.type === "error") {
+            setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: `Error: ${event.message}` }]);
           }
         }
         setIsLoading(false);

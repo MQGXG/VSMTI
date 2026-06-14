@@ -29,6 +29,8 @@ const electronAPI = {
     listTools: () => ipcRenderer.invoke("agent:listTools"),
     chat: (config: Record<string, unknown>, message: string, history: Array<{ role: string; content: string }>) =>
       ipcRenderer.invoke("agent:chat", config, message, history),
+    runAgentStream: (sessionId: string, message: string, config: Record<string, unknown>) =>
+      ipcRenderer.invoke("run-agent-stream", sessionId, message, config),
   },
 };
 

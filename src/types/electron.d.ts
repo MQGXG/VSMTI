@@ -12,9 +12,17 @@ export interface ToolInfo {
 
 export interface ToolResult {
   success: boolean;
-  output: string;
+  output?: string;
   error?: string;
 }
+
+export type AgentEvent =
+  | { type: "content"; text: string }
+  | { type: "tool_start"; id: string; name: string; args: Record<string, unknown> }
+  | { type: "tool_result"; id: string; name: string; result: { success: boolean; output?: string; error?: string } }
+  | { type: "error"; message: string }
+  | { type: "finish"; reason: string }
+  | { type: "thinking"; text: string };
 
 export interface ElectronAPI {
   minimizeWindow: () => void;
@@ -37,8 +45,8 @@ export interface ElectronAPI {
   agent: {
     executeTool: (name: string, args: Record<string, unknown>) => Promise<ToolResult>;
     listTools: () => Promise<ToolInfo[]>;
-    chat: (config: Record<string, unknown>, message: string, history: Array<{ role: string; content: string }>) =>
-      Promise<Array<{ type: string; text?: string; name?: string; args?: Record<string, unknown>; output?: string; message?: string; reason?: string }>>;
+    chat: (config: Record<string, unknown>, message: string, history: Array<{ role: string; content: string }>) => Promise<AgentEvent[]>;
+    runAgentStream: (sessionId: string, message: string, config: Record<string, unknown>) => Promise<AgentEvent[]>;
   };
 }
 

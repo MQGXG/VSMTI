@@ -7,11 +7,12 @@ export interface ToolCallInfo {
 }
 
 export interface Message {
-  id: string;       // 前端本地 ID
+  id: string;
   role: "user" | "assistant";
   content: string;
   toolCalls?: ToolCallInfo[];
-  dbId?: number;    // 后端数据库消息 ID（用于分叉）
+  isToolCall?: boolean;
+  dbId?: number;
 }
 
 export type AgentMode = "assistant" | "expert" | "action" | "safe";
