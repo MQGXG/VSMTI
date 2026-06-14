@@ -10,7 +10,7 @@ export interface LLMMessage {
 }
 
 export interface LLMRequest {
-  model: string
+  model?: string
   messages: LLMMessage[]
   tools?: Record<string, unknown>[]
   temperature?: number
