@@ -17,7 +17,7 @@ export const bashTool = make({
   outputSchema: z.string(),
   permission: "bash",
 
-  async execute(input, _ctx) {
+  async execute(input, ctx) {
     for (const deny of HARD_DENY) {
       if (input.command.toLowerCase().includes(deny)) {
         return { success: false, error: `Hard denied: dangerous command pattern "${deny}"` }
@@ -26,9 +26,11 @@ export const bashTool = make({
 
     try {
       const isWin = process.platform === "win32"
-      const { stdout, stderr } = await execFileAsync(
-        isWin ? "cmd" : "/bin/sh",
-        isWin ? ["/c", input.command] : ["-c", input.command],
+      const shell = ctx?.shell || (isWin ? "cmd" : "/bin/sh")
+      const shellArgs = shell === "powershell" ? ["-Command", input.command]
+        : shell === "cmd" || (!isWin && shell === "/bin/sh") ? (isWin ? ["/c", input.command] : ["-c", input.command])
+        : isWin ? ["/c", input.command] : ["-c", input.command]
+      const { stdout, stderr } = await execFileAsync(shell, shellArgs,
         {
           timeout: (input.timeout || 30) * 1000,
           maxBuffer: 1024 * 1024,

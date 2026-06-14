@@ -165,10 +165,26 @@ function ThemeSelector() {
   );
 }
 
+function loadSettings(): Record<string, any> {
+  try { return JSON.parse(localStorage.getItem("settings") || "{}") }
+  catch { return {} }
+}
+
+function saveSettings(s: Record<string, any>) {
+  localStorage.setItem("settings", JSON.stringify(s))
+}
+
 export function SettingsDialog({ open, onClose }: Props) {
   const [tab, setTab] = useState<"general" | "shortcuts" | "providers" | "models" | "about">("providers");
   const [providers, setProviders] = useState<Provider[]>(defaultProviders);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<Record<string, any>>(loadSettings);
+
+  const updateSettings = (patch: Record<string, any>) => {
+    const next = { ...settings, ...patch }
+    setSettings(next)
+    saveSettings(next)
+  }
 
   useEffect(() => {
     if (open) {
@@ -226,18 +242,81 @@ export function SettingsDialog({ open, onClose }: Props) {
             <div className="max-w-2xl space-y-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-200">通用设置</h3>
               <ThemeSelector />
-              <div className="space-y-4">
-                {["开机自动启动", "关闭时最小化到托盘", "流式输出"].map((name) => (
-                  <div key={name} className="flex items-center justify-between p-4 rounded-xl glass border border-glass-border">
-                    <div>
-                      <div className="text-sm text-gray-900 dark:text-neutral-200">{name}</div>
-                      <div className="text-xs text-neutral-500 mt-1">设置说明</div>
-                    </div>
-                    <div className="w-11 h-6 bg-accent-600 rounded-full relative cursor-pointer">
-                      <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow" />
-                    </div>
+
+              {/* 权限 */}
+              <div className="p-4 rounded-xl glass border border-glass-border">
+                <div className="text-sm text-gray-900 dark:text-neutral-200 mb-3">权限</div>
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <div className="text-sm text-neutral-300">自动接受权限</div>
+                    <div className="text-xs text-neutral-600 mt-0.5">允许 Agent 自动执行操作，不再弹出确认对话框</div>
                   </div>
-                ))}
+                  <input type="checkbox" checked={settings.autoAcceptPermissions}
+                    onChange={(e) => updateSettings({ autoAcceptPermissions: e.target.checked })}
+                    className="w-4 h-4 rounded accent-accent-500" />
+                </label>
+              </div>
+
+              {/* 终端 */}
+              <div className="p-4 rounded-xl glass border border-glass-border">
+                <div className="text-sm text-gray-900 dark:text-neutral-200 mb-3">终端</div>
+                <label className="text-xs text-neutral-500 mb-1 block">默认 Shell</label>
+                <select value={settings.terminalShell}
+                  onChange={(e) => updateSettings({ terminalShell: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-glass-border text-neutral-200 outline-none focus:border-accent-500/30">
+                  <option value="default">Auto (Default)</option>
+                  <option value="powershell">PowerShell</option>
+                  <option value="cmd">CMD</option>
+                  <option value="bash">Bash (WSL)</option>
+                </select>
+              </div>
+
+              {/* 时间线 */}
+              <div className="p-4 rounded-xl glass border border-glass-border">
+                <div className="text-sm text-gray-900 dark:text-neutral-200 mb-3">时间线</div>
+                <div className="space-y-3">
+                  {[
+                    { key: "showReasoning" as const, label: "显示推理摘要", desc: "在时间线中显示模型推理摘要" },
+                    { key: "expandShellTools" as const, label: "展开 Shell 工具", desc: "默认在时间线中展开 shell 工具部分" },
+                    { key: "expandEditTools" as const, label: "展开编辑工具", desc: "默认在时间线中展开 edit、write 和 patch 工具部分" },
+                  ].map((item) => (
+                    <label key={item.key} className="flex items-center justify-between cursor-pointer">
+                      <div>
+                        <div className="text-sm text-neutral-300">{item.label}</div>
+                        <div className="text-xs text-neutral-600">{item.desc}</div>
+                      </div>
+                      <input type="checkbox" checked={(settings as any)[item.key]}
+                        onChange={(e) => updateSettings({ [item.key]: e.target.checked })}
+                        className="w-4 h-4 rounded accent-accent-500" />
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 进度条 */}
+              <div className="p-4 rounded-xl glass border border-glass-border">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <div className="text-sm text-neutral-300">显示会话进度条</div>
+                    <div className="text-xs text-neutral-600 mt-0.5">当智能体正在工作时，在会话顶部显示动画进度条</div>
+                  </div>
+                  <input type="checkbox" checked={settings.showProgressBar}
+                    onChange={(e) => updateSettings({ showProgressBar: e.target.checked })}
+                    className="w-4 h-4 rounded accent-accent-500" />
+                </label>
+              </div>
+
+              {/* 界面 */}
+              <div className="p-4 rounded-xl glass border border-glass-border">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <div className="text-sm text-neutral-300">新版界面布局</div>
+                    <div className="text-xs text-neutral-600 mt-0.5">启用重新设计的布局、主页、编辑器和会话界面</div>
+                  </div>
+                  <input type="checkbox" checked={settings.newLayout}
+                    onChange={(e) => updateSettings({ newLayout: e.target.checked })}
+                    className="w-4 h-4 rounded accent-accent-500" />
+                </label>
               </div>
             </div>
           )}
@@ -291,6 +370,11 @@ export function SettingsDialog({ open, onClose }: Props) {
       </div>
     </div>
   );
+}
+
+/** 读取通用设置（供其他组件使用） */
+export function getSettings(): Record<string, any> {
+  return loadSettings()
 }
 
 export async function getActiveProvider(): Promise<{ provider: string; model: string; apiKey: string; apiUrl: string } | null> {

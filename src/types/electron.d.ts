@@ -21,6 +21,7 @@ export type AgentEvent =
   | { type: "tool_start"; id: string; name: string; args: Record<string, unknown> }
   | { type: "tool_result"; id: string; name: string; result: { success: boolean; output?: string; error?: string } }
   | { type: "permission_request"; id: string; action: string; resources: string[]; toolCall: { id: string; name: string; input: Record<string, unknown> } }
+  | { type: "question"; id: string; question: string; options?: string[] }
   | { type: "error"; message: string }
   | { type: "finish"; reason: string }
   | { type: "thinking"; text: string };
@@ -41,6 +42,18 @@ export interface ElectronAPI {
   decryptApiKey: (encrypted: string) => Promise<string>;
   isEncryptionAvailable: () => Promise<boolean>;
   platform: string;
+
+  // TS Core 会话/项目管理
+  ts: {
+    listProjects: () => Promise<Array<{ project_id: string; name: string; workspace_path: string }>>;
+    createProject: (name: string, workspace: string) => Promise<{ project_id: string }>;
+    deleteProject: (projectId: string) => Promise<void>;
+    createSession: (projectId: string, title?: string) => Promise<{ session_id: string; title: string; kind: string; workspace_path: string; message_count: number; updated_at: string }>;
+    listSessions: (projectId?: string) => Promise<Array<{ session_id: string; title: string; kind: string; workspace_path: string; message_count: number; updated_at: string }>>;
+    getSessionMessages: (sessionId: string) => Promise<Array<{ id: number; role: string; content: string }>>;
+    deleteSession: (sessionId: string) => Promise<void>;
+    searchMessages: (query: string) => Promise<Array<{ session_id: string; session_title: string; message: { role: string; content: string; timestamp: string }; context: string }>>;
+  };
 
   // TypeScript Agent Core
   agent: {

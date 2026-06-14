@@ -32,15 +32,35 @@ export function App() {
       }
     } catch { /* Python offline */ }
 
-    // 离线模式：创建本地虚拟项目
-    const localProject: Project = {
-      project_id: "local",
-      name: "本地模式",
+    // 从 TS Core 加载项目
+    try {
+      const tsProjects = await window.electronAPI.ts.listProjects();
+      if (tsProjects && tsProjects.length > 0) {
+        const mapped: Project[] = tsProjects.map((p: any, i: number) => ({
+          project_id: p.project_id,
+          name: p.name,
+          workspace_path: p.workspace_path,
+          color: `from-${['indigo','cyan','emerald','violet','rose','amber'][i % 6]}-500 to-${['cyan','indigo','emerald','rose','amber','violet'][i % 6]}-500`,
+        }));
+        setProjects(mapped);
+        if (!activeProject) setActiveProject(mapped[0].project_id);
+        return;
+      }
+    } catch { /* fallback */ }
+
+    // 没有已保存的项目 → 创建默认
+    const defaultProject: Project = {
+      project_id: "default",
+      name: "默认项目",
       workspace_path: window.electronAPI.platform === "win32" ? "C:\\" : "/",
       color: "from-indigo-500 to-cyan-500",
     };
-    setProjects([localProject]);
-    if (!activeProject) setActiveProject("local");
+    try {
+      const created = await window.electronAPI.ts.createProject(defaultProject.name, defaultProject.workspace_path);
+      defaultProject.project_id = created.project_id;
+    } catch { /* 静默 */ }
+    setProjects([defaultProject]);
+    if (!activeProject) setActiveProject(defaultProject.project_id);
   }, [activeProject]);
 
   useEffect(() => {
@@ -90,16 +110,22 @@ export function App() {
     if (!activeProject) return;
     try {
       const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") return;
-      const res = await fetch(`${status.url}/api/projects/${encodeURIComponent(activeProject)}/sessions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "" }),
-      });
-      const data = await res.json();
-      if (data.session?.session_id) {
-        setActiveSession(data.session.session_id);
+      if (status.status === "running") {
+        const res = await fetch(`${status.url}/api/projects/${encodeURIComponent(activeProject)}/sessions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: "" }),
+        });
+        const data = await res.json();
+        if (data.session?.session_id) setActiveSession(data.session.session_id);
+        return;
       }
+    } catch { /* fallback */ }
+
+    // TS Core 模式
+    try {
+      const session = await window.electronAPI.ts.createSession(activeProject, "");
+      if (session?.session_id) setActiveSession(session.session_id);
     } catch (err) {
       console.error("新建会话失败:", err);
     }
@@ -109,16 +135,21 @@ export function App() {
     if (!activeProject) return;
     try {
       const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") return;
-      const res = await fetch(`${status.url}/api/projects/${encodeURIComponent(activeProject)}/tasks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
-      });
-      const data = await res.json();
-      if (data.session?.session_id) {
-        setActiveSession(data.session.session_id);
+      if (status.status === "running") {
+        const res = await fetch(`${status.url}/api/projects/${encodeURIComponent(activeProject)}/tasks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title }),
+        });
+        const data = await res.json();
+        if (data.session?.session_id) setActiveSession(data.session.session_id);
+        return;
       }
+    } catch { /* fallback */ }
+
+    try {
+      const session = await window.electronAPI.ts.createSession(activeProject, title);
+      if (session?.session_id) setActiveSession(session.session_id);
     } catch (err) {
       console.error("新建任务失败:", err);
     }
@@ -127,17 +158,25 @@ export function App() {
   const handleOpenProject = async (name: string, workspacePath: string) => {
     try {
       const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") return;
-      const res = await fetch(`${status.url}/api/projects`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, workspace_path: workspacePath }),
-      });
-      const data = await res.json();
-      if (data.project?.project_id) {
-        await loadProjects();
-        await handleProjectChange(data.project.project_id);
+      if (status.status === "running") {
+        const res = await fetch(`${status.url}/api/projects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, workspace_path: workspacePath }),
+        });
+        const data = await res.json();
+        if (data.project?.project_id) {
+          await loadProjects();
+          await handleProjectChange(data.project.project_id);
+        }
+        setNewProjectOpen(false);
+        return;
       }
+    } catch { /* fallback */ }
+
+    try {
+      await window.electronAPI.ts.createProject(name, workspacePath);
+      await loadProjects();
       setNewProjectOpen(false);
     } catch (err) {
       console.error("打开项目失败:", err);
@@ -162,10 +201,11 @@ export function App() {
   const handleDeleteProject = async (projectId: string) => {
     try {
       const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") return;
-      await fetch(`${status.url}/api/projects/${encodeURIComponent(projectId)}`, {
-        method: "DELETE",
-      });
+      if (status.status === "running") {
+        await fetch(`${status.url}/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE" });
+      } else {
+        await window.electronAPI.ts.deleteProject(projectId);
+      }
       await loadProjects();
       if (activeProject === projectId) {
         setActiveProject("");
@@ -196,7 +236,6 @@ export function App() {
           projects={projects}
           onSessionChange={setActiveSession}
           onNewSession={handleNewSession}
-          onNewTask={handleNewTask}
         />
         <main className="flex-1 overflow-hidden">
           <ChatWindow

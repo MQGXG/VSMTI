@@ -22,6 +22,18 @@ const electronAPI = {
 
   platform: process.platform,
 
+  // TS Core 会话/项目
+  ts: {
+    listProjects: () => ipcRenderer.invoke("ts:listProjects"),
+    createProject: (name: string, workspace: string) => ipcRenderer.invoke("ts:createProject", name, workspace),
+    deleteProject: (projectId: string) => ipcRenderer.invoke("ts:deleteProject", projectId),
+    createSession: (projectId: string, title?: string) => ipcRenderer.invoke("ts:createSession", projectId, title),
+    listSessions: (projectId?: string) => ipcRenderer.invoke("ts:listSessions", projectId),
+    getSessionMessages: (sessionId: string) => ipcRenderer.invoke("ts:getSessionMessages", sessionId),
+    deleteSession: (sessionId: string) => ipcRenderer.invoke("ts:deleteSession", sessionId),
+    searchMessages: (query: string) => ipcRenderer.invoke("ts:searchMessages", query),
+  },
+
   // TypeScript Agent Core IPC
   agent: {
     executeTool: (name: string, args: Record<string, unknown>) =>

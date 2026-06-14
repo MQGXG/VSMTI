@@ -1,23 +1,30 @@
 import { ipcMain, dialog, Notification, safeStorage } from "electron";
-import { PythonManager } from "../python-manager";
 import { getMainWindow, minimizeWindow, toggleMaximizeWindow, hideWindow } from "../managers/window-manager";
 import { registerAgentIPCHandlers } from "../agent-core/ipc-bridge";
 
-export function registerIPCHandlers(pythonManager: PythonManager): void {
+export function registerIPCHandlers(): void {
   registerAgentIPCHandlers();
+
   // 窗口控制
   ipcMain.on("window:minimize", () => minimizeWindow());
   ipcMain.on("window:maximize", () => toggleMaximizeWindow());
   ipcMain.on("window:close", () => hideWindow());
 
-  // Python 后端管理
-  ipcMain.handle("python:status", () => pythonManager.getStatus());
-  ipcMain.handle("python:logs", () => pythonManager.getLogs());
-  ipcMain.handle("python:clearLogs", () => pythonManager.clearLogs());
-  ipcMain.handle("python:restart", async () => {
-    await pythonManager.restart();
-    return pythonManager.getStatus();
-  });
+  // Python 后端管理（固定返回未运行，由 TS Core 接管）
+  ipcMain.handle("python:status", () => ({
+    status: "stopped",
+    port: 0,
+    url: "",
+    error: "",
+  }));
+  ipcMain.handle("python:logs", () => []);
+  ipcMain.handle("python:clearLogs", () => {});
+  ipcMain.handle("python:restart", async () => ({
+    status: "stopped",
+    port: 0,
+    url: "",
+    error: "TS Core 模式：Python 后端未启用",
+  }));
 
   // 文件对话框
   ipcMain.handle("dialog:openDirectory", async () => {
@@ -57,24 +64,18 @@ export function registerIPCHandlers(pythonManager: PythonManager): void {
 
   // API Key 加密存储
   ipcMain.handle("safeStorage:encrypt", (_, text: string) => {
-    if (!safeStorage.isEncryptionAvailable()) {
-      throw new Error("系统不支持加密存储");
-    }
+    if (!safeStorage.isEncryptionAvailable()) return "";
     if (!text) return "";
     const encrypted = safeStorage.encryptString(text);
     return encrypted.toString("base64");
   });
 
   ipcMain.handle("safeStorage:decrypt", (_, encrypted: string) => {
-    if (!safeStorage.isEncryptionAvailable()) {
-      throw new Error("系统不支持加密存储");
-    }
+    if (!safeStorage.isEncryptionAvailable()) return "";
     if (!encrypted) return "";
     const buffer = Buffer.from(encrypted, "base64");
     return safeStorage.decryptString(buffer);
   });
 
-  ipcMain.handle("safeStorage:isAvailable", () => {
-    return safeStorage.isEncryptionAvailable();
-  });
+  ipcMain.handle("safeStorage:isAvailable", () => safeStorage.isEncryptionAvailable());
 }

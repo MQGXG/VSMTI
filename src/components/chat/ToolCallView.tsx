@@ -12,12 +12,28 @@ const toolIcons: Record<string, typeof Code> = {
   browse_web: Globe,
 };
 
+function getSettings(): Record<string, any> {
+  try { return JSON.parse(localStorage.getItem("settings") || "{}") }
+  catch { return {} }
+}
+
+function isShellTool(name: string): boolean {
+  return name === "bash" || name === "terminal" || name === "run_code"
+}
+
+function isEditTool(name: string): boolean {
+  return name === "write_file" || name === "edit_file" || name === "patch"
+}
+
 interface Props {
   info: ToolCallInfo;
 }
 
 export function ToolCallView({ info }: Props) {
-  const [expanded, setExpanded] = useState(false);
+  const settings = getSettings()
+  const defaultExpanded = (isShellTool(info.name) && settings.expandShellTools) ||
+    (isEditTool(info.name) && settings.expandEditTools)
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const Icon = toolIcons[info.name] || Code;
   const isStreamingArgs = info.status === "running" && info.argsText !== undefined;
 

@@ -51,6 +51,7 @@ module.exports = {
         "scale-in": "scale-in 0.2s ease-out",
         "slide-in-right": "slide-in-right 0.25s ease-out",
         "bounce-dot": "bounce-dot 1.4s ease-in-out infinite",
+        "progress": "progress 2s ease-in-out infinite",
       },
       keyframes: {
         "pulse-glow": {
@@ -72,6 +73,10 @@ module.exports = {
         "bounce-dot": {
           "0%, 80%, 100%": { transform: "scale(0)" },
           "40%": { transform: "scale(1)" },
+        },
+        "progress": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
         },
       },
     },

@@ -1,20 +1,18 @@
 import {
   MessageSquarePlus,
-  FolderPlus,
   Settings,
   PanelLeftClose,
   PanelLeft,
   Cpu,
   HardDrive,
   Trash2,
-  GitBranch,
   MessageSquare,
-  CheckSquare,
+  Search,
+  X,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { SettingsDialog } from "./SettingsDialog";
-import { NewTaskDialog } from "./NewTaskDialog";
 
 interface Project {
   project_id: string;
@@ -42,7 +40,6 @@ interface Props {
   projects: Project[];
   onSessionChange: (sessionId: string) => void;
   onNewSession: () => void;
-  onNewTask: (title: string) => void;
 }
 
 function formatTime(iso: string): string {
@@ -66,12 +63,12 @@ export function Sidebar({
   projects,
   onSessionChange,
   onNewSession,
-  onNewTask,
 }: Props) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [systemInfo, setSystemInfo] = useState<{ status: string; port: number } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[] | null>(null);
 
   const project = useMemo(
     () => projects.find((p) => p.project_id === activeProject),
@@ -86,21 +83,40 @@ export function Sidebar({
     try {
       const status = await window.electronAPI.getPythonStatus();
       setSystemInfo(status);
-      if (status.status !== "running") return;
+      if (status.status === "running") {
+        const res = await fetch(`${status.url}/api/projects/${encodeURIComponent(activeProject)}/sessions`);
+        const data = await res.json();
+        const list: Session[] = (data.sessions || []).map((s: any) => ({
+          session_id: s.session_id,
+          project_id: s.project_id,
+          title: s.title || "",
+          kind: s.kind || "session",
+          workspace_path: s.workspace_path || "",
+          parent_session_id: s.parent_session_id,
+          message_count: s.message_count,
+          updated_at: s.updated_at,
+        }));
+        setSessions(list);
+        return;
+      }
+    } catch { /* fallback */ }
 
-      const res = await fetch(`${status.url}/api/projects/${encodeURIComponent(activeProject)}/sessions`);
-      const data = await res.json();
-      const list: Session[] = (data.sessions || []).map((s: any) => ({
-        session_id: s.session_id,
-        project_id: s.project_id,
-        title: s.title || "",
-        kind: s.kind || "session",
-        workspace_path: s.workspace_path || "",
-        parent_session_id: s.parent_session_id,
-        message_count: s.message_count,
-        updated_at: s.updated_at,
-      }));
-      setSessions(list);
+    // TS Core 模式：从本地加载会话
+    try {
+      const tsSessions = await window.electronAPI.ts.listSessions(activeProject);
+      if (tsSessions) {
+        const list: Session[] = tsSessions.map((s: any) => ({
+          session_id: s.session_id,
+          project_id: s.project_id || activeProject,
+          title: s.title || "",
+          kind: s.kind || "session",
+          workspace_path: s.workspace_path || "",
+          parent_session_id: undefined,
+          message_count: s.message_count || 0,
+          updated_at: s.updated_at,
+        }));
+        setSessions(list);
+      }
     } catch { /* ignore */ }
   };
 
@@ -109,11 +125,6 @@ export function Sidebar({
     const timer = setInterval(loadSessions, 10000);
     return () => clearInterval(timer);
   }, [activeProject]);
-
-  const handleCreateTask = (title: string) => {
-    onNewTask(title);
-    setNewTaskOpen(false);
-  };
 
   if (!isOpen) {
     return (
@@ -130,7 +141,7 @@ export function Sidebar({
   }
 
   return (
-    <div className="w-64 border-r border-glass-border flex flex-col glass transition-all duration-250">
+    <div className="w-64 border-r border-glass-border flex flex-col glass relative transition-all duration-250">
       <div className="p-4 border-b border-glass-border">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -148,23 +159,65 @@ export function Sidebar({
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mt-4">
-          <button
-            onClick={onNewSession}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm bg-white/5 hover:bg-white/10 text-gray-900 dark:text-neutral-100 transition-colors border border-glass-border"
-          >
-            <MessageSquarePlus className="w-4 h-4" />
-            新建会话
-          </button>
-          <button
-            onClick={() => setNewTaskOpen(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm btn-gradient text-white"
-          >
-            <FolderPlus className="w-4 h-4" />
-            新建任务
-          </button>
+        {/* 工作区搜索 */}
+        <div className="relative mt-3">
+          <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            value={searchQuery}
+            onChange={async (e) => {
+              const v = e.target.value;
+              setSearchQuery(v);
+              if (!v.trim()) { setSearchResults(null); return; }
+              try {
+                const results = await window.electronAPI.ts.searchMessages(v);
+                setSearchResults(results);
+              } catch { setSearchResults([]); }
+            }}
+            placeholder="搜索当前项目对话..."
+            className="w-full pl-8 pr-7 py-1.5 rounded-lg text-xs bg-white/5 border border-glass-border text-neutral-200 placeholder-neutral-600 outline-none focus:border-accent-500/30 transition-colors"
+          />
+          {searchQuery && (
+            <button onClick={() => { setSearchQuery(""); setSearchResults(null); }} className="absolute right-2 top-1/2 -translate-y-1/2">
+              <X className="w-3 h-3 text-neutral-500 hover:text-neutral-300" />
+            </button>
+          )}
         </div>
+
+        <button
+          onClick={onNewSession}
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm btn-gradient text-white mt-3"
+        >
+          <MessageSquarePlus className="w-4 h-4" />
+          新建会话
+        </button>
       </div>
+
+      {/* 搜索结果下拉 */}
+      {searchResults !== null && (
+        <div className="absolute left-4 right-4 top-[200px] z-50 glass-heavy rounded-xl border border-glass-border shadow-2xl max-h-64 overflow-y-auto">
+          <div className="px-3 py-1.5 text-[10px] text-neutral-500 border-b border-glass-border">
+            找到 {searchResults.length} 条结果
+          </div>
+          {searchResults.length === 0 ? (
+            <p className="text-xs text-neutral-600 text-center py-4">未找到匹配内容</p>
+          ) : (
+            searchResults.map((r, i) => (
+              <button
+                key={i}
+                onClick={() => { onSessionChange(r.session_id); setSearchResults(null); setSearchQuery(""); }}
+                className="w-full text-left p-2.5 hover:bg-white/5 transition-colors border-b border-glass-border last:border-0"
+              >
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-3 h-3 text-neutral-500 shrink-0" />
+                  <span className="text-xs font-medium text-neutral-300 truncate">{r.session_title}</span>
+                  <span className="text-[10px] text-neutral-600 ml-auto">{r.message.role === "user" ? "用户" : "AI"}</span>
+                </div>
+                <p className="text-[10px] text-neutral-500 line-clamp-2 mt-0.5 ml-5">{r.message.content}</p>
+              </button>
+            ))
+          )}
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {sessions.map((session) => (
@@ -185,19 +238,13 @@ export function Sidebar({
               }`}
             >
               <div className="flex items-center gap-2.5">
-                {session.kind === "task" ? (
-                  <CheckSquare className="w-4 h-4 shrink-0 text-emerald-500" />
-                ) : (
-                  <MessageSquare className="w-4 h-4 shrink-0 text-neutral-500" />
-                )}
+                <MessageSquare className="w-4 h-4 shrink-0 text-neutral-500" />
                 <div className="min-w-0">
                   <div className="truncate font-medium">
-                    {session.title || (session.kind === "task" ? "未命名任务" : "新会话")}
+                    {session.title || "新会话"}
                   </div>
                   <div className="truncate text-xs text-neutral-600">
-                    {session.kind === "task"
-                      ? session.workspace_path.split(/[/\\]/).pop() || "任务目录"
-                      : `${session.message_count || 0} 条消息 · ${formatTime(session.updated_at)}`}
+                    {session.message_count || 0} 条消息 · {formatTime(session.updated_at)}
                   </div>
                 </div>
               </div>
@@ -208,39 +255,13 @@ export function Sidebar({
                 try {
                   const status = await window.electronAPI.getPythonStatus();
                   if (status.status === "running") {
-                    const res = await fetch(
-                      `${status.url}/api/sessions/${encodeURIComponent(session.session_id)}/fork`,
-                      {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ session_id: session.session_id }),
-                      }
-                    );
-                    if (res.ok) {
-                      const data = await res.json();
-                      if (data.session) onSessionChange(data.session.session_id);
-                    }
-                  }
-                } catch (err) {
-                  console.error("分叉失败:", err);
-                }
-              }}
-              className="p-2 opacity-0 group-hover:opacity-100 hover:text-emerald-400 transition-all duration-200 shrink-0"
-              title="分叉"
-            >
-              <GitBranch className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  const status = await window.electronAPI.getPythonStatus();
-                  if (status.status === "running") {
                     await fetch(`${status.url}/api/sessions/${encodeURIComponent(session.session_id)}`, {
                       method: "DELETE",
                     });
-                    loadSessions();
+                  } else {
+                    await window.electronAPI.ts.deleteSession(session.session_id);
                   }
+                  loadSessions();
                 } catch (err) {
                   console.error("删除失败:", err);
                 }
@@ -293,12 +314,7 @@ export function Sidebar({
         <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />,
         document.body
       )}
-      <NewTaskDialog
-        open={newTaskOpen}
-        onClose={() => setNewTaskOpen(false)}
-        onCreate={handleCreateTask}
-        projectName={project?.name}
-      />
+
     </div>
   );
 }

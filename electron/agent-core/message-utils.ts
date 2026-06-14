@@ -31,8 +31,15 @@ export function truncateToBudget(messages: LLMMessage[], maxTokens: number): LLM
   if (estimateTokens(messages) <= maxTokens) return messages
   const system = messages.find(m => m.role === 'system')
   const rest = messages.filter(m => m.role !== 'system')
+
   while (rest.length > 2 && estimateTokens([system!, ...rest]) > maxTokens) {
-    rest.shift()
+    const removed = rest.shift()!
+    // 如果移除的是带 tool_calls 的 assistant，连带后面的 tool 消息一起移除
+    if (removed.role === 'assistant' && removed.tool_calls?.length) {
+      while (rest.length > 0 && rest[0].role === 'tool') {
+        rest.shift()
+      }
+    }
   }
   return system ? [system, ...rest] : rest
 }

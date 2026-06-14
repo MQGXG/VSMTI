@@ -44,6 +44,26 @@ export interface ClientConfig {
   options?: Record<string, unknown>
 }
 
+/** 最后一道防线：修复孤儿 tool 消息，确保每个 tool 消息前都有 assistant(tool_calls) */
+function fixOrphanedToolMessages(messages: LLMMessage[]): LLMMessage[] {
+  const result: LLMMessage[] = []
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i]
+    const prev = i > 0 ? messages[i - 1] : null
+    const isOrphaned = msg.role === 'tool' && (!prev || prev.role !== 'assistant' || !prev.tool_calls?.length)
+    if (isOrphaned) {
+      // 孤儿 tool → 内容追加到上一条结果中
+      if (result.length > 0) {
+        const last = result[result.length - 1]
+        last.content += `\n\n[工具结果: ${(msg.content || '').slice(0, 300)}]`
+      }
+    } else {
+      result.push(msg)
+    }
+  }
+  return result
+}
+
 function normalizeBaseUrl(provider: string, url: string): string {
   let base = url.replace(/\/+$/, '')
   if (provider !== 'openai' && !base.endsWith('/v1')) base += '/v1'
@@ -60,6 +80,7 @@ export function createOpenAIClient(config: ClientConfig): LLMClient {
   }
 
   async function complete(request: LLMRequest) {
+    request.messages = fixOrphanedToolMessages(request.messages)
     const body = {
       model: config.model,
       messages: request.messages,
@@ -86,6 +107,7 @@ export function createOpenAIClient(config: ClientConfig): LLMClient {
   }
 
   async function* stream(request: LLMRequest): AsyncGenerator<LLMStreamEvent> {
+    request.messages = fixOrphanedToolMessages(request.messages)
     const body = {
       model: config.model,
       messages: request.messages,
@@ -183,6 +205,7 @@ export function createAnthropicClient(config: ClientConfig): LLMClient {
   }
 
   async function complete(request: LLMRequest) {
+    request.messages = fixOrphanedToolMessages(request.messages)
     const { system, messages } = toAnthropicMessages(request.messages)
     const body: any = {
       model: config.model,

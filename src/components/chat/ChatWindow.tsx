@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { getProviderById } from "@/components/sidebar/SettingsDialog";
+import { getProviderById, getSettings } from "@/components/sidebar/SettingsDialog";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { ToolCallView } from "./ToolCallView";
 import { ModelSelector, loadModelChoice, loadModeChoice } from "./ModelSelector";
@@ -77,6 +77,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const dragCounter = useRef(0);
   const { streamChat } = useChatStream();
+  const currentChannelRef = useRef<string | null>(null);
   const offlineSessionIdRef = useRef<string | null>(null);
   function getOfflineSessionId(): string {
     if (offlineSessionIdRef.current) return offlineSessionIdRef.current;
@@ -111,28 +112,41 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
 
   useEffect(() => {
     if (!sessionId) {
-      if (backendRunning) setMessages([]);
+      setMessages([]);
       return;
     }
     const loadHistory = async () => {
       try {
-        if (!backendRunning) return;
+        // Path A: Python 在线 → 从 Python API 加载
         const status = await window.electronAPI.getPythonStatus();
-        if (status.status !== "running") return;
-        const res = await fetch(`${status.url}/api/sessions/${encodeURIComponent(sessionId)}/messages`);
-        if (!res.ok) {
-          setMessages([]);
-          return;
+        if (status.status === "running") {
+          const res = await fetch(`${status.url}/api/sessions/${encodeURIComponent(sessionId)}/messages`);
+          if (res.ok) {
+            const data = await res.json();
+            const formattedMessages: Message[] = (data.messages || []).map((msg: any) => ({
+              id: crypto.randomUUID(),
+              dbId: msg.id,
+              role: msg.role,
+              content: msg.content,
+            }));
+            setMessages(formattedMessages);
+            return;
+          }
         }
-        const data = await res.json();
-        const historyMessages = data.messages || [];
-        const formattedMessages: Message[] = historyMessages.map((msg: any) => ({
-          id: crypto.randomUUID(),
-          dbId: msg.id,
-          role: msg.role,
-          content: msg.content,
-        }));
-        setMessages(formattedMessages);
+
+        // Path B: TS Core 离线 → 从本地 session store 加载
+        const tsMsgs = await window.electronAPI.ts.getSessionMessages(sessionId);
+        if (tsMsgs && tsMsgs.length > 0) {
+          const formattedMessages: Message[] = tsMsgs.map((msg: any) => ({
+            id: crypto.randomUUID(),
+            dbId: msg.id,
+            role: msg.role,
+            content: msg.content,
+          }));
+          setMessages(formattedMessages);
+        } else {
+          setMessages([]);
+        }
       } catch {
         setMessages([]);
       }
@@ -384,10 +398,11 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
           apiUrl,
           provider: selectedModel.provider,
           headers: provider?.headers || {},
-          options: provider?.options || {},
+          options: { ...(provider?.options || {}), shell: getSettings().terminalShell || "default" },
         };
 
         const channel = await window.electronAPI.agent.startStream(sessionId || getOfflineSessionId(), content, config);
+        currentChannelRef.current = channel;
         const cleanup = window.electronAPI.agent.onEvent(channel, (event: any) => {
           if (event.type === "content") {
             setMessages((prev) => {
@@ -414,18 +429,25 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
               isToolCall: true,
             }]);
           } else if (event.type === "permission_request") {
-            setPermissionReq({
-              tool_name: event.action,
-              args: event.toolCall?.input || {},
-              reason: `需要权限执行操作: ${event.action}`,
-              request_id: event.id,
-              channel,
-            });
+            const s = getSettings();
+            if (s.autoAcceptPermissions) {
+              // 自动接受
+              window.electronAPI.agent.replyPermission(channel, event.id, "allow");
+            } else {
+              setPermissionReq({
+                tool_name: event.action,
+                args: event.toolCall?.input || {},
+                reason: `需要权限执行操作: ${event.action}`,
+                request_id: event.id,
+                channel,
+              });
+            }
           } else if (event.type === "error") {
             setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: `Error: ${event.message}` }]);
           } else if (event.type === "finish") {
             setIsLoading(false);
             cleanup();
+            currentChannelRef.current = null;
             window.electronAPI.agent.stopStream(channel);
           }
         });
@@ -571,8 +593,8 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
               </div>
               {!backendRunning ? (
                 <>
-                  <p className="text-neutral-500 text-sm">离线模式：配置 API Key 后即可 AI 对话</p>
-                  <p className="text-xs text-neutral-600">当前使用 TypeScript Agent，工具面板也可直接使用</p>
+                  <p className="text-neutral-500 text-sm">Core 模式：配置 API Key 后即可 AI 对话</p>
+                  <p className="text-xs text-neutral-600">TypeScript Agent Core 驱动，所有功能可用</p>
                 </>
               ) : !sessionId ? (
                 <>
@@ -624,16 +646,37 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
           </div>
         ))}
 
-        {isLoading && messages[messages.length - 1]?.content === "" && (
-          <div className="flex items-center gap-3 text-neutral-500 px-1">
-            <div className="flex items-center gap-1">
-              <span className="w-2 h-2 bg-accent-400 rounded-full animate-bounce-dot" style={{ animationDelay: "0s" }} />
-              <span className="w-2 h-2 bg-accent-400 rounded-full animate-bounce-dot" style={{ animationDelay: "0.2s" }} />
-              <span className="w-2 h-2 bg-accent-400 rounded-full animate-bounce-dot" style={{ animationDelay: "0.4s" }} />
+        {isLoading && (() => {
+          const settings = getSettings();
+          return (
+            <div className="flex items-center gap-3 px-1">
+              <button onClick={async () => {
+                setIsLoading(false);
+                const ch = currentChannelRef.current;
+                if (ch) window.electronAPI.agent.stopStream(ch);
+              }} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">
+                停止
+              </button>
+              {settings.showProgressBar ? (
+                <div className="flex-1">
+                  <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-accent-500 to-accent-300 rounded-full animate-[progress_2s_ease-in-out_infinite]" style={{width:'40%'}} />
+                  </div>
+                  <p className="text-xs text-neutral-600 mt-1">Agent 正在工作...</p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 text-neutral-500">
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 bg-accent-400 rounded-full animate-bounce-dot" style={{ animationDelay: "0s" }} />
+                    <span className="w-2 h-2 bg-accent-400 rounded-full animate-bounce-dot" style={{ animationDelay: "0.2s" }} />
+                    <span className="w-2 h-2 bg-accent-400 rounded-full animate-bounce-dot" style={{ animationDelay: "0.4s" }} />
+                  </div>
+                  <span className="text-sm">思考中...</span>
+                </div>
+              )}
             </div>
-            <span className="text-sm">思考中...</span>
-          </div>
-        )}
+          );
+        })()}
         <div ref={bottomRef} />
       </div>
 

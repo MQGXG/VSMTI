@@ -12,6 +12,7 @@ export interface ToolContext {
   agent: string
   assistantMessageID: string
   toolCallID: string
+  shell?: string
 }
 
 export interface ToolResult {
@@ -68,6 +69,7 @@ function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
     return { type: "object", properties, required }
   }
   if (schema instanceof z.ZodOptional) return zodToJsonSchema(schema.unwrap() as z.ZodType)
+  if (schema instanceof z.ZodDefault) return zodToJsonSchema(schema.removeDefault() as z.ZodType)
   return { type: "string" }
 }
 

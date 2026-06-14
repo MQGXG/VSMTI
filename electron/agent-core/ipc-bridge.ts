@@ -11,6 +11,9 @@ import { loadWorkspacePermissions, saveWorkspacePermission } from "./permission-
 import { buildInstructionSystemPrompt } from "./instruction-context"
 import { matchSkillCommand, buildSkillInvocationMessage } from "./skill/skill-commands"
 import { scanSkills, loadSkill } from "./skill/skill-loader"
+import { cronScheduler } from "./cron-scheduler"
+import { setupDefaultHooks } from "./hooks-setup"
+import { listProjects, createProject, deleteProjectById, createSession, listSessions, getSessionMessages, deleteSessionById, searchMessages } from "./session-manager"
 
 const registry = createDefaultRegistry()
 
@@ -54,6 +57,21 @@ function processSkillCommand(message: string): { processed: string; skillLoaded:
 }
 
 export function registerAgentIPCHandlers(): void {
+  // 注册默认钩子
+  setupDefaultHooks()
+  // 启动 Cron 调度器
+  cronScheduler.start()
+
+  // --- TS Core 会话/项目管理 (替代 Python API) ---
+  ipcMain.handle("ts:listProjects", () => listProjects())
+  ipcMain.handle("ts:createProject", (_, name: string, workspace: string) => createProject(name, workspace))
+  ipcMain.handle("ts:deleteProject", (_, projectId: string) => deleteProjectById(projectId))
+  ipcMain.handle("ts:createSession", (_, projectId: string, title?: string) => createSession(projectId, title))
+  ipcMain.handle("ts:listSessions", (_, projectId?: string) => listSessions(projectId))
+  ipcMain.handle("ts:getSessionMessages", (_, sessionId: string) => getSessionMessages(sessionId))
+  ipcMain.handle("ts:deleteSession", (_, sessionId: string) => deleteSessionById(sessionId))
+  ipcMain.handle("ts:searchMessages", (_, query: string) => searchMessages(query))
+
   // 列出所有可用 Skill
   ipcMain.handle("skill:listSkills", () => {
     return scanSkills().map((s) => ({
@@ -102,8 +120,8 @@ export function registerAgentIPCHandlers(): void {
   // 启动实时 Agent 流 — 通过 channel 发送事件，支持交互式权限回复
   ipcMain.handle("agent:startStream", async (event, sessionId: string, message: string, config: AgentConfig) => {
     const channel = generateChannelId()
-    const agent = new Agent(registry)
     const workspace = config.workspace || process.cwd()
+    const agent = new Agent(registry, config.apiKey, config.apiUrl, workspace)
 
     // 处理 slash 命令
     const { processed } = processSkillCommand(message)
@@ -148,18 +166,19 @@ export function registerAgentIPCHandlers(): void {
     session.agent.replyPermission(requestId, reply)
   })
 
-  // 清理会话
+  // 停止 Agent 流（中断当前执行）
   ipcMain.handle("agent:stopStream", (_, channel: string) => {
     const session = activeSessions.get(channel)
     if (session) {
+      session.agent.abort()
       activeSessions.delete(channel)
     }
   })
 
   // 向后兼容：旧版流式消息 → 返回事件数组（支持非交互场景）
   ipcMain.handle("run-agent-stream", async (_, sessionId: string, message: string, config: AgentConfig) => {
-    const agent = new Agent(registry)
     const workspace = config.workspace || process.cwd()
+    const agent = new Agent(registry, config.apiKey, config.apiUrl, workspace)
     const { processed } = processSkillCommand(message)
     const permissions = config.permissions || buildPermissions(workspace)
     const instructions = buildInstructionSystemPrompt(workspace)
@@ -195,7 +214,7 @@ export function registerAgentIPCHandlers(): void {
 
   // 保留旧版 chat handler 以兼容现有调用
   ipcMain.handle("agent:chat", async (_, config: AgentConfig, message: string, history: Array<{ role: string; content: string }>) => {
-    const agent = new Agent(registry)
+    const agent = new Agent(registry, config.apiKey, config.apiUrl, config.workspace || process.cwd())
     const events: AgentEvent[] = []
     try {
       for await (const evt of agent.run(message, history, config)) {
