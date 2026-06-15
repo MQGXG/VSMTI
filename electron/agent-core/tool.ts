@@ -53,24 +53,36 @@ const runtimeMap = new WeakMap<ToolDef, {
   outputJsonSchema: Record<string, unknown>
 }>()
 
-function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
-  // 简化版 Zod → JSON Schema 转换
-  if (schema instanceof z.ZodString) return { type: "string" }
-  if (schema instanceof z.ZodNumber) return { type: "number" }
-  if (schema instanceof z.ZodBoolean) return { type: "boolean" }
-  if (schema instanceof z.ZodArray) return { type: "array", items: zodToJsonSchema(schema.element as z.ZodType) }
-  if (schema instanceof z.ZodObject) {
-    const properties: Record<string, unknown> = {}
-    const required: string[] = []
-    for (const [key, val] of Object.entries(schema.shape)) {
-      properties[key] = zodToJsonSchema(val as z.ZodType)
-      if (!(val instanceof z.ZodOptional)) required.push(key)
+function cleanJsonSchema(raw: Record<string, unknown>): Record<string, unknown> {
+  // 移除 LLM API 不支持的字段
+  const cleaned: Record<string, unknown> = {}
+  const allowed = new Set(["type", "properties", "required", "items", "description", "enum", "minItems", "maxItems", "minimum", "maximum", "minLength", "maxLength", "pattern", "default", "anyOf", "oneOf", "allOf", "not", "if", "then", "else"])
+  for (const [key, value] of Object.entries(raw)) {
+    if (allowed.has(key)) {
+      cleaned[key] = value
+      if (key === "items" && typeof value === "object" && value !== null) {
+        cleaned[key] = cleanJsonSchema(value as Record<string, unknown>)
+      }
+      if ((key === "properties" || key === "anyOf" || key === "oneOf") && typeof value === "object" && value !== null) {
+        const props: Record<string, unknown> = {}
+        for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+          props[k] = typeof v === "object" && v !== null ? cleanJsonSchema(v as Record<string, unknown>) : v
+        }
+        cleaned[key] = props
+      }
     }
-    return { type: "object", properties, required }
   }
-  if (schema instanceof z.ZodOptional) return zodToJsonSchema(schema.unwrap() as z.ZodType)
-  if (schema instanceof z.ZodDefault) return zodToJsonSchema(schema.removeDefault() as z.ZodType)
-  return { type: "string" }
+  if (!raw.type && Object.keys(cleaned).length === 0) return { type: "string" }
+  return cleaned
+}
+
+function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
+  try {
+    const raw = schema.toJSONSchema()
+    return cleanJsonSchema(raw as Record<string, unknown>)
+  } catch {
+    return { type: "object", properties: {} }
+  }
 }
 
 export function make<Input, Output>(
@@ -94,16 +106,40 @@ export function make<Input, Output>(
     permission: config.permission,
   }
 
+  const jsonschema = zodToJsonSchema(config.inputSchema)
+  const outputJsonSchema = zodToJsonSchema(config.outputSchema)
+  // 修复 type: null
+  if (!jsonschema.type) jsonschema.type = "object"
+  if (!jsonschema.properties) jsonschema.properties = {}
   runtimeMap.set(def, {
-    jsonSchema: zodToJsonSchema(config.inputSchema),
-    outputJsonSchema: zodToJsonSchema(config.outputSchema),
+    jsonSchema: jsonschema,
+    outputJsonSchema,
   })
 
   return def
 }
 
 export function getJsonSchema(def: ToolDef): Record<string, unknown> {
-  return runtimeMap.get(def)?.jsonSchema ?? { type: "object", properties: {} }
+  const cached = runtimeMap.get(def)?.jsonSchema
+  if (cached) {
+    if (cached.type === null || cached.type === undefined) {
+      console.error(`[tool] ${def.name} schema has invalid type:`, JSON.stringify(cached))
+      return { type: "object", properties: cached.properties || {} }
+    }
+    return cached
+  }
+  // 没有缓存时即时生成（兼容注册表直接使用的工具）
+  if ("inputSchema" in def && typeof (def as any).inputSchema?.toJSONSchema === "function") {
+    try {
+      const raw = (def as any).inputSchema.toJSONSchema()
+      const cleaned: Record<string, unknown> = { type: raw.type || "object" }
+      if (raw.properties) cleaned.properties = raw.properties
+      if (raw.required) cleaned.required = raw.required
+      if (raw.items) cleaned.items = raw.items
+      return cleaned
+    } catch {}
+  }
+  return { type: "object", properties: {} }
 }
 
 export function toOpenAISchema(def: ToolDef): Record<string, unknown> {

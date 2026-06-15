@@ -6,7 +6,7 @@ import { z } from "zod"
 import { make } from "../tool"
 import { runDelegate, getDelegationStatus, listActiveDelegations, cleanupDelegations } from "../delegate-runner"
 import { ToolRegistry } from "../registry"
-import { readFileTool } from "./read-file"
+import { readFileTool } from "./read-file-effect"
 import { writeFileTool } from "./write-file"
 import { listFilesTool } from "./list-files"
 import { webSearchTool } from "./web-search"
@@ -24,7 +24,7 @@ import { taskTool } from "./task-tool"
 
 // 共享注册表（直接构造避免循环依赖）
 const registry = new ToolRegistry()
-registry.register(readFileTool)
+registry.registerEffectLazy(readFileTool)
 registry.register(writeFileTool)
 registry.register(listFilesTool)
 registry.register(webSearchTool)

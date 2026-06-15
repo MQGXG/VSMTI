@@ -6,16 +6,22 @@
 export { Agent } from "./agent"
 export type { AgentConfig } from "./agent"
 export type { AgentEvent } from "./types"
-export { ToolRegistry } from "./registry"
+export { ToolRegistry, type ModelFilter } from "./registry"
 export { make, withPermission, toOpenAISchema, settle } from "./tool"
-export { PermissionSet, defaultPermissions } from "./permission"
-export { createLLMClient } from "./llm-client"
-export type { ClientConfig } from "./llm-client"
+export { PermissionSet, defaultPermissions, permissionsForMode } from "./permission"
+export { type AgentMode, getModeConfig, getAllModes, modeToPermissionSet } from "./modes"
+export { createLLMClient } from "./llm-sdk"
+export type { SDKConfig as ClientConfig } from "./llm-sdk"
 export type { ToolDef, ToolContext, ToolResult, ToolCall, Content, Settlement } from "./tool"
+export * as ToolEffect from "./tool-effect"
+export { AppLayer, ToolRegistryTag, LLMTag, DatabaseTag, ToolRegistryLayer, LLMLayer, DatabaseLayer } from "./layers"
+export { lspManager } from "./lsp/manager"
 
 // 工具
 export {
-  readFileTool,
+  readFileTool as readFileToolEffect,
+} from "./tools/read-file-effect"
+export {
   writeFileTool,
   listFilesTool,
   webSearchTool,
@@ -43,6 +49,8 @@ export { imageGenTool } from "./tools/image-gen"
 export { worktreeTool } from "./tools/worktree-tool"
 // 团队工具
 export { teamTool } from "./tools/team-tool"
+// LSP 工具
+export { lspDefinitionTool, lspReferencesTool, lspHoverTool } from "./tools/lsp-tool"
 
 // 系统模块
 export { cronScheduler } from "./cron-scheduler"
@@ -53,52 +61,8 @@ export { setupDefaultHooks } from "./hooks-setup"
 export { sendMessage, readInbox } from "./team-bus"
 export { createWorktree, listWorktrees } from "./worktree-manager"
 
-import { ToolRegistry } from "./registry"
-import { defaultPermissions } from "./permission"
-import {
-  readFileTool, writeFileTool, listFilesTool,
-  webSearchTool, grepTool, globTool, codeExecTool, bashTool, editFileTool,
-} from "./tools/index"
-import { skillsListTool, skillViewTool } from "./skill/skill-tools"
-import { dataAnalysisTool } from "./tools/data-analysis"
-import { webBrowseTool } from "./tools/web-browse"
-import { cronTool } from "./tools/cron-tool"
-import { taskTool } from "./tools/task-tool"
-import { delegateTaskTool } from "./tools/delegate-task"
-import { imageGenTool } from "./tools/image-gen"
-import { worktreeTool } from "./tools/worktree-tool"
-import { teamTool } from "./tools/team-tool"
+export { createDefaultRegistry } from "./registry-init"
 
-/** 创建预注册了所有默认工具的注册表 */
-export function createDefaultRegistry(): ToolRegistry {
-  const registry = new ToolRegistry()
-  registry.register(readFileTool)
-  registry.register(writeFileTool)
-  registry.register(listFilesTool)
-  registry.register(webSearchTool)
-  registry.register(grepTool)
-  registry.register(globTool)
-  registry.register(codeExecTool)
-  registry.register(bashTool)
-  registry.register(editFileTool)
-  // Skill 工具
-  registry.register(skillsListTool)
-  registry.register(skillViewTool)
-  // 数据分析工具
-  registry.register(dataAnalysisTool)
-  // 浏览器自动化
-  registry.register(webBrowseTool)
-  // Cron 定时任务
-  registry.register(cronTool)
-  // 任务规划
-  registry.register(taskTool)
-  // 委派任务
-  registry.register(delegateTaskTool)
-  // 图片生成
-  registry.register(imageGenTool)
-  // Worktree 隔离
-  registry.register(worktreeTool)
-  // 团队通信
-  registry.register(teamTool)
-  return registry
-}
+// 配置系统
+export { loadConfig, saveGlobalConfig, resolveRuntimeConfig, getConfigForRenderer } from "./config"
+export type { OmniAgentConfig, ResolvedConfig } from "./config"

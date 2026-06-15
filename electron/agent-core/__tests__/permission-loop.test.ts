@@ -6,8 +6,8 @@ import { PermissionSet } from '../permission'
 import { z } from 'zod'
 import type { AgentEvent } from '../types'
 
-vi.mock('../llm-client', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../llm-client')>()
+vi.mock('../llm-sdk', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../llm-sdk')>()
   return {
     ...actual,
     createLLMClient: vi.fn().mockImplementation(() => {

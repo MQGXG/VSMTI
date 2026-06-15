@@ -3,7 +3,6 @@
  * 新增工具只需在这里加一行
  */
 
-export { readFileTool } from "./read-file"
 export { writeFileTool } from "./write-file"
 export { listFilesTool } from "./list-files"
 export { webSearchTool } from "./web-search"

@@ -6,8 +6,7 @@
 import { AgentConfig } from "./agent"
 import { ToolRegistry } from "./registry"
 import { PermissionSet, PermissionRule } from "./permission"
-import { createLLMClient } from "./llm-client"
-import type { LLMMessage } from "./llm-client"
+import { createLLMClient, LLMMessage } from "./llm-sdk"
 import { IterationBudget } from "./iteration-budget"
 
 export interface DelegateTask {
@@ -107,25 +106,25 @@ Your task: ${task}`,
       apiUrl: config.apiUrl,
       headers: config.headers,
       options: config.options,
-    })
+    } as any)
 
     const budget = new IterationBudget(childConfig.maxSteps || 5)
     let finalText = ""
 
     while (budget.consume()) {
-      const stream = client.stream({ messages, tools: toolDefs, stream: true })
+      const stream = client.stream({ messages, tools: toolDefs })
       let currentText = ""
-      const pendingToolCalls: Map<string, { name: string; args: string; complete: boolean }> = new Map()
+      const pendingToolCalls: Array<{ id: string; name: string; arguments: string }> = []
 
       for await (const event of stream) {
         if (event.type === "delta") {
-          currentText += (event.delta || "")
+          currentText += event.delta
         } else if (event.type === "tool_call" && event.toolCall) {
-          const existing = pendingToolCalls.get(event.toolCall.id) || { name: "", args: "", complete: false }
-          if (event.toolCall.name) existing.name = event.toolCall.name
-          if (event.toolCall.arguments !== undefined) existing.args = event.toolCall.arguments
-          existing.complete = !!existing.name && existing.args !== undefined
-          pendingToolCalls.set(event.toolCall.id, existing)
+          pendingToolCalls.push({
+            id: event.toolCall.id,
+            name: event.toolCall.name,
+            arguments: event.toolCall.arguments,
+          })
         } else if (event.type === "error") {
           finalText = `子代理错误: ${event.error?.message || ""}`
           delegation.status = "failed"
@@ -137,11 +136,11 @@ Your task: ${task}`,
         }
       }
 
-      const toolCallsArray = Array.from(pendingToolCalls.entries())
-        .filter(([, v]) => v.complete)
-        .map(([id, v]) => ({
-          id, type: "function" as const,
-          function: { name: v.name, arguments: v.args },
+      const toolCallsArray = pendingToolCalls
+        .filter((tc) => tc.id && tc.name)
+        .map((tc) => ({
+          id: tc.id, type: "function" as const,
+          function: { name: tc.name, arguments: tc.arguments },
         }))
 
       messages.push({

@@ -1,87 +1,44 @@
-/**
- * 权限规则持久化 — 使用 JSON 文件保存每个工作区的「始终允许」规则
- */
-
-import { app } from "electron"
-import { join } from "path"
-import fs from "fs"
+import { getDbAsync, runWrite } from "./database"
 import { PermissionSet, type PermissionRule } from "./permission"
 
-interface StoreData {
-  permissions: Record<string, PermissionRule[]>
-}
-
-function getStorePath(): string {
-  return join(app.getPath("userData"), "permissions.json")
-}
-
-function readStore(): StoreData {
+export async function loadWorkspacePermissions(workspace: string): Promise<PermissionRule[]> {
   try {
-    const raw = fs.readFileSync(getStorePath(), "utf-8")
-    return JSON.parse(raw)
+    const db = await getDbAsync()
+    const key = workspace.replace(/[/\\:]/g, "_")
+    const result = db.exec("SELECT action, resource, effect FROM permissions WHERE workspace = ?", [key])
+    if (result.length === 0) return []
+    return result[0].values.map((r: any) => ({
+      action: r[0] as string,
+      resource: (r[1] as string) || "*",
+      effect: r[2] as "allow" | "deny" | "ask",
+    }))
   } catch {
-    return { permissions: {} }
+    return []
   }
 }
 
-function writeStore(data: StoreData): void {
-  const dir = app.getPath("userData")
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-  fs.writeFileSync(getStorePath(), JSON.stringify(data, null, 2), "utf-8")
-}
-
-/** 加载指定工作区的已保存权限规则 */
-export function loadWorkspacePermissions(workspace: string): PermissionRule[] {
-  const data = readStore()
-  // 用工作区路径的 hash 或直接使用路径作为 key
+export async function saveWorkspacePermission(workspace: string, rule: PermissionRule): Promise<void> {
+  const db = await getDbAsync()
   const key = workspace.replace(/[/\\:]/g, "_")
-  return data.permissions[key] || []
-}
-
-/** 保存一条权限规则到指定工作区 */
-export function saveWorkspacePermission(
-  workspace: string,
-  rule: PermissionRule,
-): void {
-  const data = readStore()
-  const key = workspace.replace(/[/\\:]/g, "_")
-  const existing = data.permissions[key] || []
-
-  // 移除同 action + resource 的旧规则，追加新规则
-  const filtered = existing.filter(
-    (r) => r.action !== rule.action || r.resource !== rule.resource,
+  runWrite(
+    "INSERT OR REPLACE INTO permissions (workspace, action, resource, effect) VALUES (?, ?, ?, ?)",
+    [key, rule.action, rule.resource || "*", rule.effect],
   )
-  data.permissions[key] = [...filtered, rule]
-
-  writeStore(data)
 }
 
-/** 删除指定工作区的某个权限规则 */
-export function removeWorkspacePermission(
-  workspace: string,
-  action: string,
-  resource: string,
-): void {
-  const data = readStore()
+export async function removeWorkspacePermission(workspace: string, action: string, resource: string): Promise<void> {
+  const db = await getDbAsync()
   const key = workspace.replace(/[/\\:]/g, "_")
-  const existing = data.permissions[key] || []
-
-  data.permissions[key] = existing.filter(
-    (r) => r.action !== action || r.resource !== resource,
-  )
-  writeStore(data)
+  runWrite("DELETE FROM permissions WHERE workspace = ? AND action = ? AND resource = ?", [key, action, resource])
 }
 
-/** 清空指定工作区的所有自定义规则 */
-export function clearWorkspacePermissions(workspace: string): void {
-  const data = readStore()
+export async function clearWorkspacePermissions(workspace: string): Promise<void> {
+  const db = await getDbAsync()
   const key = workspace.replace(/[/\\:]/g, "_")
-  delete data.permissions[key]
-  writeStore(data)
+  runWrite("DELETE FROM permissions WHERE workspace = ?", [key])
 }
 
-/** 从 JSON 文件构建 PermissionSet（仅 allow/deny 规则） */
-export function buildSavedPermissionSet(workspace: string): PermissionSet {
-  const savedRules = loadWorkspacePermissions(workspace)
+export async function buildSavedPermissionSet(workspace: string): Promise<PermissionSet> {
+  const savedRules = await loadWorkspacePermissions(workspace)
   return new PermissionSet(savedRules)
 }

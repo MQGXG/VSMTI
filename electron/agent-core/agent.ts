@@ -7,19 +7,20 @@ import { ToolRegistry } from './registry'
 import { ToolContext, ToolCall, ToolResult } from './tool'
 import { AgentEvent } from './types'
 import { IterationBudget } from './iteration-budget'
-import { createLLMClient, LLMMessage } from './llm-client'
-import { repairMessageSequence, truncateToBudget } from './message-utils'
+import { createLLMClient, LLMMessage } from './llm-sdk'
+import { truncateToBudget } from './message-utils'
 import { PermissionSet, PermissionRule } from './permission'
 import { MemoryManager } from './memory/manager'
 import { BuiltinMemoryProvider } from './memory/builtin-provider'
 import { appendMessage, loadSession } from './session-store'
-import type { StoredMessage } from './session-store'
-import { logToolCall } from './logger'
 import { VectorMemoryProvider } from './memory/vector-provider'
 import { FileMemoryProvider } from './memory/file-memory-provider'
-import { questionStore } from './question-store'
+import { evaluateToolCalls, generateId, extractResources } from './permission-gate'
+import { executeToolCalls } from './tool-executor'
 
 export type PermissionReply = 'allow' | 'deny' | 'always'
+
+import { AgentMode, modeToPermissionSet } from "./modes"
 
 export interface AgentConfig {
   sessionID: string
@@ -34,46 +35,15 @@ export interface AgentConfig {
   maxSteps?: number
   maxContextTokens?: number
   permissions?: PermissionSet
+  mode?: AgentMode
   onPermissionSave?: (rules: PermissionRule[]) => void
 }
 
 export type { AgentEvent } from './types'
 
 export const DEFAULT_SYSTEM = `You are OmniAgent, an AI assistant integrated into a desktop application.
-You have access to the following tools to help users:
-
-- read_file: Read file contents from the local filesystem
-- write_file: Write content to a file
-- edit_file: Replace exact text in a file
-- list_files: List directory contents
-- web_search: Search the internet for current information
-- grep: Search file contents using regex
-- glob: Find files matching a glob pattern
-- run_code: Execute Python code
-- bash: Execute shell commands
-
-When the user asks you to read, search, list, or modify files, use the appropriate tool.
-After getting tool results, provide a clear summary to the user.`
-
-function isCompleteJson(s: string): boolean {
-  try { JSON.parse(s); return true } catch { return false }
-}
-
-let permissionIdCounter = 0
-
-function generatePermissionId(): string {
-  return `perm-${Date.now().toString(36)}-${++permissionIdCounter}`
-}
-
-function extractResources(args: Record<string, unknown>): string[] {
-  const resources: string[] = []
-  const keys = ['path', 'file', 'url', 'command', 'dir', 'directory']
-  for (const key of keys) {
-    const value = args[key]
-    if (typeof value === 'string') resources.push(value)
-  }
-  return resources
-}
+Use the available tools to help users with their tasks.
+When you use a tool, wait for the result and provide a clear summary to the user.`
 
 export class Agent {
   private pendingPermissions = new Map<string, {
@@ -116,7 +86,7 @@ export class Agent {
     const ctx: ToolContext = {
       sessionID: config.sessionID,
       workspace: config.workspace,
-      mode: 'assistant',
+      mode: config.mode || 'assistant',
       agent: 'build',
       assistantMessageID: '',
       toolCallID: '',
@@ -138,7 +108,7 @@ export class Agent {
 
     // 从持久化会话恢复历史（如果 history 为空但有已保存消息）
     if (history.length === 0) {
-      const stored = loadSession(config.sessionID)
+      const stored = await loadSession(config.sessionID)
       if (stored && stored.messages.length > 0) {
         const restored: LLMMessage[] = []
         for (const m of stored.messages) {
@@ -162,7 +132,7 @@ export class Agent {
     }
 
     // 保存用户消息到持久化会话
-    appendMessage(config.sessionID, {
+    await appendMessage(config.sessionID, {
       role: 'user',
       content: userMessage,
       timestamp: new Date().toISOString(),
@@ -186,7 +156,7 @@ export class Agent {
       apiUrl: config.apiUrl,
       headers: config.headers,
       options: config.options,
-    })
+    } as any)
 
     const budget = new IterationBudget(config.maxSteps || 10)
 
@@ -195,72 +165,21 @@ export class Agent {
         yield { type: 'finish', reason: 'stopped' }
         return
       }
-      messages = repairMessageSequence(messages)
       messages = truncateToBudget(messages, config.maxContextTokens || 8000)
-      // 最终防线：清理孤儿 tool 消息（前面没有 assistant(tool_calls) 的 tool 消息）
-      const cleaned: LLMMessage[] = []
-      for (let i = 0; i < messages.length; i++) {
-        const msg = messages[i]
-        if (msg.role === 'tool') {
-          // 检查前面是否有对应的 assistant 带 tool_calls
-          let hasPreceding = false
-          for (let j = cleaned.length - 1; j >= 0; j--) {
-            const prev = cleaned[j]
-            if (prev.role === 'assistant' && prev.tool_calls?.length) {
-              hasPreceding = true
-              break
-            }
-            if (prev.role === 'user' || prev.role === 'system') break
-          }
-          if (!hasPreceding) {
-            // 孤儿 tool → 合并到前一条消息
-            if (cleaned.length > 0) {
-              const last = cleaned[cleaned.length - 1]
-              last.content += `\n\n[Tool result: ${(msg.content || '').slice(0, 500)}]`
-            }
-            continue
-          }
-        }
-        cleaned.push(msg)
-      }
-      messages = cleaned
-      // 确保所有 tool 消息都有 tool_call_id（LLM API 严格要求）
-      // 按顺序遍历 tool 消息，与最近的 assistant 的 tool_calls 按位置匹配
-      let toolCallIndex = 0
-      for (let i = 0; i < messages.length; i++) {
-        const msg = messages[i]
-        if (msg.role === 'assistant' && msg.tool_calls?.length) {
-          toolCallIndex = 0
-        } else if (msg.role === 'tool') {
-          if (!msg.tool_call_id) {
-            // 向前找最近的 assistant 消息的 tool_calls，按位置匹配
-            for (let j = i - 1; j >= 0; j--) {
-              const prev = messages[j]
-              if (prev.role === 'assistant' && prev.tool_calls?.length) {
-                const idx = Math.min(toolCallIndex, prev.tool_calls.length - 1)
-                msg.tool_call_id = prev.tool_calls[idx].id
-                toolCallIndex++
-                break
-              }
-            }
-          }
-        }
-      }
-      const stream = client.stream({ messages, tools: toolDefs, stream: true })
+      const stream = client.stream({ messages, tools: toolDefs })
       let currentText = ''
-      const pendingToolCalls: Map<string, { name: string; args: string; complete: boolean }> = new Map()
+      const pendingToolCalls: Array<{ id: string; name: string; arguments: string }> = []
 
       for await (const event of stream) {
         if (event.type === 'delta') {
-          const delta = event.delta || ''
-          currentText += delta
-          yield { type: 'content', text: delta }
+          currentText += event.delta
+          yield { type: 'content', text: event.delta }
         } else if (event.type === 'tool_call' && event.toolCall) {
-          const existing = pendingToolCalls.get(event.toolCall.id) || { name: '', args: '', complete: false }
-          if (event.toolCall.name) existing.name = event.toolCall.name
-          if (event.toolCall.arguments !== undefined) existing.args = event.toolCall.arguments
-          existing.complete = !!existing.name && existing.args !== undefined && isCompleteJson(existing.args)
-          pendingToolCalls.set(event.toolCall.id, existing)
+          pendingToolCalls.push({
+            id: event.toolCall.id,
+            name: event.toolCall.name,
+            arguments: event.toolCall.arguments,
+          })
         } else if (event.type === 'error') {
           yield { type: 'error', message: event.error?.message || 'LLM stream error' }
           return
@@ -269,12 +188,12 @@ export class Agent {
         }
       }
 
-      const toolCallsArray = Array.from(pendingToolCalls.entries())
-        .filter(([, v]) => v.complete)
-        .map(([id, v]) => ({
-          id,
+      const toolCallsArray = pendingToolCalls
+        .filter((tc) => tc.id && tc.name)
+        .map((tc) => ({
+          id: tc.id,
           type: 'function' as const,
-          function: { name: v.name, arguments: v.args },
+          function: { name: tc.name, arguments: tc.arguments },
         }))
 
       messages.push({
@@ -284,101 +203,61 @@ export class Agent {
       })
 
       if (toolCallsArray.length === 0) {
-        // 持久化最终回复
         if (currentText) {
-          appendMessage(config.sessionID, {
+          await appendMessage(config.sessionID, {
             role: 'assistant',
             content: currentText,
             timestamp: new Date().toISOString(),
           })
         }
-        this.memoryManager.syncTurn(userMessage, currentText, config.sessionID).catch(() => {})
         yield { type: 'finish', reason: 'stop' }
         return
       }
 
-      // 权限门控：每个工具调用前独立检查，需要确认时顺序 yield permission_request 并暂停
+      // 权限门控 + 工具执行（拆分为独立模块维护）
+      const evaluations = evaluateToolCalls(toolCallsArray, this.registry, config.permissions)
       const approvedCalls: typeof toolCallsArray = []
       const results = new Map<string, ToolResult>()
 
-      for (const call of toolCallsArray) {
-        const def = this.registry.get(call.function.name)
-        let args: Record<string, unknown> = {}
-        try { args = JSON.parse(call.function.arguments) } catch { /* ignore */ }
-
-        if (config.permissions?.needsApproval(call.function.name, def?.permission)) {
-          const id = generatePermissionId()
-          const action = def?.permission || call.function.name
-          const toolCall: ToolCall = { id: call.id, name: call.function.name, input: args }
-
-          // 先注册 pending 再 yield，确保外部收到事件后立即 replyPermission 也能命中
+      for (const ev of evaluations) {
+        if (ev.needsApproval) {
+          const id = generateId()
           let resolvePermission!: (allow: boolean) => void
-          const allowedPromise = new Promise<boolean>((resolve) => {
-            resolvePermission = resolve
-          })
+          const allowedPromise = new Promise<boolean>((resolve) => { resolvePermission = resolve })
           this.pendingPermissions.set(id, {
             resolve: resolvePermission,
             onAlways: () => {
-              config.onPermissionSave?.([{ action, resource: '*', effect: 'allow' }])
+              config.onPermissionSave?.([{ action: ev.permissionAction, resource: '*', effect: 'allow' }])
             },
           })
 
           yield {
             type: 'permission_request',
             id,
-            action,
-            resources: extractResources(args),
-            toolCall,
+            action: ev.permissionAction,
+            resources: extractResources(ev.args),
+            toolCall: ev.toolCall,
           }
 
           const allowed = await allowedPromise
-
           if (!allowed) {
-            results.set(call.id, { success: false, error: `Permission denied: ${call.function.name}` })
+            results.set(ev.toolCall.id, { success: false, error: `Permission denied: ${ev.toolCall.name}` })
             continue
           }
         }
-
-        approvedCalls.push(call)
+        approvedCalls.push({ id: ev.toolCall.id, type: 'function' as const, function: { name: ev.toolCall.name, arguments: JSON.stringify(ev.args) } })
       }
 
-      // 已批准的工具并发执行
       for (const call of approvedCalls) {
-        let args: Record<string, unknown> = {}
-        try { args = JSON.parse(call.function.arguments) } catch { /* ignore */ }
-        yield { type: 'tool_start', id: call.id, name: call.function.name, args }
+        yield { type: 'tool_start', id: call.id, name: call.function.name, args: JSON.parse(call.function.arguments) }
       }
 
-      let toolResults: Array<{ call: typeof toolCallsArray[number]; result: ToolResult }> = []
-      try {
-        toolResults = await Promise.all(
-          approvedCalls.map(async (call) => {
-            let args: Record<string, unknown> = {}
-            try { args = JSON.parse(call.function.arguments) } catch { /* ignore */ }
-            const startTime = Date.now()
-            const result = await this.registry.execute(call.function.name, args, ctx)
-            try {
-              logToolCall({
-                timestamp: new Date().toISOString(),
-                toolName: call.function.name, args, result,
-                durationMs: Date.now() - startTime,
-                provider: config.provider, model: config.model,
-              })
-            } catch { /* 日志失败不影响执行 */ }
-            return { call, result }
-          })
-        )
-      } catch (e) {
-        // 工具执行异常：为所有已批准的调用设置错误结果
-        for (const call of approvedCalls) {
-          if (!results.has(call.id)) {
-            results.set(call.id, { success: false, error: `工具执行异常: ${e instanceof Error ? e.message : String(e)}` })
-          }
-        }
-      }
-
-      for (const { call, result } of toolResults) {
-        results.set(call.id, result)
+      const executorResult = await executeToolCalls(approvedCalls, this.registry, ctx, {
+        provider: config.provider,
+        model: config.model,
+      })
+      for (const [id, result] of executorResult.results) {
+        results.set(id, result)
       }
 
       // 确保每个 tool_calls 都有对应的 tool 消息
@@ -409,7 +288,7 @@ export class Agent {
 
       // 持久化此回合的 assistant 和 tool 消息
       if (currentText) {
-        appendMessage(config.sessionID, {
+        await appendMessage(config.sessionID, {
           role: 'assistant',
           content: currentText,
           timestamp: new Date().toISOString(),
@@ -417,7 +296,7 @@ export class Agent {
       }
       for (const call of toolCallsArray) {
         const result = results.get(call.id)!
-        appendMessage(config.sessionID, {
+        await appendMessage(config.sessionID, {
           role: 'tool',
           content: result.output || result.error || '',
           timestamp: new Date().toISOString(),

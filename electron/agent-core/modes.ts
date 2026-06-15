@@ -1,7 +1,4 @@
-/**
- * Agent 模式管理 — 4 种运行模式控制行为、权限、迭代次数
- * 替代 Python modes.py
- */
+import { PermissionSet, type PermissionRule } from "./permission"
 
 export type AgentMode = "assistant" | "expert" | "action" | "safe"
 
@@ -11,9 +8,8 @@ export interface ModeConfig {
   description: string
   maxIterations: number
   systemPromptSuffix: string
-  allowFileWrite: boolean
-  allowSystemCommand: boolean
-  toolBlacklist: string[]
+  /** 该模式对应的权限规则（叠加在默认权限之上） */
+  permissionRules: PermissionRule[]
 }
 
 const modeConfigs: Record<AgentMode, ModeConfig> = {
@@ -23,9 +19,10 @@ const modeConfigs: Record<AgentMode, ModeConfig> = {
     description: "日常问答、写作、分析",
     maxIterations: 10,
     systemPromptSuffix: "You are a helpful assistant. Answer questions clearly and concisely.",
-    allowFileWrite: true,
-    allowSystemCommand: false,
-    toolBlacklist: ["bash", "run_code"],
+    permissionRules: [
+      { action: "bash", resource: "*", effect: "deny" },
+      { action: "code_exec", resource: "*", effect: "deny" },
+    ],
   },
   expert: {
     id: "expert",
@@ -33,9 +30,9 @@ const modeConfigs: Record<AgentMode, ModeConfig> = {
     description: "深度研究、数据分析",
     maxIterations: 25,
     systemPromptSuffix: "You are a domain expert. Provide thorough, detailed analysis.",
-    allowFileWrite: true,
-    allowSystemCommand: false,
-    toolBlacklist: ["bash"],
+    permissionRules: [
+      { action: "bash", resource: "*", effect: "deny" },
+    ],
   },
   action: {
     id: "action",
@@ -43,9 +40,7 @@ const modeConfigs: Record<AgentMode, ModeConfig> = {
     description: "自动化任务、批量处理",
     maxIterations: 50,
     systemPromptSuffix: "You are an automation agent. Execute tasks efficiently.",
-    allowFileWrite: true,
-    allowSystemCommand: true,
-    toolBlacklist: [],
+    permissionRules: [],
   },
   safe: {
     id: "safe",
@@ -53,9 +48,12 @@ const modeConfigs: Record<AgentMode, ModeConfig> = {
     description: "只读探索",
     maxIterations: 5,
     systemPromptSuffix: "You are in read-only mode. You can read and search but cannot modify anything.",
-    allowFileWrite: false,
-    allowSystemCommand: false,
-    toolBlacklist: ["write_file", "edit_file", "bash", "run_code"],
+    permissionRules: [
+      { action: "write_file", resource: "*", effect: "deny" },
+      { action: "edit_file", resource: "*", effect: "deny" },
+      { action: "bash", resource: "*", effect: "deny" },
+      { action: "code_exec", resource: "*", effect: "deny" },
+    ],
   },
 }
 
@@ -72,8 +70,9 @@ export function modeSystemPrompt(mode: AgentMode, basePrompt: string): string {
   return `${basePrompt}\n\n[MODE: ${config.label}]\n${config.systemPromptSuffix}`
 }
 
-export function modeFilterTools(mode: AgentMode, toolNames: string[]): string[] {
+/** 将模式配置转为 PermissionSet（叠加在 base 之上） */
+export function modeToPermissionSet(mode: AgentMode, base: PermissionSet): PermissionSet {
   const config = getModeConfig(mode)
-  const blacklist = new Set(config.toolBlacklist)
-  return toolNames.filter((t) => !blacklist.has(t))
+  const allRules = [...config.permissionRules, ...base.getAll()]
+  return new PermissionSet(allRules)
 }

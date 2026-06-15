@@ -3,27 +3,35 @@
  * 支持实时事件流（用于权限请求/问题等交互式流程）
  */
 
+import { Effect } from "effect"
 import { ipcMain, BrowserWindow } from "electron"
-import { createDefaultRegistry, defaultPermissions, PermissionSet, Agent } from "./index"
+import { createDefaultRegistry, defaultPermissions, PermissionSet, Agent, AppLayer, getConfigForRenderer, resolveRuntimeConfig, saveGlobalConfig } from "./index"
 import type { AgentConfig, AgentEvent, PermissionReply } from "./agent"
 import { DEFAULT_SYSTEM } from "./agent"
+import { modeToPermissionSet } from "./modes"
 import { loadWorkspacePermissions, saveWorkspacePermission } from "./permission-store"
 import { buildInstructionSystemPrompt } from "./instruction-context"
 import { matchSkillCommand, buildSkillInvocationMessage } from "./skill/skill-commands"
 import { scanSkills, loadSkill } from "./skill/skill-loader"
 import { cronScheduler } from "./cron-scheduler"
 import { setupDefaultHooks } from "./hooks-setup"
+import { initDatabase } from "./database"
 import { listProjects, createProject, deleteProjectById, createSession, listSessions, getSessionMessages, deleteSessionById, searchMessages } from "./session-manager"
 
 const registry = createDefaultRegistry()
 
-/** 合并默认权限与已保存的持久化规则 */
-function buildPermissions(workspace: string, configOverride?: PermissionSet): PermissionSet {
-  const savedRules = loadWorkspacePermissions(workspace)
-  if (savedRules.length === 0 && !configOverride) return defaultPermissions
+/** 合并默认权限 + 模式限制 + 已保存的持久化规则 */
+async function buildPermissions(workspace: string, mode?: string, configOverride?: PermissionSet): Promise<PermissionSet> {
+  const savedRules = await loadWorkspacePermissions(workspace)
 
-  // 合并：默认规则在后（优先级低于持久化），持久化规则附加
-  const allRules = [...savedRules, ...defaultPermissions.getAll()]
+  let base = defaultPermissions
+  if (mode) {
+    base = modeToPermissionSet(mode as any, defaultPermissions)
+  }
+
+  if (savedRules.length === 0 && !configOverride) return base
+
+  const allRules = [...savedRules, ...(configOverride?.getAll() || []), ...base.getAll()]
   return new PermissionSet(allRules)
 }
 
@@ -57,6 +65,13 @@ function processSkillCommand(message: string): { processed: string; skillLoaded:
 }
 
 export function registerAgentIPCHandlers(): void {
+  // 后台异步初始化（不影响 IPC handler 注册）
+  Effect.runPromise(
+    Effect.gen(function* () {
+      yield* Effect.promise(() => initDatabase())
+    }).pipe(Effect.provide(AppLayer)),
+  ).catch((err) => console.error("Agent 初始化失败:", err))
+
   // 注册默认钩子
   setupDefaultHooks()
   // 启动 Cron 调度器
@@ -71,6 +86,14 @@ export function registerAgentIPCHandlers(): void {
   ipcMain.handle("ts:getSessionMessages", (_, sessionId: string) => getSessionMessages(sessionId))
   ipcMain.handle("ts:deleteSession", (_, sessionId: string) => deleteSessionById(sessionId))
   ipcMain.handle("ts:searchMessages", (_, query: string) => searchMessages(query))
+
+  // ─── 配置系统 ─────────────────────────────────────────────
+  ipcMain.handle("config:get", (_, workspace?: string) => {
+    return getConfigForRenderer(workspace)
+  })
+  ipcMain.handle("config:save", (_, config: Record<string, unknown>) => {
+    saveGlobalConfig(config)
+  })
 
   // 列出所有可用 Skill
   ipcMain.handle("skill:listSkills", () => {
@@ -121,14 +144,31 @@ export function registerAgentIPCHandlers(): void {
   ipcMain.handle("agent:startStream", async (event, sessionId: string, message: string, config: AgentConfig) => {
     const channel = generateChannelId()
     const workspace = config.workspace || process.cwd()
+
+    // 合并文件/env 配置：IPC 配置优先，文件/env 配置填充空缺
+    const mergedConfig = resolveRuntimeConfig({
+      provider: config.provider,
+      model: config.model,
+      apiKey: config.apiKey,
+      apiUrl: config.apiUrl,
+      headers: config.headers,
+      options: config.options,
+      mode: config.mode,
+      workspace,
+    })
+    config.apiKey = mergedConfig.apiKey
+    config.apiUrl = mergedConfig.apiUrl
+    config.provider = mergedConfig.provider
+    config.model = mergedConfig.model
+
     const agent = new Agent(registry, config.apiKey, config.apiUrl, workspace)
 
     // 处理 slash 命令
     const { processed } = processSkillCommand(message)
     const effectiveMessage = processed
 
-    // 构建权限：持久化规则 + 调用方权限覆盖
-    const permissions = config.permissions || buildPermissions(workspace)
+    // 构建权限：持久化规则 + 模式限制 + 调用方权限覆盖
+    const permissions = config.permissions || (await buildPermissions(workspace, config.mode))
 
     // 构建系统提示：基础 prompt + 指令上下文
     const instructions = buildInstructionSystemPrompt(workspace)
@@ -180,7 +220,7 @@ export function registerAgentIPCHandlers(): void {
     const workspace = config.workspace || process.cwd()
     const agent = new Agent(registry, config.apiKey, config.apiUrl, workspace)
     const { processed } = processSkillCommand(message)
-    const permissions = config.permissions || buildPermissions(workspace)
+    const permissions = config.permissions || (await buildPermissions(workspace, config.mode))
     const instructions = buildInstructionSystemPrompt(workspace)
     const baseSystem = config.systemPrompt || DEFAULT_SYSTEM
     const systemPrompt = instructions

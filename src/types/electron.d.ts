@@ -26,6 +26,14 @@ export type AgentEvent =
   | { type: "finish"; reason: string }
   | { type: "thinking"; text: string };
 
+export interface ConfigInfo {
+  provider: string;
+  model: string;
+  apiUrl: string;
+  mode: string;
+  apiKeyFrom: "env" | "file" | "none";
+}
+
 export interface ElectronAPI {
   minimizeWindow: () => void;
   maximizeWindow: () => void;
@@ -42,6 +50,12 @@ export interface ElectronAPI {
   decryptApiKey: (encrypted: string) => Promise<string>;
   isEncryptionAvailable: () => Promise<boolean>;
   platform: string;
+
+  // 配置系统（JSON 文件 + 环境变量）
+  config: {
+    get: (workspace?: string) => Promise<ConfigInfo>;
+    save: (config: Record<string, unknown>) => Promise<void>;
+  };
 
   // TS Core 会话/项目管理
   ts: {

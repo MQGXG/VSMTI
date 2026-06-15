@@ -3,7 +3,7 @@
  * L1: 裁剪中间消息 | L2: 旧 tool_result 占位化 | L3: LLM 摘要
  */
 
-import { LLMMessage } from "./llm-client"
+import { LLMMessage } from "./llm-sdk"
 import { estimateTokens } from "./message-utils"
 
 export type CompactLevel = "none" | "l1_snip" | "l2_micro" | "l3_auto"

@@ -387,8 +387,9 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         return;
       }
 
-      // Path 2: 有 API Key → TS Agent Core + LLM Function Calling（实时流式，支持权限确认）
-      if (apiKey) {
+      // Path 2: TS Agent Core（实时流式，支持权限确认）
+      // 即使 renderer 无 API Key，主进程也会从文件/环境变量配置中 fallback
+      if (apiKey || provider) {
         const workspace = window.electronAPI.platform === "win32" ? "C:\\" : "/";
         const config = {
           sessionID: sessionId || getOfflineSessionId(),
@@ -407,7 +408,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
           if (event.type === "content") {
             setMessages((prev) => {
               const last = prev[prev.length - 1];
-              if (last?.role === "assistant" && last.content !== "") {
+              if (last?.role === "assistant") {
                 return [...prev.slice(0, -1), { ...last, content: last.content + event.text }];
               }
               return [...prev, { id: crypto.randomUUID(), role: "assistant", content: event.text }];
@@ -556,6 +557,12 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
   const removeUploadedFile = (index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
+
+  const handleStop = useCallback(() => {
+    setIsLoading(false);
+    const ch = currentChannelRef.current;
+    if (ch) window.electronAPI.agent.stopStream(ch);
+  }, []);
 
   const handleToolResult = useCallback((toolName: string, result: ToolResult) => {
     const icon = toolName === "read_file" ? "📄" : toolName === "web_search" ? "🔍" : toolName === "write_file" ? "✏️" : "🔧"
@@ -726,6 +733,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
           disabled={isLoading || (backendRunning && !sessionId)}
           onInput={setInput}
           onSend={sendMessage}
+          onStop={handleStop}
           onToolResult={handleToolResult}
         />
         <ModelSelector

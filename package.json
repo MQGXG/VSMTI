@@ -15,15 +15,23 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.84",
+    "@ai-sdk/openai": "^3.0.71",
+    "@ai-sdk/openai-compatible": "^2.0.50",
+    "ai": "^6.0.205",
+    "effect": "^3.21.3",
     "lucide-react": "^0.400.0",
     "playwright": "^1.60.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "sql.js": "^1.14.1",
+    "vscode-languageserver-protocol": "^3.18.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@types/sql.js": "^1.4.11",
     "@vitejs/plugin-react": "^4.3.1",
     "@vitest/ui": "^4.1.8",
     "autoprefixer": "^10.4.19",

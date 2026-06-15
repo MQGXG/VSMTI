@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Sliders, Keyboard, Cpu, Info, Server, Layers, Sun, Moon, Monitor } from "lucide-react";
+import { X, Sliders, Keyboard, Cpu, Info, Server, Layers, Sun, Moon, Monitor, FileText, Terminal } from "lucide-react";
 import type { Provider } from "./types";
 import { ProviderConfigPanel } from "./ProviderConfigPanel";
 import { ModelManager } from "./ModelManager";
@@ -124,6 +124,20 @@ async function loadProviders(): Promise<Provider[]> {
 async function saveProviders(list: Provider[]) {
   const encrypted = await encryptProviders(list);
   localStorage.setItem("providers_v2", JSON.stringify(encrypted));
+
+  // 同步保存到 JSON 配置文件
+  try {
+    const active = list.find((p) => p.enabled && p.models.some((m) => m.enabled));
+    const defaultModel = active?.models.find((m) => m.enabled);
+    if (active && defaultModel) {
+      await window.electronAPI.config.save({
+        provider: active.id.startsWith("custom-") ? "custom" : active.id,
+        model: defaultModel.id,
+        apiKey: active.apiKey || "",
+        apiUrl: active.baseUrl || "",
+      });
+    }
+  } catch { /* JSON 文件保存失败不影响主流程 */ }
 }
 
 function ThemeSelector() {
@@ -172,6 +186,32 @@ function loadSettings(): Record<string, any> {
 
 function saveSettings(s: Record<string, any>) {
   localStorage.setItem("settings", JSON.stringify(s))
+}
+
+/** 配置文件/环境变量来源指示器 */
+function ConfigSourceIndicator() {
+  const [info, setInfo] = useState<{ apiKeyFrom: string; show: boolean }>({ apiKeyFrom: "none", show: false });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const cfg = await window.electronAPI.config.get();
+        if (cfg.apiKeyFrom !== "none") setInfo({ apiKeyFrom: cfg.apiKeyFrom, show: true });
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  if (!info.show) return null;
+
+  return (
+    <div className="p-3 rounded-xl glass border border-emerald-500/20 bg-emerald-500/5 flex items-center gap-2">
+      {info.apiKeyFrom === "env" ? <Terminal className="w-4 h-4 text-emerald-500" /> : <FileText className="w-4 h-4 text-emerald-500" />}
+      <div className="text-xs text-neutral-400">
+        API Key 来自 <span className="text-emerald-400 font-medium">{info.apiKeyFrom === "env" ? "环境变量" : "配置文件"}</span>
+        ，无需在界面中填写
+      </div>
+    </div>
+  );
 }
 
 export function SettingsDialog({ open, onClose }: Props) {
@@ -340,7 +380,10 @@ export function SettingsDialog({ open, onClose }: Props) {
             </div>
           )}
           {tab === "providers" && (
-            <ProviderConfigPanel providers={providers} onChange={handleProvidersChange} />
+            <div className="max-w-2xl space-y-4">
+              <ConfigSourceIndicator />
+              <ProviderConfigPanel providers={providers} onChange={handleProvidersChange} />
+            </div>
           )}
           {tab === "models" && (
             <ModelManager providers={providers} onChange={handleProvidersChange} />
@@ -393,7 +436,18 @@ export async function getProviderById(providerId: string): Promise<{ apiKey: str
   for (const p of list) {
     const pid = p.id.startsWith("custom-") ? "custom" : p.id;
     if (pid === providerId && p.enabled) {
-      return { apiKey: p.apiKey, apiUrl: p.baseUrl, headers: p.headers, options: p.options };
+      // 如果 localStorage 有 API Key 则直接返回
+      if (p.apiKey) {
+        return { apiKey: p.apiKey, apiUrl: p.baseUrl, headers: p.headers, options: p.options };
+      }
+      // 无 Key → 尝试从文件/环境变量配置获取
+      try {
+        const fileConfig = await window.electronAPI.config.get();
+        if (fileConfig.apiKeyFrom !== "none") {
+          return { apiKey: "", apiUrl: p.baseUrl || fileConfig.apiUrl, headers: p.headers, options: p.options };
+        }
+      } catch { /* ignore */ }
+      return { apiKey: "", apiUrl: p.baseUrl, headers: p.headers, options: p.options };
     }
   }
   return null;

@@ -71,8 +71,8 @@ export class PermissionSet {
   }
 }
 
-/** 默认权限：只读操作允许，写操作询问 */
-export const defaultPermissions = new PermissionSet([
+/** 基础默认权限：只读操作允许，写操作询问 */
+const basePermissionRules: PermissionRule[] = [
   { action: "read_file", resource: "*", effect: "allow" },
   { action: "list_files", resource: "*", effect: "allow" },
   { action: "glob", resource: "*", effect: "allow" },
@@ -82,4 +82,16 @@ export const defaultPermissions = new PermissionSet([
   { action: "edit_file", resource: "*", effect: "ask" },
   { action: "code_exec", resource: "*", effect: "ask" },
   { action: "bash", resource: "*", effect: "ask" },
-])
+]
+
+/** 默认权限（assistant 模式） */
+export const defaultPermissions = new PermissionSet(basePermissionRules)
+
+/** 从基础规则 + 模式派生权限集 */
+export function permissionsForMode(
+  mode: string,
+  modeRules: PermissionRule[],
+): PermissionSet {
+  const allRules = [...modeRules, ...basePermissionRules]
+  return new PermissionSet(allRules)
+}

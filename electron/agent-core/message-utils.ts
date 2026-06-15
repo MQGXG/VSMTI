@@ -1,4 +1,4 @@
-import { LLMMessage } from './llm-client'
+import { LLMMessage } from './llm-sdk'
 
 export function repairMessageSequence(messages: LLMMessage[]): LLMMessage[] {
   const repaired: LLMMessage[] = []

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Send } from "lucide-react";
+import { Square, Send } from "lucide-react";
 import { ToolPalette } from "./ToolPalette";
 import type { ToolResult } from "@/types/electron";
 
@@ -9,6 +9,7 @@ interface Props {
   disabled?: boolean;
   onInput: (value: string) => void;
   onSend: () => void;
+  onStop?: () => void;
   onToolResult?: (toolName: string, result: ToolResult) => void;
 }
 
@@ -18,7 +19,7 @@ interface SkillInfo {
   category: string | null;
 }
 
-export function ChatInput({ input, isLoading, disabled, onInput, onSend, onToolResult }: Props) {
+export function ChatInput({ input, isLoading, disabled, onInput, onSend, onStop, onToolResult }: Props) {
   const [skills, setSkills] = useState<SkillInfo[]>([]);
   const [showSkills, setShowSkills] = useState(false);
   const [filteredSkills, setFilteredSkills] = useState<SkillInfo[]>([]);
@@ -138,11 +139,11 @@ export function ChatInput({ input, isLoading, disabled, onInput, onSend, onToolR
         />
 
         <button
-          onClick={onSend}
-          disabled={!input.trim() || isLoading || disabled}
+          onClick={isLoading ? onStop : onSend}
+          disabled={!input.trim() && !isLoading || disabled}
           className="flex-shrink-0 w-9 h-9 rounded-xl btn-gradient text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed disabled:transform-none"
         >
-          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {isLoading ? <Square className="w-4 h-4" /> : <Send className="w-4 h-4" />}
         </button>
       </div>
     </div>

@@ -22,6 +22,12 @@ const electronAPI = {
 
   platform: process.platform,
 
+  // 配置系统（JSON 文件 + 环境变量）
+  config: {
+    get: (workspace?: string) => ipcRenderer.invoke("config:get", workspace),
+    save: (config: Record<string, unknown>) => ipcRenderer.invoke("config:save", config),
+  },
+
   // TS Core 会话/项目
   ts: {
     listProjects: () => ipcRenderer.invoke("ts:listProjects"),
