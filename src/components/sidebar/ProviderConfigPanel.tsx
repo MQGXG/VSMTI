@@ -207,7 +207,7 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
                 className="w-full bg-white/5 border border-glass-border rounded-lg px-3 py-2 text-sm text-neutral-200 outline-none focus:border-accent-500/40 transition-colors disabled:opacity-50"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs text-neutral-500">供应商名称 *</label>
                 <input
@@ -403,7 +403,7 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
               </div>
             </div>
             {provider.enabled && (
-              <div className="p-3 grid grid-cols-2 gap-2">
+              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {provider.models.slice(0, 4).map((model) => (
                   <div key={model.id} className="px-3 py-2 rounded-lg bg-white/5 text-xs text-neutral-300">{model.name}</div>
                 ))}

@@ -175,9 +175,9 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
           )}
         </div>
 
-        <span className="text-[10px] text-neutral-600">
-          {selectedModel.provider === "custom" ? "自定义 API" : selectedModel.provider === "ollama" ? "本地运行" : "云端 API"}
-        </span>
+      <span className="text-[10px] text-neutral-600 hidden sm:inline">
+        {selectedModel.provider === "custom" ? "自定义 API" : selectedModel.provider === "ollama" ? "本地运行" : "云端 API"}
+      </span>
       </div>
 
       <div className="flex items-center gap-1 glass rounded-lg border border-glass-border p-0.5">

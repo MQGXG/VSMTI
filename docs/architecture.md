@@ -53,7 +53,6 @@ D:\开发\VSMTI\
 ├── electron/                        # Electron 主进程 (TypeScript)
 │   ├── main.ts                      # 应用入口
 │   ├── preload.ts                   # IPC 安全桥接
-│   ├── python-manager.ts            # Python 子进程管理
 │   ├── agent-core/                  # TypeScript Agent Core ★ 核心
 │   │   ├── tool.ts                  # 工具定义工厂
 │   │   ├── registry.ts              # 工具注册表

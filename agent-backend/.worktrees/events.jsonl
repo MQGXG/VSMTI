@@ -1,4 +1,0 @@
-{"event": "worktree.created", "name": "test-lane", "task_id": "task_001", "ts": 1781228692.3478577}
-{"event": "worktree.enter", "name": "test-lane", "ts": 1781228692.353607}
-{"event": "worktree.closeout.keep", "name": "test-lane", "reason": "For review", "ts": 1781228692.4114327}
-{"event": "worktree.closeout.remove", "name": "test-lane", "reason": "Test cleanup", "ts": 1781228692.4470541}

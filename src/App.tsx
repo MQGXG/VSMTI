@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { TitleBar } from "./components/layout/TitleBar";
 import { ChatWindow } from "./components/chat/ChatWindow";
 import { Sidebar } from "./components/sidebar/Sidebar";
@@ -15,11 +15,32 @@ interface Project {
 
 export function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarAutoCollapsed, setSidebarAutoCollapsed] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProject] = useState("");
   const [activeSession, setActiveSession] = useState("");
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const prevWidthRef = useRef(window.innerWidth);
+
+  useEffect(() => {
+    const BREAKPOINT = 1024;
+    const handleResize = () => {
+      const width = window.innerWidth;
+      const prevWidth = prevWidthRef.current;
+      prevWidthRef.current = width;
+      if (width < BREAKPOINT && prevWidth >= BREAKPOINT) {
+        setSidebarOpen(false);
+        setSidebarAutoCollapsed(true);
+      } else if (width >= BREAKPOINT && prevWidth < BREAKPOINT && sidebarAutoCollapsed) {
+        setSidebarOpen(true);
+        setSidebarAutoCollapsed(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, [sidebarAutoCollapsed]);
 
   const loadProjects = useCallback(async () => {
     try {
@@ -230,7 +251,7 @@ export function App() {
         />
         <Sidebar
           isOpen={sidebarOpen}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          onToggle={() => { setSidebarOpen(!sidebarOpen); setSidebarAutoCollapsed(false); }}
           activeProject={activeProject}
           activeSession={activeSession}
           projects={projects}

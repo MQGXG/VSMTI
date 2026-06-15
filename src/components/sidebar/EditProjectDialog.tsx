@@ -71,7 +71,7 @@ export function EditProjectDialog({ project, open, onClose, onSave }: Props) {
 
         <div>
           <label className="block text-sm font-medium text-neutral-300 mb-2">颜色</label>
-          <div className="grid grid-cols-8 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
             {GRADIENTS.map((gradient) => (
               <button
                 key={gradient}

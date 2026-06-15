@@ -20,8 +20,8 @@ OmniAgent 是一个全能 AI 助手桌面应用，基于 **Electron + Python Fas
 ```
 ├── electron/              # Electron 主进程
 │   ├── main.ts            # 应用入口
-│   ├── python-manager.ts  # Python 后端进程管理
 │   ├── preload.ts         # 预加载脚本
+│   ├── agent-core/        # TypeScript Agent Core
 │   ├── managers/
 │   │   ├── window-manager.ts  # 窗口管理
 │   │   └── tray-manager.ts    # 托盘管理

@@ -42,22 +42,38 @@ npm run package:win
 ├── electron/               # Electron 主进程
 │   ├── main.ts             # 窗口管理、IPC、系统托盘
 │   ├── preload.ts          # 安全桥接
-│   └── python-manager.ts   # Python 子进程管理
+│   ├── agent-core/         # TypeScript Agent Core ★
+│   ├── ipc/
+│   ├── managers/           # 窗口/托盘管理
+│   └── utils/
 ├── src/                    # 渲染进程 (React)
 │   ├── App.tsx
 │   ├── components/
 │   │   ├── chat/           # 聊天相关
 │   │   ├── sidebar/        # 侧边栏
-│   │   └── layout/         # 布局组件
-│   └── styles/
+│   │   ├── layout/         # 布局组件
+│   │   └── ui/             # 通用 UI 组件
+│   ├── contexts/           # React Context
+│   ├── styles/             # 全局样式
+│   └── types/              # 类型定义
 ├── agent-backend/          # Python 后端
-│   └── app/
-│       ├── api/            # FastAPI 路由
-│       ├── core/           # Agent 核心
-│       └── tools/          # 工具集
+│   ├── app/
+│   │   ├── api/            # FastAPI 路由
+│   │   ├── core/           # Agent 核心
+│   │   ├── tools/          # 工具集
+│   │   └── prompts/        # 提示词
+│   ├── skills/             # Skill 定义
+│   └── requirements.txt
+├── docs/                   # 文档
+│   ├── api.md
+│   ├── architecture.md
+│   ├── deployment.md
+│   └── testing.md
+├── data/                   # 运行时数据 (SQLite + ChromaDB)
 ├── portable-python/        # 内置 Python 环境 (自动生成)
 ├── package.json
 ├── electron.vite.config.ts
+├── tailwind.config.js
 └── electron-builder.yml
 ```
 

@@ -220,7 +220,7 @@ export function Sidebar({
       )}
 
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
-        {sessions.map((session) => (
+        {[...sessions].sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime()).map((session) => (
           <div
             key={session.session_id}
             className={`group flex items-center rounded-lg text-sm transition-all duration-200 ${

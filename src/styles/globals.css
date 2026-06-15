@@ -10,6 +10,7 @@
     --warning: #fbbf24;
     --error: #f43f5e;
     --info: #22d3ee;
+    --transition-duration: 200ms;
   }
 
   * {
@@ -24,10 +25,21 @@
     color-scheme: dark;
   }
 
-  body {
+  html, body {
     margin: 0;
     padding: 0;
     overflow: hidden;
+  }
+
+  /* 主题平滑过渡 */
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition: background-color var(--transition-duration) ease,
+                color var(--transition-duration) ease,
+                border-color var(--transition-duration) ease,
+                box-shadow var(--transition-duration) ease !important;
   }
 }
 
@@ -244,4 +256,31 @@ html.dark .message-assistant {
   background: rgba(255, 255, 255, 0.04);
   color: #f1f5f9;
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 消息操作按钮 */
+.message-actions {
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.message-group:hover .message-actions {
+  opacity: 1;
+}
+
+/* 响应式消息宽度 */
+@media (max-width: 640px) {
+  .message-bubble {
+    max-width: 90% !important;
+  }
+  .message-user .message-bubble,
+  .message-assistant .message-bubble {
+    max-width: 92% !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .message-bubble {
+    max-width: 85% !important;
+  }
 }

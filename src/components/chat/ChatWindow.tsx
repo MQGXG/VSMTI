@@ -7,7 +7,7 @@ import type { ModelOption } from "./ModelSelector";
 import { ChatInput } from "./ChatInput";
 import { useChatStream } from "./useChatStream";
 import type { Message, AgentMode } from "./types";
-import { FileUp, X, GitBranch, Sparkles, Wrench } from "lucide-react";
+import { FileUp, X, GitBranch, Sparkles, Wrench, Copy, Check, Pencil, RefreshCw } from "lucide-react";
 import { PermissionDialog } from "./PermissionDialog";
 import { QuestionDialog } from "./QuestionDialog";
 import type { ToolResult } from "@/types/electron";
@@ -73,8 +73,12 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     request_id: string;
   } | null>(null);
   const [backendRunning, setBackendRunning] = useState(false);
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const editInputRef = useRef<HTMLTextAreaElement>(null);
   const dragCounter = useRef(0);
   const { streamChat } = useChatStream();
   const currentChannelRef = useRef<string | null>(null);
@@ -267,8 +271,8 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     };
   }, [handleDragEnter, handleDragLeave, handleDragOver, handleDrop]);
 
-  const sendMessage = useCallback(async () => {
-    const content = input.trim();
+  const sendMessage = useCallback(async (directContent?: string) => {
+    const content = (directContent ?? input).trim();
     if (!content || isLoading) return;
     setInput("");
 
@@ -491,6 +495,29 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     }
   }, [input, isLoading, sessionId, selectedModel, agentMode, messages, streamChat]);
 
+  const startEditing = useCallback((msgId: string, content: string) => {
+    setEditingMsgId(msgId);
+    setEditingContent(content);
+    setTimeout(() => editInputRef.current?.focus(), 50);
+  }, []);
+
+  const cancelEditing = useCallback(() => {
+    setEditingMsgId(null);
+    setEditingContent("");
+  }, []);
+
+  const saveAndResend = useCallback(() => {
+    const trimmed = editingContent.trim();
+    if (!trimmed || !editingMsgId) return;
+    setMessages((prev) => prev.map((m) => m.id === editingMsgId ? { ...m, content: trimmed } : m));
+    setEditingMsgId(null);
+    sendMessage(trimmed);
+  }, [editingContent, editingMsgId, sendMessage]);
+
+  const handleRetry = useCallback((_msgId: string, content: string) => {
+    sendMessage(content);
+  }, [sendMessage]);
+
   const handleQuestionAnswer = useCallback(async (answer: string) => {
     const req = questionReq;
     if (!req) return;
@@ -560,6 +587,14 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleCopyMessage = useCallback(async (msgId: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMsgId(msgId);
+      setTimeout(() => setCopiedMsgId(null), 2000);
+    } catch { /* ignore */ }
+  }, []);
+
   const handleStop = useCallback(() => {
     setIsLoading(false);
     const ch = currentChannelRef.current;
@@ -592,68 +627,142 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl mx-auto w-full lg:px-6">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center space-y-3">
+            <div className="text-center space-y-5">
               <div className="flex items-center justify-center gap-2">
                 <Sparkles className="w-6 h-6 text-accent-400" />
                 <h1 className="text-3xl font-light tracking-tight gradient-text">OmniAgent</h1>
               </div>
               {!backendRunning ? (
-                <>
-                  <p className="text-neutral-500 text-sm">Core 模式：配置 API Key 后即可 AI 对话</p>
-                  <p className="text-xs text-neutral-600">TypeScript Agent Core 驱动，所有功能可用</p>
-                </>
+                <div className="space-y-3">
+                  <p className="text-neutral-500 text-sm">Core 模式 · TypeScript Agent Core 驱动</p>
+                  <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">配置文件 API Key</span>
+                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">或环境变量</span>
+                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">即可对话</span>
+                  </div>
+                  <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-[10px] text-neutral-600">
+                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">Ctrl+Shift+A</kbd> 全局唤出</span>
+                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">/</kbd> 命令菜单</span>
+                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">拖拽文件</kbd> 上传分析</span>
+                  </div>
+                </div>
               ) : !sessionId ? (
-                <>
-                  <p className="text-neutral-500 text-sm">点击下方 🔧 按钮直接使用工具</p>
-                  <p className="text-xs text-neutral-600">无需 Python 后端，读文件、搜网络、查内容</p>
-                </>
+                <div className="space-y-3">
+                  <p className="text-neutral-500 text-sm">工具模式 · 直接执行操作</p>
+                  <div className="flex items-center justify-center gap-2 text-xs">
+                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">读取文件</span>
+                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">搜索网络</span>
+                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">运行代码</span>
+                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">搜索内容</span>
+                  </div>
+                </div>
               ) : (
-                <>
+                <div className="space-y-3">
                   <p className="text-neutral-500 text-sm">全能 AI 助手，有什么可以帮你？</p>
-                  <p className="text-xs text-neutral-600">拖拽文件到窗口让 Agent 分析 · 也可用 🔧 工具面板</p>
-                </>
+                  <div className="flex items-center justify-center gap-2 text-xs">
+                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">直接输入提问</span>
+                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">拖拽文件分析</span>
+                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">切换 Agent 模式</span>
+                  </div>
+                  <div className="pt-1 flex items-center justify-center gap-3 text-[10px] text-neutral-600">
+                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">Enter</kbd> 发送</span>
+                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">Shift+Enter</kbd> 换行</span>
+                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">/</kbd> 命令</span>
+                  </div>
+                </div>
               )}
             </div>
           </div>
         )}
 
-        {messages.map((msg, idx) => (
-          <div key={msg.id} className="group mb-6 relative animate-fade-in-up">
+          {messages.map((msg, idx) => {
+          const isEditingThis = editingMsgId === msg.id;
+          return (
+          <div key={msg.id} className="group mb-6 relative animate-fade-in-up message-group">
             <div className={`flex w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed select-text ${
+              <div className={`message-bubble max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed select-text ${
                 msg.role === "user"
                   ? "message-user"
                   : "message-assistant"
               }`}>
-                {msg.content ? (
-                  msg.role === "assistant" ? (
-                    <MarkdownRenderer content={msg.content} />
-                  ) : (
-                    <span className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</span>
-                  )
+                {isEditingThis ? (
+                  <div className="space-y-2">
+                    <textarea
+                      ref={editInputRef}
+                      value={editingContent}
+                      onChange={(e) => setEditingContent(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveAndResend(); } if (e.key === "Escape") cancelEditing(); }}
+                      className="w-full bg-transparent text-sm text-gray-900 dark:text-neutral-200 outline-none resize-none leading-relaxed"
+                      rows={Math.max(2, editingContent.split("\n").length)}
+                    />
+                    <div className="flex items-center gap-2 justify-end">
+                      <button onClick={cancelEditing} className="px-2.5 py-1 rounded-md text-[10px] text-neutral-400 hover:text-neutral-200 hover:bg-white/10 transition-colors">取消</button>
+                      <button onClick={saveAndResend} className="px-2.5 py-1 rounded-md text-[10px] btn-gradient text-white">保存并发送</button>
+                    </div>
+                  </div>
                 ) : (
-                  <span className="text-neutral-500 italic">思考中...</span>
+                  msg.content ? (
+                    msg.role === "assistant" ? (
+                      <MarkdownRenderer content={msg.content} />
+                    ) : (
+                      <span className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</span>
+                    )
+                  ) : (
+                    <span className="text-neutral-500 italic">思考中...</span>
+                  )
                 )}
               </div>
             </div>
             {msg.toolCalls?.map((tc, i) => <ToolCallView key={i} info={tc} />)}
 
-            {msg.role === "assistant" && msg.content && (
-              <div className="absolute -left-8 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {!isEditingThis && (msg.role === "assistant" || msg.role === "user") && msg.content && (
+              <div className={`message-actions absolute ${msg.role === "user" ? "-left-10" : "-right-10"} top-2 flex gap-1`}>
                 <button
-                  onClick={() => handleFork(msg.dbId)}
-                  className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-emerald-400 transition-all"
-                  title="从此处分叉新会话"
+                  onClick={() => handleCopyMessage(msg.id, msg.content)}
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-500 hover:text-accent-400 transition-all"
+                  title="复制消息"
                 >
-                  <GitBranch className="w-3.5 h-3.5" />
+                  {copiedMsgId === msg.id ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
                 </button>
+                {msg.role === "user" && (
+                  <>
+                    <button
+                      onClick={() => startEditing(msg.id, msg.content)}
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-500 hover:text-accent-400 transition-all"
+                      title="编辑消息"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleRetry(msg.id, msg.content)}
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-500 hover:text-emerald-400 transition-all"
+                      title="重新发送"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
+                {msg.role === "assistant" && (
+                  <button
+                    onClick={() => handleFork(msg.dbId)}
+                    className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-500 hover:text-emerald-400 transition-all"
+                    title="从此处分叉新会话"
+                  >
+                    <GitBranch className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )}
           </div>
-        ))}
+        );
+      })}
 
         {isLoading && (() => {
           const settings = getSettings();
@@ -708,7 +817,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         />
       )}
 
-      <div className="border-t border-glass-border p-4 max-w-3xl mx-auto w-full">
+      <div className="border-t border-glass-border p-3 sm:p-4 max-w-3xl mx-auto w-full">
         {uploadedFiles.length > 0 && (
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             {uploadedFiles.map((file, index) => (

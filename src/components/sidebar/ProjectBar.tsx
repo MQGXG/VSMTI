@@ -1,4 +1,4 @@
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, FolderOpen, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 interface Project {
@@ -91,22 +91,55 @@ export function ProjectBar({
         const isActive = activeProject === project.project_id;
         const gradient = getGradient(index);
         return (
-          <button
-            key={project.project_id}
-            onClick={() => onProjectChange(project.project_id)}
-            onContextMenu={(e) => handleContextMenu(e, project, index)}
-            title={`${project.name}\n${project.workspace_path}`}
-            className={`relative w-10 h-10 rounded-xl flex items-center justify-center text-white font-semibold text-sm shadow-sm transition-all duration-200 bg-gradient-br ${gradient} ${
-              isActive
-                ? "ring-2 ring-accent-400/50 ring-offset-2 ring-offset-surface-950 scale-105 glow-sm"
-                : "hover:scale-105 opacity-80 hover:opacity-100 hover:shadow-lg"
-            }`}
-          >
-            {getInitials(project.name)}
-            {isActive && (
-              <span className="absolute -right-1 -top-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-surface-950 animate-pulse-glow" />
-            )}
-          </button>
+          <div key={project.project_id} className="relative group">
+            <button
+              onClick={() => onProjectChange(project.project_id)}
+              onContextMenu={(e) => handleContextMenu(e, project, index)}
+              className={`relative w-10 h-10 rounded-xl flex items-center justify-center text-white font-semibold text-sm shadow-sm transition-all duration-200 bg-gradient-br ${gradient} ${
+                isActive
+                  ? "ring-2 ring-accent-400/50 ring-offset-2 ring-offset-surface-950 scale-105 glow-sm"
+                  : "hover:scale-105 opacity-80 hover:opacity-100 hover:shadow-lg"
+              }`}
+            >
+              {getInitials(project.name)}
+              {isActive && (
+                <span className="absolute -right-1 -top-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-surface-950 animate-pulse-glow" />
+              )}
+            </button>
+
+            {/* 悬浮预览卡片 */}
+            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-[-4px] group-hover:translate-x-0">
+              <div className="glass-heavy rounded-xl shadow-2xl border border-glass-border p-3 w-56">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold bg-gradient-br ${gradient} shrink-0`}>
+                    {getInitials(project.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-neutral-200 truncate">{project.name}</div>
+                    {isActive && <span className="text-[10px] text-emerald-400">当前项目</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-neutral-500 truncate">
+                  <FolderOpen className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{project.workspace_path}</span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-glass-border flex gap-2 pointer-events-auto">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onEditProject(project); }}
+                    className="flex-1 px-2 py-1 rounded-md text-[10px] text-neutral-400 hover:text-neutral-200 hover:bg-white/10 transition-colors"
+                  >
+                    编辑
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDeleteProject(project.project_id); }}
+                    className="flex-1 px-2 py-1 rounded-md text-[10px] text-red-400 hover:text-red-300 hover:bg-white/10 transition-colors"
+                  >
+                    删除
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         );
       })}
 
