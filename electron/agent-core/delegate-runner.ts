@@ -98,7 +98,7 @@ Your task: ${task}`,
       { role: "user", content: task },
     ]
 
-    const toolDefs = registry.materialize(childConfig.permissions).definitions
+    const toolSet = registry.materialize(childConfig.permissions).definitions
     const client = createLLMClient({
       provider: (config.provider as any) || "openai",
       model: config.model,
@@ -112,7 +112,7 @@ Your task: ${task}`,
     let finalText = ""
 
     while (budget.consume()) {
-      const stream = client.stream({ messages, tools: toolDefs })
+      const stream = client.stream({ messages, tools: toolSet })
       let currentText = ""
       const pendingToolCalls: Array<{ id: string; name: string; arguments: string }> = []
 
@@ -145,8 +145,15 @@ Your task: ${task}`,
 
       messages.push({
         role: "assistant",
-        content: currentText,
-        tool_calls: toolCallsArray,
+        content: [
+          { type: "text", text: currentText },
+          ...toolCallsArray.map((tc) => ({
+            type: "tool-call" as const,
+            toolCallId: tc.id,
+            toolName: tc.function.name,
+            args: JSON.parse(tc.function.arguments),
+          })),
+        ],
       })
 
       if (currentText) finalText = currentText
@@ -167,9 +174,10 @@ Your task: ${task}`,
         let args: Record<string, unknown> = {}
         try { args = JSON.parse(call.function.arguments) } catch { /* ignore */ }
         const result = await registry.execute(call.function.name, args, ctx)
+        const text = result.output || result.error || ""
         messages.push({
           role: "tool",
-          content: result.output || result.error || "",
+          content: [{ type: "tool-result" as const, toolCallId: call.id, toolName: call.function.name, output: { type: "text" as const, value: text } }],
           tool_call_id: call.id,
         })
       }

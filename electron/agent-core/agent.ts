@@ -8,7 +8,7 @@ import { ToolContext, ToolCall, ToolResult } from './tool'
 import { AgentEvent } from './types'
 import { IterationBudget } from './iteration-budget'
 import { createLLMClient, LLMMessage } from './llm-sdk'
-import { truncateToBudget } from './message-utils'
+import { truncateToBudget, hasToolCalls } from './message-utils'
 import { PermissionSet, PermissionRule } from './permission'
 import { MemoryManager } from './memory/manager'
 import { BuiltinMemoryProvider } from './memory/builtin-provider'
@@ -80,7 +80,7 @@ export class Agent {
 
   async *run(
     userMessage: string,
-    history: Array<{ role: string; content: string }>,
+    history: LLMMessage[],
     config: AgentConfig,
   ): AsyncGenerator<AgentEvent> {
     const ctx: ToolContext = {
@@ -94,7 +94,7 @@ export class Agent {
     }
 
     const materialized = this.registry.materialize(config.permissions)
-    const toolDefs = materialized.definitions
+    const toolSet = materialized.definitions
 
     // 初始化记忆系统
     await this.memoryManager.initialize(config.sessionID, config.workspace)
@@ -114,7 +114,7 @@ export class Agent {
         for (const m of stored.messages) {
           if (m.role === 'tool' && restored.length > 0) {
             const last = restored[restored.length - 1]
-            if (last.role === 'assistant' && !last.tool_calls) {
+            if (last.role === 'assistant' && !('tool_calls' in (m as any)) && !hasToolCalls(last.content)) {
               // 孤儿 tool 消息 → 将内容合并到前一条 assistant 中
               last.content += `\n\n[Tool result: ${m.content.slice(0, 500)}]`
               continue
@@ -141,9 +141,24 @@ export class Agent {
     let messages: LLMMessage[] = [
       { role: 'system', content: config.systemPrompt || DEFAULT_SYSTEM },
       ...history.map((m) => {
+        // 从持久化还原消息，兼容新旧格式
+        if (m.role === 'assistant' && (m as any).tool_calls && typeof m.content === 'string') {
+          const oldTc = (m as any).tool_calls || []
+          return {
+            role: 'assistant' as const,
+            content: [
+              { type: 'text', text: m.content },
+              ...oldTc.map((tc: any) => ({
+                type: 'tool-call' as const,
+                toolCallId: tc.id || tc.toolCallId || '',
+                toolName: tc.function?.name || tc.toolName || '',
+                args: typeof tc.function?.arguments === 'string' ? JSON.parse(tc.function.arguments) : (tc.args || {}),
+              })),
+            ],
+          }
+        }
         const msg: LLMMessage = { role: m.role as LLMMessage['role'], content: m.content }
         if ((m as any).tool_call_id) msg.tool_call_id = (m as any).tool_call_id
-        if ((m as any).tool_calls) msg.tool_calls = (m as any).tool_calls
         return msg
       }),
       { role: 'user', content: enrichedUser },
@@ -166,12 +181,15 @@ export class Agent {
         return
       }
       messages = truncateToBudget(messages, config.maxContextTokens || 8000)
-      const stream = client.stream({ messages, tools: toolDefs })
+      const stream = client.stream({ messages, tools: toolSet })
       let currentText = ''
+      let eventCount = 0
       const pendingToolCalls: Array<{ id: string; name: string; arguments: string }> = []
 
       for await (const event of stream) {
+        eventCount++
         if (event.type === 'delta') {
+          console.log('[Agent] delta received, len:', event.delta.length)
           currentText += event.delta
           yield { type: 'content', text: event.delta }
         } else if (event.type === 'tool_call' && event.toolCall) {
@@ -198,10 +216,18 @@ export class Agent {
 
       messages.push({
         role: 'assistant',
-        content: currentText,
-        tool_calls: toolCallsArray,
+        content: [
+          { type: 'text', text: currentText },
+          ...toolCallsArray.map((tc) => ({
+            type: 'tool-call' as const,
+            toolCallId: tc.id,
+            toolName: tc.function.name,
+            args: JSON.parse(tc.function.arguments),
+          })),
+        ],
       })
 
+      console.log('[Agent] turn complete, events:', eventCount, 'text len:', currentText.length, 'tool calls:', toolCallsArray.length)
       if (toolCallsArray.length === 0) {
         if (currentText) {
           await appendMessage(config.sessionID, {
@@ -210,6 +236,7 @@ export class Agent {
             timestamp: new Date().toISOString(),
           })
         }
+        console.log('[Agent] finishing with reason: stop')
         yield { type: 'finish', reason: 'stop' }
         return
       }
@@ -267,7 +294,7 @@ export class Agent {
           // 如果结果不存在（理论上不应发生），插入默认错误
           messages.push({
             role: 'tool',
-            content: '[Tool execution error: no result available]',
+            content: [{ type: 'tool-result' as const, toolCallId: call.id, toolName: call.function.name, output: { type: 'text' as const, value: '[Tool execution error: no result available]' } }],
             tool_call_id: call.id,
           })
           yield { type: 'tool_result', id: call.id, name: call.function.name, result: { success: false, error: 'No result available' } }
@@ -279,9 +306,10 @@ export class Agent {
           name: call.function.name,
           result: { success: result.success, output: result.output, error: result.error },
         }
+        const text = result.success ? (result.output || '') : (result.error || '')
         messages.push({
           role: 'tool',
-          content: result.success ? (result.output || '') : (result.error || ''),
+          content: [{ type: 'tool-result' as const, toolCallId: call.id, toolName: call.function.name, output: { type: 'text' as const, value: text } }],
           tool_call_id: call.id,
         })
       }

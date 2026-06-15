@@ -15,7 +15,7 @@ describe('Agent Core benchmarks', () => {
       })
     }
     const materialized = registry.materialize()
-    expect(materialized.definitions).toHaveLength(100)
+    expect(Object.keys(materialized.definitions)).toHaveLength(100)
   })
 
   it('materialize runs under 5ms', () => {

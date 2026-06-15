@@ -12,8 +12,8 @@ import { initDatabase } from "./database"
 // ─── ToolRegistry Service ────────────────────────────────────────
 
 export interface ToolRegistryInterface {
-  materialize(permissions?: any): { definitions: Record<string, unknown>[]; settle(call: any, ctx: any): Promise<any> }
-  materializeWithModel(filter: { providerID: string; modelID: string }, permissions?: any): { definitions: Record<string, unknown>[]; settle(call: any, ctx: any): Promise<any> }
+  materialize(permissions?: any): { definitions: Record<string, unknown>; settle(call: any, ctx: any): Promise<any> }
+  materializeWithModel(filter: { providerID: string; modelID: string }, permissions?: any): { definitions: Record<string, unknown>; settle(call: any, ctx: any): Promise<any> }
   execute(name: string, args: Record<string, unknown>, ctx: any): Promise<{ success: boolean; output?: string; error?: string }>
   register(def: any): void
   registerEffectLazy(effect: Effect.Effect<any>): void
@@ -29,8 +29,8 @@ export const ToolRegistryLayer = Layer.succeed(ToolRegistryTag, createDefaultReg
 
 export interface LLMInterface {
   createClient(config: { provider: string; model: string; apiKey: string; apiUrl?: string; headers?: Record<string, string>; options?: Record<string, unknown> }): {
-    stream(request: { messages: any[]; tools?: Record<string, unknown>[] }): AsyncGenerator<any>
-    complete(request: { messages: any[]; tools?: Record<string, unknown>[] }): Promise<{ content: string; toolCalls: any[] }>
+    stream(request: { messages: any[]; tools?: Record<string, unknown> }): AsyncGenerator<any>
+    complete(request: { messages: any[]; tools?: Record<string, unknown> }): Promise<{ content: string; toolCalls: any[] }>
   }
 }
 

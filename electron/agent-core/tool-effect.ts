@@ -87,6 +87,8 @@ export function getJsonSchema(def: Def): Record<string, unknown> {
 export function toLegacyToolDef(effectDef: Def): {
   name: string
   description: string
+  parameters: Record<string, unknown>
+  jsonSchema: Record<string, unknown>
   inputSchema: { safeParse: () => { success: boolean; data: Record<string, unknown> } }
   outputSchema: { parse: (v: unknown) => unknown }
   execute(input: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult>
@@ -96,6 +98,8 @@ export function toLegacyToolDef(effectDef: Def): {
   return {
     name: effectDef.id,
     description: effectDef.description,
+    parameters: schema,
+    jsonSchema: schema,
     inputSchema: {
       safeParse: () => ({ success: true, data: {} }),
     },

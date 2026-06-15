@@ -139,6 +139,11 @@ export function getJsonSchema(def: ToolDef): Record<string, unknown> {
       return cleaned
     } catch {}
   }
+  // fallback: 使用 def.parameters（Effect 工具通过 toLegacyToolDef 注入）
+  if ("parameters" in def) {
+    const p = (def as any).parameters as Record<string, unknown>
+    if (p && typeof p === "object" && (p as any).type === "object") return p
+  }
   return { type: "object", properties: {} }
 }
 

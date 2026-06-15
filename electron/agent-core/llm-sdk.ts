@@ -17,12 +17,11 @@ export interface SDKConfig {
 
 export interface LLMMessage {
   role: "system" | "user" | "assistant" | "tool"
-  content: string
-  tool_calls?: Array<{
-    id: string
-    type: "function"
-    function: { name: string; arguments: string }
-  }>
+  content: string | Array<
+    | { type: "tool-result"; toolCallId: string; toolName: string; output: { type: "text"; value: string } }
+    | { type: "text"; text: string }
+    | { type: "tool-call"; toolCallId: string; toolName: string; args: Record<string, unknown> }
+  >
   tool_call_id?: string
 }
 
@@ -32,9 +31,11 @@ export type LLMStreamEvent =
   | { type: "done" }
   | { type: "error"; error: { message: string } }
 
+export type LLMToolSet = Record<string, { description: string; inputSchema: z.ZodType; parameters?: z.ZodType }>
+
 export interface LLMRequest {
   messages: LLMMessage[]
-  tools?: Record<string, unknown>[]
+  tools?: LLMToolSet
 }
 
 export interface LLMClient {
@@ -67,61 +68,30 @@ function buildLanguageModel(config: SDKConfig): any {
   }
 }
 
-/** 将 ToolDef 数组转为 AI SDK 的 ToolSet */
-function toToolSet(tools: Record<string, unknown>[]): any {
-  const result: any = {}
-  for (const def of tools) {
-    const fn = (def as any).function
-    if (!fn?.name) continue
-
-    // 从 JSON Schema 重构 Zod schema，AI SDK 内部通过 asSchema() 正确识别
-    const rawParams = fn.parameters
-    let inputSchema: z.ZodType
-
-    if (!rawParams || typeof rawParams !== "object") {
-      inputSchema = z.object({})
-    } else {
-      const props = (rawParams as any).properties || {}
-      const shape: Record<string, z.ZodType> = {}
-      for (const [k, v] of Object.entries<any>(props)) {
-        const t = v.type === "string" ? z.string()
-          : v.type === "number" ? z.number()
-          : v.type === "boolean" ? z.boolean()
-          : v.type === "integer" ? z.number().int()
-          : z.any()
-        shape[k] = v.description ? t.describe(v.description) : t
-      }
-      inputSchema = z.object(shape)
-    }
-
-    result[fn.name] = {
-      description: fn.description || "",
-      parameters: inputSchema,
-      inputSchema,
-    }
-  }
-  return result
-}
-
 export function createLLMClient(config: SDKConfig): LLMClient {
   const model = buildLanguageModel(config)
 
   async function* stream(request: LLMRequest): AsyncGenerator<LLMStreamEvent> {
-    const hasTools = request.tools && request.tools.length > 0
+    const hasTools = request.tools && Object.keys(request.tools).length > 0
 
     // 使用 onChunk 实现增量流式
     const textQueue: string[] = []
     let streamDone = false
     let streamError: string | null = null
     let pendingToolCalls: any[] = []
+    let finalText = ""
 
     const streamPromise = streamText({
       model: model as any,
       messages: request.messages as any[],
-      ...(hasTools ? { tools: toToolSet(request.tools as any) as any } : {}),
+      ...(hasTools ? { tools: request.tools as any } : {}),
+      allowSystemInMessages: true,
       onChunk(event: any) {
-        if (event.chunk?.type === "text-delta" && event.chunk.textDelta) {
+        const type = event.chunk?.type
+        if (type === "text-delta" && event.chunk.textDelta) {
           textQueue.push(event.chunk.textDelta)
+        } else if (type === "reasoning-delta" && event.chunk.delta) {
+          textQueue.push(event.chunk.delta)
         }
       },
     })
@@ -129,10 +99,14 @@ export function createLLMClient(config: SDKConfig): LLMClient {
     // 后台启动流消费（触发 onChunk）
     const consumePromise = (async () => {
       try {
-        await streamPromise.text
+        const text = await streamPromise.text
+        finalText = text || ""
+        console.log("[LLM SDK] stream finished, text length:", finalText.length)
         pendingToolCalls = [...(await streamPromise.toolCalls)]
+        console.log("[LLM SDK] tool calls:", pendingToolCalls.length)
         streamDone = true
       } catch (e: any) {
+        console.error("[LLM SDK] stream error:", e?.message || e)
         // 提取底层错误（API key 无效、模型不可用、速率限制等）
         if (e instanceof APICallError) {
           const status = e.statusCode ? ` (HTTP ${e.statusCode})` : ""
@@ -166,6 +140,13 @@ export function createLLMClient(config: SDKConfig): LLMClient {
       yield { type: "delta", delta: textQueue.shift()! }
     }
 
+    // fallback: 如果 onChunk 从未捕获到文本但 finalText 有内容
+    // （某些模型/提供商的 chunk 类型不受支持）
+    if (finalText && textQueue.length === 0) {
+      console.log("[LLM SDK] fallback: emitting finalText directly, len:", finalText.length)
+      yield { type: "delta", delta: finalText }
+    }
+
     if (streamError) {
       yield { type: "error", error: { message: streamError } }
       return
@@ -187,11 +168,12 @@ export function createLLMClient(config: SDKConfig): LLMClient {
   }
 
   async function complete(request: LLMRequest) {
-    const hasTools = request.tools && request.tools.length > 0
+    const hasTools = request.tools && Object.keys(request.tools).length > 0
     const result = await generateText({
       model: model as any,
       messages: request.messages as any[],
-      ...(hasTools ? { tools: toToolSet(request.tools as any) as any } : {}),
+      ...(hasTools ? { tools: request.tools as any } : {}),
+      allowSystemInMessages: true,
     })
 
     return {

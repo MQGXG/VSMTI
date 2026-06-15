@@ -403,8 +403,10 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         };
 
         const channel = await window.electronAPI.agent.startStream(sessionId || getOfflineSessionId(), content, config);
+        console.log("[ChatWindow] channel started:", channel);
         currentChannelRef.current = channel;
         const cleanup = window.electronAPI.agent.onEvent(channel, (event: any) => {
+          console.log("[ChatWindow] event:", event.type, event);
           if (event.type === "content") {
             setMessages((prev) => {
               const last = prev[prev.length - 1];
@@ -730,7 +732,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         <ChatInput
           input={input}
           isLoading={isLoading}
-          disabled={isLoading || (backendRunning && !sessionId)}
+          disabled={backendRunning && !sessionId}
           onInput={setInput}
           onSend={sendMessage}
           onStop={handleStop}

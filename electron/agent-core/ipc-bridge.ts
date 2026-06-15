@@ -9,6 +9,7 @@ import { createDefaultRegistry, defaultPermissions, PermissionSet, Agent, AppLay
 import type { AgentConfig, AgentEvent, PermissionReply } from "./agent"
 import { DEFAULT_SYSTEM } from "./agent"
 import { modeToPermissionSet } from "./modes"
+import { getJsonSchema } from "./tool"
 import { loadWorkspacePermissions, saveWorkspacePermission } from "./permission-store"
 import { buildInstructionSystemPrompt } from "./instruction-context"
 import { matchSkillCommand, buildSkillInvocationMessage } from "./skill/skill-commands"
@@ -119,11 +120,14 @@ export function registerAgentIPCHandlers(): void {
   // 列出所有可用工具（含 Schema）
   ipcMain.handle("agent:listTools", () => {
     const materialized = registry.materialize(defaultPermissions)
-    return materialized.definitions.map((t: any) => ({
-      name: t.function?.name,
-      description: t.function?.description,
-      parameters: t.function?.parameters,
-    }))
+    return Object.keys(materialized.definitions).map((name) => {
+      const def = registry.get(name)
+      return {
+        name,
+        description: def?.description || "",
+        parameters: def ? getJsonSchema(def) : { type: "object", properties: {} },
+      }
+    })
   })
 
   // 批量执行多个工具（并发）
@@ -257,7 +261,7 @@ export function registerAgentIPCHandlers(): void {
     const agent = new Agent(registry, config.apiKey, config.apiUrl, config.workspace || process.cwd())
     const events: AgentEvent[] = []
     try {
-      for await (const evt of agent.run(message, history, config)) {
+      for await (const evt of agent.run(message, history as any, config)) {
         events.push(evt)
       }
     } catch (e) {
@@ -277,10 +281,12 @@ async function runAgentInBackground(
   const { agent, channel, sender } = session
 
   try {
+    let eventCount = 0
     for await (const evt of agent.run(message, [], { ...config, sessionID: sessionId })) {
+      eventCount++
       if (sender.isDestroyed()) break
 
-      // 通过 IPC 发送事件到渲染进程
+      console.log('[IPC] sending event:', evt.type, channel)
       sender.send("agent:event", channel, evt)
 
       // 如果遇到交互事件（权限请求），暂停并等待前端回复

@@ -1,12 +1,14 @@
 import * as fs from "fs"
 import * as path from "path"
-import { ToolDef, ToolContext, ToolResult, ToolCall, settle, toOpenAISchema as toLegacyOpenAISchema, Content } from "./tool"
+import { z } from "zod"
+import { ToolDef, ToolContext, ToolResult, ToolCall, settle, getJsonSchema, Content } from "./tool"
 import { PermissionSet } from "./permission"
 import { Effect } from "effect"
 import * as ToolEffect from "./tool-effect"
+import type { LLMToolSet } from "./llm-sdk"
 
 export interface Materialization {
-  definitions: Record<string, unknown>[]
+  definitions: LLMToolSet
   settle(call: ToolCall, ctx: ToolContext): Promise<{ result: ToolResult; content: Content[] }>
 }
 
@@ -28,15 +30,8 @@ export class ToolRegistry {
   }
 
   registerEffectLazy(effect: Effect.Effect<ToolEffect.Info>): void {
+    // 立即初始化，不等待
     Effect.runPromise(effect).then((info) => {
-      // 占位
-      this.effectDefs.set(info.id, {
-        id: info.id,
-        description: "",
-        parameters: {},
-        execute: async () => ({ success: false, error: "初始化中" }),
-      })
-      // 异步初始化完成后替换
       Effect.runPromise(ToolEffect.init(info)).then((def) => {
         this.effectDefs.set(def.id, def)
       }).catch((err) => {
@@ -63,15 +58,43 @@ export class ToolRegistry {
     })
   }
 
+  /** 将 JSON Schema 重建为 Zod schema（确保 type: "object" 且 AI SDK 能正确序列化） */
+  private jsonSchemaToZod(schema: Record<string, unknown>): z.ZodType {
+    const props = (schema.properties || {}) as Record<string, any>
+    const shape: Record<string, z.ZodType> = {}
+    for (const [k, v] of Object.entries(props)) {
+      const t = v.type === "string" ? z.string()
+        : v.type === "number" ? z.number()
+        : v.type === "boolean" ? z.boolean()
+        : v.type === "integer" ? z.number().int()
+        : z.any()
+      shape[k] = v.description ? t.describe(v.description) : t
+    }
+    return z.object(shape)
+  }
+
+  /** 将 ToolDef 转为 AI SDK 工具集条目 — AI SDK v6 使用 inputSchema 而非 parameters */
+  private toAISDKTool(t: ToolDef): { description: string; inputSchema: z.ZodType } {
+    return {
+      description: t.description,
+      inputSchema: this.jsonSchemaToZod(getJsonSchema(t)),
+    }
+  }
+
   /** 物化所有工具，可选按权限过滤 */
   materialize(permissions?: PermissionSet): Materialization {
-    const allDefs = [...this.tools.values(), ...Array.from(this.effectDefs.values()).map((et) => this.toLegacyDef(et))]
+    const allDefs: ToolDef[] = [...this.tools.values(), ...Array.from(this.effectDefs.values()).map((et) => this.toLegacyDef(et))]
     const allowed = permissions
       ? allDefs.filter((t) => permissions.isAllowed(t.name, t.permission))
       : allDefs
 
+    const toolSet: LLMToolSet = {}
+    for (const t of allowed) {
+      toolSet[t.name] = this.toAISDKTool(t)
+    }
+
     return {
-      definitions: allowed.map((t) => toLegacyOpenAISchema(t)),
+      definitions: toolSet,
 
       settle: async (call: ToolCall, ctx: ToolContext) => {
         let def = this.tools.get(call.name)
@@ -118,13 +141,18 @@ export class ToolRegistry {
   /** 按模型过滤 + 权限过滤一次完成 */
   materializeWithModel(modelFilter: ModelFilter, permissions?: PermissionSet): Materialization {
     const filtered = this.filterByModel(modelFilter)
-    const allDefs = [...filtered, ...Array.from(this.effectDefs.values()).map((et) => this.toLegacyDef(et))]
+    const allDefs: ToolDef[] = [...filtered, ...Array.from(this.effectDefs.values()).map((et) => this.toLegacyDef(et))]
     const allowed = permissions
       ? allDefs.filter((t) => permissions.isAllowed(t.name, t.permission))
       : allDefs
 
+    const toolSet: LLMToolSet = {}
+    for (const t of allowed) {
+      toolSet[t.name] = this.toAISDKTool(t)
+    }
+
     return {
-      definitions: allowed.map((t) => toLegacyOpenAISchema(t)),
+      definitions: toolSet,
       settle: async (call, ctx) => {
         const m = this.materialize(permissions)
         return m.settle(call, ctx)
@@ -180,6 +208,40 @@ export class ToolRegistry {
 
   /** 将 Effect Def 转为旧的 ToolDef 兼容格式 */
   private toLegacyDef(effectDef: ToolEffect.Def): ToolDef {
-    return ToolEffect.toLegacyToolDef(effectDef) as unknown as ToolDef
+    const schema = ToolEffect.getJsonSchema(effectDef)
+    const props = (schema.properties || {}) as Record<string, any>
+    const shape: Record<string, z.ZodType> = {}
+    for (const [k, v] of Object.entries(props)) {
+      const t = v.type === "string" ? z.string()
+        : v.type === "number" ? z.number()
+        : v.type === "boolean" ? z.boolean()
+        : v.type === "integer" ? z.number().int()
+        : z.any()
+      shape[k] = v.description ? t.describe(v.description) : t
+    }
+
+    return {
+      name: effectDef.id,
+      description: effectDef.description,
+      parameters: schema,
+      jsonSchema: schema,
+      inputSchema: Object.keys(shape).length > 0 ? z.object(shape) : z.object({}),
+      outputSchema: { parse: (v: unknown) => v } as any,
+      execute: async (input: any, ctx: ToolContext): Promise<ToolResult> => {
+        try {
+          if (effectDef.validation) {
+            const validated = effectDef.validation(input)
+            if (validated instanceof Error) {
+              return { success: false, error: validated.message }
+            }
+            return await effectDef.execute(validated, ctx as any)
+          }
+          return await effectDef.execute(input, ctx as any)
+        } catch (e) {
+          return { success: false, error: e instanceof Error ? e.message : String(e) }
+        }
+      },
+      permission: effectDef.permission,
+    } as ToolDef
   }
 }
