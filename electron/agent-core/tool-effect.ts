@@ -1,3 +1,4 @@
+import { z } from "zod"
 import { Effect } from "effect"
 
 export interface ToolContext {
@@ -84,27 +85,27 @@ export function getJsonSchema(def: Def): Record<string, unknown> {
 }
 
 /** 将 Effect Def 转为旧式 ToolDef 兼容格式 */
-export function toLegacyToolDef(effectDef: Def): {
-  name: string
-  description: string
-  parameters: Record<string, unknown>
-  jsonSchema: Record<string, unknown>
-  inputSchema: { safeParse: () => { success: boolean; data: Record<string, unknown> } }
-  outputSchema: { parse: (v: unknown) => unknown }
-  execute(input: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult>
-  permission?: string
-} {
+export function toLegacyToolDef(effectDef: Def) {
   const schema = getJsonSchema(effectDef)
+  const props = (schema.properties || {}) as Record<string, any>
+  const shape: Record<string, z.ZodType> = {}
+  for (const [k, v] of Object.entries(props)) {
+    const t = v.type === "string" ? z.string()
+      : v.type === "number" ? z.number()
+      : v.type === "boolean" ? z.boolean()
+      : v.type === "integer" ? z.number().int()
+      : z.any()
+    shape[k] = v.description ? t.describe(v.description) : t
+  }
+
   return {
     name: effectDef.id,
     description: effectDef.description,
     parameters: schema,
     jsonSchema: schema,
-    inputSchema: {
-      safeParse: () => ({ success: true, data: {} }),
-    },
+    inputSchema: Object.keys(shape).length > 0 ? z.object(shape) : z.object({}),
     outputSchema: { parse: (v: unknown) => v },
-    execute: async (input, ctx) => {
+    execute: async (input: Record<string, unknown>, ctx: ToolContext) => {
       try {
         if (effectDef.validation) {
           const validated = effectDef.validation(input)

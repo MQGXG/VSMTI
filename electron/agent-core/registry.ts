@@ -83,7 +83,7 @@ export class ToolRegistry {
 
   /** 物化所有工具，可选按权限过滤 */
   materialize(permissions?: PermissionSet): Materialization {
-    const allDefs: ToolDef[] = [...this.tools.values(), ...Array.from(this.effectDefs.values()).map((et) => this.toLegacyDef(et))]
+    const allDefs: ToolDef[] = [...this.tools.values(), ...Array.from(this.effectDefs.values()).map((et) => ToolEffect.toLegacyToolDef(et) as unknown as ToolDef)]
     const allowed = permissions
       ? allDefs.filter((t) => permissions.isAllowed(t.name, t.permission))
       : allDefs
@@ -141,7 +141,7 @@ export class ToolRegistry {
   /** 按模型过滤 + 权限过滤一次完成 */
   materializeWithModel(modelFilter: ModelFilter, permissions?: PermissionSet): Materialization {
     const filtered = this.filterByModel(modelFilter)
-    const allDefs: ToolDef[] = [...filtered, ...Array.from(this.effectDefs.values()).map((et) => this.toLegacyDef(et))]
+    const allDefs: ToolDef[] = [...filtered, ...Array.from(this.effectDefs.values()).map((et) => ToolEffect.toLegacyToolDef(et) as unknown as ToolDef)]
     const allowed = permissions
       ? allDefs.filter((t) => permissions.isAllowed(t.name, t.permission))
       : allDefs
@@ -204,44 +204,5 @@ export class ToolRegistry {
         }
       }
     }
-  }
-
-  /** 将 Effect Def 转为旧的 ToolDef 兼容格式 */
-  private toLegacyDef(effectDef: ToolEffect.Def): ToolDef {
-    const schema = ToolEffect.getJsonSchema(effectDef)
-    const props = (schema.properties || {}) as Record<string, any>
-    const shape: Record<string, z.ZodType> = {}
-    for (const [k, v] of Object.entries(props)) {
-      const t = v.type === "string" ? z.string()
-        : v.type === "number" ? z.number()
-        : v.type === "boolean" ? z.boolean()
-        : v.type === "integer" ? z.number().int()
-        : z.any()
-      shape[k] = v.description ? t.describe(v.description) : t
-    }
-
-    return {
-      name: effectDef.id,
-      description: effectDef.description,
-      parameters: schema,
-      jsonSchema: schema,
-      inputSchema: Object.keys(shape).length > 0 ? z.object(shape) : z.object({}),
-      outputSchema: { parse: (v: unknown) => v } as any,
-      execute: async (input: any, ctx: ToolContext): Promise<ToolResult> => {
-        try {
-          if (effectDef.validation) {
-            const validated = effectDef.validation(input)
-            if (validated instanceof Error) {
-              return { success: false, error: validated.message }
-            }
-            return await effectDef.execute(validated, ctx as any)
-          }
-          return await effectDef.execute(input, ctx as any)
-        } catch (e) {
-          return { success: false, error: e instanceof Error ? e.message : String(e) }
-        }
-      },
-      permission: effectDef.permission,
-    } as ToolDef
   }
 }

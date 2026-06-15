@@ -379,9 +379,4 @@ npm run package:linux # Linux
 # 4. 在 index.ts 的 createDefaultRegistry() 注册
 # 5. 自动出现在前端工具面板
 
-# 添加新工具 (Python)
-# 1. 在 agent-backend/app/tools/ 创建 .py 文件
-# 2. 继承 BaseTool
-# 3. discovery.py 自动扫描注册
-# 4. 在 omniagent.json 配置权限
 ```

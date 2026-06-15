@@ -12,18 +12,10 @@ files:
   - "!node_modules/**/*"
 
 extraResources:
-  - from: portable-python/
-    to: portable-python/
-    filter:
-      - "**/*"
-      - "!**/__pycache__/**"
-  - from: agent-backend/
-    to: agent-backend/
-    filter:
-      - "**/*"
-      - "!.venv/**"
-      - "!__pycache__/**"
-      - "!.pytest_cache/**"
+  - from: agent-backend/requirements.txt
+    to: agent-backend/requirements.txt
+  - from: agent-backend/skills/
+    to: agent-backend/skills/
 
 win:
   icon: resources/icon.ico
