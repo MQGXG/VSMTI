@@ -217,16 +217,16 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
             setMessages((prev) => [...prev, {
               id: crypto.randomUUID(),
               role: "assistant",
-              content: `**${event.name}**(${JSON.stringify(event.args)})`,
+              content: `⚡ ${event.name}`,
               isToolCall: true,
             }]);
           } else if (event.type === "tool_result") {
+            const snippet = (event.result.output || event.result.error || "").slice(0, 300)
+            const label = event.result.success ? "✓ 完成" : "✗ 失败"
             setMessages((prev) => [...prev, {
               id: crypto.randomUUID(),
               role: "assistant",
-              content: event.result.success
-                ? `\`${event.result.output?.slice(0, 500) || ""}\``
-                : `Error: ${event.result.error}`,
+              content: `${label} | ${event.name}\n\`\`\`\n${snippet}\n\`\`\``,
               isToolCall: true,
             }]);
           } else if (event.type === "permission_request") {
@@ -244,7 +244,8 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
               });
             }
           } else if (event.type === "error") {
-            setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: `Error: ${event.message}` }]);
+            const cleanMsg = event.message.replace(/\[TOOL_ERROR\]\s*/g, "").replace(/\s*\{.*\}/s, "").trim()
+            setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: `⚠️ ${cleanMsg || event.message}` }]);
           } else if (event.type === "finish") {
             setIsLoading(false);
             cleanup();
@@ -459,7 +460,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
                   </div>
                 ) : (
                   msg.isToolCall ? (
-                    <div className="flex items-center gap-2 py-1">
+                    <div className="flex items-center gap-2 py-0.5">
                       <span className="text-[11px] font-mono" style={{ color: 'var(--text-tertiary)' }}>{msg.content}</span>
                     </div>
                   ) : msg.content ? (
