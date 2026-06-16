@@ -7,6 +7,9 @@ import {
   MessageSquare,
   Search,
   X,
+  Plus,
+  Hash,
+  FileText,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -25,7 +28,6 @@ interface Session {
   title: string;
   kind: "session" | "task";
   workspace_path: string;
-  parent_session_id?: string;
   message_count?: number;
   updated_at: string;
 }
@@ -73,24 +75,19 @@ export function Sidebar({
   );
 
   const loadSessions = async () => {
-    if (!activeProject) {
-      setSessions([]);
-      return;
-    }
+    if (!activeProject) { setSessions([]); return; }
     try {
       const tsSessions = await window.electronAPI.ts.listSessions(activeProject);
       if (tsSessions) {
-        const list: Session[] = tsSessions.map((s: any) => ({
+        setSessions(tsSessions.map((s: any) => ({
           session_id: s.session_id,
           project_id: s.project_id || activeProject,
           title: s.title || "",
           kind: s.kind || "session",
           workspace_path: s.workspace_path || "",
-          parent_session_id: undefined,
           message_count: s.message_count || 0,
           updated_at: s.updated_at,
-        }));
-        setSessions(list);
+        })));
       }
     } catch { /* ignore */ }
   };
@@ -103,176 +100,159 @@ export function Sidebar({
 
   if (!isOpen) {
     return (
-      <div className="border-r border-glass-border p-2 flex flex-col items-center gap-2 bg-surface-950/30">
-        <button
-          onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-          title="展开侧边栏"
-        >
-          <PanelLeft className="w-4 h-4 text-neutral-400" />
+      <div className="flex flex-col items-center gap-2 p-2" style={{ borderRight: '1px solid var(--border-light)', background: 'var(--surface-secondary)' }}>
+        <button onClick={onToggle} className="w-8 h-8 flex items-center justify-center rounded-lg btn-ghost" title="展开侧边栏">
+          <PanelLeft className="w-4 h-4" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="w-64 border-r border-glass-border flex flex-col glass relative transition-all duration-250">
-      <div className="p-4 border-b border-glass-border">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h2 className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-              {project?.name || "未选择项目"}
-            </h2>
-            {project?.workspace_path && (
-              <p className="text-xs text-neutral-500 truncate mt-0.5">
-                {project.workspace_path}
-              </p>
-            )}
+    <div className="w-64 flex flex-col relative" style={{ borderRight: '1px solid var(--border-light)', background: 'var(--surface-secondary)' }}>
+      {/* 头部 */}
+      <div className="p-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+              {project ? project.name[0].toUpperCase() : '?'}
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                {project?.name || "未选择项目"}
+              </div>
+              {project?.workspace_path && (
+                <div className="text-[10px] truncate" style={{ color: 'var(--text-tertiary)' }}>
+                  {project.workspace_path}
+                </div>
+              )}
+            </div>
           </div>
-          <button onClick={onToggle} className="p-1.5 rounded hover:bg-white/10 transition-colors shrink-0">
-            <PanelLeftClose className="w-4 h-4 text-neutral-400" />
+          <button onClick={onToggle} className="w-6 h-6 flex items-center justify-center rounded btn-ghost shrink-0">
+            <PanelLeftClose className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* 工作区搜索 */}
-        <div className="relative mt-3">
-          <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        {/* 搜索 */}
+        <div className="relative">
+          <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
           <input
             value={searchQuery}
             onChange={async (e) => {
               const v = e.target.value;
               setSearchQuery(v);
               if (!v.trim()) { setSearchResults(null); return; }
-              try {
-                const results = await window.electronAPI.ts.searchMessages(v);
-                setSearchResults(results);
-              } catch { setSearchResults([]); }
+              try { setSearchResults(await window.electronAPI.ts.searchMessages(v)); }
+              catch { setSearchResults([]); }
             }}
-            placeholder="搜索当前项目对话..."
-            className="w-full pl-8 pr-7 py-1.5 rounded-lg text-xs bg-white/5 border border-glass-border text-neutral-200 placeholder-neutral-600 outline-none focus:border-accent-500/30 transition-colors"
+            placeholder="搜索消息..."
+            className="w-full pl-7 pr-6 py-1.5 rounded-lg text-xs outline-none transition-colors"
+            style={{ background: 'var(--surface-tertiary)', color: 'var(--text-primary)', border: '1px solid transparent' }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--accent-start)'}
+            onBlur={(e) => e.target.style.borderColor = 'transparent'}
           />
           {searchQuery && (
-            <button onClick={() => { setSearchQuery(""); setSearchResults(null); }} className="absolute right-2 top-1/2 -translate-y-1/2">
-              <X className="w-3 h-3 text-neutral-500 hover:text-neutral-300" />
+            <button onClick={() => { setSearchQuery(""); setSearchResults(null); }} className="absolute right-1.5 top-1/2 -translate-y-1/2 btn-ghost p-0.5 rounded">
+              <X className="w-3 h-3" />
             </button>
           )}
         </div>
 
-        <button
-          onClick={onNewSession}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm btn-gradient text-white mt-3"
-        >
-          <MessageSquarePlus className="w-4 h-4" />
+        <button onClick={onNewSession} className="w-full flex items-center justify-center gap-1.5 mt-2 px-3 py-2 rounded-lg text-xs font-medium btn-primary">
+          <MessageSquarePlus className="w-3.5 h-3.5" />
           新建会话
         </button>
       </div>
 
-      {/* 搜索结果下拉 */}
+      {/* 搜索结果 */}
       {searchResults !== null && (
-        <div className="absolute left-4 right-4 top-[200px] z-50 glass-heavy rounded-xl border border-glass-border shadow-2xl max-h-64 overflow-y-auto">
-          <div className="px-3 py-1.5 text-[10px] text-neutral-500 border-b border-glass-border">
+        <div className="absolute left-2 right-2 z-50 rounded-xl shadow-2xl max-h-64 overflow-y-auto"
+          style={{ top: '140px', background: 'var(--surface-secondary)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
+          <div className="px-3 py-1.5 text-[10px]" style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border-light)' }}>
             找到 {searchResults.length} 条结果
           </div>
           {searchResults.length === 0 ? (
-            <p className="text-xs text-neutral-600 text-center py-4">未找到匹配内容</p>
+            <p className="text-xs py-4 text-center" style={{ color: 'var(--text-tertiary)' }}>未找到匹配内容</p>
           ) : (
             searchResults.map((r, i) => (
-              <button
-                key={i}
-                onClick={() => { onSessionChange(r.session_id); setSearchResults(null); setSearchQuery(""); }}
-                className="w-full text-left p-2.5 hover:bg-white/5 transition-colors border-b border-glass-border last:border-0"
-              >
+              <button key={i} onClick={() => { onSessionChange(r.session_id); setSearchResults(null); setSearchQuery(""); }}
+                className="w-full text-left p-2.5 transition-colors"
+                style={{ borderBottom: i < searchResults.length - 1 ? '1px solid var(--border-light)' : 'none' }}>
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="w-3 h-3 text-neutral-500 shrink-0" />
-                  <span className="text-xs font-medium text-neutral-300 truncate">{r.session_title}</span>
-                  <span className="text-[10px] text-neutral-600 ml-auto">{r.message.role === "user" ? "用户" : "AI"}</span>
+                  <MessageSquare className="w-3 h-3 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+                  <span className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{r.session_title}</span>
+                  <span className="text-[10px] ml-auto shrink-0" style={{ color: 'var(--text-tertiary)' }}>{r.message.role === "user" ? "用户" : "AI"}</span>
                 </div>
-                <p className="text-[10px] text-neutral-500 line-clamp-2 mt-0.5 ml-5">{r.message.content}</p>
+                <p className="text-[10px] line-clamp-2 mt-0.5 ml-5" style={{ color: 'var(--text-tertiary)' }}>{r.message.content}</p>
               </button>
             ))
           )}
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
-        {[...sessions].sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime()).map((session) => (
-          <div
-            key={session.session_id}
-            className={`group flex items-center rounded-lg text-sm transition-all duration-200 ${
-              activeSession === session.session_id
-                ? "bg-white/10 shadow-[inset_3px_0_0_-0px_rgba(99,102,241,0.6)]"
-                : "hover:bg-white/5"
-            }`}
-          >
-            <button
-              onClick={() => onSessionChange(session.session_id)}
-              className={`flex-1 text-left px-3 py-2 min-w-0 ${
-                activeSession === session.session_id
-                  ? "text-neutral-900 dark:text-neutral-100"
-                  : "text-neutral-400 hover:text-neutral-200"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <MessageSquare className="w-4 h-4 shrink-0 text-neutral-500" />
-                <div className="min-w-0">
-                  <div className="truncate font-medium">
-                    {session.title || "新会话"}
+      {/* 会话列表 */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+        {[...sessions]
+          .sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime())
+          .map((session) => {
+            const isActive = activeSession === session.session_id;
+            return (
+              <div key={session.session_id} className="group flex items-center rounded-lg text-sm transition-all"
+                style={{ background: isActive ? 'var(--surface-tertiary)' : 'transparent' }}>
+                <button onClick={() => onSessionChange(session.session_id)}
+                  className="flex-1 text-left px-2.5 py-2 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                      style={{ background: isActive ? 'var(--surface)' : 'var(--surface-tertiary)' }}>
+                      {session.kind === "task" ? <FileText className="w-3 h-3" style={{ color: 'var(--accent-start)' }} />
+                        : <MessageSquare className="w-3 h-3" style={{ color: 'var(--text-tertiary)' }} />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium truncate" style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                        {session.title || "新会话"}
+                      </div>
+                      <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                        {session.message_count || 0} 条 · {formatTime(session.updated_at)}
+                      </div>
+                    </div>
                   </div>
-                  <div className="truncate text-xs text-neutral-600">
-                    {session.message_count || 0} 条消息 · {formatTime(session.updated_at)}
-                  </div>
-                </div>
+                </button>
+                <button onClick={async (e) => {
+                  e.stopPropagation();
+                  try { await window.electronAPI.ts.deleteSession(session.session_id); loadSessions(); }
+                  catch { /* ignore */ }
+                  if (activeSession === session.session_id) onNewSession();
+                }}
+                  className="p-1.5 mr-1 rounded-md opacity-0 group-hover:opacity-100 transition-all btn-ghost shrink-0">
+                  <Trash2 className="w-3 h-3" />
+                </button>
               </div>
-            </button>
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  await window.electronAPI.ts.deleteSession(session.session_id);
-                  loadSessions();
-                } catch (err) {
-                  console.error("删除失败:", err);
-                }
-                if (activeSession === session.session_id) {
-                  onNewSession();
-                }
-              }}
-              className="p-2 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all duration-200 shrink-0"
-              title="删除"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
+            );
+          })}
+
         {sessions.length === 0 && project && (
-          <div className="text-xs text-neutral-600 text-center py-8">
-            该项目下暂无会话或任务
-            <br />
-            点击上方按钮创建
+          <div className="text-xs py-8 text-center space-y-2" style={{ color: 'var(--text-tertiary)' }}>
+            <MessageSquare className="w-8 h-8 mx-auto opacity-40" />
+            <p>暂无会话</p>
           </div>
         )}
         {!project && (
-          <div className="text-xs text-neutral-600 text-center py-8">
-            请从左侧选择一个项目
+          <div className="text-xs py-8 text-center" style={{ color: 'var(--text-tertiary)' }}>
+            请先选择一个项目
           </div>
         )}
       </div>
 
-      <div className="p-3 border-t border-glass-border space-y-2">
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-400 hover:bg-white/10 hover:text-neutral-200 transition-colors"
-        >
-          <Settings className="w-4 h-4" />
+      {/* 底部 */}
+      <div className="p-2" style={{ borderTop: '1px solid var(--border-light)' }}>
+        <button onClick={() => setSettingsOpen(true)}
+          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs btn-ghost">
+          <Settings className="w-3.5 h-3.5" />
           <span>设置</span>
         </button>
-
       </div>
-      {createPortal(
-        <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />,
-        document.body
-      )}
 
+      {createPortal(<SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />, document.body)}
     </div>
   );
 }
