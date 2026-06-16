@@ -44,17 +44,6 @@ export function App() {
 
   const loadProjects = useCallback(async () => {
     try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status === "running") {
-        const res = await fetch(`${status.url}/api/projects`);
-        const data = await res.json();
-        setProjects(data.projects || []);
-        return;
-      }
-    } catch { /* Python offline */ }
-
-    // 从 TS Core 加载项目
-    try {
       const tsProjects = await window.electronAPI.ts.listProjects();
       if (tsProjects && tsProjects.length > 0) {
         const mapped: Project[] = tsProjects.map((p: any, i: number) => ({
@@ -98,52 +87,11 @@ export function App() {
 
   const handleProjectChange = async (projectId: string) => {
     setActiveProject(projectId);
-    try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") return;
-
-      await fetch(`${status.url}/api/projects/${encodeURIComponent(projectId)}/switch`, {
-        method: "POST",
-      });
-
-      const res = await fetch(`${status.url}/api/projects/${encodeURIComponent(projectId)}/sessions`);
-      const data = await res.json();
-      const list = data.sessions || [];
-      if (list.length > 0) {
-        setActiveSession(list[0].session_id);
-      } else {
-        const createRes = await fetch(`${status.url}/api/projects/${encodeURIComponent(projectId)}/sessions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: "" }),
-        });
-        const createData = await createRes.json();
-        if (createData.session?.session_id) {
-          setActiveSession(createData.session.session_id);
-        }
-      }
-    } catch (err) {
-      console.error("切换项目失败:", err);
-    }
+    setActiveSession(""); // 重置会话，等 Sidebar 加载后自动选择
   };
 
   const handleNewSession = async () => {
     if (!activeProject) return;
-    try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status === "running") {
-        const res = await fetch(`${status.url}/api/projects/${encodeURIComponent(activeProject)}/sessions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: "" }),
-        });
-        const data = await res.json();
-        if (data.session?.session_id) setActiveSession(data.session.session_id);
-        return;
-      }
-    } catch { /* fallback */ }
-
-    // TS Core 模式
     try {
       const session = await window.electronAPI.ts.createSession(activeProject, "");
       if (session?.session_id) setActiveSession(session.session_id);
@@ -155,20 +103,6 @@ export function App() {
   const handleNewTask = async (title: string) => {
     if (!activeProject) return;
     try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status === "running") {
-        const res = await fetch(`${status.url}/api/projects/${encodeURIComponent(activeProject)}/tasks`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title }),
-        });
-        const data = await res.json();
-        if (data.session?.session_id) setActiveSession(data.session.session_id);
-        return;
-      }
-    } catch { /* fallback */ }
-
-    try {
       const session = await window.electronAPI.ts.createSession(activeProject, title);
       if (session?.session_id) setActiveSession(session.session_id);
     } catch (err) {
@@ -178,24 +112,6 @@ export function App() {
 
   const handleOpenProject = async (name: string, workspacePath: string) => {
     try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status === "running") {
-        const res = await fetch(`${status.url}/api/projects`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, workspace_path: workspacePath }),
-        });
-        const data = await res.json();
-        if (data.project?.project_id) {
-          await loadProjects();
-          await handleProjectChange(data.project.project_id);
-        }
-        setNewProjectOpen(false);
-        return;
-      }
-    } catch { /* fallback */ }
-
-    try {
       await window.electronAPI.ts.createProject(name, workspacePath);
       await loadProjects();
       setNewProjectOpen(false);
@@ -204,29 +120,14 @@ export function App() {
     }
   };
 
-  const handleEditProject = async (projectId: string, name: string, color: string) => {
-    try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") return;
-      await fetch(`${status.url}/api/projects/${encodeURIComponent(projectId)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, color }),
-      });
-      await loadProjects();
-    } catch (err) {
-      console.error("更新项目失败:", err);
-    }
+  const handleEditProject = async (_projectId: string, _name: string, _color: string) => {
+    // 编辑项目功能待实现
+    await loadProjects();
   };
 
   const handleDeleteProject = async (projectId: string) => {
     try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status === "running") {
-        await fetch(`${status.url}/api/projects/${encodeURIComponent(projectId)}`, { method: "DELETE" });
-      } else {
-        await window.electronAPI.ts.deleteProject(projectId);
-      }
+      await window.electronAPI.ts.deleteProject(projectId);
       await loadProjects();
       if (activeProject === projectId) {
         setActiveProject("");
@@ -238,7 +139,7 @@ export function App() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-surface-50 dark:bg-surface-950 text-gray-900 dark:text-neutral-100 overflow-hidden transition-colors duration-200">
+    <div className="h-screen flex flex-col bg-surface-50 dark:bg-surface-950 text-neutral-900 dark:text-neutral-100 overflow-hidden transition-colors duration-200">
       <TitleBar />
       <div className="flex flex-1 overflow-hidden">
         <ProjectBar

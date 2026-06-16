@@ -135,7 +135,7 @@ export function ChatInput({ input, isLoading, disabled, onInput, onSend, onStop,
           placeholder={disabled ? "AI 对话需连接后端，工具面板可直接使用" : "输入消息... (/ 查看 Skill, Shift+Enter 换行)"}
           rows={1}
           disabled={disabled}
-          className="flex-1 bg-transparent text-sm text-gray-900 dark:text-neutral-200 placeholder-neutral-500 outline-none resize-none leading-relaxed disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent text-sm text-neutral-900 dark:text-neutral-200 placeholder-neutral-500 outline-none resize-none leading-relaxed disabled:cursor-not-allowed"
         />
 
         <button

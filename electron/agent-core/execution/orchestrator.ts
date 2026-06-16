@@ -1,0 +1,125 @@
+/**
+ * 工具编排器 — 参考 Codex orchestrator.rs
+ * 工具声明式并行 + Promise.allSettled 并发执行
+ */
+
+import { ToolRegistry } from "../registry"
+import { ToolContext, ToolResult } from "../tool"
+import { executeToolCalls } from "../tool-executor"
+import { ToolOutputStore } from "../tools/tool-output-store"
+import { isToolParallel } from "../tools/tool-meta"
+
+export interface OrchestratedToolCall {
+  id: string
+  name: string
+  args: Record<string, unknown>
+}
+
+export class ToolOrchestrator {
+  private outputStore = new ToolOutputStore()
+
+  constructor(private registry: ToolRegistry) {}
+
+  async execute(
+    calls: OrchestratedToolCall[],
+    ctx: ToolContext,
+    extra?: { provider?: string; model?: string },
+  ): Promise<Map<string, ToolResult>> {
+    const results = new Map<string, ToolResult>()
+    if (calls.length === 0) return results
+
+    const groups = this.groupCalls(calls)
+
+    for (const group of groups) {
+      const groupResults = await this.executeGroup(group, ctx, extra)
+      for (const [id, result] of groupResults) {
+        results.set(id, result)
+        if (result.output) {
+          this.outputStore.store(id, group.find((c) => c.id === id)?.name || "", result.output)
+        }
+      }
+    }
+
+    return results
+  }
+
+  /**
+   * 将工具调用分组：
+   * - 声明了 supportsParallel 的工具合并为一组并行执行
+   * - 非并行工具各自独占一组串行执行
+   */
+  private groupCalls(calls: OrchestratedToolCall[]): OrchestratedToolCall[][] {
+    const groups: OrchestratedToolCall[][] = []
+    let parallelGroup: OrchestratedToolCall[] = []
+
+    for (const call of calls) {
+      if (isToolParallel(call.name)) {
+        parallelGroup.push(call)
+      } else {
+        if (parallelGroup.length > 0) {
+          groups.push(parallelGroup)
+          parallelGroup = []
+        }
+        groups.push([call])
+      }
+    }
+
+    if (parallelGroup.length > 0) {
+      groups.push(parallelGroup)
+    }
+
+    return groups
+  }
+
+  private async executeGroup(
+    calls: OrchestratedToolCall[],
+    ctx: ToolContext,
+    extra?: { provider?: string; model?: string },
+  ): Promise<Map<string, ToolResult>> {
+    if (calls.length === 1) {
+      const result = await this.executeSingle(calls[0], ctx, extra)
+      return result
+    }
+
+    // 并行执行：使用 Promise.allSettled × 信号量控制并发数
+    const semaphore = 5  // 最大并发数
+    const results = new Map<string, ToolResult>()
+    const executing: Promise<void>[] = []
+
+    for (let i = 0; i < calls.length; i += semaphore) {
+      const batch = calls.slice(i, i + semaphore)
+      const batchResults = await Promise.allSettled(
+        batch.map((call) => this.executeSingle(call, ctx, extra))
+      )
+
+      for (let j = 0; j < batch.length; j++) {
+        const settled = batchResults[j]
+        if (settled.status === "fulfilled") {
+          for (const [id, r] of settled.value) {
+            results.set(id, r)
+          }
+        } else {
+          results.set(batch[j].id, {
+            success: false,
+            error: settled.reason?.message || "Execution failed",
+          })
+        }
+      }
+    }
+
+    return results
+  }
+
+  private async executeSingle(
+    call: OrchestratedToolCall,
+    ctx: ToolContext,
+    extra?: { provider?: string; model?: string },
+  ): Promise<Map<string, ToolResult>> {
+    const formatted = [{
+      id: call.id,
+      type: "function" as const,
+      function: { name: call.name, arguments: JSON.stringify(call.args) },
+    }]
+    return (await executeToolCalls(formatted, this.registry, ctx, extra)).results
+  }
+}

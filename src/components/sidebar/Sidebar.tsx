@@ -3,8 +3,6 @@ import {
   Settings,
   PanelLeftClose,
   PanelLeft,
-  Cpu,
-  HardDrive,
   Trash2,
   MessageSquare,
   Search,
@@ -65,7 +63,6 @@ export function Sidebar({
   onNewSession,
 }: Props) {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [systemInfo, setSystemInfo] = useState<{ status: string; port: number } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[] | null>(null);
@@ -80,28 +77,6 @@ export function Sidebar({
       setSessions([]);
       return;
     }
-    try {
-      const status = await window.electronAPI.getPythonStatus();
-      setSystemInfo(status);
-      if (status.status === "running") {
-        const res = await fetch(`${status.url}/api/projects/${encodeURIComponent(activeProject)}/sessions`);
-        const data = await res.json();
-        const list: Session[] = (data.sessions || []).map((s: any) => ({
-          session_id: s.session_id,
-          project_id: s.project_id,
-          title: s.title || "",
-          kind: s.kind || "session",
-          workspace_path: s.workspace_path || "",
-          parent_session_id: s.parent_session_id,
-          message_count: s.message_count,
-          updated_at: s.updated_at,
-        }));
-        setSessions(list);
-        return;
-      }
-    } catch { /* fallback */ }
-
-    // TS Core 模式：从本地加载会话
     try {
       const tsSessions = await window.electronAPI.ts.listSessions(activeProject);
       if (tsSessions) {
@@ -145,7 +120,7 @@ export function Sidebar({
       <div className="p-4 border-b border-glass-border">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h2 className="font-semibold text-gray-900 dark:text-neutral-100 truncate">
+            <h2 className="font-semibold text-neutral-900 dark:text-neutral-100 truncate">
               {project?.name || "未选择项目"}
             </h2>
             {project?.workspace_path && (
@@ -233,7 +208,7 @@ export function Sidebar({
               onClick={() => onSessionChange(session.session_id)}
               className={`flex-1 text-left px-3 py-2 min-w-0 ${
                 activeSession === session.session_id
-                  ? "text-gray-900 dark:text-neutral-100"
+                  ? "text-neutral-900 dark:text-neutral-100"
                   : "text-neutral-400 hover:text-neutral-200"
               }`}
             >
@@ -253,14 +228,7 @@ export function Sidebar({
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
-                  const status = await window.electronAPI.getPythonStatus();
-                  if (status.status === "running") {
-                    await fetch(`${status.url}/api/sessions/${encodeURIComponent(session.session_id)}`, {
-                      method: "DELETE",
-                    });
-                  } else {
-                    await window.electronAPI.ts.deleteSession(session.session_id);
-                  }
+                  await window.electronAPI.ts.deleteSession(session.session_id);
                   loadSessions();
                 } catch (err) {
                   console.error("删除失败:", err);
@@ -299,16 +267,6 @@ export function Sidebar({
           <span>设置</span>
         </button>
 
-        <div className="px-3 py-2 rounded-lg bg-white/5 space-y-1">
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
-            <Cpu className="w-3 h-3" />
-            <span>后端: {systemInfo?.status || "..."}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
-            <HardDrive className="w-3 h-3" />
-            <span>端口: {systemInfo?.port || "..."}</span>
-          </div>
-        </div>
       </div>
       {createPortal(
         <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />,

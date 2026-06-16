@@ -5,47 +5,12 @@ import { ToolCallView } from "./ToolCallView";
 import { ModelSelector, loadModelChoice, loadModeChoice } from "./ModelSelector";
 import type { ModelOption } from "./ModelSelector";
 import { ChatInput } from "./ChatInput";
-import { useChatStream } from "./useChatStream";
 import type { Message, AgentMode } from "./types";
-import { FileUp, X, GitBranch, Sparkles, Wrench, Copy, Check, Pencil, RefreshCw } from "lucide-react";
+import { routeToolMessage } from "./tool-router";
+import { FileUp, X, Sparkles, Copy, Check, Pencil, RefreshCw } from "lucide-react";
 import { PermissionDialog } from "./PermissionDialog";
 import { QuestionDialog } from "./QuestionDialog";
 import type { ToolResult } from "@/types/electron";
-
-/** 前端工具路由 — 关键词匹配用户输入到 TypeScript 工具 */
-function routeToolMessage(input: string, tools: Array<{ name: string; description: string; parameters: Record<string, unknown> }>): { name: string; args: Record<string, unknown> } | null {
-  const lower = input.toLowerCase().trim();
-  for (const t of tools) {
-    if (lower.startsWith("read ") || lower.startsWith("open ") || lower.startsWith("show ") || lower.startsWith("cat ")) {
-      if (t.name === "read_file") {
-        const path = lower.replace(/^(read|open|show|cat)\s+/i, "").trim();
-        return { name: "read_file", args: { path } };
-      }
-    }
-    if (lower.startsWith("search ") || lower.startsWith("find ") || lower.startsWith("查找") || lower.startsWith("搜索")) {
-      if (t.name === "web_search") {
-        const query = lower.replace(/^(search|find|查找|搜索)\s+/i, "").trim();
-        return { name: "web_search", args: { query } };
-      }
-    }
-    if (lower.startsWith("ls ") || lower.startsWith("list ") || lower.startsWith("dir ") || lower === "ls" || lower === "list" || lower === "dir") {
-      if (t.name === "list_files") return { name: "list_files", args: {} };
-    }
-    if (lower.includes("grep ") || lower.startsWith("grep") || lower.startsWith("查找内容") || lower.startsWith("搜索内容")) {
-      if (t.name === "grep") {
-        const pattern = lower.replace(/^grep\s+/i, "").trim().split(/\s+/)[0];
-        return { name: "grep", args: { pattern } };
-      }
-    }
-    if (lower.startsWith("run ") || lower.startsWith("运行") || lower.startsWith("执行")) {
-      if (t.name === "run_code") {
-        const code = input.replace(/^(run|运行|执行)\s+/i, "").trim();
-        return { name: "run_code", args: { code } };
-      }
-    }
-  }
-  return null;
-}
 
 interface Props {
   sessionId: string;
@@ -72,7 +37,6 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     options: string[];
     request_id: string;
   } | null>(null);
-  const [backendRunning, setBackendRunning] = useState(false);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
@@ -80,7 +44,6 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLTextAreaElement>(null);
   const dragCounter = useRef(0);
-  const { streamChat } = useChatStream();
   const currentChannelRef = useRef<string | null>(null);
   const offlineSessionIdRef = useRef<string | null>(null);
   function getOfflineSessionId(): string {
@@ -97,20 +60,6 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
   }
 
   useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const status = await window.electronAPI.getPythonStatus();
-        setBackendRunning(status.status === "running");
-      } catch {
-        setBackendRunning(false);
-      }
-    };
-    checkStatus();
-    const timer = setInterval(checkStatus, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -121,24 +70,6 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     }
     const loadHistory = async () => {
       try {
-        // Path A: Python 在线 → 从 Python API 加载
-        const status = await window.electronAPI.getPythonStatus();
-        if (status.status === "running") {
-          const res = await fetch(`${status.url}/api/sessions/${encodeURIComponent(sessionId)}/messages`);
-          if (res.ok) {
-            const data = await res.json();
-            const formattedMessages: Message[] = (data.messages || []).map((msg: any) => ({
-              id: crypto.randomUUID(),
-              dbId: msg.id,
-              role: msg.role,
-              content: msg.content,
-            }));
-            setMessages(formattedMessages);
-            return;
-          }
-        }
-
-        // Path B: TS Core 离线 → 从本地 session store 加载
         const tsMsgs = await window.electronAPI.ts.getSessionMessages(sessionId);
         if (tsMsgs && tsMsgs.length > 0) {
           const formattedMessages: Message[] = tsMsgs.map((msg: any) => ({
@@ -192,57 +123,21 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     if (!files || files.length === 0) return;
 
     try {
-      const status = await window.electronAPI.getPythonStatus();
-
-      if (status.status === "running") {
-        // Path A: Python 后端在线 → 上传文件到后端
-        const uploaded: Array<{ name: string; path: string }> = [];
-
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const formData = new FormData();
-          formData.append("file", file);
-
-          const response = await fetch(`${status.url}/api/files/upload`, {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!response.ok) {
-            throw new Error(`上传失败: ${file.name}`);
-          }
-
-          const data = await response.json();
-          uploaded.push({ name: file.name, path: data.path || data.filename });
-        }
-
-        setUploadedFiles((prev) => [...prev, ...uploaded]);
-
-        const fileDetails = uploaded.map((f) => `"${f.name}" (路径: ${f.path})`).join("、");
-        const message = `我刚刚上传了文件：${fileDetails}。请用 read_file 读取这些文件并分析内容。`;
-
-        setTimeout(() => {
-          setInput(message);
-        }, 100);
-      } else {
-        // Path B: 后端离线 → 直接用 Electron 本地路径
-        const localFiles: Array<{ name: string; path: string }> = [];
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          // Electron 中拖拽文件可以获取到完整路径
-          const filePath = (file as any).path || file.name;
-          localFiles.push({ name: file.name, path: filePath });
-        }
-
-        setUploadedFiles((prev) => [...prev, ...localFiles]);
-
-        const fileDetails = localFiles.map((f) => `"${f.name}" (路径: ${f.path})`).join("、");
-        const message = `我刚刚添加了文件：${fileDetails}。请使用 read_file 读取这些文件并分析内容。`;
-
-        setTimeout(() => {
-          setInput(message);
-        }, 100);
+      const localFiles: Array<{ name: string; path: string }> = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const filePath = (file as any).path || file.name;
+        localFiles.push({ name: file.name, path: filePath });
       }
+
+      setUploadedFiles((prev) => [...prev, ...localFiles]);
+
+      const fileDetails = localFiles.map((f) => `"${f.name}" (路径: ${f.path})`).join("、");
+      const message = `我刚刚添加了文件：${fileDetails}。请使用 read_file 读取这些文件并分析内容。`;
+
+      setTimeout(() => {
+        setInput(message);
+      }, 100);
     } catch (err: any) {
       console.error("文件上传失败:", err);
       setMessages((prev) => [
@@ -290,108 +185,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
       const apiKey = provider?.apiKey || "";
       const apiUrl = provider?.apiUrl || "";
 
-      // Path 1: Python 后端在线 → 使用完整后端 Agent（支持所有 Provider + 工具 + 持久化）
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status === "running") {
-        const body = {
-          message: content,
-          session_id: sessionId,
-          model: selectedModel.provider,
-          model_name: selectedModel.value,
-          api_key: apiKey,
-          api_url: apiUrl,
-          mode: agentMode,
-        };
-
-        await streamChat(status.url, body, {
-          onContent: (text) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, content: m.content + text } : m
-              )
-            );
-          },
-          onToolStart: (_id, name, args) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? {
-                      ...m,
-                      toolCalls: m.toolCalls?.some((tc) => tc.name === name)
-                        ? m.toolCalls.map((tc) =>
-                            tc.name === name ? { ...tc, args, argsText: JSON.stringify(args) } : tc
-                          )
-                        : [...(m.toolCalls || []), { name, args, argsText: "", status: "running" as const }],
-                    }
-                  : m
-              )
-            );
-          },
-          onToolDelta: (id, delta) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? {
-                      ...m,
-                      toolCalls: m.toolCalls?.map((tc) =>
-                        tc.name === id || (m.toolCalls?.length ?? 0) > 0
-                          ? { ...tc, argsText: (tc.argsText || "") + delta }
-                          : tc
-                      ),
-                    }
-                  : m
-              )
-            );
-          },
-          onToolResult: (name, output, success) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? {
-                      ...m,
-                      toolCalls: m.toolCalls?.map((tc) =>
-                        tc.name === name
-                          ? { ...tc, result: output, status: (success ? "done" : "error") as "done" | "error" }
-                          : tc
-                      ),
-                    }
-                  : m
-              )
-            );
-          },
-          onToolError: (name, error) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? {
-                      ...m,
-                      toolCalls: m.toolCalls?.map((tc) =>
-                        tc.name === name ? { ...tc, result: error, status: "error" as const } : tc
-                      ),
-                    }
-                  : m
-              )
-            );
-          },
-          onPermissionRequest: (req) => setPermissionReq(req),
-          onQuestion: (q) => setQuestionReq(q),
-          onError: (msg) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId
-                  ? { ...m, content: m.content + `\n\n⚠️ ${msg}` }
-                  : m
-              )
-            );
-          },
-          onFinish: () => {
-            setIsLoading(false);
-          },
-        });
-        return;
-      }
-
-      // Path 2: TS Agent Core（实时流式，支持权限确认）
+      // TS Agent Core（实时流式，支持权限确认）
       // 即使 renderer 无 API Key，主进程也会从文件/环境变量配置中 fallback
       if (apiKey || provider) {
         const workspace = window.electronAPI.platform === "win32" ? "C:\\" : "/";
@@ -493,7 +287,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
       if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
       setIsLoading(false);
     }
-  }, [input, isLoading, sessionId, selectedModel, agentMode, messages, streamChat]);
+  }, [input, isLoading, sessionId, selectedModel, agentMode]);
 
   const startEditing = useCallback((msgId: string, content: string) => {
     setEditingMsgId(msgId);
@@ -518,70 +312,22 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
     sendMessage(content);
   }, [sendMessage]);
 
-  const handleQuestionAnswer = useCallback(async (answer: string) => {
-    const req = questionReq;
-    if (!req) return;
+  const handleQuestionAnswer = useCallback(async (_answer: string) => {
     setQuestionReq(null);
-    try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status === "running") {
-        await fetch(`${status.url}/api/question/respond`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ request_id: req.request_id, answer }),
-        });
-      }
-    } catch (err) {
-      console.error("Question response failed:", err);
-    }
-  }, [questionReq]);
+  }, []);
 
   const handlePermission = useCallback(async (approved: boolean | "always") => {
     const req = permissionReq;
     if (!req) return;
     setPermissionReq(null);
-    try {
-      if (req.channel) {
-        // TS Agent Core 实时流式通道
-        await window.electronAPI.agent.replyPermission(
-          req.channel,
-          req.request_id,
-          approved === "always" ? "always" : approved ? "allow" : "deny",
-        );
-        return;
-      }
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status === "running") {
-        await fetch(`${status.url}/api/permission/respond`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ request_id: req.request_id, approved }),
-        });
-      }
-    } catch (err) {
-      console.error("Permission response failed:", err);
+    if (req.channel) {
+      await window.electronAPI.agent.replyPermission(
+        req.channel,
+        req.request_id,
+        approved === "always" ? "always" : approved ? "allow" : "deny",
+      );
     }
   }, [permissionReq]);
-
-  const handleFork = useCallback(async (forkAtMessageId: number | undefined) => {
-    try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") return;
-
-      const res = await fetch(`${status.url}/api/sessions/${encodeURIComponent(sessionId)}/fork`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, fork_at_message_id: forkAtMessageId ?? null }),
-      });
-      if (!res.ok) throw new Error("分叉失败");
-      const data = await res.json();
-      if (data.session && onSessionChange) {
-        onSessionChange(data.session.session_id);
-      }
-    } catch (err) {
-      console.error("Fork error:", err);
-    }
-  }, [sessionId, onSessionChange]);
 
   const removeUploadedFile = (index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
@@ -635,21 +381,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
                 <Sparkles className="w-6 h-6 text-accent-400" />
                 <h1 className="text-3xl font-light tracking-tight gradient-text">OmniAgent</h1>
               </div>
-              {!backendRunning ? (
-                <div className="space-y-3">
-                  <p className="text-neutral-500 text-sm">Core 模式 · TypeScript Agent Core 驱动</p>
-                  <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
-                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">配置文件 API Key</span>
-                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">或环境变量</span>
-                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">即可对话</span>
-                  </div>
-                  <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-[10px] text-neutral-600">
-                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">Ctrl+Shift+A</kbd> 全局唤出</span>
-                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">/</kbd> 命令菜单</span>
-                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">拖拽文件</kbd> 上传分析</span>
-                  </div>
-                </div>
-              ) : !sessionId ? (
+              {!sessionId ? (
                 <div className="space-y-3">
                   <p className="text-neutral-500 text-sm">工具模式 · 直接执行操作</p>
                   <div className="flex items-center justify-center gap-2 text-xs">
@@ -695,7 +427,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
                       value={editingContent}
                       onChange={(e) => setEditingContent(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveAndResend(); } if (e.key === "Escape") cancelEditing(); }}
-                      className="w-full bg-transparent text-sm text-gray-900 dark:text-neutral-200 outline-none resize-none leading-relaxed"
+                      className="w-full bg-transparent text-sm text-neutral-900 dark:text-neutral-200 outline-none resize-none leading-relaxed"
                       rows={Math.max(2, editingContent.split("\n").length)}
                     />
                     <div className="flex items-center gap-2 justify-end">
@@ -749,15 +481,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
                     </button>
                   </>
                 )}
-                {msg.role === "assistant" && (
-                  <button
-                    onClick={() => handleFork(msg.dbId)}
-                    className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-500 hover:text-emerald-400 transition-all"
-                    title="从此处分叉新会话"
-                  >
-                    <GitBranch className="w-3.5 h-3.5" />
-                  </button>
-                )}
+
               </div>
             )}
           </div>
@@ -841,7 +565,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
         <ChatInput
           input={input}
           isLoading={isLoading}
-          disabled={backendRunning && !sessionId}
+          disabled={!sessionId}
           onInput={setInput}
           onSend={sendMessage}
           onStop={handleStop}

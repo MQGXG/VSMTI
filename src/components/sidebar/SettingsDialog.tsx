@@ -151,7 +151,7 @@ function ThemeSelector() {
 
   return (
     <div className="p-4 rounded-xl glass border border-glass-border">
-      <div className="text-sm text-gray-900 dark:text-neutral-200 mb-3">外观</div>
+      <div className="text-sm text-neutral-900 dark:text-neutral-200 mb-3">外观</div>
       <div className="flex gap-2">
         {options.map((option) => {
           const Icon = option.icon;
@@ -312,12 +312,12 @@ export function SettingsDialog({ open, onClose }: Props) {
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 min-h-0">
           {tab === "general" && (
             <div className="max-w-2xl space-y-6">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-200">通用设置</h3>
+              <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-200">通用设置</h3>
               <ThemeSelector />
 
               {/* 权限 */}
               <div className="p-4 rounded-xl glass border border-glass-border">
-                <div className="text-sm text-gray-900 dark:text-neutral-200 mb-3">权限</div>
+                <div className="text-sm text-neutral-900 dark:text-neutral-200 mb-3">权限</div>
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
                     <div className="text-sm text-neutral-300">自动接受权限</div>
@@ -331,7 +331,7 @@ export function SettingsDialog({ open, onClose }: Props) {
 
               {/* 终端 */}
               <div className="p-4 rounded-xl glass border border-glass-border">
-                <div className="text-sm text-gray-900 dark:text-neutral-200 mb-3">终端</div>
+                <div className="text-sm text-neutral-900 dark:text-neutral-200 mb-3">终端</div>
                 <label className="text-xs text-neutral-500 mb-1 block">默认 Shell</label>
                 <select value={settings.terminalShell}
                   onChange={(e) => updateSettings({ terminalShell: e.target.value })}
@@ -345,7 +345,7 @@ export function SettingsDialog({ open, onClose }: Props) {
 
               {/* 时间线 */}
               <div className="p-4 rounded-xl glass border border-glass-border">
-                <div className="text-sm text-gray-900 dark:text-neutral-200 mb-3">时间线</div>
+                <div className="text-sm text-neutral-900 dark:text-neutral-200 mb-3">时间线</div>
                 <div className="space-y-3">
                   {[
                     { key: "showReasoning" as const, label: "显示推理摘要", desc: "在时间线中显示模型推理摘要" },
@@ -394,7 +394,7 @@ export function SettingsDialog({ open, onClose }: Props) {
           )}
           {tab === "shortcuts" && (
             <div className="max-w-2xl space-y-6">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-200">快捷键</h3>
+              <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-200">快捷键</h3>
               <div className="space-y-2">
                 {[
                   { name: "全局唤出", key: "Ctrl + Shift + A" },
@@ -422,14 +422,14 @@ export function SettingsDialog({ open, onClose }: Props) {
           )}
           {tab === "about" && (
             <div className="max-w-2xl space-y-6">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-200">关于 OmniAgent</h3>
+              <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-200">关于 OmniAgent</h3>
               <div className="p-6 rounded-xl glass border border-glass-border space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-accent-500/20 flex items-center justify-center">
                     <Cpu className="w-6 h-6 text-accent-500" />
                   </div>
                   <div>
-                    <div className="text-lg font-medium text-gray-900 dark:text-neutral-200">OmniAgent</div>
+                    <div className="text-lg font-medium text-neutral-900 dark:text-neutral-200">OmniAgent</div>
                     <div className="text-xs text-neutral-500">版本 1.0.0</div>
                   </div>
                 </div>

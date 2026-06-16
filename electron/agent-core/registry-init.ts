@@ -2,7 +2,7 @@
  * 注册表初始化 — 从 index.ts 拆分以打破循环依赖
  */
 import { ToolRegistry } from "./registry"
-import { readFileTool as readFileToolEffect } from "./tools/read-file-effect"
+import { readFileTool } from "./tools/read-file"
 import {
   writeFileTool, listFilesTool,
   webSearchTool, grepTool, globTool, codeExecTool, bashTool, editFileTool,
@@ -20,7 +20,7 @@ import { lspDefinitionTool, lspReferencesTool, lspHoverTool } from "./tools/lsp-
 
 export function createDefaultRegistry(): ToolRegistry {
   const registry = new ToolRegistry()
-  registry.registerEffectLazy(readFileToolEffect)
+  registry.register(readFileTool)
   registry.register(writeFileTool)
   registry.register(listFilesTool)
   registry.register(webSearchTool)

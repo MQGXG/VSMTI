@@ -6,6 +6,7 @@ module.exports = {
     extend: {
       colors: {
         neutral: {
+          900: "#171717",
           850: "#1a1a1a",
           950: "#0a0a0a",
         },

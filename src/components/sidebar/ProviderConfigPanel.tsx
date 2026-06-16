@@ -139,47 +139,8 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
   };
 
   const fetchModels = async () => {
-    if (!editingProvider?.baseUrl) {
-      setFetchError("请先配置 Base URL");
-      return;
-    }
-    setFetchingModels(true);
-    setFetchError("");
-
-    try {
-      const status = await window.electronAPI.getPythonStatus();
-      if (status.status !== "running") throw new Error("Python 后端未启动");
-
-      const response = await fetch(`${status.url}/api/models/fetch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          baseUrl: editingProvider.baseUrl,
-          apiKey: editingProvider.apiKey,
-          headers: Object.fromEntries(editingProvider.headers.filter((h) => h.key).map((h) => [h.key, h.value])),
-          provider: editingProvider.apiFormat,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "获取模型列表失败");
-      }
-
-      const data = await response.json();
-      if (data.success && data.models) {
-        const existingModels = new Map(editingProvider.models.map((m) => [m.id, m.name]));
-        const newModels = data.models.map((m: { id: string; name: string }) => ({
-          id: m.id,
-          name: existingModels.get(m.id) || m.name || m.id,
-        }));
-        setEditingProvider({ ...editingProvider, models: newModels });
-      }
-    } catch (err: any) {
-      setFetchError(err.message || "获取模型列表失败");
-    } finally {
-      setFetchingModels(false);
-    }
+    setFetchError("自动获取模型列表功能暂不可用，请手动添加模型");
+    setTimeout(() => setFetchError(""), 3000);
   };
 
   if (editingProvider) {
@@ -375,7 +336,7 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-neutral-200">提供商</h3>
+        <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-200">提供商</h3>
         <button onClick={startAdd} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs glass hover:bg-white/10 text-neutral-300 transition-colors">
           <Plus className="w-3.5 h-3.5" /> 添加提供商
         </button>
@@ -386,7 +347,7 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
           <div key={provider.id} className="rounded-xl glass border border-glass-border overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-glass-border">
               <div className="flex items-center gap-3">
-                <div className="text-sm font-medium text-gray-900 dark:text-neutral-200">{provider.displayName || provider.name}</div>
+                <div className="text-sm font-medium text-neutral-900 dark:text-neutral-200">{provider.displayName || provider.name}</div>
                 <div className="text-xs text-neutral-500">{provider.models.length} 个模型</div>
               </div>
               <div className="flex items-center gap-2">

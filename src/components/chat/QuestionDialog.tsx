@@ -28,7 +28,7 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
             <HelpCircle className="w-5 h-5 text-accent-400" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-neutral-100">Agent 提问</h3>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Agent 提问</h3>
             <p className="text-sm text-neutral-400">{question}</p>
           </div>
         </div>
@@ -60,7 +60,7 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
                 setSelected(null);
               }}
               placeholder="输入自定义回答..."
-              className="w-full px-4 py-2.5 rounded-xl text-sm border border-glass-border bg-transparent focus:outline-none focus:border-accent-500/50 text-gray-900 dark:text-neutral-100 placeholder-neutral-500"
+              className="w-full px-4 py-2.5 rounded-xl text-sm border border-glass-border bg-transparent focus:outline-none focus:border-accent-500/50 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500"
             />
           </div>
         </div>

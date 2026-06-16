@@ -20,15 +20,15 @@ const toolIcons: Record<string, typeof Search> = {
 }
 
 const toolKeywords: Record<string, string[]> = {
-  read_file: ["read", "open", "查看", "读取", "打开", "show", "cat", "content"],
-  write_file: ["write", "create", "save", "写入", "创建", "保存"],
-  list_files: ["list", "ls", "dir", "directory", "文件夹", "目录", "列出"],
-  web_search: ["search", "google", "find", "搜索", "查找", "互联网", "网络"],
-  grep: ["grep", "search in", "find text", "查找内容", "搜索内容"],
-  glob: ["find file", "glob", "查找文件", "匹配"],
-  run_code: ["run", "execute", "python", "code", "运行", "执行", "代码"],
-  edit_file: ["edit", "replace", "modify", "修改", "替换", "编辑"],
-  bash: ["bash", "shell", "terminal", "command", "终端", "命令"],
+  read_file: ["read", "open", "查看", "读取", "打开", "show", "cat", "content", "文件内容", "看看", "显示"],
+  write_file: ["write", "create", "save", "写入", "创建", "保存", "生成文件", "新建"],
+  list_files: ["list", "ls", "dir", "directory", "文件夹", "目录", "列出", "查看目录", "有哪些文件"],
+  web_search: ["search", "google", "find", "搜索", "查找", "互联网", "网络", "查一下", "搜一下", "百度"],
+  grep: ["grep", "search in", "find text", "查找内容", "搜索内容", "包含", "关键词"],
+  glob: ["find file", "glob", "查找文件", "匹配文件", "文件名", "模糊查找"],
+  run_code: ["run", "execute", "python", "code", "运行", "执行", "代码", "脚本", "node"],
+  edit_file: ["edit", "replace", "modify", "修改", "替换", "编辑", "改动", "更新"],
+  bash: ["bash", "shell", "terminal", "command", "终端", "命令", "cmd", "powershell", "执行命令"],
 }
 
 export function ToolPalette({ onResult, disabled, inputHint }: Props) {

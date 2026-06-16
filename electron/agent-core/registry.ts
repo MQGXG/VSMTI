@@ -6,6 +6,7 @@ import { PermissionSet } from "./permission"
 import { Effect } from "effect"
 import * as ToolEffect from "./tool-effect"
 import type { LLMToolSet } from "./llm-sdk"
+import { toolMetadata, type ToolCategory } from "./tools/tool-meta"
 
 export interface Materialization {
   definitions: LLMToolSet
@@ -46,6 +47,16 @@ export class ToolRegistry {
 
   getAll(): ToolDef[] {
     return Array.from(this.tools.values())
+  }
+
+  /** 按分类过滤工具 */
+  getByCategory(category: ToolCategory): ToolDef[] {
+    return Array.from(this.tools.values()).filter((t) => toolMetadata[t.name]?.category === category)
+  }
+
+  /** 获取工具的分类元数据 */
+  getCategory(toolName: string): ToolCategory | undefined {
+    return toolMetadata[toolName]?.category
   }
 
   /** 按模型过滤（如 GPT-4 用 edit，旧模型用 apply_patch） */

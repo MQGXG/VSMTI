@@ -11,11 +11,7 @@ files:
   - dist/**/*
   - "!node_modules/**/*"
 
-extraResources:
-  - from: agent-backend/requirements.txt
-    to: agent-backend/requirements.txt
-  - from: agent-backend/skills/
-    to: agent-backend/skills/
+extraResources: []
 
 win:
   icon: resources/icon.ico

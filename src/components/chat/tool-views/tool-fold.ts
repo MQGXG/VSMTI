@@ -1,0 +1,65 @@
+/**
+ * 工具输出折叠策略 — 参考 OpenCode collapseToolOutput()
+ * 不同工具有不同的默认折叠行数，偏好持久化到 localStorage
+ */
+
+const STORAGE_KEY = "tool_fold_preferences"
+
+export interface ToolFoldConfig {
+  defaultExpanded: boolean
+  maxPreviewLines: number
+}
+
+const defaultConfigs: Record<string, ToolFoldConfig> = {
+  read_file:    { defaultExpanded: true,  maxPreviewLines: 30 },
+  write_file:   { defaultExpanded: true,  maxPreviewLines: 10 },
+  edit_file:    { defaultExpanded: true,  maxPreviewLines: 20 },
+  bash:         { defaultExpanded: false, maxPreviewLines: 5 },
+  code_exec:    { defaultExpanded: false, maxPreviewLines: 5 },
+  web_search:   { defaultExpanded: true,  maxPreviewLines: 10 },
+  web_browse:   { defaultExpanded: true,  maxPreviewLines: 10 },
+  grep:         { defaultExpanded: true,  maxPreviewLines: 15 },
+  glob:         { defaultExpanded: true,  maxPreviewLines: 15 },
+  list_files:   { defaultExpanded: false, maxPreviewLines: 10 },
+  data_analysis:{ defaultExpanded: true,  maxPreviewLines: 20 },
+  default:      { defaultExpanded: false, maxPreviewLines: 8 },
+}
+
+function loadOverrides(): Record<string, Partial<ToolFoldConfig>> {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}")
+  } catch {
+    return {}
+  }
+}
+
+function saveOverrides(overrides: Record<string, Partial<ToolFoldConfig>>): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides))
+}
+
+export function getFoldConfig(toolName: string): ToolFoldConfig {
+  const base = defaultConfigs[toolName] || defaultConfigs.default
+  const overrides = loadOverrides()
+  const override = overrides[toolName]
+  if (!override) return base
+  return { ...base, ...override }
+}
+
+export function setFoldConfig(toolName: string, config: Partial<ToolFoldConfig>): void {
+  const overrides = loadOverrides()
+  overrides[toolName] = { ...(overrides[toolName] || {}), ...config }
+  saveOverrides(overrides)
+}
+
+export function expandToolOutput(result: string, toolName: string): { preview: string; hasMore: boolean; totalLines: number } {
+  const lines = result.split("\n")
+  const config = getFoldConfig(toolName)
+  if (lines.length <= config.maxPreviewLines) {
+    return { preview: result, hasMore: false, totalLines: lines.length }
+  }
+  return {
+    preview: lines.slice(0, config.maxPreviewLines).join("\n"),
+    hasMore: true,
+    totalLines: lines.length,
+  }
+}

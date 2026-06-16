@@ -65,7 +65,7 @@ export function EditProjectDialog({ project, open, onClose, onSave }: Props) {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-glass-border bg-white/5 text-gray-900 dark:text-neutral-100 text-sm focus:outline-none focus:border-accent-500/50"
+            className="w-full px-3 py-2 rounded-lg border border-glass-border bg-white/5 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:border-accent-500/50"
           />
         </div>
 

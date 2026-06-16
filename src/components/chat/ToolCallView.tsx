@@ -1,83 +1,50 @@
-import { useState } from "react";
-import { Loader2, CheckCircle2, XCircle, ChevronDown, Search, Code, FileText, Image, Globe } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { ToolCallInfo } from "./types";
-
-const toolIcons: Record<string, typeof Code> = {
-  web_search: Search,
-  run_code: Code,
-  read_file: FileText,
-  write_file: FileText,
-  data_analysis: Code,
-  image_generate: Image,
-  browse_web: Globe,
-};
-
-function getSettings(): Record<string, any> {
-  try { return JSON.parse(localStorage.getItem("settings") || "{}") }
-  catch { return {} }
-}
-
-function isShellTool(name: string): boolean {
-  return name === "bash" || name === "terminal" || name === "run_code"
-}
-
-function isEditTool(name: string): boolean {
-  return name === "write_file" || name === "edit_file" || name === "patch"
-}
+import { ToolReadView } from "./tool-views/ToolReadView";
+import { ToolDiffView } from "./tool-views/ToolDiffView";
+import { ToolShellView } from "./tool-views/ToolShellView";
+import { ToolSearchView } from "./tool-views/ToolSearchView";
+import { ToolGenericView } from "./tool-views/ToolGenericView";
 
 interface Props {
   info: ToolCallInfo;
 }
 
-export function ToolCallView({ info }: Props) {
-  const settings = getSettings()
-  const defaultExpanded = (isShellTool(info.name) && settings.expandShellTools) ||
-    (isEditTool(info.name) && settings.expandEditTools)
-  const [expanded, setExpanded] = useState(defaultExpanded);
-  const Icon = toolIcons[info.name] || Code;
-  const isStreamingArgs = info.status === "running" && info.argsText !== undefined;
+const readTools = new Set(["read_file"]);
+const editTools = new Set(["edit_file", "write_file"]);
+const shellTools = new Set(["bash", "code_exec"]);
+const searchTools = new Set(["web_search", "web_browse"]);
 
-  return (
-    <div className="ml-8 mt-2 glass rounded-xl border border-glass-border overflow-hidden animate-fade-in-up">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
-      >
-        {info.status === "running" ? (
-          <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
-        ) : info.status === "done" ? (
-          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-        ) : (
-          <XCircle className="w-4 h-4 text-red-500" />
-        )}
-        <Icon className="w-4 h-4" />
-        <span className="font-mono text-xs">{info.name}</span>
-        {isStreamingArgs && (
-          <span className="text-[10px] text-amber-500 animate-pulse">接收参数...</span>
-        )}
-        <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${expanded ? "rotate-180" : ""}`} />
-      </button>
-      {expanded && (
-        <div className="px-3 pb-3 space-y-2 border-t border-glass-border pt-2">
-          <div className="bg-surface-950/50 rounded-lg p-3 text-xs">
-            <div className="text-neutral-500 mb-1">参数：</div>
-            {isStreamingArgs ? (
-              <pre className="text-neutral-300 overflow-x-auto font-mono">
-                {info.argsText}
-                <span className="inline-block w-2 h-4 bg-accent-400/50 ml-0.5 animate-pulse" />
-              </pre>
-            ) : (
-              <pre className="text-neutral-300 overflow-x-auto">{JSON.stringify(info.args, null, 2)}</pre>
-            )}
-          </div>
-          {info.result && (
-            <div className="bg-surface-950/50 rounded-lg p-3 text-xs">
-              <div className="text-neutral-500 mb-1">结果：</div>
-              <pre className="text-neutral-300 overflow-x-auto max-h-48 overflow-y-auto">{info.result}</pre>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
+export function ToolCallView({ info }: Props) {
+  if (info.status === "running" && !info.result) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-500">
+        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+        <span className="font-mono">{info.name}</span>
+        <span className="text-amber-500 animate-pulse">执行中...</span>
+      </div>
+    );
+  }
+
+  if (!info.result) {
+    return null;
+  }
+
+  if (readTools.has(info.name)) {
+    return <ToolReadView result={info.result} args={info.args} />;
+  }
+
+  if (editTools.has(info.name)) {
+    return <ToolDiffView result={info.result} args={info.args} name={info.name} />;
+  }
+
+  if (shellTools.has(info.name)) {
+    return <ToolShellView result={info.result} args={info.args} />;
+  }
+
+  if (searchTools.has(info.name)) {
+    return <ToolSearchView result={info.result} args={info.args} />;
+  }
+
+  return <ToolGenericView info={info} />;
 }
