@@ -6,63 +6,55 @@
   :root {
     --accent-start: #6366f1;
     --accent-end: #06b6d4;
-    --success: #34d399;
-    --warning: #fbbf24;
-    --error: #f43f5e;
-    --info: #22d3ee;
-    --transition-duration: 200ms;
+    --surface: #ffffff;
+    --surface-secondary: #f8fafc;
+    --surface-tertiary: #f1f5f9;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-tertiary: #94a3b8;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --transition: 200ms ease;
   }
 
-  * {
-    scrollbar-width: thin;
+  .dark {
+    --accent-start: #818cf8;
+    --accent-end: #22d3ee;
+    --surface: #0f172a;
+    --surface-secondary: #1e293b;
+    --surface-tertiary: #334155;
+    --border: #334155;
+    --border-light: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
   }
 
-  html {
-    color-scheme: light;
-  }
-
-  html.dark {
-    color-scheme: dark;
-  }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-
-  /* 主题平滑过渡 */
-  html.theme-transitioning,
-  html.theme-transitioning *,
-  html.theme-transitioning *::before,
-  html.theme-transitioning *::after {
-    transition: background-color var(--transition-duration) ease,
-                color var(--transition-duration) ease,
-                border-color var(--transition-duration) ease,
-                box-shadow var(--transition-duration) ease !important;
-  }
+  * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+  html, body { margin: 0; padding: 0; overflow: hidden; }
 }
 
 @layer components {
   .glass {
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .glass-light {
-    background: rgba(255, 255, 255, 0.06);
+    background: color-mix(in srgb, var(--surface-secondary) 80%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-light);
   }
 
   .glass-heavy {
-    background: rgba(255, 255, 255, 0.1);
+    background: color-mix(in srgb, var(--surface-secondary) 95%, transparent);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border);
   }
 
   .gradient-text {
@@ -72,150 +64,58 @@
     background-clip: text;
   }
 
-  .gradient-border {
-    position: relative;
-  }
-
-  .gradient-border::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
+  .btn-primary {
     background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+    color: white;
+    transition: all var(--transition);
+  }
+  .btn-primary:hover { filter: brightness(1.1); transform: scale(1.02); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-ghost {
+    color: var(--text-secondary);
+    transition: all var(--transition);
+  }
+  .btn-ghost:hover { background: var(--surface-tertiary); color: var(--text-primary); }
+
+  .message-user {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.08));
+    color: var(--text-primary);
+    border: 1px solid rgba(99, 102, 241, 0.15);
   }
 
-  .glow {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 40px rgba(6, 182, 212, 0.1);
+  .message-assistant {
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
   }
 
-  .glow-sm {
-    box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+  .message-actions {
+    opacity: 0;
+    transition: opacity 150ms ease;
   }
+  .message-group:hover .message-actions { opacity: 1; }
 
-  .btn-gradient {
-    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-    transition: all 0.2s ease;
+  @media (max-width: 640px) {
+    .message-bubble { max-width: 90% !important; }
   }
-
-  .btn-gradient:hover {
-    filter: brightness(1.1);
-    transform: scale(1.02);
-  }
-
-  .btn-gradient:active {
-    transform: scale(0.98);
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .message-bubble { max-width: 85% !important; }
   }
 }
 
 @layer utilities {
-  .drag-region {
-    -webkit-app-region: drag;
-  }
-  .no-drag {
-    -webkit-app-region: no-drag;
-  }
+  .drag-region { -webkit-app-region: drag; }
+  .no-drag { -webkit-app-region: no-drag; }
 }
 
-html.dark .glass {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-html:not(.dark) .glass {
-  background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(16px);
-}
-
-html:not(.dark) .glass-light {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(0, 0, 0, 0.04);
-}
-
-html:not(.dark) .glass-heavy {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-html:not(.dark) * {
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-html.dark * {
-  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
-}
-
-html.dark pre::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-html.dark .overflow-y-auto::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-radius: 3px;
-}
-
-html.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-html:not(.dark) pre::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 3px;
-}
-
-html:not(.dark) .overflow-y-auto::-webkit-scrollbar-thumb {
-  background-color: #e2e8f0;
-  border-radius: 3px;
-}
-
-html:not(.dark) .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background-color: #cbd5e1;
-}
-
-pre {
-  -ms-overflow-style: auto;
-}
-
-pre::-webkit-scrollbar {
-  height: 6px;
-}
-
-pre::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
-}
-
-.overflow-y-auto::-webkit-scrollbar-track {
-  background: transparent;
-}
+pre { -ms-overflow-style: auto; }
+pre::-webkit-scrollbar { height: 6px; }
+pre::-webkit-scrollbar-track, .overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
+.overflow-y-auto::-webkit-scrollbar { width: 6px; }
 
 code {
   font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
-}
-
-.language-py .keyword,
-code.keyword {
-  color: #c084fc;
-}
-.language-py .string,
-code.string {
-  color: #fde68a;
-}
-.language-py .comment,
-code.comment {
-  color: #64748b;
-}
-.language-py .function,
-code.function {
-  color: #6ee7b7;
 }
 
 html:not(.dark) code:not(pre code) {
@@ -232,55 +132,4 @@ html.dark code:not(pre code) {
   padding: 1px 5px;
   border-radius: 3px;
   font-size: 0.875em;
-}
-
-html:not(.dark) .message-user {
-  background: linear-gradient(135deg, #eef2ff, #ecfeff);
-  color: #1e1b4b;
-  border: 1px solid #c7d2fe;
-}
-
-html:not(.dark) .message-assistant {
-  background: rgba(255, 255, 255, 0.7);
-  color: #0f172a;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-html.dark .message-user {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.15));
-  color: #e0e7ff;
-  border: 1px solid rgba(99, 102, 241, 0.2);
-}
-
-html.dark .message-assistant {
-  background: rgba(255, 255, 255, 0.04);
-  color: #f1f5f9;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* 消息操作按钮 */
-.message-actions {
-  opacity: 0;
-  transition: opacity 150ms ease;
-}
-
-.message-group:hover .message-actions {
-  opacity: 1;
-}
-
-/* 响应式消息宽度 */
-@media (max-width: 640px) {
-  .message-bubble {
-    max-width: 90% !important;
-  }
-  .message-user .message-bubble,
-  .message-assistant .message-bubble {
-    max-width: 92% !important;
-  }
-}
-
-@media (min-width: 641px) and (max-width: 1024px) {
-  .message-bubble {
-    max-width: 85% !important;
-  }
 }

@@ -7,7 +7,7 @@ import type { ModelOption } from "./ModelSelector";
 import { ChatInput } from "./ChatInput";
 import type { Message, AgentMode } from "./types";
 import { routeToolMessage } from "./tool-router";
-import { FileUp, X, Sparkles, Copy, Check, Pencil, RefreshCw } from "lucide-react";
+import { FileUp, X, Sparkles, Copy, Check, Pencil, RefreshCw, Terminal, Globe, Code, Search, MessageSquare, AlertCircle, ChevronRight, Square } from "lucide-react";
 import { PermissionDialog } from "./PermissionDialog";
 import { QuestionDialog } from "./QuestionDialog";
 import type { ToolResult } from "@/types/electron";
@@ -217,7 +217,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
             setMessages((prev) => [...prev, {
               id: crypto.randomUUID(),
               role: "assistant",
-              content: `🔧 Using tool **${event.name}** with ${JSON.stringify(event.args)}`,
+              content: `**${event.name}**(${JSON.stringify(event.args)})`,
               isToolCall: true,
             }]);
           } else if (event.type === "tool_result") {
@@ -225,8 +225,8 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
               id: crypto.randomUUID(),
               role: "assistant",
               content: event.result.success
-                ? `✅ Result: ${event.result.output?.slice(0, 500) || ""}`
-                : `❌ Error: ${event.result.error}`,
+                ? `\`${event.result.output?.slice(0, 500) || ""}\``
+                : `Error: ${event.result.error}`,
               isToolCall: true,
             }]);
           } else if (event.type === "permission_request") {
@@ -348,11 +348,10 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
   }, []);
 
   const handleToolResult = useCallback((toolName: string, result: ToolResult) => {
-    const icon = toolName === "read_file" ? "📄" : toolName === "web_search" ? "🔍" : toolName === "write_file" ? "✏️" : "🔧"
-    const header = `${icon} **${toolName}**`
+    const header = `**${toolName}**`
     const content = result.success
       ? `${header}\n\n${result.output}`
-      : `${header}\n\n⚠️ ${result.error || "执行失败"}`
+      : `${header}\n\n${result.error || "执行失败"}`
     const msg: Message = {
       id: crypto.randomUUID(),
       role: "assistant",
@@ -376,36 +375,47 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-3xl mx-auto w-full lg:px-6">
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center space-y-5">
-              <div className="flex items-center justify-center gap-2">
-                <Sparkles className="w-6 h-6 text-accent-400" />
-                <h1 className="text-3xl font-light tracking-tight gradient-text">Mira</h1>
+            <div className="text-center max-w-md">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-500/20 to-accent-400/10 flex items-center justify-center mx-auto mb-6">
+                <Sparkles className="w-8 h-8 text-accent-400" />
               </div>
-              {!sessionId ? (
-                <div className="space-y-3">
-                  <p className="text-neutral-500 text-sm">工具模式 · 直接执行操作</p>
-                  <div className="flex items-center justify-center gap-2 text-xs">
-                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">读取文件</span>
-                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">搜索网络</span>
-                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">运行代码</span>
-                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">搜索内容</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-neutral-500 text-sm">全能 AI 助手，有什么可以帮你？</p>
-                  <div className="flex items-center justify-center gap-2 text-xs">
-                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">直接输入提问</span>
-                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">拖拽文件分析</span>
-                    <span className="px-2.5 py-1 rounded-md bg-white/5 text-neutral-400">切换 Agent 模式</span>
-                  </div>
-                  <div className="pt-1 flex items-center justify-center gap-3 text-[10px] text-neutral-600">
-                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">Enter</kbd> 发送</span>
-                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">Shift+Enter</kbd> 换行</span>
-                    <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 rounded bg-white/5 font-mono">/</kbd> 命令</span>
-                  </div>
+              <h1 className="text-2xl font-semibold tracking-tight mb-2" style={{ color: 'var(--text-primary)' }}>Mira</h1>
+              <p className="text-sm mb-8" style={{ color: 'var(--text-secondary)' }}>{!sessionId ? '工具模式 · 选择会话开始' : '全能 AI 助手，有什么可以帮你？'}</p>
+
+              {sessionId && (
+                <div className="grid grid-cols-2 gap-2 mb-6">
+                  {[
+                    { icon: MessageSquare, label: '直接提问', desc: '日常问答、写作、分析' },
+                    { icon: FileUp, label: '拖拽文件', desc: '拖入文件自动分析' },
+                    { icon: Globe, label: '网络搜索', desc: '获取实时信息' },
+                    { icon: Terminal, label: '执行命令', desc: '运行终端命令' },
+                  ].map(({ icon: Icon, label, desc }) => (
+                    <div key={label} className="flex items-start gap-3 p-3 rounded-xl"
+                      style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border-light)' }}>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: 'var(--surface-tertiary)' }}>
+                        <Icon className="w-4 h-4" style={{ color: 'var(--accent-start)' }} />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{label}</p>
+                        <p className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{desc}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
+
+              <div className="flex items-center justify-center gap-3 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                <span className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--surface-tertiary)', border: '1px solid var(--border)' }}>Enter</kbd> 发送
+                </span>
+                <span className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--surface-tertiary)', border: '1px solid var(--border)' }}>Shift+Enter</kbd> 换行
+                </span>
+                <span className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--surface-tertiary)', border: '1px solid var(--border)' }}>/</kbd> 命令
+                </span>
+              </div>
             </div>
           </div>
         )}
