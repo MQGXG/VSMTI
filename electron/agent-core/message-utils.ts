@@ -54,6 +54,11 @@ export function truncateToBudget(messages: LLMMessage[], maxTokens: number): LLM
         rest.shift()
       }
     }
+    // 如果移除后队首是 tool 消息（孤立的结果），也一并移除
+    while (rest.length > 0 && rest[0].role === 'tool') {
+      rest.shift()
+    }
   }
-  return system ? [system, ...rest] : rest
+  const result = system ? [system, ...rest] : rest
+  return repairMessageSequence(result)
 }
