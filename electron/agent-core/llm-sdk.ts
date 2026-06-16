@@ -183,6 +183,38 @@ function recordSchema(def: any): Record<string, unknown> {
   return { type: "object", additionalProperties: def.valueType ? manualZodToJson(def.valueType) : { type: "string" } }
 }
 
+/**
+ * 指数退避重试包装器 — 处理瞬时网络故障
+ */
+async function* withRetry(
+  fn: () => AsyncGenerator<LLMStreamEvent>,
+  maxRetries = 2,
+  baseDelay = 800,
+): AsyncGenerator<LLMStreamEvent> {
+  let lastError: Error | undefined
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt > 0) {
+      const delay = baseDelay * Math.pow(2, attempt - 1)
+      await new Promise((r) => setTimeout(r, delay))
+    }
+    try {
+      let hasError = false
+      for await (const event of fn()) {
+        if (event.type === "error") {
+          hasError = true
+          lastError = new Error(event.error.message)
+          break
+        }
+        yield event
+      }
+      if (!hasError) return
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e))
+    }
+  }
+  yield { type: "error", error: { message: `All ${maxRetries} retries failed: ${lastError?.message}` } }
+}
+
 export function createLLMClient(config: SDKConfig): LLMClient {
   const provider = createProvider(
     config.provider,
@@ -191,7 +223,7 @@ export function createLLMClient(config: SDKConfig): LLMClient {
     config.headers,
   )
 
-  async function* stream(request: LLMRequest2): AsyncGenerator<LLMStreamEvent> {
+  async function* innerStream(request: LLMRequest2): AsyncGenerator<LLMStreamEvent> {
     try {
       const llmRequest: SchemaLLMRequest = {
         model: config.model,
@@ -239,6 +271,10 @@ export function createLLMClient(config: SDKConfig): LLMClient {
         yield { type: "error", error: { message: err.message || String(err) } }
       }
     }
+  }
+
+  async function* stream(request: LLMRequest2): AsyncGenerator<LLMStreamEvent> {
+    yield* withRetry(() => innerStream(request), 2, 800)
   }
 
   async function complete(request: LLMRequest2) {
