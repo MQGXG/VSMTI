@@ -422,14 +422,14 @@ export function SettingsDialog({ open, onClose }: Props) {
           )}
           {tab === "about" && (
             <div className="max-w-2xl space-y-6">
-              <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-200">关于 OmniAgent</h3>
+              <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-200">关于 Mira</h3>
               <div className="p-6 rounded-xl glass border border-glass-border space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-accent-500/20 flex items-center justify-center">
                     <Cpu className="w-6 h-6 text-accent-500" />
                   </div>
                   <div>
-                    <div className="text-lg font-medium text-neutral-900 dark:text-neutral-200">OmniAgent</div>
+                    <div className="text-lg font-medium text-neutral-900 dark:text-neutral-200">Mira</div>
                     <div className="text-xs text-neutral-500">版本 1.0.0</div>
                   </div>
                 </div>

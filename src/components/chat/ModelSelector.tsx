@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Cpu, ChevronDown, Shield, Zap, Brain, Sparkles } from "lucide-react";
+import { Cpu, ChevronDown, Shield, Zap, Brain, Sparkles, Search } from "lucide-react";
 import type { AgentMode } from "./types";
 
 interface StoredProvider {
@@ -76,6 +76,7 @@ const DEFAULT_MODEL: ModelOption = {
 
 const MODE_OPTIONS: { value: AgentMode; label: string; icon: typeof Brain; desc: string }[] = [
   { value: "assistant", label: "助手", icon: Brain, desc: "日常问答" },
+  { value: "plan", label: "规划", icon: Search, desc: "代码分析" },
   { value: "expert", label: "专家", icon: Zap, desc: "深度分析" },
   { value: "action", label: "执行", icon: Cpu, desc: "自动任务" },
   { value: "safe", label: "安全", icon: Shield, desc: "只读模式" },

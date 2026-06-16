@@ -21,7 +21,7 @@ export function TitleBar() {
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-accent-400" />
           <span className="text-sm font-semibold gradient-text tracking-wide">
-            OmniAgent
+            Mira
           </span>
         </div>
 

@@ -13,7 +13,7 @@ export interface ProviderConfig {
   models?: Record<string, { name?: string; enabled?: boolean }>
 }
 
-export interface OmniAgentConfig {
+export interface MiraConfig {
   provider?: string
   model?: string
   apiKey?: string
@@ -47,7 +47,7 @@ function getGlobalConfigPath(): string {
 }
 
 function getProjectConfigPath(workspace: string): string {
-  return join(workspace, "omniagent.json")
+  return join(workspace, "mira.json")
 }
 
 // ─── 文件读取 ──────────────────────────────────────────────────────
@@ -107,13 +107,13 @@ function resolveConfigValues(config: Record<string, unknown>): Record<string, un
 
 // ─── 环境变量 ──────────────────────────────────────────────────────
 
-function loadEnvConfig(): Partial<OmniAgentConfig> {
-  const config: Partial<OmniAgentConfig> = {}
-  if (process.env.OMNIAGENT_API_KEY) config.apiKey = process.env.OMNIAGENT_API_KEY
-  if (process.env.OMNIAGENT_MODEL) config.model = process.env.OMNIAGENT_MODEL
-  if (process.env.OMNIAGENT_PROVIDER) config.provider = process.env.OMNIAGENT_PROVIDER
-  if (process.env.OMNIAGENT_API_URL) config.apiUrl = process.env.OMNIAGENT_API_URL
-  if (process.env.OMNIAGENT_MODE) config.mode = process.env.OMNIAGENT_MODE
+function loadEnvConfig(): Partial<MiraConfig> {
+  const config: Partial<MiraConfig> = {}
+  if (process.env.MIRA_API_KEY) config.apiKey = process.env.MIRA_API_KEY
+  if (process.env.MIRA_MODEL) config.model = process.env.MIRA_MODEL
+  if (process.env.MIRA_PROVIDER) config.provider = process.env.MIRA_PROVIDER
+  if (process.env.MIRA_API_URL) config.apiUrl = process.env.MIRA_API_URL
+  if (process.env.MIRA_MODE) config.mode = process.env.MIRA_MODE
   return config
 }
 
@@ -136,7 +136,7 @@ function deepMerge<T extends Record<string, unknown>>(...sources: (T | null | un
 
 // ─── 主 API ────────────────────────────────────────────────────────
 
-export function loadConfig(workspace?: string): OmniAgentConfig {
+export function loadConfig(workspace?: string): MiraConfig {
   const globalConfig = readJsonFile(getGlobalConfigPath())
   const projectConfig = workspace ? readJsonFile(getProjectConfigPath(workspace)) : null
   const envConfig = loadEnvConfig()
@@ -147,10 +147,10 @@ export function loadConfig(workspace?: string): OmniAgentConfig {
     envConfig as Record<string, unknown>,
   )
 
-  return resolveConfigValues(merged) as unknown as OmniAgentConfig
+  return resolveConfigValues(merged) as unknown as MiraConfig
 }
 
-export function saveGlobalConfig(config: Partial<OmniAgentConfig>): void {
+export function saveGlobalConfig(config: Partial<MiraConfig>): void {
   const existing = readJsonFile(getGlobalConfigPath()) || {}
   const merged = { ...existing, ...config }
   writeJsonFile(getGlobalConfigPath(), merged)

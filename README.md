@@ -1,4 +1,4 @@
-# OmniAgent
+# Mira
 
 全能 AI 助手桌面应用 — 集聊天、搜索、编程、数据分析于一体。
 
@@ -32,7 +32,7 @@ npm run dev
 
 ```powershell
 npm run package:win
-# 生成 release\OmniAgent-1.0.0-portable.exe
+# 生成 release\Mira-1.0.0-portable.exe
 # 复制到其他电脑直接双击运行！
 ```
 

@@ -1,4 +1,4 @@
-# OmniAgent 开发上下文
+# Mira 开发上下文
 
 ## 当前阶段
 
@@ -50,8 +50,8 @@
 
 ## 日志系统
 
-- Electron 日志: `%APPDATA%/OmniAgent/logs/omniagent-YYYY-MM-DD.log`
-- Python 日志: `%APPDATA%/OmniAgent/logs/python-YYYY-MM-DD.log`
+- Electron 日志: `%APPDATA%/Mira/logs/mira-YYYY-MM-DD.log`
+- Python 日志: `%APPDATA%/Mira/logs/python-YYYY-MM-DD.log`
 - CLI 日志: 控制台输出 + 文件同时写入
 
 ## 常见问题

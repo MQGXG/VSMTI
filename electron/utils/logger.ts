@@ -16,7 +16,7 @@ function ensureLogDir(): string {
 export function initLogger(): void {
   const logsDir = ensureLogDir();
   const date = new Date().toISOString().split("T")[0];
-  logFilePath = join(logsDir, `omniagent-${date}.log`);
+  logFilePath = join(logsDir, `mira-${date}.log`);
 }
 
 export function getLogFilePath(): string {

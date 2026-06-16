@@ -17,7 +17,7 @@ $env:ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/"
 & $npm config set registry https://registry.npmmirror.com/ 2>$null
 
 function Start-Dev {
-    Write-Host "🚀 启动 OmniAgent 桌面应用 (开发模式)..." -ForegroundColor Cyan
+    Write-Host "🚀 启动 Mira 桌面应用 (开发模式)..." -ForegroundColor Cyan
     Write-Host "`n📦 确保后端已安装依赖..." -ForegroundColor Yellow
     pip install -r agent-backend/requirements.txt -q 2>$null
 
@@ -41,7 +41,7 @@ function Start-Backend {
 
 function Start-Package {
     param([string]$target = "")
-    Write-Host "📦 打包 OmniAgent..." -ForegroundColor Cyan
+    Write-Host "📦 打包 Mira..." -ForegroundColor Cyan
     & $npm install
     if ($target) {
         & $npm run $target

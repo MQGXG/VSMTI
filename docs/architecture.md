@@ -1,4 +1,4 @@
-# OmniAgent 架构文档
+# Mira 架构文档
 
 ## 一、整体架构
 
@@ -174,7 +174,7 @@ D:\开发\VSMTI\
 │   │   │   └── schema_tool.py      # Schema 基类
 │   │   └── prompts/
 │   │       └── system.py           # 系统提示词
-│   ├── omniagent.json              # 权限配置
+│   ├── mira.json              # 权限配置
 │   └── requirements.txt            # Python 依赖
 │
 ├── docs/                           # 文档
@@ -352,7 +352,7 @@ class MyTool(BaseTool):
 | IPC 通信 | contextBridge + ipcRenderer | 安全隔离 |
 | HTTP 通信 | SSE (Server-Sent Events) | 单向流式，适合 AI 响应 |
 | 数据库 | SQLite + ChromaDB | 零配置，单文件 |
-| 权限配置 | omniagent.json | 声明式，用户可编辑 |
+| 权限配置 | mira.json | 声明式，用户可编辑 |
 
 ## 七、开发工作流
 

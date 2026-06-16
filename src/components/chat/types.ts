@@ -15,4 +15,4 @@ export interface Message {
   dbId?: number;
 }
 
-export type AgentMode = "assistant" | "expert" | "action" | "safe";
+export type AgentMode = "assistant" | "expert" | "action" | "safe" | "plan";

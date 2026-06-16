@@ -1,4 +1,4 @@
-# OmniAgent 部署文档
+# Mira 部署文档
 
 ## 开发环境
 
@@ -46,10 +46,10 @@ docker-compose up -d
 
 ```bash
 # 后端
-docker build -t omniagent-backend ./agent-backend
-docker run -p 8000:8000 -e OPENAI_API_KEY=sk-xxx omniagent-backend
+docker build -t mira-backend ./agent-backend
+docker run -p 8000:8000 -e OPENAI_API_KEY=sk-xxx mira-backend
 
 # 前端
-docker build -t omniagent-frontend ./frontend
-docker run -p 3000:3000 omniagent-frontend
+docker build -t mira-frontend ./frontend
+docker run -p 3000:3000 mira-frontend
 ```

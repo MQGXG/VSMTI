@@ -1,8 +1,8 @@
-# OmniAgent 项目文档
+# Mira 项目文档
 
 ## 项目概述
 
-OmniAgent 是一个全能 AI 助手桌面应用，基于 **Electron + Python FastAPI** 架构打造。
+Mira 是一个全能 AI 助手桌面应用，基于 **Electron + Python FastAPI** 架构打造。
 
 ## 技术栈
 

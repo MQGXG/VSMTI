@@ -17,7 +17,7 @@ export function createTray(): Tray {
     },
   ]);
 
-  tray.setToolTip("OmniAgent");
+  tray.setToolTip("Mira");
   tray.setContextMenu(contextMenu);
   tray.on("click", () => showMainWindow());
 

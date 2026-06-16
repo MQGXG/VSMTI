@@ -3,7 +3,7 @@
 MODE=${1:-dev}
 
 start_dev() {
-    echo "🚀 启动 OmniAgent 开发环境..."
+    echo "🚀 启动 Mira 开发环境..."
     cd agent-backend && pip install -r requirements.txt -q && cd ..
     cd frontend && npm install && cd ..
 
@@ -18,7 +18,7 @@ start_dev() {
 }
 
 start_electron() {
-    echo "🚀 启动 OmniAgent 桌面应用..."
+    echo "🚀 启动 Mira 桌面应用..."
     cd agent-backend && pip install -r requirements.txt -q && cd ..
     cd frontend && npm install
 
@@ -31,7 +31,7 @@ start_electron() {
 }
 
 start_docker() {
-    echo "🐳 启动 OmniAgent Docker 环境..."
+    echo "🐳 启动 Mira Docker 环境..."
     docker-compose up -d --build
     echo ""
     echo "🌐 前端: http://localhost:3000"

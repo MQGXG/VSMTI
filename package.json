@@ -1,7 +1,7 @@
 {
-  "name": "omniagent",
+  "name": "mira",
   "version": "1.0.0",
-  "description": "OmniAgent - 全能 AI 助手桌面应用",
+  "description": "Mira - 全能 AI 助手桌面应用",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "electron-vite dev",

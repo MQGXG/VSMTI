@@ -25,10 +25,10 @@ export function findProjectRoot(start: string): string {
   return start
 }
 
-/** 加载全局 AGENTS.md（~/.config/omniagent/AGENTS.md） */
+/** 加载全局 AGENTS.md（~/.config/mira/AGENTS.md） */
 export function loadGlobalInstructions(): string | null {
   try {
-    const configDir = join(app.getPath("home"), ".config", "omniagent")
+    const configDir = join(app.getPath("home"), ".config", "mira")
     const path = join(configDir, "AGENTS.md")
     if (fs.existsSync(path)) {
       return fs.readFileSync(path, "utf-8")
@@ -71,7 +71,7 @@ export function buildInstructionSystemPrompt(workspace: string): string {
   // 1. 全局指令
   const global = loadGlobalInstructions()
   if (global) {
-    parts.push(`[Global Instructions from ~/.config/omniagent/AGENTS.md]\n${global}\n`)
+    parts.push(`[Global Instructions from ~/.config/mira/AGENTS.md]\n${global}\n`)
   }
 
   // 2. 项目级指令

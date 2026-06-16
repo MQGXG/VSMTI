@@ -379,7 +379,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
             <div className="text-center space-y-5">
               <div className="flex items-center justify-center gap-2">
                 <Sparkles className="w-6 h-6 text-accent-400" />
-                <h1 className="text-3xl font-light tracking-tight gradient-text">OmniAgent</h1>
+                <h1 className="text-3xl font-light tracking-tight gradient-text">Mira</h1>
               </div>
               {!sessionId ? (
                 <div className="space-y-3">

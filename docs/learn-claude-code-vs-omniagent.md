@@ -1,8 +1,8 @@
-# learn-claude-code 课程与 OmniAgent 实现对照
+# learn-claude-code 课程与 Mira 实现对照
 
 ## 对照表
 
-| 课程 | 机制 | OmniAgent 实现 | 状态 |
+| 课程 | 机制 | Mira 实现 | 状态 |
 |------|------|---------------|------|
 | **s01** | Agent Loop | `app/core/agent.py` — `Agent.run()` 循环 | ✅ 已增强 |
 | **s02** | Tool Use | `app/tools/registry.py` — `TOOL_HANDLERS` 分发 | ✅ 已完成 |

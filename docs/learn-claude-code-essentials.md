@@ -489,7 +489,7 @@ def assemble_tool_pool():
 ## 十三、CLI Agent vs GUI Agent 架构差异
 
 ```
-CLI Agent (learn-claude-code)      GUI Agent (OmniAgent)
+CLI Agent (learn-claude-code)      GUI Agent (Mira)
 ┌──────────────────┐              ┌──────────────────────┐
 │ input() 阻塞等待  │              │ HTTP POST /api/chat   │
 │ while True 同步   │              │ AsyncIterable[SSE]    │

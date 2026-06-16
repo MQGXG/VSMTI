@@ -65,4 +65,4 @@ export { createDefaultRegistry } from "./registry-init"
 
 // 配置系统
 export { loadConfig, saveGlobalConfig, resolveRuntimeConfig, getConfigForRenderer } from "./config"
-export type { OmniAgentConfig, ResolvedConfig } from "./config"
+export type { MiraConfig, ResolvedConfig } from "./config"

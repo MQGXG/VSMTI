@@ -2,7 +2,7 @@ param(
     [switch]$full
 )
 
-Write-Host "=== OmniAgent 环境设置 ===" -ForegroundColor Cyan
+Write-Host "=== Mira 环境设置 ===" -ForegroundColor Cyan
 Write-Host ""
 
 # 1. 检查 Node.js

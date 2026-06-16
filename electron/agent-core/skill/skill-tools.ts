@@ -24,7 +24,7 @@ export const skillsListTool = make({
     if (filtered.length === 0) {
       return {
         success: true,
-        output: "没有找到已安装的 Skill。请先在 ~/.config/omniagent/skills/ 目录下创建。",
+        output: "没有找到已安装的 Skill。请先在 ~/.config/mira/skills/ 目录下创建。",
       }
     }
 

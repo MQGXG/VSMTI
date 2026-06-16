@@ -1,6 +1,6 @@
 /**
  * Skill 加载器 — 扫描和加载 Skill 目录
- * 参考 Hermes Agent skill 系统：~/.config/omniagent/skills/<category>/<skill>/SKILL.md
+ * 参考 Hermes Agent skill 系统：~/.config/mira/skills/<category>/<skill>/SKILL.md
  */
 
 import { app } from "electron"
@@ -23,7 +23,7 @@ export interface SkillContent {
 
 /** 获取 skills 根目录 */
 export function getSkillsDir(): string {
-  return join(app.getPath("home"), ".config", "omniagent", "skills")
+  return join(app.getPath("home"), ".config", "mira", "skills")
 }
 
 /** 解析 SKILL.md 的 YAML frontmatter */

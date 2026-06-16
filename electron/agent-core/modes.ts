@@ -1,6 +1,6 @@
 import { PermissionSet, type PermissionRule } from "./permission"
 
-export type AgentMode = "assistant" | "expert" | "action" | "safe"
+export type AgentMode = "assistant" | "expert" | "action" | "safe" | "plan"
 
 export interface ModeConfig {
   id: AgentMode
@@ -10,6 +10,8 @@ export interface ModeConfig {
   systemPromptSuffix: string
   /** 该模式对应的权限规则（叠加在默认权限之上） */
   permissionRules: PermissionRule[]
+  /** 工具允许列表：如果设置，LLM 只能看到这些工具 */
+  toolAllowlist?: string[]
 }
 
 const modeConfigs: Record<AgentMode, ModeConfig> = {
@@ -54,6 +56,24 @@ const modeConfigs: Record<AgentMode, ModeConfig> = {
       { action: "bash", resource: "*", effect: "deny" },
       { action: "code_exec", resource: "*", effect: "deny" },
     ],
+    toolAllowlist: ["read_file", "list_files", "grep", "glob", "web_search", "web_browse", "data_analysis"],
+  },
+  plan: {
+    id: "plan",
+    label: "规划",
+    description: "代码分析、方案设计",
+    maxIterations: 15,
+    systemPromptSuffix: "You are a planning agent. Analyze code, design solutions, and create plans. Focus on understanding the codebase and providing detailed implementation plans.",
+    permissionRules: [
+      { action: "write_file", resource: "*", effect: "deny" },
+      { action: "edit_file", resource: "*", effect: "deny" },
+      { action: "bash", resource: "*", effect: "deny" },
+      { action: "code_exec", resource: "*", effect: "deny" },
+      { action: "cron_tool", resource: "*", effect: "deny" },
+      { action: "worktree_tool", resource: "*", effect: "deny" },
+      { action: "image_gen", resource: "*", effect: "deny" },
+    ],
+    toolAllowlist: ["read_file", "list_files", "grep", "glob", "web_search", "web_browse", "data_analysis", "lsp_definition", "lsp_references", "lsp_hover"],
   },
 }
 
