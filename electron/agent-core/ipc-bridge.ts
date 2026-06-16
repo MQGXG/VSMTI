@@ -8,7 +8,7 @@ import { ipcMain, BrowserWindow } from "electron"
 import { createDefaultRegistry, defaultPermissions, PermissionSet, Agent, AppLayer, getConfigForRenderer, resolveRuntimeConfig, saveGlobalConfig } from "./index"
 import type { AgentConfig, AgentEvent, PermissionReply } from "./agent"
 import { DEFAULT_SYSTEM } from "./agent"
-import { modeToPermissionSet } from "./modes"
+import { modeToPermissionSet, getModeConfig } from "./modes"
 import { getJsonSchema } from "./tool"
 import { loadWorkspacePermissions, saveWorkspacePermission } from "./permission-store"
 import { buildInstructionSystemPrompt } from "./instruction-context"
@@ -18,8 +18,28 @@ import { cronScheduler } from "./cron-scheduler"
 import { setupDefaultHooks } from "./hooks-setup"
 import { initDatabase } from "./database"
 import { listProjects, createProject, deleteProjectById, createSession, listSessions, getSessionMessages, deleteSessionById, searchMessages } from "./session-manager"
+import { AgentRegistry } from "./agent/registry"
+import { getAllModes } from "./modes"
 
 const registry = createDefaultRegistry()
+const agentRegistry = new AgentRegistry()
+
+// 注册所有模式到 AgentRegistry
+for (const mode of getAllModes()) {
+  agentRegistry.register({
+    info: {
+      name: mode.id,
+      label: mode.label,
+      description: mode.description,
+      icon: mode.id === "plan" ? "search" : mode.id === "assistant" ? "brain" : mode.id === "expert" ? "zap" : mode.id === "action" ? "cpu" : "shield",
+      maxIterations: mode.maxIterations,
+      denyActions: mode.permissionRules.filter((r) => r.effect === "deny").map((r) => r.action),
+    },
+    async *run() {
+      // Agent 运行由 agent:startStream 处理
+    },
+  })
+}
 
 /** 合并默认权限 + 模式限制 + 已保存的持久化规则 */
 async function buildPermissions(workspace: string, mode?: string, configOverride?: PermissionSet): Promise<PermissionSet> {
@@ -117,6 +137,11 @@ export function registerAgentIPCHandlers(): void {
     return await registry.execute(toolName, args, ctx)
   })
 
+  // 列出所有可用 Agent
+  ipcMain.handle("agent:listAgents", () => {
+    return agentRegistry.list()
+  })
+
   // 列出所有可用工具（含 Schema）
   ipcMain.handle("agent:listTools", () => {
     const materialized = registry.materialize(defaultPermissions)
@@ -181,12 +206,14 @@ export function registerAgentIPCHandlers(): void {
       ? `[指令上下文]\n${instructions}\n\n[Agent 基础指令]\n${baseSystem}`
       : baseSystem
 
-    // 准备完整配置：注入合并后的权限和持久化回调
+    // 准备完整配置：注入合并后的权限、toolAllowlist 和持久化回调
+    const modeConfig = config.mode ? getModeConfig(config.mode as any) : null
     const effectiveConfig: AgentConfig = {
       ...config,
       sessionID: sessionId,
       systemPrompt,
       permissions,
+      toolAllowlist: modeConfig?.toolAllowlist,
       onPermissionSave: (rules) => {
         for (const rule of rules) {
           saveWorkspacePermission(workspace, rule)
@@ -219,7 +246,7 @@ export function registerAgentIPCHandlers(): void {
     }
   })
 
-  // 向后兼容：旧版流式消息 → 返回事件数组（支持非交互场景）
+  /** @deprecated 使用 agent:startStream 替代 — 保留以兼容旧调用 */
   ipcMain.handle("run-agent-stream", async (_, sessionId: string, message: string, config: AgentConfig) => {
     const workspace = config.workspace || process.cwd()
     const agent = new Agent(registry, config.apiKey, config.apiUrl, workspace)
@@ -256,7 +283,7 @@ export function registerAgentIPCHandlers(): void {
     return events
   })
 
-  // 保留旧版 chat handler 以兼容现有调用
+  /** @deprecated 使用 agent:startStream 替代 — 保留以兼容旧调用 */
   ipcMain.handle("agent:chat", async (_, config: AgentConfig, message: string, history: Array<{ role: string; content: string }>) => {
     const agent = new Agent(registry, config.apiKey, config.apiUrl, config.workspace || process.cwd())
     const events: AgentEvent[] = []
