@@ -41,7 +41,7 @@ export const bashTool = make({
       return { success: true, output: output || "(no output)" }
     } catch (e: any) {
       const msg = e.stderr || e.stdout || e.message
-      return { success: true, output: (msg || "").slice(0, 5000) }
+      return { success: false, error: (msg || "Command execution failed").slice(0, 5000) }
     }
   },
 })
