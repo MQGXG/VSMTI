@@ -26,6 +26,7 @@ export const codeExecTool = make({
       const { stdout, stderr } = await execFileAsync("python", [filePath], {
         timeout: 30000,
         maxBuffer: 1024 * 1024,
+        env: { ...process.env, PYTHONIOENCODING: "utf-8" },
       })
       const output = (stdout || stderr).slice(0, 10000)
       return { success: true, output: output || "(no output)" }
