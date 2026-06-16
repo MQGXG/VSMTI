@@ -9,7 +9,7 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null
 
 function getDbPath(): string | null {
   try {
-    return join(app.getPath("userData"), "omniagent.db")
+    return join(app.getPath("userData"), "mira.db")
   } catch {
     return null // 测试环境中 app 不可用
   }
@@ -67,6 +67,14 @@ export async function getDbAsync(): Promise<SqliteDb> {
 /** 执行 SQL 写入并自动触发持久化 */
 export function runWrite(sql: string, params?: any[]): void {
   if (!db) throw new Error("数据库未初始化")
+  // 参数类型安全校验：防止对象被误传为参数
+  if (params) {
+    for (let i = 0; i < params.length; i++) {
+      if (typeof params[i] === "object" && params[i] !== null) {
+        params[i] = JSON.stringify(params[i])
+      }
+    }
+  }
   db.run(sql, params)
   scheduleSave()
 }
