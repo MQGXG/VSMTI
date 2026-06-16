@@ -42,6 +42,11 @@ export const toolMetadata: Record<string, ToolMeta> = {
   lsp_definition:  { category: "infrastructure", supportsParallel: true },
   lsp_references:  { category: "infrastructure", supportsParallel: true },
   lsp_hover:       { category: "infrastructure", supportsParallel: true },
+
+  git_status:      { category: "core", timeout: 15000, supportsParallel: true },
+  git_diff:        { category: "core", timeout: 15000, supportsParallel: true },
+  git_log:         { category: "core", timeout: 15000, supportsParallel: true },
+  git_commit:      { category: "execution", requiresPermission: true, timeout: 15000 },
 }
 
 export function isToolParallel(name: string): boolean {

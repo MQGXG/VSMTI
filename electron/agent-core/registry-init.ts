@@ -17,6 +17,7 @@ import { imageGenTool } from "./tools/image-gen"
 import { worktreeTool } from "./tools/worktree-tool"
 import { teamTool } from "./tools/team-tool"
 import { lspDefinitionTool, lspReferencesTool, lspHoverTool } from "./tools/lsp-tool"
+import { gitStatusTool, gitDiffTool, gitLogTool, gitCommitTool } from "./tools/git"
 
 export function createDefaultRegistry(): ToolRegistry {
   const registry = new ToolRegistry()
@@ -42,5 +43,9 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(lspDefinitionTool)
   registry.register(lspReferencesTool)
   registry.register(lspHoverTool)
+  registry.register(gitStatusTool)
+  registry.register(gitDiffTool)
+  registry.register(gitLogTool)
+  registry.register(gitCommitTool)
   return registry
 }
