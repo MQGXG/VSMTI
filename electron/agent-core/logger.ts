@@ -63,6 +63,20 @@ export function getTodayLogContent(): string {
   return "No logs for today."
 }
 
+/** 通用错误日志（带时间戳和上下文） */
+export function logError(context: string, error?: unknown): void {
+  const msg = error instanceof Error ? error.message : error ? String(error) : ""
+  const line = `[${new Date().toISOString()}] [ERROR] ${context}${msg ? `: ${msg}` : ""}`
+  try {
+    const date = new Date().toISOString().slice(0, 10)
+    const logDir = getLogDir()
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true })
+    fs.appendFileSync(join(logDir, `error-${date}.log`), line + "\n", "utf-8")
+  } catch { /* 日志写入失败时静默 */ }
+  // 开发阶段同时输出到控制台
+  console.error(line)
+}
+
 /** 清空日志 */
 export function clearLogs(): void {
   logs = []
