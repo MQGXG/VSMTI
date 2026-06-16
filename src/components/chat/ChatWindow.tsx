@@ -425,25 +425,22 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
           const isUser = msg.role === "user";
           return (
           <div key={msg.id} className="mb-5 animate-fade-in-up">
-            {/* 消息头部标签 */}
-            <div className={`flex items-center gap-2 mb-1.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
-              {!isUser && (
-                <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded-md bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center">
-                    <Sparkles className="w-2.5 h-2.5 text-white" />
+            <div className={`flex w-full gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+              {/* 头像 */}
+              <div className="shrink-0">
+                {isUser ? (
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{ background: 'var(--surface-tertiary)', color: 'var(--text-secondary)' }}>
+                    U
                   </div>
-                  <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>Mira</span>
-                </div>
-              )}
-              {isUser && (
-                <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>你</span>
-              )}
-            </div>
-            <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
-              <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed select-text relative ${
-                isUser ? 'message-user' : 'message-assistant'
-              }`}
-              style={{ maxWidth: isUser ? '70%' : '92%' }}>
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                  </div>
+                )}
+              </div>
+              {/* 消息主体 */}
+              <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[calc(100%-50px)]`}>
                 {isEditingThis ? (
                   <div className="space-y-2">
                     <textarea
@@ -476,12 +473,9 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
                   )
                 )}
               </div>
-            </div>
-            {msg.toolCalls?.map((tc, i) => <ToolCallView key={i} info={tc} />)}
-
-            {/* 操作按钮 — 始终可见 */}
-            {!isEditingThis && msg.content && (
-              <div className={`flex gap-1 mt-1 ${isUser ? 'justify-end' : 'justify-start'} ml-1`}>
+              {msg.toolCalls?.map((tc, i) => <ToolCallView key={i} info={tc} />)}
+              {!isEditingThis && msg.content && (
+              <div className={`flex gap-1 mt-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
                 <button onClick={() => handleCopyMessage(msg.id, msg.content)}
                   className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] btn-ghost"
                   title="复制">
@@ -504,6 +498,7 @@ export function ChatWindow({ sessionId, onSessionChange }: Props) {
                 )}
               </div>
             )}
+            </div>
           </div>
         );
       })}
