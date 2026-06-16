@@ -46,6 +46,7 @@ for (const mode of getAllModes()) {
 async function buildPermissions(workspace: string, mode?: string, configOverride?: PermissionSet): Promise<PermissionSet> {
   const savedRules = await loadWorkspacePermissions(workspace)
 
+  // 优先级：持久化规则 > 调用方覆盖 > 模式规则 > 默认权限
   let base = defaultPermissions
   if (mode) {
     base = modeToPermissionSet(mode as any, defaultPermissions)
@@ -53,7 +54,7 @@ async function buildPermissions(workspace: string, mode?: string, configOverride
 
   if (savedRules.length === 0 && !configOverride) return base
 
-  const allRules = [...savedRules, ...(configOverride?.getAll() || []), ...base.getAll()]
+  const allRules = [...base.getAll(), ...(configOverride?.getAll() || []), ...savedRules]
   return new PermissionSet(allRules)
 }
 
