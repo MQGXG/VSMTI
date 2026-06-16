@@ -7,6 +7,7 @@ import { Effect } from "effect"
 import * as ToolEffect from "./tool-effect"
 import type { LLMToolSet } from "./llm-sdk"
 import { toolMetadata, type ToolCategory } from "./tools/tool-meta"
+import { logError } from "./logger"
 
 export interface Materialization {
   definitions: LLMToolSet
@@ -36,7 +37,7 @@ export class ToolRegistry {
       Effect.runPromise(ToolEffect.init(info)).then((def) => {
         this.effectDefs.set(def.id, def)
       }).catch((err) => {
-        console.error(`[registry] 工具 "${info.id}" 初始化失败:`, err)
+        logError(`[registry] 工具 "${info.id}" 初始化失败`, err)
       })
     })
   }
@@ -210,7 +211,7 @@ export class ToolRegistry {
               }
             }
           }).catch((err) => {
-            console.error(`[registry] 加载自定义工具失败: ${modPath}`, err)
+            logError(`[registry] 加载自定义工具失败: ${modPath}`, err)
           })
         }
       }

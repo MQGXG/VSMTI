@@ -20,6 +20,7 @@ import { initDatabase } from "./database"
 import { listProjects, createProject, deleteProjectById, createSession, listSessions, getSessionMessages, deleteSessionById, searchMessages } from "./session-manager"
 import { AgentRegistry } from "./agent/registry"
 import { getAllModes } from "./modes"
+import { logError } from "./logger"
 
 const registry = createDefaultRegistry()
 const agentRegistry = new AgentRegistry()
@@ -91,7 +92,7 @@ export function registerAgentIPCHandlers(): void {
     Effect.gen(function* () {
       yield* Effect.promise(() => initDatabase())
     }).pipe(Effect.provide(AppLayer)),
-  ).catch((err) => console.error("Agent 初始化失败:", err))
+  ).catch((err) => logError("Agent 初始化失败", err))
 
   // 注册默认钩子
   setupDefaultHooks()
