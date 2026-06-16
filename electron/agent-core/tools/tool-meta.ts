@@ -27,17 +27,17 @@ export const toolMetadata: Record<string, ToolMeta> = {
 
   web_search:   { category: "knowledge", timeout: 15000, supportsParallel: true },
   web_browse:   { category: "knowledge", timeout: 30000, supportsParallel: true },
-  data_analysis:{ category: "knowledge", timeout: 60000 },
+  data_analysis:{ category: "knowledge", timeout: 60000, supportsParallel: true },
 
   bash:         { category: "execution", requiresPermission: true, timeout: 60000 },
   code_exec:    { category: "execution", requiresPermission: true, timeout: 60000 },
-  image_gen:    { category: "execution", timeout: 60000 },
+  image_gen:    { category: "execution", requiresPermission: true, timeout: 60000 },
 
   task_planner: { category: "orchestration", supportsParallel: true },
-  delegate_task:{ category: "orchestration" },
+  delegate_task:{ category: "orchestration", timeout: 120000 },
   team_tool:    { category: "orchestration" },
   cron_tool:    { category: "orchestration" },
-  worktree_tool:{ category: "orchestration" },
+  worktree_tool:{ category: "orchestration", timeout: 30000 },
 
   lsp_definition:  { category: "infrastructure", supportsParallel: true },
   lsp_references:  { category: "infrastructure", supportsParallel: true },
