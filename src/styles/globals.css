@@ -90,18 +90,7 @@
     border: 1px solid var(--border-light);
   }
 
-  .message-actions {
-    opacity: 0;
-    transition: opacity 150ms ease;
-  }
-  .message-group:hover .message-actions { opacity: 1; }
-
-  @media (max-width: 640px) {
-    .message-bubble { max-width: 90% !important; }
-  }
-  @media (min-width: 641px) and (max-width: 1024px) {
-    .message-bubble { max-width: 85% !important; }
-  }
+  /* 响应式消息宽度（旧版覆盖，新版使用内联 style） */
 }
 
 @layer utilities {
