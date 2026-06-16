@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { make } from "../tool"
 
-const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 interface SearchResult {
   title: string
@@ -10,164 +10,121 @@ interface SearchResult {
   source: string
 }
 
-async function fetchText(url: string, timeoutMs = 8000): Promise<string> {
-  const resp = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT },
-    signal: AbortSignal.timeout(timeoutMs),
-  })
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-  return resp.text()
+async function tryFetch(url: string, timeoutMs = 10000): Promise<string | null> {
+  try {
+    const resp = await fetch(url, {
+      headers: { "User-Agent": UA },
+      signal: AbortSignal.timeout(timeoutMs),
+    })
+    if (!resp.ok) return null
+    return await resp.text()
+  } catch { return null }
 }
 
-async function fetchJson(url: string, timeoutMs = 8000): Promise<any> {
-  const resp = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
-    signal: AbortSignal.timeout(timeoutMs),
-  })
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-  return resp.json()
-}
+/** DuckDuckGo HTML 搜索 — 最稳定，不需要 API Key */
+async function ddg(query: string, max: number): Promise<SearchResult[] | null> {
+  const html = await tryFetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
+  if (!html) return null
 
-/** Google HTML 搜索（无需 API Key） */
-async function searchGoogle(query: string, maxResults: number): Promise<SearchResult[]> {
-  const html = await fetchText(`https://www.google.com/search?q=${encodeURIComponent(query)}&num=${maxResults}`)
   const results: SearchResult[] = []
-  // Google 结果区域
-  const blocks = html.match(/<div[^>]*class="[^"]*g[^"]*"[^>]*>[\s\S]*?<\/div>\s*(?=<div|$)/g) || []
-  for (const block of blocks) {
-    const titleMatch = block.match(/<h3[^>]*>([\s\S]*?)<\/h3>/)
-    const linkMatch = block.match(/<a[^>]*href="\/(?:url\?q=)?([^"&]+)[^"]*"[^>]*>/)
-    const snippetMatch = block.match(/<div[^>]*class="[^"]*[VwiC3b|BNeawe][^"]*"[^>]*>([\s\S]*?)<\/div>/)
-    if (titleMatch && linkMatch) {
-      const url = decodeURIComponent(linkMatch[1])
-      if (url.startsWith("http")) {
-        results.push({
-          title: titleMatch[1].replace(/<[^>]+>/g, "").trim(),
-          url,
-          content: snippetMatch ? snippetMatch[1].replace(/<[^>]+>/g, "").trim() : "",
-          source: "google",
-        })
-      }
-    }
-  }
-  return results.slice(0, maxResults)
-}
-
-/** DuckDuckGo HTML 搜索 */
-async function searchDuckDuckGo(query: string, maxResults: number): Promise<SearchResult[]> {
-  const html = await fetchText(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
-  const results: SearchResult[] = []
-  const linkRegex = /<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g
-  const snippetRegex = /<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g
+  const linkRe = /<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g
+  const snippetRe = /<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g
   const snippets: string[] = []
 
-  let match: RegExpExecArray | null
-  while ((match = linkRegex.exec(html)) !== null && results.length < maxResults) {
-    const href = decodeURIComponent(match[1].replace(/\/\/duckduckgo\.com\/l\/\?uddg=/, "").split("&")[0])
-    const title = match[2].replace(/<[^>]+>/g, "").trim()
-    if (title && href.startsWith("http")) {
-      results.push({ title, url: href, content: "", source: "duckduckgo" })
-    }
+  let m: RegExpExecArray | null
+  while ((m = linkRe.exec(html)) !== null && results.length < max) {
+    const href = decodeURIComponent(m[1].replace(/\/\/duckduckgo\.com\/l\/\?uddg=/, "").split("&")[0])
+    const title = m[2].replace(/<[^>]+>/g, "").trim()
+    if (title && href.startsWith("http")) results.push({ title, url: href, content: "", source: "duckduckgo" })
   }
-  while ((match = snippetRegex.exec(html)) !== null) {
-    snippets.push(match[1].replace(/<[^>]+>/g, "").trim())
-  }
+  while ((m = snippetRe.exec(html)) !== null) snippets.push(m[1].replace(/<[^>]+>/g, "").trim())
   snippets.forEach((s, i) => { if (results[i]) results[i].content = s })
-  return results
+  return results.length > 0 ? results : null
 }
 
-/** SEArxNG JSON API */
-async function searchSearxng(query: string, maxResults: number): Promise<SearchResult[]> {
-  const instances = ["https://search.sapti.me", "https://searx.be"]
-  for (const instance of instances) {
+/** SEArxNG 公共实例（JSON API，可配置） */
+async function searxng(query: string, max: number, instance?: string): Promise<SearchResult[] | null> {
+  const instances = instance
+    ? [instance]
+    : ["https://search.sapti.me", "https://searx.be", "https://searx.work"]
+  for (const base of instances) {
     try {
-      const data = await fetchJson(`${instance}/search?q=${encodeURIComponent(query)}&format=json`)
-      if (data.results?.length > 0) {
-        return data.results.slice(0, maxResults).map((r: any) => ({
-          title: r.title || "",
-          url: r.url || "",
-          content: (r.content || "").slice(0, 500),
-          source: `searxng(${instance.replace("https://", "")})`,
-        }))
-      }
+      const resp = await fetch(`${base}/search?q=${encodeURIComponent(query)}&format=json`, {
+        headers: { "User-Agent": UA, Accept: "application/json" },
+        signal: AbortSignal.timeout(8000),
+      })
+      if (!resp.ok) continue
+      const data = await resp.json()
+      const items = (data.results || []).slice(0, max).filter((r: any) => r.title && r.url)
+      if (items.length > 0) return items.map((r: any) => ({
+        title: r.title,
+        url: r.url,
+        content: (r.content || "").slice(0, 500),
+        source: `searxng`,
+      }))
     } catch { continue }
   }
-  return []
+  return null
 }
-
-/** Bing HTML 搜索 */
-async function searchBing(query: string, maxResults: number): Promise<SearchResult[]> {
-  const html = await fetchText(`https://www.bing.com/search?q=${encodeURIComponent(query)}&count=${maxResults}`)
-  const results: SearchResult[] = []
-  const blocks = html.match(/<li[^>]*class="[^"]*b_algo[^"]*"[^>]*>[\s\S]*?<\/li>/g) || []
-  for (const block of blocks) {
-    const titleMatch = block.match(/<h2[^>]*>[\s\S]*?<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h2>/)
-    const snippetMatch = block.match(/<div[^>]*class="[^"]*b_caption[^"]*"[^>]*>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/)
-    if (titleMatch) {
-      results.push({
-        title: titleMatch[2].replace(/<[^>]+>/g, "").trim(),
-        url: titleMatch[1],
-        content: snippetMatch ? snippetMatch[1].replace(/<[^>]+>/g, "").trim() : "",
-        source: "bing",
-      })
-    }
-  }
-  return results.slice(0, maxResults)
-}
-
-/** Brave Search（免费公共 API） */
-async function searchBrave(query: string, maxResults: number): Promise<SearchResult[]> {
-  const data = await fetchJson(`https://search.brave.com/api/search?q=${encodeURIComponent(query)}&count=${maxResults}`)
-  return (data.web?.results || []).slice(0, maxResults).map((r: any) => ({
-    title: r.title || "",
-    url: r.url || "",
-    content: (r.description || "").slice(0, 500),
-    source: "brave",
-  }))
-}
-
-const ENGINES: Array<{ name: string; search: (q: string, n: number) => Promise<SearchResult[]> }> = [
-  { name: "google", search: searchGoogle },
-  { name: "duckduckgo", search: searchDuckDuckGo },
-  { name: "bing", search: searchBing },
-  { name: "brave", search: searchBrave },
-  { name: "searxng", search: searchSearxng },
-]
 
 export const webSearchTool = make({
   name: "web_search",
-  description: "Search the internet. Tries multiple engines (Google, DuckDuckGo, Bing, Brave, SEArxNG). Use for news, facts, and web content.",
+  description: "Search the web. Uses DuckDuckGo (primary) with SEArxNG fallback.",
   inputSchema: z.object({
     query: z.string().describe("Search query"),
-    maxResults: z.number().optional().default(5).describe("Maximum results to return (max 10)"),
-    engine: z.string().optional().describe("Specific search engine: google, duckduckgo, bing, brave, searxng, or auto (default)"),
+    maxResults: z.number().optional().default(5).describe("Max results (max 10)"),
+    searxInstance: z.string().optional().describe("Custom SEArxNG instance URL (e.g. https://searx.example.com)"),
   }),
   outputSchema: z.string(),
   permission: "web_search",
   async execute(input, _ctx) {
-    const maxResults = Math.min(input.maxResults || 5, 10)
-    const preferred = input.engine
-    const ordered = preferred
-      ? [ENGINES.find((e) => e.name === preferred)].filter(Boolean) as typeof ENGINES
-      : ENGINES
+    const max = Math.min(input.maxResults || 5, 10)
 
-    const errors: string[] = []
-    for (const engine of ordered) {
-      try {
-        const results = await engine.search(input.query, maxResults)
-        if (results.length > 0) {
-          const header = `搜索引擎: ${engine.name}\n查询: ${input.query}\n结果: ${results.length}\n${"─".repeat(40)}`
-          const body = results.map((r, i) =>
-            `${i + 1}. [${r.title}](${r.url})\n   ${r.content.slice(0, 300)}`
-          ).join("\n\n")
-          return { success: true, output: `${header}\n\n${body}` }
-        }
-        errors.push(`${engine.name}: 无结果`)
-      } catch (e) {
-        errors.push(`${engine.name}: ${e instanceof Error ? e.message : String(e)}`)
+    // 1) DuckDuckGo
+    const ddgResults = await ddg(input.query, max)
+    if (ddgResults) {
+      return {
+        success: true,
+        output: [
+          `来源: DuckDuckGo`,
+          `查询: ${input.query}`,
+          `结果: ${ddgResults.length}`,
+          "─".repeat(40),
+          ...ddgResults.map((r, i) =>
+            `${i + 1}. [${r.title}](${r.url})\n   ${r.content.slice(0, 300)}`),
+        ].join("\n"),
       }
     }
 
-    return { success: false, error: `所有搜索引擎均失败:\n${errors.join("\n")}\n\n可尝试 web_browse 直接访问网站` }
+    // 2) SEArxNG 降级
+    const sxResults = await searxng(input.query, max, input.searxInstance)
+    if (sxResults) {
+      return {
+        success: true,
+        output: [
+          `来源: SEArxNG`,
+          `查询: ${input.query}`,
+          `结果: ${sxResults.length}`,
+          "─".repeat(40),
+          ...sxResults.map((r, i) =>
+            `${i + 1}. [${r.title}](${r.url})\n   ${r.content.slice(0, 300)}`),
+        ].join("\n"),
+      }
+    }
+
+    // 3) 全部失败
+    return {
+      success: false,
+      error: [
+        "搜索失败：所有搜索引擎均不可用。",
+        "  - DuckDuckGo: 被屏蔽或超时",
+        "  - SEArxNG: 所有公共实例无响应",
+        "",
+        "解决方法:",
+        "  1. 稍后重试（搜索引擎可能有临时限制）",
+        "  2. 使用 web_browse 直接访问目标网站",
+        "  3. 自建 SEArxNG 实例并通过 searxInstance 参数指定",
+      ].join("\n"),
+    }
   },
 })
