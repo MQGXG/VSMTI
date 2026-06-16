@@ -8,6 +8,7 @@ import { ToolRegistry } from "./registry"
 import { PermissionSet, PermissionRule } from "./permission"
 import { createLLMClient, LLMMessage } from "./llm-sdk"
 import { IterationBudget } from "./iteration-budget"
+import { evaluateToolCalls } from "./permission-gate"
 
 export interface DelegateTask {
   id: string
@@ -170,15 +171,23 @@ Your task: ${task}`,
         toolCallID: "",
       }
 
-      for (const call of toolCallsArray) {
-        let args: Record<string, unknown> = {}
-        try { args = JSON.parse(call.function.arguments) } catch { /* ignore */ }
-        const result = await registry.execute(call.function.name, args, ctx)
+      // 权限门控：子代理不能请求用户授权，权限不足直接拒绝
+      const approvals = evaluateToolCalls(toolCallsArray, registry, childConfig.permissions)
+      for (const ev of approvals) {
+        if (ev.needsApproval) {
+          messages.push({
+            role: "tool",
+            content: [{ type: "tool-result" as const, toolCallId: ev.toolCall.id, toolName: ev.toolCall.name, output: { type: "text" as const, value: `[Permission denied: ${ev.toolCall.name} — sub-agent cannot request permission]` } }],
+            tool_call_id: ev.toolCall.id,
+          })
+          continue
+        }
+        const result = await registry.execute(ev.toolCall.name, ev.args, ctx)
         const text = result.output || result.error || ""
         messages.push({
           role: "tool",
-          content: [{ type: "tool-result" as const, toolCallId: call.id, toolName: call.function.name, output: { type: "text" as const, value: text } }],
-          tool_call_id: call.id,
+          content: [{ type: "tool-result" as const, toolCallId: ev.toolCall.id, toolName: ev.toolCall.name, output: { type: "text" as const, value: text } }],
+          tool_call_id: ev.toolCall.id,
         })
       }
     }
