@@ -111,11 +111,12 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
       <button
         onClick={() => setOpen(!open)}
         disabled={disabled}
-        className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs transition-colors disabled:opacity-30 ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all duration-200 disabled:opacity-30 ${
           suggestedTool && !open
-            ? "text-accent-400 bg-accent-500/10 border border-accent-500/30 animate-pulse-glow"
-            : "text-neutral-400 hover:text-neutral-200 hover:bg-white/10"
+            ? "text-primary-400 animate-pulse-glow"
+            : "text-neutral-500 hover:text-neutral-300 hover:bg-neutral-700/50"
         }`}
+        style={suggestedTool && !open ? { background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)' } : {}}
         title="工具面板 (可直接执行，不经过 LLM)"
       >
         <Wrench className="w-3.5 h-3.5" />
@@ -123,16 +124,17 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 w-80 glass-heavy rounded-xl shadow-2xl overflow-hidden z-50 animate-scale-in">
+        <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden shadow-glass-lg z-50 animate-scale-in"
+          style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
           {resultMsg ? (
-            <div className="p-4 text-sm text-center text-neutral-300">{resultMsg}</div>
+            <div className="p-4 text-sm text-center" style={{ color: '#E8F4F0' }}>{resultMsg}</div>
           ) : !selectedTool ? (
             <div>
-              <div className="px-3 py-2 border-b border-glass-border">
-                <div className="text-xs text-neutral-500 font-medium">工具面板</div>
-                <div className="text-[10px] text-neutral-600">直接执行，不需要 AI 参与</div>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1A2E35' }}>
+                <div className="text-xs font-medium" style={{ color: '#E8F4F0' }}>工具面板</div>
+                <div className="text-[10px] mt-0.5" style={{ color: '#5C8D8A' }}>直接执行，不需要 AI 参与</div>
               </div>
-              <div className="max-h-72 overflow-y-auto p-1 space-y-0.5">
+              <div className="max-h-72 overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
                 {tools.map((tool) => {
                   const Icon = toolIcons[tool.name] || Wrench
                   const isSuggested = tool.name === suggestedTool?.name
@@ -140,18 +142,19 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                     <button
                       key={tool.name}
                       onClick={() => handleSelectTool(tool)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-colors ${
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ${
                         isSuggested
-                          ? "bg-accent-500/15 text-accent-300 border border-accent-500/30"
-                          : "text-neutral-200 hover:bg-white/10"
+                          ? "text-primary-300"
+                          : "text-neutral-300 hover:bg-neutral-800/50"
                       }`}
+                      style={isSuggested ? { background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)' } : {}}
                     >
-                      <Icon className="w-4 h-4 text-accent-400 shrink-0" />
+                      <Icon className="w-4 h-4 shrink-0" style={{ color: isSuggested ? '#00D9C0' : '#5C8D8A' }} />
                       <div className="min-w-0 flex-1">
                         <div className="font-medium truncate">{tool.name}</div>
-                        <div className="text-[11px] text-neutral-500 truncate">{tool.description}</div>
+                        <div className="text-[11px] truncate mt-0.5" style={{ color: '#5C8D8A' }}>{tool.description}</div>
                       </div>
-                      {isSuggested && <Sparkles className="w-3 h-3 text-accent-400 shrink-0" />}
+                      {isSuggested && <Sparkles className="w-3 h-3 shrink-0" style={{ color: '#00D9C0' }} />}
                     </button>
                   )
                 })}
@@ -161,56 +164,48 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {(() => { const Icon = toolIcons[selectedTool.name] || Wrench; return <Icon className="w-4 h-4 text-accent-400" /> })()}
-                  <span className="text-sm font-medium text-neutral-200">{selectedTool.name}</span>
+                  {(() => { const Icon = toolIcons[selectedTool.name] || Wrench; return <Icon className="w-4 h-4" style={{ color: '#00D9C0' }} /> })()}
+                  <span className="text-sm font-medium" style={{ color: '#E8F4F0' }}>{selectedTool.name}</span>
                 </div>
-                <button onClick={() => setSelectedTool(null)} className="p-1 rounded hover:bg-white/10">
-                  <X className="w-3.5 h-3.5 text-neutral-500" />
+                <button onClick={() => setSelectedTool(null)} className="p-1.5 rounded-lg transition-colors hover:bg-neutral-700/50">
+                  <X className="w-3.5 h-3.5" style={{ color: '#5C8D8A' }} />
                 </button>
               </div>
 
-              <p className="text-xs text-neutral-500">{selectedTool.description}</p>
+              <p className="text-xs" style={{ color: '#5C8D8A' }}>{selectedTool.description}</p>
 
               {!!selectedTool.parameters?.properties && (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {Object.entries(selectedTool.parameters.properties as Record<string, { type: string; description?: string }>).map(([key, prop]) => {
                     const required = (selectedTool.parameters?.required || []) as string[]
                     return (
                       <div key={key}>
-                        <label className="text-xs text-neutral-500 block mb-1">
+                        <label className="text-xs block mb-1.5" style={{ color: '#5C8D8A' }}>
                           {key}
-                          {required.includes(key) && <span className="text-red-400 ml-1">*</span>}
+                          {required.includes(key) && <span className="ml-1" style={{ color: '#FF4757' }}>*</span>}
                         </label>
-                        {prop.type === "string" && (
-                          <input
-                            value={inputs[key] || ""}
-                            onChange={(e) => setInputs((p) => ({ ...p, [key]: e.target.value }))}
-                            placeholder={prop.description || key}
-                            className="w-full bg-white/5 border border-glass-border rounded-lg px-3 py-1.5 text-sm text-neutral-200 outline-none focus:border-accent-500/40 placeholder-neutral-600"
-                          />
-                        )}
-                        {prop.type === "number" && (
-                          <input
-                            type="number"
-                            value={inputs[key] || ""}
-                            onChange={(e) => setInputs((p) => ({ ...p, [key]: e.target.value }))}
-                            placeholder={prop.description || key}
-                            className="w-full bg-white/5 border border-glass-border rounded-lg px-3 py-1.5 text-sm text-neutral-200 outline-none focus:border-accent-500/40 placeholder-neutral-600"
-                          />
-                        )}
+                        <input
+                          type={prop.type === "number" ? "number" : "text"}
+                          value={inputs[key] || ""}
+                          onChange={(e) => setInputs((p) => ({ ...p, [key]: e.target.value }))}
+                          placeholder={prop.description || key}
+                          className="w-full rounded-xl px-3 py-2 text-sm outline-none transition-all duration-200"
+                          style={{ background: '#0D1117', border: '1px solid #1A2E35', color: '#E8F4F0' }}
+                        />
                       </div>
                     )
                   })}
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <button onClick={handleExecute} disabled={loading}
-                  className="flex-1 py-2 rounded-lg text-sm btn-gradient text-white disabled:opacity-40">
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium btn-primary disabled:opacity-40">
                   {loading ? "执行中..." : "执行"}
                 </button>
                 <button onClick={() => setSelectedTool(null)}
-                  className="px-3 py-2 rounded-lg text-sm text-neutral-400 hover:bg-white/10 transition-colors">
+                  className="px-4 py-2.5 rounded-xl text-sm transition-colors hover:bg-neutral-700/50"
+                  style={{ color: '#5C8D8A' }}>
                   返回
                 </button>
               </div>

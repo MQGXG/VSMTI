@@ -24,24 +24,26 @@ export function Modal({ open, onClose, children, title, maxWidth = "max-w-md" }:
 
   const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in-up"
+      className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in-up"
+      style={{ background: 'rgba(10, 15, 20, 0.8)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className={`w-full ${maxWidth} mx-4 glass-heavy rounded-2xl shadow-2xl animate-scale-in overflow-hidden`}
+        className={`w-full ${maxWidth} mx-4 rounded-2xl shadow-glass-lg animate-scale-in overflow-hidden`}
+        style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-glass-border">
-            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
+          <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #1A2E35' }}>
+            <h2 className="text-base font-semibold" style={{ color: '#E8F4F0' }}>{title}</h2>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-500 hover:text-neutral-300 transition-colors"
+              className="p-1.5 rounded-lg transition-colors hover:bg-neutral-700/50"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" style={{ color: '#5C8D8A' }} />
             </button>
           </div>
         )}
-        <div className={title ? "" : ""}>{children}</div>
+        <div>{children}</div>
       </div>
     </div>
   );

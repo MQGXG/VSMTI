@@ -24,12 +24,12 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
     <Modal open={true} onClose={() => onSubmit("")} maxWidth="max-w-md">
       <div className="p-6 space-y-4">
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-full bg-accent-500/20 shrink-0">
-            <HelpCircle className="w-5 h-5 text-accent-400" />
+          <div className="p-2 rounded-full shrink-0" style={{ background: 'rgba(0, 217, 192, 0.1)' }}>
+            <HelpCircle className="w-5 h-5" style={{ color: '#00D9C0' }} />
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Agent 提问</h3>
-            <p className="text-sm text-neutral-400">{question}</p>
+            <h3 className="text-sm font-semibold" style={{ color: '#E8F4F0' }}>Agent 提问</h3>
+            <p className="text-sm" style={{ color: '#5C8D8A' }}>{question}</p>
           </div>
         </div>
 
@@ -41,11 +41,12 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
                 setSelected(opt);
                 setCustomAnswer("");
               }}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-all ${
-                selected === opt
-                  ? "border-accent-500/50 bg-accent-500/10 text-accent-300"
-                  : "border-glass-border hover:border-accent-500/30 text-neutral-300"
-              }`}
+              className="w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200"
+              style={{
+                border: selected === opt ? '1px solid rgba(0, 217, 192, 0.5)' : '1px solid #1A2E35',
+                background: selected === opt ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
+                color: selected === opt ? '#00D9C0' : '#5C8D8A',
+              }}
             >
               {opt}
             </button>
@@ -60,7 +61,8 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
                 setSelected(null);
               }}
               placeholder="输入自定义回答..."
-              className="w-full px-4 py-2.5 rounded-xl text-sm border border-glass-border bg-transparent focus:outline-none focus:border-accent-500/50 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500"
+              className="w-full px-4 py-2.5 rounded-xl text-sm bg-transparent outline-none transition-all duration-200"
+              style={{ border: '1px solid #1A2E35', color: '#E8F4F0' }}
             />
           </div>
         </div>
@@ -68,7 +70,7 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
         <button
           onClick={handleSubmit}
           disabled={!selected && !customAnswer.trim()}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl btn-gradient text-white text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl btn-primary text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4" />
           提交回答

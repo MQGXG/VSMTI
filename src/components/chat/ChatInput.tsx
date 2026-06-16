@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Square, Send } from "lucide-react";
+import { Square, Send, Plus, Paperclip } from "lucide-react";
 import { ToolPalette } from "./ToolPalette";
 import type { ToolResult } from "@/types/electron";
 
@@ -24,6 +24,7 @@ export function ChatInput({ input, isLoading, disabled, onInput, onSend, onStop,
   const [showSkills, setShowSkills] = useState(false);
   const [filteredSkills, setFilteredSkills] = useState<SkillInfo[]>([]);
   const [selectedSkillIndex, setSelectedSkillIndex] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // 加载技能列表
@@ -90,58 +91,88 @@ export function ChatInput({ input, isLoading, disabled, onInput, onSend, onStop,
   return (
     <div className="space-y-2 relative">
       {/* 工具面板行 */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         {onToolResult && <ToolPalette onResult={onToolResult} inputHint={input} />}
       </div>
 
       {/* Slash 命令补全下拉 */}
       {showSkills && (
-        <div className="absolute bottom-full mb-2 left-0 right-0 z-50 glass-heavy rounded-xl border border-glass-border overflow-hidden shadow-xl">
-          <div className="px-3 py-1.5 text-xs text-neutral-500 border-b border-glass-border">
+        <div className="absolute bottom-full mb-2 left-0 right-0 z-50 rounded-xl overflow-hidden shadow-glass-lg"
+          style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
+          <div className="px-4 py-2 text-[10px] font-medium text-neutral-500" style={{ borderBottom: '1px solid #1A2E35' }}>
             Skill 命令 (回车选择 / Esc 关闭)
           </div>
-          {filteredSkills.map((skill, idx) => (
-            <button
-              key={skill.name}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2 ${
-                idx === selectedSkillIndex
-                  ? "bg-accent-500/20 text-accent-300"
-                  : "text-neutral-300 hover:bg-white/5"
-              }`}
-              onMouseDown={() => applySkill(skill)}
-            >
-              <span className="font-medium text-accent-400">/</span>
-              <span>{skill.name}</span>
-              {skill.category && (
-                <span className="text-xs text-neutral-500 ml-auto">{skill.category}</span>
-              )}
-            </button>
-          ))}
+          <div className="max-h-64 overflow-y-auto custom-scrollbar">
+            {filteredSkills.map((skill, idx) => (
+              <button
+                key={skill.name}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 flex items-center gap-2 ${
+                  idx === selectedSkillIndex
+                    ? "bg-primary-500/10 text-primary-400"
+                    : "text-neutral-300 hover:bg-neutral-800/50"
+                }`}
+                onMouseDown={() => applySkill(skill)}
+              >
+                <span className="font-medium text-primary-500">/</span>
+                <span>{skill.name}</span>
+                {skill.category && (
+                  <span className="text-xs text-neutral-600 ml-auto">{skill.category}</span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
+      {/* 输入框容器 - 玻璃拟态效果 */}
       <div
-        className={`relative flex items-end gap-2 rounded-2xl px-4 py-3 transition-all duration-200 ${
+        className={`relative flex items-end gap-3 rounded-2xl px-4 py-3 transition-all duration-200 ${
           disabled
-            ? "glass opacity-60"
-            : "glass-heavy focus-within:border-accent-500/30 focus-within:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
+            ? "opacity-60"
+            : ""
         }`}
+        style={{
+          background: 'rgba(15, 26, 32, 0.9)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: isFocused ? '1px solid rgba(0, 217, 192, 0.5)' : '1px solid #1A2E35',
+          boxShadow: isFocused ? '0 0 0 3px rgba(0, 217, 192, 0.15)' : 'none',
+        }}
       >
+        {/* 附件按钮 */}
+        <button
+          className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-neutral-700/50"
+          style={{ color: '#5C8D8A' }}
+          title="添加附件"
+        >
+          <Plus className="w-5 h-5" />
+        </button>
+
+        {/* 文本输入框 */}
         <textarea
           ref={textareaRef}
           value={input}
           onChange={(e) => onInput(e.target.value)}
           onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           placeholder={disabled ? "AI 对话需连接后端，工具面板可直接使用" : "输入消息... (/ 查看 Skill, Shift+Enter 换行)"}
           rows={1}
           disabled={disabled}
-          className="flex-1 bg-transparent text-sm text-neutral-900 dark:text-neutral-200 placeholder-neutral-500 outline-none resize-none leading-relaxed disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent text-sm text-neutral-200 placeholder-neutral-600 outline-none resize-none leading-relaxed disabled:cursor-not-allowed min-h-[24px] max-h-[200px]"
+          style={{ lineHeight: '1.6' }}
         />
 
+        {/* 发送/停止按钮 */}
         <button
           onClick={isLoading ? onStop : onSend}
-          disabled={!input.trim() && !isLoading || disabled}
-          className="flex-shrink-0 w-9 h-9 rounded-xl btn-gradient text-white flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed disabled:transform-none"
+          disabled={(!input.trim() && !isLoading) || disabled}
+          className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:transform-none"
+          style={{
+            background: (input.trim() || isLoading) ? 'linear-gradient(135deg, #00D9C0, #00A8E8)' : '#1A2E35',
+            color: (input.trim() || isLoading) ? '#ffffff' : '#5C8D8A',
+            boxShadow: (input.trim() || isLoading) ? '0 2px 8px rgba(0, 217, 192, 0.3)' : 'none',
+          }}
         >
           {isLoading ? <Square className="w-4 h-4" /> : <Send className="w-4 h-4" />}
         </button>

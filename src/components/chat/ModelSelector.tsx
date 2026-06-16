@@ -131,21 +131,27 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
   }, []);
 
   return (
-    <div className="flex items-center justify-between mt-2">
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between mt-3">
+      <div className="flex items-center gap-3">
+        {/* 模型选择器 */}
         <div className="relative" ref={modelRef}>
           <button
             onClick={() => setModelOpen(!modelOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-neutral-400 hover:text-neutral-200 hover:bg-white/10 transition-colors border border-transparent hover:border-glass-border"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all duration-200 hover:bg-neutral-700/50"
+            style={{ color: '#5C8D8A', border: '1px solid #1A2E35' }}
           >
-            <Cpu className="w-3 h-3" />
+            <Cpu className="w-3.5 h-3.5" />
             <span>{selectedModel.label}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${modelOpen ? "rotate-180" : ""}`} />
+            <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${modelOpen ? "rotate-180" : ""}`} />
           </button>
 
           {modelOpen && (
-            <div className="absolute bottom-full left-0 mb-1 w-56 glass-heavy rounded-xl shadow-2xl overflow-hidden z-50 animate-scale-in">
-              <div className="max-h-60 overflow-y-auto py-1">
+            <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl overflow-hidden shadow-glass-lg animate-scale-in z-50"
+              style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
+              <div className="px-3 py-2 text-[10px] font-medium text-neutral-500" style={{ borderBottom: '1px solid #1A2E35' }}>
+                选择模型
+              </div>
+              <div className="max-h-60 overflow-y-auto custom-scrollbar">
                 {availableModels.map((opt) => (
                   <button
                     key={opt.value}
@@ -154,20 +160,20 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
                       saveModelChoice(opt);
                       setModelOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                    className={`w-full text-left px-3 py-2.5 text-xs transition-all duration-200 ${
                       selectedModel.value === opt.value
-                        ? "bg-accent-500/10 text-accent-400"
-                        : "text-neutral-300 hover:bg-white/10"
+                        ? "bg-primary-500/10 text-primary-400"
+                        : "text-neutral-300 hover:bg-neutral-800/50"
                     }`}
                   >
                     <div className="font-medium">{opt.label}</div>
-                    <div className="text-neutral-500 text-[10px] mt-0.5">
+                    <div className="text-[10px] mt-0.5" style={{ color: '#3A5A58' }}>
                       {opt.provider === "openai" ? "OpenAI" : opt.provider === "claude" ? "Anthropic" : opt.provider === "ollama" ? "本地" : "自定义"}
                     </div>
                   </button>
                 ))}
                 {availableModels.length === 0 && (
-                  <div className="px-3 py-2 text-xs text-neutral-500">
+                  <div className="px-3 py-4 text-xs text-center" style={{ color: '#5C8D8A' }}>
                     请在设置中启用模型
                   </div>
                 )}
@@ -176,12 +182,14 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
           )}
         </div>
 
-      <span className="text-[10px] text-neutral-600 hidden sm:inline">
-        {selectedModel.provider === "custom" ? "自定义 API" : selectedModel.provider === "ollama" ? "本地运行" : "云端 API"}
-      </span>
+        {/* API 类型标识 */}
+        <span className="text-[10px] hidden sm:inline" style={{ color: '#3A5A58' }}>
+          {selectedModel.provider === "custom" ? "自定义 API" : selectedModel.provider === "ollama" ? "本地运行" : "云端 API"}
+        </span>
       </div>
 
-      <div className="flex items-center gap-1 glass rounded-lg border border-glass-border p-0.5">
+      {/* Agent 模式选择器 */}
+      <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
         {MODE_OPTIONS.map((m) => {
           const Icon = m.icon;
           const active = agentMode === m.value;
@@ -193,11 +201,12 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
                 localStorage.setItem("chat_mode", m.value);
               }}
               title={`${m.label} — ${m.desc}`}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-all duration-200 ${
                 active
-                  ? "bg-accent-500/20 text-accent-400 border border-accent-500/30"
-                  : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
+                  ? "text-primary-400"
+                  : "text-neutral-500 hover:text-neutral-300 hover:bg-neutral-700/50"
               }`}
+              style={active ? { background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)' } : {}}
             >
               <Icon className="w-3 h-3" />
               <span className="hidden sm:inline">{m.label}</span>

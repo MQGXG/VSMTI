@@ -50,7 +50,7 @@ export function App() {
           project_id: p.project_id,
           name: p.name,
           workspace_path: p.workspace_path,
-          color: `from-${['indigo','cyan','emerald','violet','rose','amber'][i % 6]}-500 to-${['cyan','indigo','emerald','rose','amber','violet'][i % 6]}-500`,
+          color: `from-${['primary','accent','primary','accent','primary','accent'][i % 6]}-500 to-${['accent','primary','accent','primary','accent','primary'][i % 6]}-500`,
         }));
         setProjects(mapped);
         if (!activeProject) setActiveProject(mapped[0].project_id);
@@ -63,7 +63,7 @@ export function App() {
       project_id: "default",
       name: "默认项目",
       workspace_path: window.electronAPI.platform === "win32" ? "C:\\" : "/",
-      color: "from-indigo-500 to-cyan-500",
+      color: "from-primary-500 to-accent-500",
     };
     try {
       const created = await window.electronAPI.ts.createProject(defaultProject.name, defaultProject.workspace_path);
@@ -139,7 +139,7 @@ export function App() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-surface-50 dark:bg-surface-950 text-neutral-900 dark:text-neutral-100 overflow-hidden transition-colors duration-200">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#0A0F14', color: '#E8F4F0' }}>
       <TitleBar />
       <div className="flex flex-1 overflow-hidden">
         <ProjectBar
