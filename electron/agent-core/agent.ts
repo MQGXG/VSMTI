@@ -10,6 +10,7 @@ import { BuiltinMemoryProvider } from "./memory/builtin-provider"
 import { appendMessage, loadSession } from "./session-store"
 import { VectorMemoryProvider } from "./memory/vector-provider"
 import { FileMemoryProvider } from "./memory/file-memory-provider"
+import { FTSMemoryProvider } from "./memory/fts-memory-provider"
 import { evaluateToolCalls, extractResources } from "./permission-gate"
 import { ToolOrchestrator } from "./execution/orchestrator"
 import { AgentStateMachine } from "./agent/state-machine"
@@ -34,12 +35,13 @@ export interface AgentConfig {
   maxContextTokens?: number
   permissions?: PermissionSet
   mode?: AgentMode
+  toolAllowlist?: string[]  // 如果设置，LLM 只可见这些工具
   onPermissionSave?: (rules: PermissionRule[]) => void
 }
 
 export type { AgentEvent } from "./types"
 
-export const DEFAULT_SYSTEM = `You are OmniAgent, an AI assistant integrated into a desktop application.
+export const DEFAULT_SYSTEM = `You are Mira, an AI assistant integrated into a desktop application.
 Use the available tools to help users with their tasks.
 When you use a tool, wait for the result and provide a clear summary to the user.`
 
@@ -60,6 +62,7 @@ export class Agent {
     }
     if (workspace) {
       this.memoryManager.addProvider(new FileMemoryProvider())
+      this.memoryManager.addProvider(new FTSMemoryProvider())
     }
   }
 
@@ -74,8 +77,19 @@ export class Agent {
   ): AsyncGenerator<AgentEvent> {
     const ctx = buildToolContext(config)
 
+    // 注入持久化权限到审批缓存
+    if (config.permissions) {
+      this.approvalStore.setPermissions(config.permissions)
+    }
+
     const materialized = this.registry.materialize(config.permissions)
-    const toolSet = materialized.definitions
+    let toolSet = materialized.definitions
+
+    // toolAllowlist: 只暴露允许的工具给 LLM，其他工具 LLM 完全不知道
+    if (config.toolAllowlist && config.toolAllowlist.length > 0) {
+      const allowed = new Set(config.toolAllowlist)
+      toolSet = Object.fromEntries(Object.entries(toolSet).filter(([name]) => allowed.has(name)))
+    }
 
     await this.memoryManager.initialize(config.sessionID, config.workspace)
     const memoryPrompt = this.memoryManager.buildSystemPrompt()
@@ -238,9 +252,9 @@ export class Agent {
 
           const allowed = await waitForReply()
           if (allowed) {
-            this.approvalStore.record(ev.permissionAction, resources, "allow")
+            this.approvalStore.record(ev.permissionAction, resources, "allow", 300_000, config.workspace)
           } else {
-            this.approvalStore.record(ev.permissionAction, resources, "deny")
+            this.approvalStore.record(ev.permissionAction, resources, "deny", 300_000, config.workspace)
             results.set(ev.toolCall.id, { success: false, error: `Permission denied: ${ev.toolCall.name}` })
             continue
           }
