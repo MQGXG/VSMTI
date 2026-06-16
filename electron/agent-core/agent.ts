@@ -41,9 +41,7 @@ export interface AgentConfig {
 
 export type { AgentEvent } from "./types"
 
-export const DEFAULT_SYSTEM = `You are Mira, an AI assistant integrated into a desktop application.
-Use the available tools to help users with their tasks.
-When you use a tool, wait for the result and provide a clear summary to the user.`
+export const DEFAULT_SYSTEM = `You are Mira, an AI assistant integrated into a desktop application. Answer directly and concisely. Only use tools when the user explicitly asks you to read files, search the web, run code, or perform file operations. For general questions, just answer from your knowledge.`
 
 export class Agent {
   private stateMachine = new AgentStateMachine()

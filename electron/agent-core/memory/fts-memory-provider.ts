@@ -93,7 +93,7 @@ export class FTSMemoryProvider implements MemoryProvider {
   }
 
   buildSystemPrompt(): string {
-    return `你有一个 FTS5 全文搜索记忆系统(${this.ignoreDirs.size} 个忽略目录, ${this.ignoreExts.size} 种忽略格式)，可检索项目文件内容。通过 FTS5 + BM25 排序，分数阈值 ${(this.scoreFloor * 100).toFixed(0)}%。需要回忆之前见过的信息时，系统会自动搜索并提供相关上下文。`
+    return `[Memory: FTS5 index available for file content search when needed]`
   }
 
   async prefetch(query: string, _sessionID: string): Promise<string> {

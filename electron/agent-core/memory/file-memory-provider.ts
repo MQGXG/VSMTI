@@ -31,11 +31,7 @@ export class FileMemoryProvider implements MemoryProvider {
 
   buildSystemPrompt(): string {
     if (this.memories.length === 0) return ""
-    return (
-      `[File Memory: ${this.memories.length} items in .memory/MEMORY.md]\n` +
-      `Key decisions and context are automatically persisted. ` +
-      `Use the "memory" tool to add/search/update memories.`
-    )
+    return `[Memory: ${this.memories.length} saved facts available]`
   }
 
   async prefetch(_query: string, _sessionID: string): Promise<string> {
