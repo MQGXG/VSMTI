@@ -184,8 +184,16 @@ function recordSchema(def: any): Record<string, unknown> {
 }
 
 /**
- * 指数退避重试包装器 — 处理瞬时网络故障
+ * 指数退避重试包装器 — 仅重试可恢复的网络错误
+ * HTTP 4xx（除 429 限流外）立刻失败，不重试
  */
+function isRetryableError(message: string): boolean {
+  const code = parseInt(message.match(/HTTP (\d+)/)?.[1] || "0", 10)
+  if (code >= 400 && code < 500) return code === 429
+  if (code >= 500) return true
+  return true
+}
+
 async function* withRetry(
   fn: () => AsyncGenerator<LLMStreamEvent>,
   maxRetries = 2,
@@ -211,8 +219,9 @@ async function* withRetry(
     } catch (e) {
       lastError = e instanceof Error ? e : new Error(String(e))
     }
+    if (lastError && !isRetryableError(lastError.message)) break
   }
-  yield { type: "error", error: { message: `All ${maxRetries} retries failed: ${lastError?.message}` } }
+  yield { type: "error", error: { message: lastError?.message || "Unknown error" } }
 }
 
 export function createLLMClient(config: SDKConfig): LLMClient {

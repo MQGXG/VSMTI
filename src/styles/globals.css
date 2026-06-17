@@ -234,3 +234,217 @@ html.dark code:not(pre code) {
   border-radius: 3px;
   font-size: 0.875em;
 }
+
+/* assistant-ui Thread 样式覆盖 */
+.aui-thread-root {
+  background: transparent !important;
+  height: 100% !important;
+}
+
+.aui-thread-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #1A2E35 transparent;
+}
+
+.aui-thread-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.aui-thread-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.aui-thread-scroll::-webkit-scrollbar-thumb {
+  background: #1A2E35;
+  border-radius: 3px;
+}
+
+.aui-thread-scroll::-webkit-scrollbar-thumb:hover {
+  background: #3A5A58;
+}
+
+/* assistant-ui 消息样式 */
+.aui-message {
+  padding: 12px 0 !important;
+}
+
+.aui-message-user {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.aui-message-assistant {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* assistant-ui Composer 样式 */
+.aui-composer-root {
+  background: rgba(15, 26, 32, 0.9) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #1A2E35 !important;
+  border-radius: 16px !important;
+  padding: 12px 16px !important;
+  transition: all 200ms ease !important;
+}
+
+.aui-composer-root:focus-within {
+  border-color: rgba(0, 217, 192, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(0, 217, 192, 0.15) !important;
+}
+
+.aui-composer-input {
+  background: transparent !important;
+  color: #E8F4F0 !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  outline: none !important;
+}
+
+.aui-composer-input::placeholder {
+  color: #3A5A58 !important;
+}
+
+.aui-composer-send {
+  background: linear-gradient(135deg, #00D9C0, #00A8E8) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 12px !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 200ms ease !important;
+  box-shadow: 0 2px 8px rgba(0, 217, 192, 0.3) !important;
+}
+
+.aui-composer-send:hover:not(:disabled) {
+  transform: scale(1.02) !important;
+  box-shadow: 0 4px 16px rgba(0, 217, 192, 0.4) !important;
+}
+
+.aui-composer-send:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
+}
+
+.aui-composer-cancel {
+  background: rgba(255, 71, 87, 0.1) !important;
+  color: #FF4757 !important;
+  border: none !important;
+  border-radius: 12px !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 200ms ease !important;
+}
+
+.aui-composer-cancel:hover {
+  background: rgba(255, 71, 87, 0.2) !important;
+}
+
+/* assistant-ui Action Bar 样式 */
+.aui-action-bar {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.aui-action-bar-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  color: #5C8D8A;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.aui-action-bar-button:hover {
+  background: rgba(26, 46, 53, 0.5);
+  color: #E8F4F0;
+}
+
+/* assistant-ui Branch Picker 样式 */
+.aui-branch-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.aui-branch-picker-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(26, 46, 53, 0.5);
+  border: 1px solid #1A2E35;
+  color: #5C8D8A;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.aui-branch-picker-button:hover {
+  background: rgba(0, 217, 192, 0.1);
+  border-color: rgba(0, 217, 192, 0.3);
+  color: #00D9C0;
+}
+
+.aui-branch-picker-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* assistant-ui Error 样式 */
+.aui-error {
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #FF4757;
+  font-size: 14px;
+}
+
+/* assistant-ui Loading 样式 */
+.aui-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #0F1A20;
+  border-radius: 12px;
+}
+
+.aui-loading-dot {
+  width: 8px;
+  height: 8px;
+  background: #00D9C0;
+  border-radius: 50%;
+  animation: bounce-dot 1.4s ease-in-out infinite;
+}
+
+.aui-loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.aui-loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.aui-loading-text {
+  color: #5C8D8A;
+  font-size: 14px;
+}

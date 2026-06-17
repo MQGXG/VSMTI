@@ -65,6 +65,71 @@ const electronAPI = {
     /** 列出可用 Skill */
     listSkills: () => ipcRenderer.invoke("skill:listSkills"),
 
+    /** Task Tracker */
+    task: {
+      create: (summary: string, parentId?: string) => ipcRenderer.invoke("task:create", summary, parentId),
+      updateStatus: (taskId: string, status: string) => ipcRenderer.invoke("task:updateStatus", taskId, status),
+      updateSummary: (taskId: string, summary: string) => ipcRenderer.invoke("task:updateSummary", taskId, summary),
+      addNote: (taskId: string, note: string) => ipcRenderer.invoke("task:addNote", taskId, note),
+      get: (taskId: string) => ipcRenderer.invoke("task:get", taskId),
+      list: (status?: string) => ipcRenderer.invoke("task:list", status),
+      listActive: () => ipcRenderer.invoke("task:listActive"),
+      toText: () => ipcRenderer.invoke("task:toText"),
+    },
+
+    /** Subagent Manager */
+    subagent: {
+      spawn: (description: string, options?: { parentId?: string; prompt?: string }) =>
+        ipcRenderer.invoke("subagent:spawn", description, options),
+      wait: (id: string, timeoutMs?: number) => ipcRenderer.invoke("subagent:wait", id, timeoutMs),
+      cancel: (id: string) => ipcRenderer.invoke("subagent:cancel", id),
+      get: (id: string) => ipcRenderer.invoke("subagent:get", id),
+      list: (filter?: { parentId?: string; status?: string }) => ipcRenderer.invoke("subagent:list", filter),
+      listActive: () => ipcRenderer.invoke("subagent:listActive"),
+      cancelAll: () => ipcRenderer.invoke("subagent:cancelAll"),
+      toText: () => ipcRenderer.invoke("subagent:toText"),
+    },
+
+    /** Goal Manager */
+    goal: {
+      set: (description: string) => ipcRenderer.invoke("goal:set", description),
+      getActive: () => ipcRenderer.invoke("goal:getActive"),
+      list: () => ipcRenderer.invoke("goal:list"),
+      cancel: () => ipcRenderer.invoke("goal:cancel"),
+      toText: () => ipcRenderer.invoke("goal:toText"),
+    },
+
+    /** Dream/Distill Manager */
+    dreamDistill: {
+      dream: (conversationHistory: any[], config: { apiKey: string; apiUrl: string; model: string; provider: string }) =>
+        ipcRenderer.invoke("dreamDistill:dream", conversationHistory, config),
+      distill: (conversationHistory: any[], config: { apiKey: string; apiUrl: string; model: string; provider: string }) =>
+        ipcRenderer.invoke("dreamDistill:distill", conversationHistory, config),
+      getKnowledge: () => ipcRenderer.invoke("dreamDistill:getKnowledge"),
+      toText: () => ipcRenderer.invoke("dreamDistill:toText"),
+    },
+
+    /** Compose Mode */
+    compose: {
+      start: (spec: string) => ipcRenderer.invoke("compose:start", spec),
+      getState: () => ipcRenderer.invoke("compose:getState"),
+      getCurrentSkill: () => ipcRenderer.invoke("compose:getCurrentSkill"),
+      advance: () => ipcRenderer.invoke("compose:advance"),
+      goTo: (phase: string) => ipcRenderer.invoke("compose:goTo", phase),
+      update: (updates: any) => ipcRenderer.invoke("compose:update", updates),
+      addCodeFile: (filePath: string) => ipcRenderer.invoke("compose:addCodeFile", filePath),
+      addReviewComment: (comment: string) => ipcRenderer.invoke("compose:addReviewComment", comment),
+      addTestResult: (result: string) => ipcRenderer.invoke("compose:addTestResult", result),
+      addDebugLog: (log: string) => ipcRenderer.invoke("compose:addDebugLog", log),
+      setVerificationPassed: (passed: boolean) => ipcRenderer.invoke("compose:setVerificationPassed", passed),
+      complete: () => ipcRenderer.invoke("compose:complete"),
+      cancel: () => ipcRenderer.invoke("compose:cancel"),
+      getHistory: () => ipcRenderer.invoke("compose:getHistory"),
+      toText: () => ipcRenderer.invoke("compose:toText"),
+      getSkills: () => ipcRenderer.invoke("compose:getSkills"),
+      getPhaseOrder: () => ipcRenderer.invoke("compose:getPhaseOrder"),
+    },
+
     /** 监听 Agent 事件 */
     onEvent: (channel: string, callback: (event: any) => void) => {
       const handler = (_event: IpcRendererEvent, evtChannel: string, ...args: any[]) => {

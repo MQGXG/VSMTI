@@ -3,7 +3,7 @@ import type { ToolContext, ToolResult } from "./tool"
 import type { AgentEvent } from "./types"
 import { IterationBudget } from "./iteration-budget"
 import { createLLMClient, type LLMMessage } from "./llm-sdk"
-import { truncateToBudget } from "./message-utils"
+import { truncateToBudget, needsContextRebuild, rebuildContextFromCheckpoint, estimateTokens } from "./message-utils"
 import { PermissionSet, type PermissionRule } from "./permission"
 import { MemoryManager } from "./memory/manager"
 import { BuiltinMemoryProvider } from "./memory/builtin-provider"
@@ -11,6 +11,7 @@ import { appendMessage, loadSession } from "./session-store"
 import { VectorMemoryProvider } from "./memory/vector-provider"
 import { FileMemoryProvider } from "./memory/file-memory-provider"
 import { FTSMemoryProvider } from "./memory/fts-memory-provider"
+import { CheckpointProvider } from "./memory/checkpoint-provider"
 import { evaluateToolCalls, extractResources } from "./permission-gate"
 import { ToolOrchestrator } from "./execution/orchestrator"
 import { AgentStateMachine } from "./agent/state-machine"
@@ -41,20 +42,29 @@ export interface AgentConfig {
 
 export type { AgentEvent } from "./types"
 
-export const DEFAULT_SYSTEM = `You are Mira, an AI assistant integrated into a desktop application. Answer directly and concisely. Only use tools when the user explicitly asks you to read files, search the web, run code, or perform file operations. For general questions, just answer from your knowledge.`
+export const DEFAULT_SYSTEM = `You are Mira, an AI assistant integrated into a desktop application.
+
+You have access to tools that let you interact with the user's system: read and write files, search the web, execute code, manage git, and analyze data.
+
+Use tools when they help answer the user's question or complete their task. Prefer getting real information over guessing.
+
+Be direct and concise. When using tools, briefly explain what you're doing.`
 
 export class Agent {
   private stateMachine = new AgentStateMachine()
   private memoryManager = new MemoryManager()
   private approvalStore = new ApprovalStore()
   private orchestrator: ToolOrchestrator
+  private checkpointProvider: CheckpointProvider
 
   get aborted(): boolean { return this.stateMachine.aborted }
   abort(): void { this.stateMachine.stop() }
 
   constructor(private registry: ToolRegistry, apiKey?: string, apiUrl?: string, workspace?: string) {
     this.orchestrator = new ToolOrchestrator(registry)
+    this.checkpointProvider = new CheckpointProvider()
     this.memoryManager.addProvider(new BuiltinMemoryProvider())
+    this.memoryManager.addProvider(this.checkpointProvider)
     if (apiKey) {
       this.memoryManager.addProvider(new VectorMemoryProvider({ apiKey, apiUrl }))
     }
@@ -100,6 +110,24 @@ export class Agent {
       if (stored && stored.messages.length > 0) {
         const restored: LLMMessage[] = []
         for (const m of stored.messages) {
+          if (m.role === "assistant") {
+            const parsed = tryParseAssistantPayload(m.content)
+            if (parsed) {
+              restored.push({
+                role: "assistant",
+                content: [
+                  { type: "text", text: parsed.text },
+                  ...parsed.tool_calls.map((tc: any) => ({
+                    type: "tool-call" as const,
+                    toolCallId: tc.id,
+                    toolName: tc.name,
+                    args: JSON.parse(tc.args),
+                  })),
+                ],
+              })
+              continue
+            }
+          }
           if (m.role === "tool" && restored.length > 0) {
             const last = restored[restored.length - 1]
             if (last.role === "assistant" && !hasToolCalls(last.content)) {
@@ -164,7 +192,25 @@ export class Agent {
         return
       }
 
-      messages = truncateToBudget(messages, config.maxContextTokens || 8000)
+      // 上下文重建：当接近 token 限制时，从 checkpoint 重建
+      const maxTokens = config.maxContextTokens || 8000
+      if (needsContextRebuild(messages, maxTokens)) {
+        const checkpoint = this.checkpointProvider.getCheckpoint()
+        if (checkpoint) {
+          messages = rebuildContextFromCheckpoint(messages, {
+            summary: checkpoint.summary,
+            activeTask: checkpoint.activeTask,
+            recentDecisions: checkpoint.recentDecisions,
+            keyFiles: checkpoint.keyFiles,
+          }, maxTokens)
+          yield { type: "thinking", text: "🔄 Context reconstructed from checkpoint" }
+        } else {
+          messages = truncateToBudget(messages, maxTokens)
+        }
+      } else {
+        messages = truncateToBudget(messages, maxTokens)
+      }
+
       const stream = client.stream({ messages, tools: toolSet })
       let currentText = ""
       let eventCount = 0
@@ -221,6 +267,21 @@ export class Agent {
         yield { type: "finish", reason: "stop" }
         return
       }
+
+      // 保存 assistant 消息（含 tool_calls）到 DB
+      const assistantPayload = JSON.stringify({
+        text: currentText,
+        tool_calls: toolCallsArray.map((tc) => ({
+          id: tc.id,
+          name: tc.function.name,
+          args: tc.function.arguments,
+        })),
+      })
+      await appendMessage(config.sessionID, {
+        role: "assistant",
+        content: assistantPayload,
+        timestamp: new Date().toISOString(),
+      })
 
       // 权限门控 + 工具执行
       const evaluations = evaluateToolCalls(toolCallsArray, this.registry, config.permissions)
@@ -301,13 +362,6 @@ export class Agent {
         messages.push({ role: "tool", content: parts as any, tool_call_id: call.id })
       }
 
-      if (currentText) {
-        await appendMessage(config.sessionID, {
-          role: "assistant",
-          content: currentText,
-          timestamp: new Date().toISOString(),
-        })
-      }
       for (const call of toolCallsArray) {
         const result = results.get(call.id)!
         await appendMessage(config.sessionID, {
@@ -318,9 +372,13 @@ export class Agent {
         })
       }
 
+      // 同步记忆和检查点
       this.memoryManager.syncTurn(userMessage, currentText, config.sessionID).catch(() => {})
+      this.checkpointProvider.syncTurn(userMessage, currentText, config.sessionID).catch(() => {})
     }
 
+    // 最终保存检查点
+    await this.checkpointProvider.shutdown()
     this.memoryManager.shutdown().catch(() => {})
     yield { type: "finish", reason: "length" }
   }
@@ -329,4 +387,14 @@ export class Agent {
 function hasToolCalls(content: string | any[]): boolean {
   if (Array.isArray(content)) return content.some((p) => p.type === "tool-call")
   return false
+}
+
+function tryParseAssistantPayload(content: string): { text: string; tool_calls: Array<{ id: string; name: string; args: string }> } | null {
+  try {
+    const parsed = JSON.parse(content)
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.tool_calls)) {
+      return { text: parsed.text || "", tool_calls: parsed.tool_calls }
+    }
+  } catch {}
+  return null
 }

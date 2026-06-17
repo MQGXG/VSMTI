@@ -81,19 +81,26 @@ export async function createSession(projectId: string, title?: string): Promise<
 }
 
 export async function listSessions(projectId?: string): Promise<SessionInfo[]> {
-  const stored = await sqliteListSessions()
-  return stored
-    .filter((s) => !projectId || true) // 所有会话
-    .map((s) => ({
-      session_id: s.id,
-      project_id: projectId || "",
-      title: s.title,
+  const db = await getDbAsync()
+  const rows = db.exec(
+    projectId
+      ? "SELECT session_id, project_id, title, workspace, created_at, updated_at FROM sessions WHERE project_id = ? ORDER BY updated_at DESC"
+      : "SELECT session_id, project_id, title, workspace, created_at, updated_at FROM sessions ORDER BY updated_at DESC",
+    projectId ? [projectId] : [],
+  )
+  if (rows.length === 0) return []
+  return rows[0].values.map((row) => {
+    const [session_id, project_id, title, workspace, _created, updated_at] = row as string[]
+    return {
+      session_id,
+      project_id: project_id || projectId || "",
+      title: title || "",
       kind: "session" as SessionInfo["kind"],
-      workspace_path: s.workspace,
-      message_count: s.messages.length,
-      updated_at: s.updated,
-    }))
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      workspace_path: workspace || "",
+      message_count: 0,
+      updated_at: updated_at || "",
+    }
+  })
 }
 
 export async function getSessionMessages(sessionId: string): Promise<Array<{ role: string; content: string; id: number }>> {

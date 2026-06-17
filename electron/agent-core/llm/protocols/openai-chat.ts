@@ -21,7 +21,9 @@ interface OpenAIMessage {
 export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
   return messages.map((msg) => {
     if (typeof msg.content === "string") {
-      return { role: msg.role, content: msg.content } as OpenAIMessage
+      const out: OpenAIMessage = { role: msg.role, content: msg.content }
+      if (msg.role === "tool" && msg.tool_call_id) out.tool_call_id = msg.tool_call_id
+      return out
     }
     const parts = msg.content
     const text = parts.filter((p) => p.type === "text").map((p) => p.text).join("")

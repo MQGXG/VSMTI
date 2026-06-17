@@ -20,7 +20,7 @@ const modeConfigs: Record<AgentMode, ModeConfig> = {
     label: "助手",
     description: "日常问答、写作、分析",
     maxIterations: 10,
-    systemPromptSuffix: "You are a helpful assistant. Answer questions clearly and concisely.",
+    systemPromptSuffix: "You are a helpful assistant. Use tools to provide accurate, up-to-date answers.",
     permissionRules: [
       { action: "bash", resource: "*", effect: "deny" },
       { action: "code_exec", resource: "*", effect: "deny" },
@@ -31,7 +31,7 @@ const modeConfigs: Record<AgentMode, ModeConfig> = {
     label: "专家",
     description: "深度研究、数据分析",
     maxIterations: 25,
-    systemPromptSuffix: "You are a domain expert. Provide thorough, detailed analysis.",
+    systemPromptSuffix: "You are a domain expert. Use tools for research, analysis, and verification.",
     permissionRules: [
       { action: "bash", resource: "*", effect: "deny" },
     ],
@@ -41,7 +41,7 @@ const modeConfigs: Record<AgentMode, ModeConfig> = {
     label: "执行",
     description: "自动化任务、批量处理",
     maxIterations: 50,
-    systemPromptSuffix: "You are an automation agent. Execute tasks efficiently.",
+    systemPromptSuffix: "You are an automation agent. Execute tasks end-to-end using all available tools.",
     permissionRules: [],
   },
   safe: {
@@ -49,7 +49,7 @@ const modeConfigs: Record<AgentMode, ModeConfig> = {
     label: "安全",
     description: "只读探索",
     maxIterations: 5,
-    systemPromptSuffix: "You are in read-only mode. You can read and search but cannot modify anything.",
+    systemPromptSuffix: "You are in read-only mode. Explore and analyze without modifying anything.",
     permissionRules: [
       { action: "write_file", resource: "*", effect: "deny" },
       { action: "edit_file", resource: "*", effect: "deny" },
@@ -63,7 +63,7 @@ const modeConfigs: Record<AgentMode, ModeConfig> = {
     label: "规划",
     description: "代码分析、方案设计",
     maxIterations: 15,
-    systemPromptSuffix: "You are a planning agent. Analyze code, design solutions, and create plans. Focus on understanding the codebase and providing detailed implementation plans.",
+    systemPromptSuffix: "You are a planning agent. Analyze code and design implementation plans.",
     permissionRules: [
       { action: "write_file", resource: "*", effect: "deny" },
       { action: "edit_file", resource: "*", effect: "deny" },

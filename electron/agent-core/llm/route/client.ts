@@ -49,7 +49,12 @@ export class RouteClient {
 
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(`HTTP ${response.status}: ${errorText}`)
+      const fullBody = typeof body === "object" ? JSON.stringify(body, null, 2) : String(body)
+      console.error(`[RouteClient] HTTP ${response.status} from ${url}:
+  Response: ${errorText}
+  Full Body:
+${fullBody.slice(0, 5000)}`)
+      throw new Error(`HTTP ${response.status}: ${errorText.slice(0, 1000)}`)
     }
 
     const reader = response.body?.getReader()

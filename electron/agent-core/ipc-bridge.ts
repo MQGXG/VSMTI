@@ -21,9 +21,18 @@ import { listProjects, createProject, deleteProjectById, createSession, listSess
 import { AgentRegistry } from "./agent/registry"
 import { getAllModes } from "./modes"
 import { logError } from "./logger"
+import { taskTracker } from "./task-tracker"
+import { SubagentManager } from "./subagent-manager"
+import { GoalManager } from "./goal-manager"
+import { DreamDistillManager } from "./dream-distill"
+import { ComposeModeManager, type ComposeState } from "./compose-mode"
 
 const registry = createDefaultRegistry()
 const agentRegistry = new AgentRegistry()
+const subagentManager = new SubagentManager(registry)
+const goalManager = new GoalManager()
+const dreamDistillManager = new DreamDistillManager()
+const composeModeManager = new ComposeModeManager()
 
 // 注册所有模式到 AgentRegistry
 for (const mode of getAllModes()) {
@@ -126,6 +135,162 @@ export function registerAgentIPCHandlers(): void {
       category: s.category,
     }))
   })
+
+  // ─── Task Tracker IPC ─────────────────────────────────────────────
+  ipcMain.handle("task:create", (_, summary: string, parentId?: string) => {
+    return taskTracker.create(summary, parentId)
+  })
+  ipcMain.handle("task:updateStatus", (_, taskId: string, status: string) => {
+    return taskTracker.updateStatus(taskId, status as any)
+  })
+  ipcMain.handle("task:updateSummary", (_, taskId: string, summary: string) => {
+    return taskTracker.updateSummary(taskId, summary)
+  })
+  ipcMain.handle("task:addNote", (_, taskId: string, note: string) => {
+    return taskTracker.addNote(taskId, note)
+  })
+  ipcMain.handle("task:get", (_, taskId: string) => {
+    return taskTracker.getTask(taskId)
+  })
+  ipcMain.handle("task:list", (_, status?: string) => {
+    if (status) {
+      return taskTracker.getAllTasks().filter((t) => t.status === status)
+    }
+    return taskTracker.getAllTasks()
+  })
+  ipcMain.handle("task:listActive", () => {
+    return taskTracker.getActiveTasks()
+  })
+  ipcMain.handle("task:toText", () => {
+    return taskTracker.toText()
+  })
+
+  // ─── Subagent IPC ─────────────────────────────────────────────
+  ipcMain.handle("subagent:spawn", async (_, description: string, options?: { parentId?: string; prompt?: string }) => {
+    const config: AgentConfig = {
+      sessionID: "subagent",
+      workspace: process.cwd(),
+      model: "gpt-4o",
+      apiKey: "",
+      apiUrl: "",
+    }
+    return await subagentManager.spawn(description, config, options)
+  })
+  ipcMain.handle("subagent:wait", async (_, id: string, timeoutMs?: number) => {
+    return await subagentManager.wait(id, timeoutMs)
+  })
+  ipcMain.handle("subagent:cancel", (_, id: string) => {
+    return subagentManager.cancel(id)
+  })
+  ipcMain.handle("subagent:get", (_, id: string) => {
+    return subagentManager.getInfo(id)
+  })
+  ipcMain.handle("subagent:list", (_, filter?: { parentId?: string; status?: string }) => {
+    return subagentManager.list(filter as any)
+  })
+  ipcMain.handle("subagent:listActive", () => {
+    return subagentManager.listActive()
+  })
+  ipcMain.handle("subagent:cancelAll", () => {
+    subagentManager.cancelAll()
+    return true
+  })
+  ipcMain.handle("subagent:toText", () => {
+    return subagentManager.toText()
+  })
+
+  // ─── Goal Manager IPC ─────────────────────────────────────────────
+  ipcMain.handle("goal:set", (_, description: string) => {
+    return goalManager.setGoal(description)
+  })
+  ipcMain.handle("goal:getActive", () => {
+    return goalManager.getActiveGoal()
+  })
+  ipcMain.handle("goal:list", () => {
+    return goalManager.getAllGoals()
+  })
+  ipcMain.handle("goal:cancel", () => {
+    return goalManager.cancelGoal()
+  })
+  ipcMain.handle("goal:toText", () => {
+    return goalManager.toText()
+  })
+
+  // ─── Dream/Distill IPC ─────────────────────────────────────────────
+  ipcMain.handle("dreamDistill:dream", async (_, conversationHistory: any[], config: { apiKey: string; apiUrl: string; model: string; provider: string }) => {
+    await dreamDistillManager.initialize(config.apiUrl || process.cwd())
+    return await dreamDistillManager.dream(conversationHistory, config)
+  })
+  ipcMain.handle("dreamDistill:distill", async (_, conversationHistory: any[], config: { apiKey: string; apiUrl: string; model: string; provider: string }) => {
+    await dreamDistillManager.initialize(config.apiUrl || process.cwd())
+    return await dreamDistillManager.distill(conversationHistory, config)
+  })
+  ipcMain.handle("dreamDistill:getKnowledge", () => {
+    return dreamDistillManager.getKnowledge()
+  })
+  ipcMain.handle("dreamDistill:toText", () => {
+    return dreamDistillManager.toText()
+  })
+
+  // ─── Compose Mode IPC ─────────────────────────────────────────────
+  ipcMain.handle("compose:start", (_, spec: string) => {
+    return composeModeManager.start(spec)
+  })
+  ipcMain.handle("compose:getState", () => {
+    return composeModeManager.getState()
+  })
+  ipcMain.handle("compose:getCurrentSkill", () => {
+    return composeModeManager.getCurrentSkill()
+  })
+  ipcMain.handle("compose:advance", () => {
+    return composeModeManager.advance()
+  })
+  ipcMain.handle("compose:goTo", (_, phase: string) => {
+    return composeModeManager.goTo(phase as any)
+  })
+  ipcMain.handle("compose:update", (_, updates: Partial<ComposeState>) => {
+    composeModeManager.update(updates)
+    return true
+  })
+  ipcMain.handle("compose:addCodeFile", (_, filePath: string) => {
+    composeModeManager.addCodeFile(filePath)
+    return true
+  })
+  ipcMain.handle("compose:addReviewComment", (_, comment: string) => {
+    composeModeManager.addReviewComment(comment)
+    return true
+  })
+  ipcMain.handle("compose:addTestResult", (_, result: string) => {
+    composeModeManager.addTestResult(result)
+    return true
+  })
+  ipcMain.handle("compose:addDebugLog", (_, log: string) => {
+    composeModeManager.addDebugLog(log)
+    return true
+  })
+  ipcMain.handle("compose:setVerificationPassed", (_, passed: boolean) => {
+    composeModeManager.setVerificationPassed(passed)
+    return true
+  })
+  ipcMain.handle("compose:complete", () => {
+    return composeModeManager.complete()
+  })
+  ipcMain.handle("compose:cancel", () => {
+    return composeModeManager.cancel()
+  })
+  ipcMain.handle("compose:getHistory", () => {
+    return composeModeManager.getHistory()
+  })
+  ipcMain.handle("compose:toText", () => {
+    return composeModeManager.toText()
+  })
+  ipcMain.handle("compose:getSkills", () => {
+    return ComposeModeManager.getSkills()
+  })
+  ipcMain.handle("compose:getPhaseOrder", () => {
+    return ComposeModeManager.getPhaseOrder()
+  })
+
   // 执行工具（直接调用，不走 LLM）
   ipcMain.handle("agent:executeTool", async (_, toolName: string, args: Record<string, unknown>) => {
     const ctx = {
@@ -144,10 +309,19 @@ export function registerAgentIPCHandlers(): void {
     return agentRegistry.list()
   })
 
-  // 列出所有可用工具（含 Schema）
-  ipcMain.handle("agent:listTools", () => {
-    const materialized = registry.materialize(defaultPermissions)
-    return Object.keys(materialized.definitions).map((name) => {
+  // 列出可用工具（含 Schema，按模式过滤）
+  ipcMain.handle("agent:listTools", (_, mode?: string) => {
+    const modeConfig = mode ? getModeConfig(mode as any) : null
+    const permissions = mode
+      ? modeToPermissionSet(mode as any, defaultPermissions)
+      : defaultPermissions
+    const materialized = registry.materialize(permissions)
+    let toolNames = Object.keys(materialized.definitions)
+    if (modeConfig?.toolAllowlist && modeConfig.toolAllowlist.length > 0) {
+      const allowed = new Set(modeConfig.toolAllowlist)
+      toolNames = toolNames.filter((n) => allowed.has(n))
+    }
+    return toolNames.map((name) => {
       const def = registry.get(name)
       return {
         name,
@@ -175,6 +349,9 @@ export function registerAgentIPCHandlers(): void {
   ipcMain.handle("agent:startStream", async (event, sessionId: string, message: string, config: AgentConfig) => {
     const channel = generateChannelId()
     const workspace = config.workspace || process.cwd()
+
+    // 初始化 Task Tracker
+    await taskTracker.initialize(sessionId)
 
     // 合并文件/env 配置：IPC 配置优先，文件/env 配置填充空缺
     const mergedConfig = resolveRuntimeConfig({

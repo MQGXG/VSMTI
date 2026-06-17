@@ -1,4 +1,5 @@
 export interface ToolCallInfo {
+  toolCallId: string;
   name: string;
   args: Record<string, unknown>;
   argsText?: string;
