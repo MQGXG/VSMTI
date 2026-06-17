@@ -1,9 +1,21 @@
 import type { ThreadMessageLike } from "@assistant-ui/react";
 import type { Message, ToolCallInfo } from "./types";
 
+export interface MessageTiming {
+  streamStartTime: number;
+  firstTokenTime?: number;
+  totalStreamTime?: number;
+  tokenCount?: number;
+  tokensPerSecond?: number;
+  totalChunks: number;
+  toolCallCount: number;
+}
+
 export interface MiraMessage extends Message {
   createdAt?: Date;
   toolCallParts?: ToolCallPart[];
+  timing?: MessageTiming;
+  thinking?: string;
 }
 
 export interface ToolCallPart {
@@ -52,6 +64,10 @@ export function convertMessage(message: MiraMessage): ThreadMessageLike {
     content: parts.length > 0 ? parts : "",
     id: message.id,
     createdAt: message.createdAt,
+    metadata: message.timing ? {
+      timing: message.timing,
+      custom: {},
+    } : undefined,
   };
 }
 

@@ -19,6 +19,7 @@
     "@assistant-ui/react-markdown": "^0.14.4",
     "effect": "^3.21.3",
     "lucide-react": "^0.400.0",
+    "mermaid": "^11.15.0",
     "playwright": "^1.60.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

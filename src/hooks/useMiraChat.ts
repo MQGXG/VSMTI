@@ -34,6 +34,7 @@ interface UseMiraChatReturn {
     request_id: string;
   } | null;
   sendMessage: (content: string) => Promise<void>;
+  retryMessage: (assistantMsgId: string) => Promise<void>;
   stopStream: () => void;
   handlePermission: (approved: boolean | "always") => Promise<void>;
   handleQuestionAnswer: (answer: string) => void;
@@ -66,6 +67,13 @@ export function useMiraChat({
   const currentChannelRef = useRef<string | null>(null);
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const offlineSessionIdRef = useRef<string | null>(null);
+  const timingRef = useRef<{
+    streamStartTime: number;
+    firstTokenTime?: number;
+    tokenCount: number;
+    chunkCount: number;
+    toolCallCount: number;
+  } | null>(null);
 
   function getOfflineSessionId(): string {
     if (offlineSessionIdRef.current) return offlineSessionIdRef.current;
@@ -168,10 +176,23 @@ export function useMiraChat({
           );
           currentChannelRef.current = channel;
 
+          timingRef.current = {
+            streamStartTime: Date.now(),
+            tokenCount: 0,
+            chunkCount: 0,
+            toolCallCount: 0,
+          };
+
           const cleanup = window.electronAPI.agent.onEvent(
             channel,
             (event: AgentEvent) => {
               if (event.type === "content") {
+                const t = timingRef.current;
+                if (t) {
+                  if (!t.firstTokenTime) t.firstTokenTime = Date.now();
+                  t.tokenCount += event.text.split(/\s+/).filter(Boolean).length;
+                  t.chunkCount++;
+                }
                 setMessages((prev) => {
                   const last = prev[prev.length - 1];
                   if (last?.role === "assistant" && last.id === assistantId) {
@@ -186,6 +207,8 @@ export function useMiraChat({
                   ];
                 });
               } else if (event.type === "tool_start") {
+                const t = timingRef.current;
+                if (t) t.toolCallCount++;
                 setMessages((prev) => {
                   const last = prev[prev.length - 1];
                   if (last?.role === "assistant" && last.id === assistantId) {
@@ -208,6 +231,20 @@ export function useMiraChat({
                     status: "running" as const,
                   };
                   return [...prev, addToolCallToMessage(newMsg, toolCall)];
+                });
+              } else if (event.type === "thinking") {
+                setMessages((prev) => {
+                  const last = prev[prev.length - 1];
+                  if (last?.role === "assistant" && last.id === assistantId) {
+                    return [
+                      ...prev.slice(0, -1),
+                      {
+                        ...last,
+                        thinking: (last.thinking || "") + event.text,
+                      },
+                    ];
+                  }
+                  return prev;
                 });
               } else if (event.type === "tool_result") {
                 setMessages((prev) => {
@@ -278,6 +315,35 @@ export function useMiraChat({
                   ),
                 ]);
               } else if (event.type === "finish") {
+                const t = timingRef.current;
+                if (t) {
+                  const now = Date.now();
+                  const totalTime = now - t.streamStartTime;
+                  setMessages((prev) => {
+                    const last = prev[prev.length - 1];
+                    if (last?.role === "assistant" && last.id === assistantId) {
+                      return [
+                        ...prev.slice(0, -1),
+                        {
+                          ...last,
+                          timing: {
+                            streamStartTime: t.streamStartTime,
+                            firstTokenTime: t.firstTokenTime,
+                            totalStreamTime: totalTime,
+                            tokenCount: t.tokenCount,
+                            tokensPerSecond: totalTime > 0
+                              ? Math.round((t.tokenCount / totalTime) * 1000 * 10) / 10
+                              : undefined,
+                            totalChunks: t.chunkCount,
+                            toolCallCount: t.toolCallCount,
+                          },
+                        },
+                      ];
+                    }
+                    return prev;
+                  });
+                  timingRef.current = null;
+                }
                 setIsRunning(false);
                 cleanup();
                 currentChannelRef.current = null;
@@ -347,6 +413,24 @@ export function useMiraChat({
     [isRunning, sessionId, selectedModel, agentMode, goalCondition]
   );
 
+  const retryMessage = useCallback(
+    async (assistantMsgId: string) => {
+      let userContent = "";
+      setMessages((prev) => {
+        const idx = prev.findIndex(m => m.id === assistantMsgId);
+        if (idx > 0 && prev[idx - 1]?.role === "user") {
+          userContent = prev[idx - 1].content;
+          return prev.filter((_, i) => i !== idx - 1 && i !== idx);
+        }
+        return prev;
+      });
+      if (userContent) {
+        await sendMessage(userContent);
+      }
+    },
+    [sendMessage]
+  );
+
   const stopStream = useCallback(() => {
     setIsRunning(false);
     const ch = currentChannelRef.current;
@@ -394,6 +478,7 @@ export function useMiraChat({
     permissionReq,
     questionReq,
     sendMessage,
+    retryMessage,
     stopStream,
     handlePermission,
     handleQuestionAnswer,

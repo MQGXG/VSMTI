@@ -29,6 +29,8 @@ interface MiraRuntimeContext {
   handleQuestionAnswer: (answer: string) => void;
   handleToolResult: (toolName: string, result: any) => void;
   stopStream: () => void;
+  sendMessage: (content: string) => Promise<void>;
+  retryMessage: (assistantMsgId: string) => Promise<void>;
 }
 
 interface Props {
@@ -58,7 +60,11 @@ export function MiraRuntimeProvider({
       if (message.content[0]?.type !== "text") {
         throw new Error("Only text messages are supported");
       }
-      const input = message.content[0].text;
+      let input = message.content[0].text;
+      const quote = (message.metadata as { custom?: { quote?: { text: string; messageId: string } } })?.custom?.quote;
+      if (quote?.text) {
+        input = `[引用: "${quote.text}"]\n\n${input}`;
+      }
       await chat.sendMessage(input);
     },
     [chat.sendMessage]
@@ -104,6 +110,8 @@ export function MiraRuntimeProvider({
     handleQuestionAnswer: chat.handleQuestionAnswer,
     handleToolResult: chat.handleToolResult,
     stopStream: chat.stopStream,
+    sendMessage: chat.sendMessage,
+    retryMessage: chat.retryMessage,
   };
 
   return (

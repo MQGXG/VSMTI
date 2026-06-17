@@ -4,6 +4,10 @@ import {
   ComposerPrimitive,
   ThreadPrimitive,
   MessagePrimitive,
+  ActionBarPrimitive,
+  ErrorPrimitive,
+  BranchPickerPrimitive,
+  SelectionToolbarPrimitive,
   useAui,
   useAuiState,
 } from "@assistant-ui/react";
@@ -11,9 +15,12 @@ import { MiraRuntimeProvider } from "./MiraRuntimeProvider";
 import { ModelSelector, loadModelChoice, loadModeChoice } from "./ModelSelector";
 import type { ModelOption } from "./ModelSelector";
 import type { AgentMode } from "./types";
+import type { MiraMessage } from "./mira-runtime";
 import { PermissionDialog } from "./PermissionDialog";
 import { QuestionDialog } from "./QuestionDialog";
 import { MarkdownRenderer } from "./MarkdownRenderer";
+import { MessageTimingDisplay } from "./MessageTimingDisplay";
+import { ThinkingBlock } from "./ThinkingBlock";
 import {
   FileUp,
   Sparkles,
@@ -29,6 +36,14 @@ import {
   Copy,
   Check,
   Plus,
+  RotateCcw,
+  Pencil,
+  Volume2,
+  ThumbsUp,
+  ThumbsDown,
+  Download,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface Props {
@@ -167,7 +182,10 @@ function ChatContent({ sessionId }: { sessionId: string }) {
 interface ChatInnerProps {
   sessionId: string;
   ctx: {
+    messages: MiraMessage[];
     isRunning: boolean;
+    sendMessage: (content: string) => Promise<void>;
+    retryMessage: (assistantMsgId: string) => Promise<void>;
     permissionReq: {
       tool_name: string;
       args: Record<string, unknown>;
@@ -421,8 +439,11 @@ function ChatInner({
           </AuiIf>
 
           <ThreadPrimitive.Messages>
-            {({ message }) => (
-              <MessagePrimitive.Root className="mb-5 animate-fade-in-up">
+            {({ message }) => {
+              const origMsg = ctx.messages.find(m => m.id === message.id);
+              return (
+              <MessagePrimitive.Root className="group mb-5 animate-fade-in-up">
+                {origMsg?.thinking && <ThinkingBlock text={origMsg.thinking} />}
                 <div className={`flex w-full gap-3 ${message.role === "user" ? 'flex-row-reverse' : 'flex-row'}`}>
                   <div className="shrink-0">
                     {message.role === "user" ? (
@@ -466,30 +487,126 @@ function ChatInner({
                       </div>
                     )}
 
-                    {message.role === "assistant" && (
-                      <div className="flex gap-1 mt-1 justify-start">
-                        <button
-                          onClick={() => {
-                            const text = message.content.map((p: any) => p.type === "text" ? p.text : "").join("");
-                            handleCopyMessage(text);
-                          }}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200"
-                          title="复制"
-                        >
-                          {copiedMsgId === "copied" ? (
-                            <><Check className="w-3 h-3 text-success" /><span className="text-success">已复制</span></>
-                          ) : (
-                            <><Copy className="w-3 h-3" /><span>复制</span></>
-                          )}
-                        </button>
-                      </div>
-                    )}
+                    <MessagePrimitive.Error>
+                      <ErrorPrimitive.Root className="mt-2 flex items-center gap-2 rounded-md bg-red-900/20 border border-red-500/20 px-3 py-2 text-xs text-red-400" role="alert">
+                        <ErrorPrimitive.Message />
+                      </ErrorPrimitive.Root>
+                    </MessagePrimitive.Error>
+
+                    {message.role === "assistant" && <MessageTimingDisplay />}
+
+                    <div className="flex items-center justify-between mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      {/* BranchPickerPrimitive - 分支选择器 */}
+                      <BranchPickerPrimitive.Root hideWhenSingleBranch className="inline-flex items-center gap-1 text-[11px] text-neutral-500">
+                        <BranchPickerPrimitive.Previous className="flex size-5 items-center justify-center rounded hover:bg-neutral-700/50 disabled:opacity-30">
+                          <ChevronLeft className="w-3 h-3" />
+                        </BranchPickerPrimitive.Previous>
+                        <span className="tabular-nums text-neutral-500">
+                          <BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count />
+                        </span>
+                        <BranchPickerPrimitive.Next className="flex size-5 items-center justify-center rounded hover:bg-neutral-700/50 disabled:opacity-30">
+                          <ChevronRight className="w-3 h-3" />
+                        </BranchPickerPrimitive.Next>
+                      </BranchPickerPrimitive.Root>
+
+                      {/* ActionBarPrimitive - 消息操作栏 */}
+                      {message.role === "assistant" && (
+                        <ActionBarPrimitive.Root className="flex gap-1 justify-start">
+                          <ActionBarPrimitive.Copy asChild>
+                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
+                              <Copy className="w-3 h-3" />
+                              <span>复制</span>
+                            </button>
+                          </ActionBarPrimitive.Copy>
+                          <button
+                            onClick={() => ctx.retryMessage(message.id as string)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>重试</span>
+                          </button>
+                          <ActionBarPrimitive.Edit asChild>
+                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
+                              <Pencil className="w-3 h-3" />
+                              <span>编辑</span>
+                            </button>
+                          </ActionBarPrimitive.Edit>
+                          <ActionBarPrimitive.Speak asChild>
+                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
+                              <Volume2 className="w-3 h-3" />
+                              <span>朗读</span>
+                            </button>
+                          </ActionBarPrimitive.Speak>
+                          <ActionBarPrimitive.FeedbackPositive asChild>
+                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
+                              <ThumbsUp className="w-3 h-3" />
+                              <span>有用</span>
+                            </button>
+                          </ActionBarPrimitive.FeedbackPositive>
+                          <ActionBarPrimitive.FeedbackNegative asChild>
+                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
+                              <ThumbsDown className="w-3 h-3" />
+                              <span>没用</span>
+                            </button>
+                          </ActionBarPrimitive.FeedbackNegative>
+                          <ActionBarPrimitive.ExportMarkdown asChild>
+                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
+                              <Download className="w-3 h-3" />
+                              <span>导出</span>
+                            </button>
+                          </ActionBarPrimitive.ExportMarkdown>
+                        </ActionBarPrimitive.Root>
+                      )}
+                    </div>
                   </div>
                 </div>
               </MessagePrimitive.Root>
-            )}
+            );
+            }}
           </ThreadPrimitive.Messages>
+
+          {/* 建议提示 - 使用 ThreadPrimitive.Suggestion */}
+          <AuiIf condition={(s) => s.thread.isEmpty && !!sessionId}>
+            <div className="flex flex-wrap gap-2 justify-center mt-4 px-4">
+              <ThreadPrimitive.Suggestion
+                prompt="分析代码结构"
+                className="px-3 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer hover:scale-105"
+                style={{ background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)', color: '#00D9C0' }}
+                send={false}
+              />
+              <ThreadPrimitive.Suggestion
+                prompt="科技新闻"
+                className="px-3 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer hover:scale-105"
+                style={{ background: 'rgba(0, 168, 232, 0.1)', border: '1px solid rgba(0, 168, 232, 0.2)', color: '#00A8E8' }}
+                send={false}
+              />
+              <ThreadPrimitive.Suggestion
+                prompt="写 Python 脚本"
+                className="px-3 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer hover:scale-105"
+                style={{ background: 'rgba(163, 113, 247, 0.1)', border: '1px solid rgba(163, 113, 247, 0.2)', color: '#A371F7' }}
+                send={false}
+              />
+              <ThreadPrimitive.Suggestion
+                prompt="AI 技术进展"
+                className="px-3 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer hover:scale-105"
+                style={{ background: 'rgba(255, 184, 0, 0.1)', border: '1px solid rgba(255, 184, 0, 0.2)', color: '#FFB800' }}
+                send={false}
+              />
+            </div>
+          </AuiIf>
         </ThreadPrimitive.Viewport>
+
+        {/* SelectionToolbarPrimitive - 文本选择引用工具栏 */}
+        <SelectionToolbarPrimitive.Root className="flex items-center gap-1 rounded-lg border bg-[#0F1A20] px-1 py-1 shadow-lg z-50"
+          style={{ borderColor: '#1A2E35' }}>
+          <SelectionToolbarPrimitive.Quote className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-neutral-300 hover:bg-neutral-700/50 transition-colors duration-200">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
+              <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" />
+            </svg>
+            引用
+          </SelectionToolbarPrimitive.Quote>
+        </SelectionToolbarPrimitive.Root>
 
         {ctx.questionReq && (
           <QuestionDialog question={ctx.questionReq.question} options={ctx.questionReq.options} onSubmit={ctx.handleQuestionAnswer} />

@@ -1,4 +1,5 @@
 import { CodeBlock } from "./CodeBlock";
+import { MermaidBlock } from "./MermaidBlock";
 
 interface MarkdownRendererProps {
   content: string;
@@ -15,7 +16,13 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     if (codeBlockMatch) {
       const before = remaining.slice(0, codeBlockMatch.index);
       if (before) { parts.push(renderText(before, key++)); }
-      parts.push(<CodeBlock key={`c-${key++}`} language={codeBlockMatch[1]} code={codeBlockMatch[2].replace(/\n$/, "")} />);
+      const lang = codeBlockMatch[1];
+      const code = codeBlockMatch[2].replace(/\n$/, "");
+      if (lang === "mermaid") {
+        parts.push(<MermaidBlock key={`m-${key++}`} code={code} />);
+      } else {
+        parts.push(<CodeBlock key={`c-${key++}`} language={lang} code={code} />);
+      }
       remaining = remaining.slice(codeBlockMatch.index! + codeBlockMatch[0].length);
       continue;
     }
