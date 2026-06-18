@@ -13,14 +13,14 @@ interface Props {
 export function PermissionDialog({ toolName, args, reason, onAllow, onDeny, onAlways }: Props) {
   return (
     <Modal open={true} onClose={onDeny} maxWidth="max-w-md">
-      <div className="px-6 pt-5 pb-3" style={{ borderBottom: '1px solid #1A2E35' }}>
+      <div className="px-6 pt-5 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255, 184, 0, 0.1)' }}>
             <Shield className="w-5 h-5" style={{ color: '#FFB800' }} />
           </div>
           <div>
-            <h2 className="text-base font-semibold" style={{ color: '#E8F4F0' }}>权限请求</h2>
-            <p className="text-xs" style={{ color: '#5C8D8A' }}>Agent 需要你的批准</p>
+            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>权限请求</h2>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Agent 需要你的批准</p>
           </div>
         </div>
       </div>
@@ -34,16 +34,16 @@ export function PermissionDialog({ toolName, args, reason, onAllow, onDeny, onAl
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-wide" style={{ color: '#5C8D8A' }}>工具</label>
-          <div className="px-3 py-2 rounded-xl text-sm font-mono" style={{ background: '#0D1117', border: '1px solid #1A2E35', color: '#E8F4F0' }}>
+          <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>工具</label>
+          <div className="px-3 py-2 rounded-xl text-sm font-mono" style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}>
             {toolName}
           </div>
         </div>
 
         {Object.keys(args).length > 0 && (
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wide" style={{ color: '#5C8D8A' }}>参数</label>
-            <pre className="px-3 py-2 rounded-xl text-xs font-mono max-h-32 overflow-y-auto whitespace-pre-wrap custom-scrollbar" style={{ background: '#0D1117', border: '1px solid #1A2E35', color: '#5C8D8A' }}>
+            <label className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>参数</label>
+            <pre className="px-3 py-2 rounded-xl text-xs font-mono max-h-32 overflow-y-auto whitespace-pre-wrap custom-scrollbar" style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-secondary)' }}>
               {JSON.stringify(args, null, 2)}
             </pre>
           </div>
@@ -54,7 +54,7 @@ export function PermissionDialog({ toolName, args, reason, onAllow, onDeny, onAl
         <button
           onClick={onDeny}
           className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 hover:bg-neutral-700/50"
-          style={{ border: '1px solid #1A2E35', color: '#5C8D8A' }}
+          style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
         >
           拒绝
         </button>

@@ -12,7 +12,7 @@ export function ThinkingBlock({ text }: Props) {
 
   return (
     <div className="mb-3 rounded-lg border overflow-hidden"
-      style={{ borderColor: '#1A2E35', background: '#0A151A' }}>
+      style={{ borderColor: 'var(--border)', background: 'var(--surface-secondary)' }}>
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="flex items-center gap-2 w-full px-3 py-2 text-xs text-neutral-400 hover:text-neutral-300 transition-colors duration-200"

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Check } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Check, Upload, Trash2, FolderOpen } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 
 interface Project {
@@ -9,40 +9,33 @@ interface Project {
   color: string;
 }
 
-const GRADIENTS = [
-  "from-indigo-500 to-cyan-500",
-  "from-violet-500 to-fuchsia-500",
-  "from-emerald-500 to-teal-500",
-  "from-rose-500 to-orange-500",
-  "from-sky-500 to-indigo-500",
-  "from-amber-500 to-rose-500",
-  "from-lime-500 to-emerald-500",
-  "from-pink-500 to-violet-500",
-  "from-teal-500 to-cyan-500",
-  "from-orange-500 to-amber-500",
-  "from-blue-500 to-violet-500",
-  "from-green-500 to-teal-500",
-  "from-red-500 to-rose-500",
-  "from-purple-500 to-pink-500",
-  "from-cyan-500 to-blue-500",
-  "from-gray-500 to-neutral-500",
+const COLORS = [
+  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
+  "#f97316", "#eab308", "#22c55e", "#14b8a6",
+  "#06b6d4", "#3b82f6", "#64748b", "#78716c",
 ];
 
 interface Props {
   project: Project | null;
   open: boolean;
   onClose: () => void;
-  onSave: (projectId: string, name: string, color: string) => void;
+  onSave: (projectId: string, name: string, color: string, startupScript: string) => void;
+  onDelete: (projectId: string) => void;
 }
 
-export function EditProjectDialog({ project, open, onClose, onSave }: Props) {
+export function EditProjectDialog({ project, open, onClose, onSave, onDelete }: Props) {
   const [name, setName] = useState(project?.name || "");
-  const [selectedGradient, setSelectedGradient] = useState(project?.color || GRADIENTS[0]);
+  const [selectedColor, setSelectedColor] = useState(project?.color || COLORS[0]);
+  const [startupScript, setStartupScript] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open && project) {
       setName(project.name);
-      setSelectedGradient(project.color || GRADIENTS[0]);
+      setSelectedColor(project.color || COLORS[0]);
+      // 从 localStorage 读取启动脚本
+      const scripts = JSON.parse(localStorage.getItem("project_scripts") || "{}");
+      setStartupScript(scripts[project.project_id] || "");
     }
   }, [open, project?.project_id]);
 
@@ -51,62 +44,159 @@ export function EditProjectDialog({ project, open, onClose, onSave }: Props) {
   const handleSave = () => {
     const n = name.trim();
     if (!n) return;
-    onSave(project.project_id, n, selectedGradient);
+    // 保存启动脚本到 localStorage
+    const scripts = JSON.parse(localStorage.getItem("project_scripts") || "{}");
+    scripts[project.project_id] = startupScript;
+    localStorage.setItem("project_scripts", JSON.stringify(scripts));
+    onSave(project.project_id, n, selectedColor, startupScript);
     onClose();
   };
+
+  const handleDelete = () => {
+    if (window.confirm(`确定要删除项目「${project.name}」吗？\n\n注意：这只会删除 Mira 中的记录，不会删除本地文件。`)) {
+      onDelete(project.project_id);
+      onClose();
+    }
+  };
+
+  const handleIconClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      // 存储为 base64
+      const icons = JSON.parse(localStorage.getItem("project_icons") || "{}");
+      icons[project.project_id] = reader.result;
+      localStorage.setItem("project_icons", JSON.stringify(icons));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const savedIcons = JSON.parse(localStorage.getItem("project_icons") || "{}");
+  const iconData = savedIcons[project.project_id];
 
   return (
     <Modal open={open} onClose={onClose} title="编辑项目">
       <div className="p-6 space-y-5">
+        {/* 名称 */}
         <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-1.5">名称</label>
+          <label className="block text-sm mb-1.5" style={{ color: 'var(--text-secondary)' }}>名称</label>
           <input
             autoFocus
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-glass-border bg-white/5 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:border-accent-500/50"
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
+            className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all duration-200"
+            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
           />
         </div>
 
+        {/* 图标 */}
         <div>
-          <label className="block text-sm font-medium text-neutral-300 mb-2">颜色</label>
-          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-            {GRADIENTS.map((gradient) => (
+          <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>图标</label>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleIconClick}
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold transition-all duration-200 hover:scale-105 relative group"
+              style={{ background: selectedColor }}
+              title="点击上传图标"
+            >
+              {iconData ? (
+                <img src={iconData} alt="icon" className="w-full h-full object-cover rounded-xl" />
+              ) : (
+                name?.[0]?.toUpperCase() || "?"
+              )}
+              <div className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <Upload className="w-4 h-4 text-white" />
+              </div>
+            </button>
+            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              点击或拖拽图片<br />建议：128x128px
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
+        </div>
+
+        {/* 颜色 */}
+        <div>
+          <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>颜色</label>
+          <div className="flex flex-wrap gap-2">
+            {COLORS.map((color) => (
               <button
-                key={gradient}
+                key={color}
                 type="button"
-                onClick={() => setSelectedGradient(gradient)}
-                className={`w-8 h-8 rounded-lg bg-gradient-br ${gradient} flex items-center justify-center transition-all ${
-                  selectedGradient === gradient
-                    ? "ring-2 ring-accent-400/50 ring-offset-2 ring-offset-surface-950 scale-110"
-                    : "hover:scale-105"
-                }`}
+                onClick={() => setSelectedColor(color)}
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold transition-all duration-200 hover:scale-105"
+                style={{
+                  background: color,
+                  boxShadow: selectedColor === color ? `0 0 0 2px var(--surface-elevated), 0 0 0 4px ${color}` : undefined,
+                }}
               >
-                {selectedGradient === gradient && <Check className="w-4 h-4 text-white" />}
+                {selectedColor === color && <Check className="w-3 h-3" />}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="text-xs text-neutral-500 truncate">
-          路径: {project.workspace_path}
+        {/* 工作区启动脚本 */}
+        <div>
+          <label className="block text-sm mb-1.5" style={{ color: 'var(--text-secondary)' }}>工作区启动脚本</label>
+          <input
+            type="text"
+            value={startupScript}
+            onChange={(e) => setStartupScript(e.target.value)}
+            placeholder="例如 bun install"
+            className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all duration-200"
+            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+          />
+          <p className="text-[11px] mt-1" style={{ color: 'var(--text-tertiary)' }}>
+            在创建新的工作区 (worktree) 后运行。
+          </p>
         </div>
 
-        <div className="flex justify-end gap-2">
+        {/* 路径 */}
+        <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+          <FolderOpen className="w-3.5 h-3.5" />
+          <span className="truncate">{project.workspace_path}</span>
+        </div>
+
+        {/* 按钮组 */}
+        <div className="flex items-center justify-between pt-2">
           <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm text-neutral-400 hover:bg-white/10 transition-colors"
+            onClick={handleDelete}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-red-500/10"
+            style={{ color: 'var(--error)' }}
           >
-            取消
+            <Trash2 className="w-4 h-4" />
+            删除项目
           </button>
-          <button
-            onClick={handleSave}
-            disabled={!name.trim()}
-            className="px-4 py-2 rounded-lg text-sm btn-gradient text-white disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            保存
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg text-sm transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              取消
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!name.trim()}
+              className="px-4 py-2 rounded-lg text-sm btn-primary text-white disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              保存
+            </button>
+          </div>
         </div>
       </div>
     </Modal>

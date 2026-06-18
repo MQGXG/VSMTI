@@ -175,10 +175,11 @@ export async function settle(
 
   try {
     const result = await def.execute(parseResult.data, ctx)
-    const output = def.outputSchema.parse(result.output)
+    const outputValue = result.output ?? (result.success ? "" : result.error ?? "")
+    const output = def.outputSchema.parse(outputValue)
     const content = def.toModelOutput
       ? def.toModelOutput(parseResult.data, output)
-      : [{ type: "text" as const, text: result.output || "" }]
+      : [{ type: "text" as const, text: result.output || result.error || "" }]
     return { result, content }
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)

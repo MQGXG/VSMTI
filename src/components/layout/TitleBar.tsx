@@ -1,9 +1,11 @@
 import { Minus, Square, X, Sparkles, Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export function TitleBar() {
   const [tsCoreAvailable, setTsCoreAvailable] = useState(false);
-  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const isMac = window.electronAPI?.platform === "darwin";
 
   useEffect(() => {
@@ -11,13 +13,11 @@ export function TitleBar() {
   }, []);
 
   const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    document.documentElement.classList.toggle("dark", next);
+    setTheme(isDark ? "light" : "dark");
   };
 
   return (
-    <div className="h-10 flex items-center drag-region shrink-0" style={{ background: 'linear-gradient(90deg, #0A0F14, #0F1A20)', borderBottom: '1px solid #15252A' }}>
+    <div className="h-10 flex items-center drag-region shrink-0" style={{ background: 'var(--titlebar-bg)', borderBottom: '1px solid var(--titlebar-border)' }}>
       {isMac && <div className="w-20" />}
 
       <div className="flex items-center gap-3 px-4 flex-1">

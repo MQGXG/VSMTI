@@ -46,12 +46,16 @@ export function App() {
     try {
       const tsProjects = await window.electronAPI.ts.listProjects();
       if (tsProjects && tsProjects.length > 0) {
-        const mapped: Project[] = tsProjects.map((p: any, i: number) => ({
-          project_id: p.project_id,
-          name: p.name,
-          workspace_path: p.workspace_path,
-          color: `from-${['primary','accent','primary','accent','primary','accent'][i % 6]}-500 to-${['accent','primary','accent','primary','accent','primary'][i % 6]}-500`,
-        }));
+        const colorMap = JSON.parse(localStorage.getItem("project_colors") || "{}");
+        const hidden = JSON.parse(localStorage.getItem("hidden_projects") || "[]") as string[];
+        const mapped: Project[] = tsProjects
+          .filter((p: any) => !hidden.includes(p.project_id))
+          .map((p: any) => ({
+            project_id: p.project_id,
+            name: p.name,
+            workspace_path: p.workspace_path,
+            color: colorMap[p.project_id] || "#3b82f6",
+          }));
         setProjects(mapped);
         if (!activeProject) setActiveProject(mapped[0].project_id);
         return;
@@ -120,9 +124,15 @@ export function App() {
     }
   };
 
-  const handleEditProject = async (_projectId: string, _name: string, _color: string) => {
-    // 编辑项目功能待实现
-    await loadProjects();
+  const handleEditProject = async (projectId: string, name: string, color: string, startupScript: string) => {
+    try {
+      const colorMap = JSON.parse(localStorage.getItem("project_colors") || "{}");
+      colorMap[projectId] = color;
+      localStorage.setItem("project_colors", JSON.stringify(colorMap));
+      await loadProjects();
+    } catch (err) {
+      console.error("编辑项目失败:", err);
+    }
   };
 
   const handleDeleteProject = async (projectId: string) => {
@@ -139,7 +149,7 @@ export function App() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#0A0F14', color: '#E8F4F0' }}>
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--surface)', color: 'var(--text-primary)' }}>
       <TitleBar />
       <div className="flex flex-1 overflow-hidden">
         <ProjectBar
@@ -176,6 +186,7 @@ export function App() {
         open={!!editingProject}
         onClose={() => setEditingProject(null)}
         onSave={handleEditProject}
+        onDelete={handleDeleteProject}
       />
     </div>
   );

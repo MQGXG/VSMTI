@@ -30,16 +30,16 @@ export function Modal({ open, onClose, children, title, maxWidth = "max-w-md" }:
     >
       <div
         className={`w-full ${maxWidth} mx-4 rounded-2xl shadow-glass-lg animate-scale-in overflow-hidden`}
-        style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #1A2E35' }}>
-            <h2 className="text-base font-semibold" style={{ color: '#E8F4F0' }}>{title}</h2>
+          <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg transition-colors hover:bg-neutral-700/50"
             >
-              <X className="w-4 h-4" style={{ color: '#5C8D8A' }} />
+              <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
             </button>
           </div>
         )}

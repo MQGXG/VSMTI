@@ -53,9 +53,12 @@ function runCommand(shell: string, args: string[], timeoutMs: number): Promise<R
       }
     })
 
-    child.on("error", (err) => {
+    child.on("error", (err: any) => {
       clearTimeout(timeout)
-      resolve({ stdout, stderr, exitCode: null, stdoutTruncated, stderrTruncated, timedOut })
+      const errorMsg = err.code === "ENOENT"
+        ? `Shell not found: "${shell}". Make sure it is installed and in your PATH.`
+        : `Failed to start shell: ${err.message}`
+      resolve({ stdout, stderr: stderr || errorMsg, exitCode: null, stdoutTruncated, stderrTruncated, timedOut })
     })
 
     child.on("close", (code) => {
@@ -124,10 +127,23 @@ export const bashTool = make({
     const externalDirs = externalCommandDirs(input.command, cwd)
     const timeout = Math.min(input.timeout || 30, 600)
     const isWin = process.platform === "win32"
-    const shell = ctx?.shell || (isWin ? "cmd" : "/bin/sh")
-    const shellArgs = shell === "powershell" ? ["-Command", input.command]
-      : shell === "cmd" || (!isWin && shell === "/bin/sh") ? (isWin ? ["/c", input.command] : ["-c", input.command])
-      : isWin ? ["/c", input.command] : ["-c", input.command]
+
+    let shell: string
+    let shellArgs: string[]
+
+    if (isWin) {
+      // Windows: 优先用 powershell，回退到 cmd
+      const psPath = "powershell"
+      shell = ctx?.shell === "powershell" ? psPath
+        : ctx?.shell === "cmd" ? "cmd"
+        : psPath
+      shellArgs = shell === "powershell"
+        ? ["-NoProfile", "-NonInteractive", "-Command", input.command]
+        : ["/c", input.command]
+    } else {
+      shell = ctx?.shell || "/bin/sh"
+      shellArgs = ["-c", input.command]
+    }
 
     const result = await runCommand(shell, shellArgs, timeout * 1000)
 

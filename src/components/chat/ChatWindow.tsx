@@ -24,49 +24,19 @@ import { ThinkingBlock } from "./ThinkingBlock";
 import {
   FileUp,
   Sparkles,
-  Code,
-  Image,
-  Search,
-  FileText,
-  Globe,
-  BarChart3,
-  Clock,
-  Calendar,
-  FolderOpen,
   Copy,
-  Check,
-  Plus,
   RotateCcw,
   Pencil,
-  Volume2,
-  ThumbsUp,
-  ThumbsDown,
-  Download,
   ChevronLeft,
   ChevronRight,
+  Square,
+  Send,
 } from "lucide-react";
 
 interface Props {
   sessionId: string;
   onSessionChange?: (id: string) => void;
 }
-
-const features = [
-  { icon: FolderOpen, label: "文件管理", color: "#00D9C0" },
-  { icon: Code, label: "代码开发", color: "#00A8E8" },
-  { icon: Globe, label: "网页搜索", color: "#A371F7" },
-  { icon: BarChart3, label: "数据分析", color: "#FFB800" },
-  { icon: Image, label: "图像生成", color: "#FF7A45" },
-  { icon: Clock, label: "定时任务", color: "#FF4757" },
-  { icon: Calendar, label: "项目管理", color: "#3FB950" },
-];
-
-const quickActions = [
-  { icon: Code, label: "分析代码", prompt: "请帮我分析这段代码" },
-  { icon: Image, label: "生成图片", prompt: "帮我生成一张图片" },
-  { icon: Search, label: "网页搜索", prompt: "帮我搜索" },
-  { icon: FileText, label: "读取文件", prompt: "请读取这个文件" },
-];
 
 interface SkillInfo {
   name: string;
@@ -77,7 +47,6 @@ interface SkillInfo {
 function ChatContent({ sessionId }: { sessionId: string }) {
   const [selectedModel, setSelectedModel] = useState<ModelOption>(loadModelChoice);
   const [agentMode, setAgentMode] = useState<AgentMode>(loadModeChoice);
-  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [skills, setSkills] = useState<SkillInfo[]>([]);
   const [showSkills, setShowSkills] = useState(false);
@@ -91,25 +60,13 @@ function ChatContent({ sessionId }: { sessionId: string }) {
     }).catch(() => {});
   }, []);
 
-  // Tab 键切换 Agent 模式（全局）
   useEffect(() => {
     const modes: AgentMode[] = ["assistant", "expert", "action", "safe", "plan"];
-    const modeLabels: Record<AgentMode, string> = {
-      assistant: "助手",
-      expert: "专家",
-      action: "执行",
-      safe: "安全",
-      plan: "规划",
-    };
-
     const handleGlobalTab = (e: KeyboardEvent) => {
-      // Tab 切换模式：仅在输入框为空或未聚焦时触发
       if (e.key === "Tab" && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const textarea = document.querySelector("textarea");
         const isInputFocused = document.activeElement === textarea;
         const isEmpty = textarea?.value === "";
-
-        // 允许 Tab 切换的条件：输入框未聚焦，或输入框为空
         if (!isInputFocused || isEmpty) {
           e.preventDefault();
           const currentIdx = modes.indexOf(agentMode);
@@ -120,12 +77,10 @@ function ChatContent({ sessionId }: { sessionId: string }) {
         }
       }
     };
-
     window.addEventListener("keydown", handleGlobalTab);
     return () => window.removeEventListener("keydown", handleGlobalTab);
   }, [agentMode, setAgentMode]);
 
-  // /goal 命令处理
   useEffect(() => {
     const handleSlashGoal = (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey) {
@@ -143,8 +98,6 @@ function ChatContent({ sessionId }: { sessionId: string }) {
     return () => window.removeEventListener("keydown", handleSlashGoal);
   }, []);
 
-  // 拖放处理移至 ChatInner
-
   return (
     <MiraRuntimeProvider
       sessionId={sessionId}
@@ -156,8 +109,6 @@ function ChatContent({ sessionId }: { sessionId: string }) {
         <ChatInner
           sessionId={sessionId}
           ctx={ctx}
-          copiedMsgId={copiedMsgId}
-          setCopiedMsgId={setCopiedMsgId}
           isFocused={isFocused}
           setIsFocused={setIsFocused}
           skills={skills}
@@ -202,8 +153,6 @@ interface ChatInnerProps {
     handleQuestionAnswer: (answer: string) => void;
     handleToolResult: (toolName: string, result: any) => void;
   };
-  copiedMsgId: string | null;
-  setCopiedMsgId: (id: string | null) => void;
   isFocused: boolean;
   setIsFocused: (v: boolean) => void;
   skills: SkillInfo[];
@@ -224,8 +173,6 @@ interface ChatInnerProps {
 function ChatInner({
   sessionId,
   ctx,
-  copiedMsgId,
-  setCopiedMsgId,
   isFocused,
   setIsFocused,
   skills,
@@ -320,14 +267,6 @@ function ChatInner({
     textareaRef.current?.focus();
   }
 
-  const handleCopyMessage = useCallback(async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      setCopiedMsgId("copied");
-      setTimeout(() => setCopiedMsgId(null), 2000);
-    } catch { /* ignore */ }
-  }, [setCopiedMsgId]);
-
   function handleKeyDown(e: React.KeyboardEvent) {
     if (showSkills) {
       if (e.key === "ArrowDown") {
@@ -353,87 +292,44 @@ function ChatInner({
   }
 
   return (
-    <div className="flex flex-col h-full relative" style={{ background: "#0A0F14" }}>
+    <div className="flex flex-col h-full relative" style={{ background: "var(--surface)" }}>
       {isDragging && (
-        <div className="absolute inset-0 z-50 glass-heavy border-2 border-dashed border-primary-500/50 rounded-2xl flex items-center justify-center animate-fade-in-up">
+        <div className="absolute inset-0 z-50 glass-heavy border-2 border-dashed rounded-2xl flex items-center justify-center animate-fade-in-up"
+          style={{ borderColor: 'rgba(0, 217, 192, 0.5)' }}>
           <div className="text-center space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-primary-500/10 flex items-center justify-center mx-auto">
-              <FileUp className="w-8 h-8 text-primary-400" />
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
+              style={{ background: 'rgba(0, 217, 192, 0.1)' }}>
+              <FileUp className="w-8 h-8" style={{ color: 'var(--accent-start)' }} />
             </div>
-            <p className="text-primary-300 text-lg font-semibold">释放以上传文件</p>
-            <p className="text-primary-400/60 text-sm">支持任意文本文件</p>
+            <p className="text-lg font-semibold" style={{ color: 'var(--accent-start)' }}>释放以上传文件</p>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>支持任意文本文件</p>
           </div>
         </div>
       )}
 
       <ThreadPrimitive.Root className="flex flex-col flex-1 overflow-hidden">
-        <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar" style={{ maxWidth: '960px', margin: '0 auto', width: '100%' }}>
+        <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar" style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+          {/* 干净的欢迎页 - 只有 Logo 和副标题 */}
           <AuiIf condition={(s) => s.thread.isEmpty && !!sessionId}>
             <div className="flex items-center justify-center h-full">
-              <div className="text-center max-w-2xl">
-                <div className="mb-6">
-                  <h1 className="text-brand font-bold brand-glow tracking-tight mb-3">Mira</h1>
-                  <p className="text-body text-neutral-500">你的 AI 桌面助手</p>
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-primary-500/20">
+                  <Sparkles className="w-8 h-8 text-white" />
                 </div>
-                <div className="flex items-center justify-center gap-3 mb-8 overflow-x-auto pb-2 px-4">
-                  {features.map(({ icon: Icon, label, color }) => (
-                    <div key={label} className="chip flex items-center gap-2 px-4 py-2 rounded-button whitespace-nowrap cursor-default">
-                      <Icon className="w-4 h-4" style={{ color }} />
-                      <span className="text-xs font-medium">{label}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-start gap-4 mb-8 max-w-lg mx-auto">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shrink-0 shadow-lg shadow-primary-500/20">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="message-assistant px-5 py-4 text-left">
-                    <p className="text-body text-neutral-200">
-                      你好！我是 Mira，你的 AI 桌面助手。我可以帮你处理文件、编写代码、搜索信息、分析数据等。有什么我可以帮你的吗？
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mb-8 max-w-lg mx-auto">
-                  {quickActions.map(({ icon: Icon, label, prompt }) => (
-                    <button
-                      key={label}
-                      onClick={() => {
-                        aui.composer().setText(prompt);
-                        textareaRef.current?.focus();
-                      }}
-                      className="flex items-center gap-3 p-4 rounded-card transition-all duration-200 hover:scale-[1.02] hover:shadow-card-hover text-left group"
-                      style={{ background: "#0F1A20", border: "1px solid #1A2E35" }}
-                    >
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors" style={{ background: "rgba(0, 217, 192, 0.1)" }}>
-                        <Icon className="w-5 h-5 text-primary-400 group-hover:text-primary-300 transition-colors" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-neutral-200 group-hover:text-neutral-100 transition-colors">{label}</p>
-                        <p className="text-[11px] text-neutral-500 mt-0.5">点击快速开始</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center justify-center gap-4 text-caption text-neutral-600">
-                  <span className="flex items-center gap-1.5">
-                    <kbd className="px-2 py-0.5 rounded-md font-mono text-[10px]" style={{ background: "#1A2E35", color: "#5C8D8A", border: "1px solid #2A4A50" }}>Enter</kbd> 发送
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <kbd className="px-2 py-0.5 rounded-md font-mono text-[10px]" style={{ background: "#1A2E35", color: "#5C8D8A", border: "1px solid #2A4A50" }}>Shift+Enter</kbd> 换行
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <kbd className="px-2 py-0.5 rounded-md font-mono text-[10px]" style={{ background: "#1A2E35", color: "#5C8D8A", border: "1px solid #2A4A50" }}>/</kbd> 命令
-                  </span>
-                </div>
+                <h1 className="text-2xl font-bold brand-glow tracking-tight mb-2">Mira</h1>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>有什么可以帮你的？</p>
               </div>
             </div>
           </AuiIf>
 
           <AuiIf condition={(s) => s.thread.isEmpty && !sessionId}>
             <div className="flex items-center justify-center h-full">
-              <div className="text-center max-w-2xl">
-                <h1 className="text-brand font-bold brand-glow tracking-tight mb-3">Mira</h1>
-                <p className="text-body text-neutral-500">工具模式 · 选择会话开始</p>
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-primary-500/20">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold brand-glow tracking-tight mb-2">Mira</h1>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>选择一个会话开始</p>
               </div>
             </div>
           </AuiIf>
@@ -447,10 +343,8 @@ function ChatInner({
                 <div className={`flex w-full gap-3 ${message.role === "user" ? 'flex-row-reverse' : 'flex-row'}`}>
                   <div className="shrink-0">
                     {message.role === "user" ? (
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                        style={{ background: "linear-gradient(135deg, #00B4A0, #0088A8)", color: "#ffffff" }}
-                      >
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{ background: "linear-gradient(135deg, #00B4A0, #0088A8)", color: "#ffffff" }}>
                         U
                       </div>
                     ) : (
@@ -479,7 +373,7 @@ function ChatInner({
                           {({ part }) => {
                             if (part.type === "text") {
                               const text = "text" in part ? (part as any).text : "";
-                              return <p className="text-body whitespace-pre-wrap">{text}</p>;
+                              return <p className="text-sm whitespace-pre-wrap" style={{ color: '#ffffff', lineHeight: '1.6' }}>{text}</p>;
                             }
                             return null;
                           }}
@@ -496,12 +390,11 @@ function ChatInner({
                     {message.role === "assistant" && <MessageTimingDisplay />}
 
                     <div className="flex items-center justify-between mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      {/* BranchPickerPrimitive - 分支选择器 */}
-                      <BranchPickerPrimitive.Root hideWhenSingleBranch className="inline-flex items-center gap-1 text-[11px] text-neutral-500">
+                      <BranchPickerPrimitive.Root hideWhenSingleBranch className="inline-flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
                         <BranchPickerPrimitive.Previous className="flex size-5 items-center justify-center rounded hover:bg-neutral-700/50 disabled:opacity-30">
                           <ChevronLeft className="w-3 h-3" />
                         </BranchPickerPrimitive.Previous>
-                        <span className="tabular-nums text-neutral-500">
+                        <span className="tabular-nums">
                           <BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count />
                         </span>
                         <BranchPickerPrimitive.Next className="flex size-5 items-center justify-center rounded hover:bg-neutral-700/50 disabled:opacity-30">
@@ -509,52 +402,27 @@ function ChatInner({
                         </BranchPickerPrimitive.Next>
                       </BranchPickerPrimitive.Root>
 
-                      {/* ActionBarPrimitive - 消息操作栏 */}
                       {message.role === "assistant" && (
                         <ActionBarPrimitive.Root className="flex gap-1 justify-start">
                           <ActionBarPrimitive.Copy asChild>
-                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
+                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200">
                               <Copy className="w-3 h-3" />
                               <span>复制</span>
                             </button>
                           </ActionBarPrimitive.Copy>
                           <button
                             onClick={() => ctx.retryMessage(message.id as string)}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50"
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200"
                           >
                             <RotateCcw className="w-3 h-3" />
                             <span>重试</span>
                           </button>
                           <ActionBarPrimitive.Edit asChild>
-                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
+                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200">
                               <Pencil className="w-3 h-3" />
                               <span>编辑</span>
                             </button>
                           </ActionBarPrimitive.Edit>
-                          <ActionBarPrimitive.Speak asChild>
-                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
-                              <Volume2 className="w-3 h-3" />
-                              <span>朗读</span>
-                            </button>
-                          </ActionBarPrimitive.Speak>
-                          <ActionBarPrimitive.FeedbackPositive asChild>
-                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
-                              <ThumbsUp className="w-3 h-3" />
-                              <span>有用</span>
-                            </button>
-                          </ActionBarPrimitive.FeedbackPositive>
-                          <ActionBarPrimitive.FeedbackNegative asChild>
-                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
-                              <ThumbsDown className="w-3 h-3" />
-                              <span>没用</span>
-                            </button>
-                          </ActionBarPrimitive.FeedbackNegative>
-                          <ActionBarPrimitive.ExportMarkdown asChild>
-                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
-                              <Download className="w-3 h-3" />
-                              <span>导出</span>
-                            </button>
-                          </ActionBarPrimitive.ExportMarkdown>
                         </ActionBarPrimitive.Root>
                       )}
                     </div>
@@ -564,42 +432,12 @@ function ChatInner({
             );
             }}
           </ThreadPrimitive.Messages>
-
-          {/* 建议提示 - 使用 ThreadPrimitive.Suggestion */}
-          <AuiIf condition={(s) => s.thread.isEmpty && !!sessionId}>
-            <div className="flex flex-wrap gap-2 justify-center mt-4 px-4">
-              <ThreadPrimitive.Suggestion
-                prompt="分析代码结构"
-                className="px-3 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer hover:scale-105"
-                style={{ background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)', color: '#00D9C0' }}
-                send={false}
-              />
-              <ThreadPrimitive.Suggestion
-                prompt="科技新闻"
-                className="px-3 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer hover:scale-105"
-                style={{ background: 'rgba(0, 168, 232, 0.1)', border: '1px solid rgba(0, 168, 232, 0.2)', color: '#00A8E8' }}
-                send={false}
-              />
-              <ThreadPrimitive.Suggestion
-                prompt="写 Python 脚本"
-                className="px-3 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer hover:scale-105"
-                style={{ background: 'rgba(163, 113, 247, 0.1)', border: '1px solid rgba(163, 113, 247, 0.2)', color: '#A371F7' }}
-                send={false}
-              />
-              <ThreadPrimitive.Suggestion
-                prompt="AI 技术进展"
-                className="px-3 py-1.5 rounded-full text-xs transition-all duration-200 cursor-pointer hover:scale-105"
-                style={{ background: 'rgba(255, 184, 0, 0.1)', border: '1px solid rgba(255, 184, 0, 0.2)', color: '#FFB800' }}
-                send={false}
-              />
-            </div>
-          </AuiIf>
         </ThreadPrimitive.Viewport>
 
-        {/* SelectionToolbarPrimitive - 文本选择引用工具栏 */}
-        <SelectionToolbarPrimitive.Root className="flex items-center gap-1 rounded-lg border bg-[#0F1A20] px-1 py-1 shadow-lg z-50"
-          style={{ borderColor: '#1A2E35' }}>
-          <SelectionToolbarPrimitive.Quote className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs text-neutral-300 hover:bg-neutral-700/50 transition-colors duration-200">
+        <SelectionToolbarPrimitive.Root className="flex items-center gap-1 rounded-lg border px-1 py-1 shadow-lg z-50"
+          style={{ background: 'var(--selection-toolbar-bg)', borderColor: 'var(--selection-toolbar-border)' }}>
+          <SelectionToolbarPrimitive.Quote className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-colors duration-200"
+            style={{ color: 'var(--text-secondary)' }}>
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
               <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" />
@@ -623,11 +461,12 @@ function ChatInner({
           />
         )}
 
-        <div className="p-4 w-full" style={{ maxWidth: "960px", margin: "0 auto", borderTop: "1px solid #15252A" }}>
+        {/* 输入区域 */}
+        <div className="p-4 w-full" style={{ maxWidth: "800px", margin: "0 auto", borderTop: "1px solid var(--border-light)" }}>
           {showSkills && (
             <div className="absolute bottom-full mb-2 left-0 right-0 z-50 rounded-xl overflow-hidden shadow-glass-lg"
-              style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
-              <div className="px-4 py-2 text-[10px] font-medium text-neutral-500" style={{ borderBottom: '1px solid #1A2E35' }}>
+              style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
+              <div className="px-4 py-2 text-[10px] font-medium" style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
                 Skill 命令 (回车选择 / Esc 关闭)
               </div>
               <div className="max-h-64 overflow-y-auto custom-scrollbar">
@@ -637,14 +476,15 @@ function ChatInner({
                     className={`w-full text-left px-4 py-2.5 text-sm transition-all duration-200 flex items-center gap-2 ${
                       idx === selectedSkillIndex
                         ? "bg-primary-500/10 text-primary-400"
-                        : "text-neutral-300 hover:bg-neutral-800/50"
+                        : "hover:bg-neutral-800/50"
                     }`}
+                    style={{ color: idx === selectedSkillIndex ? undefined : 'var(--text-secondary)' }}
                     onMouseDown={() => applySkill(skill)}
                   >
-                    <span className="font-medium text-primary-500">/</span>
+                    <span className="font-medium" style={{ color: 'var(--accent-start)' }}>/</span>
                     <span>{skill.name}</span>
                     {skill.category && (
-                      <span className="text-xs text-neutral-600 ml-auto">{skill.category}</span>
+                      <span className="text-xs ml-auto" style={{ color: 'var(--text-tertiary)' }}>{skill.category}</span>
                     )}
                   </button>
                 ))}
@@ -655,57 +495,47 @@ function ChatInner({
           <ComposerPrimitive.Root
             className="relative flex items-end gap-3 rounded-2xl px-4 py-3 transition-all duration-200"
             style={{
-              background: 'rgba(15, 26, 32, 0.9)',
+              background: 'var(--glass-bg)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
-              border: isFocused ? '1px solid rgba(0, 217, 192, 0.5)' : '1px solid #1A2E35',
+              border: isFocused ? '1px solid rgba(0, 217, 192, 0.5)' : '1px solid var(--input-border)',
               boxShadow: isFocused ? '0 0 0 3px rgba(0, 217, 192, 0.15)' : 'none',
             }}
           >
-            <button
-              className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-neutral-700/50"
-              style={{ color: '#5C8D8A' }}
-              title="添加附件"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-
             <ComposerPrimitive.Input
               ref={textareaRef}
               onKeyDown={handleKeyDown}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder="输入消息... (/ 查看 Skill, Shift+Enter 换行)"
+              placeholder="输入消息..."
               rows={1}
-              className="flex-1 bg-transparent text-sm text-neutral-200 placeholder-neutral-600 outline-none resize-none leading-relaxed min-h-[24px] max-h-[200px]"
-              style={{ lineHeight: '1.6' }}
+              className="flex-1 bg-transparent text-sm outline-none resize-none leading-relaxed min-h-[24px] max-h-[200px]"
+              style={{ lineHeight: '1.6', color: 'var(--text-primary)' }}
             />
 
+            {/* 发送/暂停按钮 - 根据状态切换 */}
             {ctx.isRunning ? (
               <ComposerPrimitive.Cancel asChild>
                 <button
                   className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
-                  style={{ background: "rgba(255, 71, 87, 0.1)", color: "#FF4757" }}
+                  style={{ background: "rgba(255, 71, 87, 0.15)", color: "#FF4757" }}
+                  title="停止生成"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <rect x="4" y="4" width="8" height="8" rx="1" />
-                  </svg>
+                  <Square className="w-4 h-4" fill="currentColor" />
                 </button>
               </ComposerPrimitive.Cancel>
             ) : (
               <ComposerPrimitive.Send asChild>
                 <button
-                  className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:transform-none"
+                  className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
                   style={{
-                    background: !composerIsEmpty ? 'linear-gradient(135deg, #00D9C0, #00A8E8)' : '#1A2E35',
-                    color: !composerIsEmpty ? '#ffffff' : '#5C8D8A',
+                    background: !composerIsEmpty ? 'linear-gradient(135deg, var(--accent-start), var(--accent-end))' : 'var(--chip-bg)',
+                    color: !composerIsEmpty ? '#ffffff' : 'var(--text-secondary)',
                     boxShadow: !composerIsEmpty ? '0 2px 8px rgba(0, 217, 192, 0.3)' : 'none',
                   }}
+                  title="发送消息"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
+                  <Send className="w-4 h-4" />
                 </button>
               </ComposerPrimitive.Send>
             )}
@@ -718,16 +548,14 @@ function ChatInner({
             onModeChange={setAgentMode}
           />
 
-          {/* Goal 条件指示器 */}
           {goalCondition && (
             <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl text-xs"
               style={{ background: 'rgba(255, 184, 0, 0.1)', border: '1px solid rgba(255, 184, 0, 0.2)' }}>
               <span style={{ color: '#FFB800' }}>🎯</span>
-              <span style={{ color: '#FFB800' }}>Goal:</span>
-              <span className="flex-1 truncate" style={{ color: '#E8F4F0' }}>{goalCondition}</span>
+              <span className="flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{goalCondition}</span>
               <button onClick={() => setGoalCondition(null)}
-                className="px-2 py-1 rounded-lg transition-colors hover:bg-neutral-700/50"
-                style={{ color: '#5C8D8A' }}>
+                className="px-2 py-1 rounded-lg transition-colors"
+                style={{ color: 'var(--text-secondary)' }}>
                 清除
               </button>
             </div>

@@ -18,7 +18,7 @@ const searchTools = new Set(["web_search", "web_browse"]);
 export function ToolCallView({ info }: Props) {
   if (info.status === "running" && !info.result) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 text-xs" style={{ color: '#5C8D8A' }}>
+      <div className="flex items-center gap-2 px-3 py-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
         <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: '#FFB800' }} />
         <span className="font-mono">{info.name}</span>
         <span className="animate-pulse" style={{ color: '#FFB800' }}>执行中...</span>

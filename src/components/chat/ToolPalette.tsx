@@ -125,14 +125,14 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
 
       {open && (
         <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden shadow-glass-lg z-50 animate-scale-in"
-          style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
+          style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
           {resultMsg ? (
-            <div className="p-4 text-sm text-center" style={{ color: '#E8F4F0' }}>{resultMsg}</div>
+            <div className="p-4 text-sm text-center" style={{ color: 'var(--text-primary)' }}>{resultMsg}</div>
           ) : !selectedTool ? (
             <div>
-              <div className="px-4 py-3" style={{ borderBottom: '1px solid #1A2E35' }}>
-                <div className="text-xs font-medium" style={{ color: '#E8F4F0' }}>工具面板</div>
-                <div className="text-[10px] mt-0.5" style={{ color: '#5C8D8A' }}>直接执行，不需要 AI 参与</div>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>工具面板</div>
+                <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>直接执行，不需要 AI 参与</div>
               </div>
               <div className="max-h-72 overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
                 {tools.map((tool) => {
@@ -149,12 +149,12 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                       }`}
                       style={isSuggested ? { background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)' } : {}}
                     >
-                      <Icon className="w-4 h-4 shrink-0" style={{ color: isSuggested ? '#00D9C0' : '#5C8D8A' }} />
+                      <Icon className="w-4 h-4 shrink-0" style={{ color: isSuggested ? 'var(--accent-start)' : 'var(--text-secondary)' }} />
                       <div className="min-w-0 flex-1">
                         <div className="font-medium truncate">{tool.name}</div>
-                        <div className="text-[11px] truncate mt-0.5" style={{ color: '#5C8D8A' }}>{tool.description}</div>
+                        <div className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>{tool.description}</div>
                       </div>
-                      {isSuggested && <Sparkles className="w-3 h-3 shrink-0" style={{ color: '#00D9C0' }} />}
+                      {isSuggested && <Sparkles className="w-3 h-3 shrink-0" style={{ color: 'var(--accent-start)' }} />}
                     </button>
                   )
                 })}
@@ -164,15 +164,15 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {(() => { const Icon = toolIcons[selectedTool.name] || Wrench; return <Icon className="w-4 h-4" style={{ color: '#00D9C0' }} /> })()}
-                  <span className="text-sm font-medium" style={{ color: '#E8F4F0' }}>{selectedTool.name}</span>
+                  {(() => { const Icon = toolIcons[selectedTool.name] || Wrench; return <Icon className="w-4 h-4" style={{ color: 'var(--accent-start)' }} /> })()}
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{selectedTool.name}</span>
                 </div>
                 <button onClick={() => setSelectedTool(null)} className="p-1.5 rounded-lg transition-colors hover:bg-neutral-700/50">
-                  <X className="w-3.5 h-3.5" style={{ color: '#5C8D8A' }} />
+                  <X className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
                 </button>
               </div>
 
-              <p className="text-xs" style={{ color: '#5C8D8A' }}>{selectedTool.description}</p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{selectedTool.description}</p>
 
               {!!selectedTool.parameters?.properties && (
                 <div className="space-y-2.5">
@@ -180,7 +180,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                     const required = (selectedTool.parameters?.required || []) as string[]
                     return (
                       <div key={key}>
-                        <label className="text-xs block mb-1.5" style={{ color: '#5C8D8A' }}>
+                        <label className="text-xs block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                           {key}
                           {required.includes(key) && <span className="ml-1" style={{ color: '#FF4757' }}>*</span>}
                         </label>
@@ -190,7 +190,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                           onChange={(e) => setInputs((p) => ({ ...p, [key]: e.target.value }))}
                           placeholder={prop.description || key}
                           className="w-full rounded-xl px-3 py-2 text-sm outline-none transition-all duration-200"
-                          style={{ background: '#0D1117', border: '1px solid #1A2E35', color: '#E8F4F0' }}
+                          style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                         />
                       </div>
                     )
@@ -205,7 +205,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                 </button>
                 <button onClick={() => setSelectedTool(null)}
                   className="px-4 py-2.5 rounded-xl text-sm transition-colors hover:bg-neutral-700/50"
-                  style={{ color: '#5C8D8A' }}>
+                  style={{ color: 'var(--text-secondary)' }}>
                   返回
                 </button>
               </div>

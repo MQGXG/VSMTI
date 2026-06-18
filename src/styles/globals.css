@@ -4,39 +4,162 @@
 
 @layer base {
   :root {
-    --accent-start: #00D9C0;
-    --accent-end: #00A8E8;
+    /* 主色调：经典蓝 (Vercel/Stripe 风格) */
+    --accent-start: #3b82f6;
+    --accent-end: #06b6d4;
+    --accent: #3b82f6;
+    --accent-light: rgba(59, 130, 246, 0.08);
+    --accent-border: rgba(59, 130, 246, 0.2);
+
+    /* 表面色：干净的白色系 */
     --surface: #ffffff;
     --surface-secondary: #f8fafc;
     --surface-tertiary: #f1f5f9;
-    --border: #e2e8f0;
-    --border-light: #f1f5f9;
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
-    --text-tertiary: #94a3b8;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --surface-elevated: #ffffff;
+
+    /* 边框：极简灰 */
+    --border: #e5e7eb;
+    --border-light: #f3f4f6;
+
+    /* 文字：三层灰度 */
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --text-muted: #d1d5db;
+
+    /* 阴影 */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+    /* 玻璃拟态 */
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(0, 0, 0, 0.06);
+
+    /* 输入框 */
+    --input-bg: #f9fafb;
+    --input-border: #e5e7eb;
+    --input-focus-border: #6366f1;
+
+    /* 代码块 */
+    --code-bg: #f9fafb;
+
+    /* 滚动条 */
+    --scrollbar-thumb: #d1d5db;
+    --scrollbar-thumb-hover: #9ca3af;
+
+    /* 侧边栏 */
+    --sidebar-bg: #f9fafb;
+    --sidebar-border: #e5e7eb;
+
+    /* 标题栏 */
+    --titlebar-bg: #ffffff;
+    --titlebar-border: #e5e7eb;
+
+    /* 消息气泡 */
+    --message-user-bg: linear-gradient(135deg, #6366f1, #8b5cf6);
+    --message-assistant-bg: #f9fafb;
+    --message-assistant-border: #e5e7eb;
+
+    /* 标签 */
+    --chip-bg: #f3f4f6;
+    --chip-border: #e5e7eb;
+    --chip-text: #6b7280;
+
+    /* 按钮 */
+    --btn-ghost-hover: rgba(0, 0, 0, 0.04);
+    --action-bar-hover: rgba(0, 0, 0, 0.04);
+
+    /* 选择工具栏 */
+    --selection-toolbar-bg: #ffffff;
+    --selection-toolbar-border: #e5e7eb;
+
+    /* 功能色 */
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+
     --transition: 200ms ease;
   }
 
   .dark {
-    --accent-start: #00D9C0;
-    --accent-end: #00A8E8;
-    --surface: #0A0F14;
-    --surface-secondary: #0F1A20;
-    --surface-tertiary: #1A2E35;
-    --border: #1A2E35;
-    --border-light: #15252A;
-    --text-primary: #E8F4F0;
-    --text-secondary: #5C8D8A;
-    --text-tertiary: #3A5A58;
+    /* 主色调：经典蓝 */
+    --accent-start: #60a5fa;
+    --accent-end: #22d3ee;
+    --accent: #3b82f6;
+    --accent-light: rgba(59, 130, 246, 0.12);
+    --accent-border: rgba(59, 130, 246, 0.2);
+
+    /* 表面色：深邃但不刺眼 (参考 Linear) */
+    --surface: #0f1117;
+    --surface-secondary: #161922;
+    --surface-tertiary: #1e2130;
+    --surface-elevated: #1a1d2b;
+
+    /* 边框：柔和分隔 */
+    --border: #252836;
+    --border-light: #1e2130;
+
+    /* 文字：柔和白色 (不用纯白 #fff) */
+    --text-primary: #e5e7eb;
+    --text-secondary: #9ca3af;
+    --text-tertiary: #6b7280;
+    --text-muted: #4b5563;
+
+    /* 阴影 */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+    /* 玻璃拟态 */
+    --glass-bg: rgba(15, 17, 23, 0.85);
+    --glass-border: rgba(37, 40, 54, 0.6);
+
+    /* 输入框 */
+    --input-bg: #161922;
+    --input-border: #252836;
+    --input-focus-border: #818cf8;
+
+    /* 代码块 */
+    --code-bg: #12141c;
+
+    /* 滚动条 */
+    --scrollbar-thumb: #252836;
+    --scrollbar-thumb-hover: #374054;
+
+    /* 侧边栏 */
+    --sidebar-bg: #12141c;
+    --sidebar-border: #1e2130;
+
+    /* 标题栏 */
+    --titlebar-bg: #0f1117;
+    --titlebar-border: #1e2130;
+
+    /* 消息气泡 */
+    --message-user-bg: linear-gradient(135deg, #6366f1, #8b5cf6);
+    --message-assistant-bg: #161922;
+    --message-assistant-border: #252836;
+
+    /* 标签 */
+    --chip-bg: rgba(37, 40, 54, 0.6);
+    --chip-border: #252836;
+    --chip-text: #9ca3af;
+
+    /* 按钮 */
+    --btn-ghost-hover: rgba(255, 255, 255, 0.06);
+    --action-bar-hover: rgba(255, 255, 255, 0.06);
+
+    /* 选择工具栏 */
+    --selection-toolbar-bg: #1a1d2b;
+    --selection-toolbar-border: #252836;
+
+    /* 功能色 */
+    --success: #34d399;
+    --warning: #fbbf24;
+    --error: #f87171;
   }
 
-  * { scrollbar-width: thin; scrollbar-color: #1A2E35 transparent; }
+  * { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
   html { color-scheme: light; }
   html.dark { color-scheme: dark; }
   html, body { margin: 0; padding: 0; overflow: hidden; font-family: "Inter", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif; }
@@ -45,29 +168,29 @@
 @layer components {
   /* 玻璃拟态效果 */
   .glass {
-    background: rgba(15, 26, 32, 0.8);
+    background: var(--glass-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(26, 46, 53, 0.5);
+    border: 1px solid var(--glass-border);
   }
 
   .glass-heavy {
-    background: rgba(15, 26, 32, 0.95);
+    background: var(--surface-elevated);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid #1A2E35;
+    border: 1px solid var(--border);
   }
 
   .glass-light {
-    background: rgba(26, 46, 53, 0.3);
+    background: var(--glass-bg);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(26, 46, 53, 0.4);
+    border: 1px solid var(--glass-border);
   }
 
   /* 渐变文字效果 */
   .gradient-text {
-    background: linear-gradient(135deg, #00D9C0, #00A8E8);
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -75,25 +198,23 @@
 
   /* 品牌文字发光效果 */
   .brand-glow {
-    background: linear-gradient(135deg, #00D9C0, #00A8E8);
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-shadow: 0 0 40px rgba(0, 217, 192, 0.5);
-    filter: drop-shadow(0 0 20px rgba(0, 217, 192, 0.3));
   }
 
   /* 主按钮 */
   .btn-primary {
-    background: linear-gradient(135deg, #00D9C0, #00A8E8);
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
     color: white;
     transition: all var(--transition);
-    box-shadow: 0 2px 8px rgba(0, 217, 192, 0.3);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
   }
   .btn-primary:hover {
-    background: linear-gradient(135deg, #00E8D0, #00B8F0);
+    background: linear-gradient(135deg, #60a5fa, #22d3ee);
     transform: scale(1.02);
-    box-shadow: 0 4px 16px rgba(0, 217, 192, 0.4);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
   }
   .btn-primary:active { transform: scale(0.98); }
 
@@ -104,49 +225,49 @@
     border-radius: 8px;
   }
   .btn-ghost:hover {
-    background: rgba(26, 46, 53, 0.5);
+    background: var(--btn-ghost-hover);
     color: var(--text-primary);
   }
 
   /* 用户消息样式 */
   .message-user {
-    background: linear-gradient(135deg, #00B4A0, #0088A8);
+    background: var(--message-user-bg);
     color: #ffffff;
     border-radius: 16px 16px 4px 16px;
-    box-shadow: 0 2px 12px rgba(0, 180, 160, 0.2);
+    box-shadow: 0 2px 12px rgba(59, 130, 246, 0.25);
   }
 
   /* AI 消息样式 */
   .message-assistant {
-    background: #0F1A20;
-    color: #E8F4F0;
-    border: 1px solid #1A2E35;
+    background: var(--message-assistant-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--message-assistant-border);
     border-radius: 16px 16px 16px 4px;
   }
 
   /* 代码块样式 */
   .code-block {
-    background: #0D1117;
-    border: 1px solid #1A2E35;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
     border-radius: 12px;
     font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
   }
 
   /* 输入框样式 */
   .input-field {
-    background: #0F1A20;
-    border: 1px solid #1A2E35;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
     border-radius: 12px;
-    color: #E8F4F0;
+    color: var(--text-primary);
     transition: all 200ms ease;
   }
   .input-field:focus {
-    border-color: #00D9C0;
-    box-shadow: 0 0 0 3px rgba(0, 217, 192, 0.15);
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     outline: none;
   }
   .input-field::placeholder {
-    color: #3A5A58;
+    color: var(--text-tertiary);
   }
 
   /* 侧边栏项目项 */
@@ -155,34 +276,34 @@
     border-left: 3px solid transparent;
   }
   .sidebar-item:hover {
-    background: rgba(26, 46, 53, 0.5);
-    border-left-color: rgba(0, 217, 192, 0.5);
+    background: var(--btn-ghost-hover);
+    border-left-color: rgba(59, 130, 246, 0.4);
   }
   .sidebar-item.active {
-    background: rgba(0, 217, 192, 0.1);
-    border-left-color: #00D9C0;
+    background: var(--accent-light);
+    border-left-color: var(--accent);
   }
 
   /* 功能标签 Chips */
   .chip {
-    background: rgba(26, 46, 53, 0.5);
-    border: 1px solid #1A2E35;
-    color: #5C8D8A;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
+    color: var(--chip-text);
     transition: all var(--transition);
   }
   .chip:hover {
-    background: rgba(0, 217, 192, 0.15);
-    border-color: rgba(0, 217, 192, 0.3);
-    color: #E8F4F0;
+    background: var(--accent-light);
+    border-color: var(--accent-border);
+    color: var(--text-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 217, 192, 0.15);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
   }
 
   /* 加载动画点 */
   .loading-dot {
     width: 8px;
     height: 8px;
-    background: #00D9C0;
+    background: var(--accent);
     border-radius: 50%;
     animation: bounce-dot 1.4s ease-in-out infinite;
   }
@@ -195,11 +316,11 @@
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #1A2E35;
+    background: var(--scrollbar-thumb);
     border-radius: 3px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #3A5A58;
+    background: var(--scrollbar-thumb-hover);
   }
 }
 
@@ -212,26 +333,26 @@ pre { -ms-overflow-style: auto; }
 pre::-webkit-scrollbar { height: 6px; }
 pre::-webkit-scrollbar-track, .overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
 .overflow-y-auto::-webkit-scrollbar { width: 6px; }
-.overflow-y-auto::-webkit-scrollbar-thumb { background: #1A2E35; border-radius: 3px; }
-.overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #3A5A58; }
+.overflow-y-auto::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+.overflow-y-auto::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
 code {
   font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
 }
 
 html:not(.dark) code:not(pre code) {
-  background: rgba(0, 217, 192, 0.1);
-  color: #008f80;
+  background: rgba(59, 130, 246, 0.08);
+  color: #3b82f6;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 0.875em;
 }
 
 html.dark code:not(pre code) {
-  background: rgba(0, 217, 192, 0.1);
-  color: #4dc2ff;
+  background: rgba(96, 165, 250, 0.12);
+  color: #93bbfd;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 0.875em;
 }
 
@@ -243,7 +364,7 @@ html.dark code:not(pre code) {
 
 .aui-thread-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #1A2E35 transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .aui-thread-scroll::-webkit-scrollbar {
@@ -255,12 +376,12 @@ html.dark code:not(pre code) {
 }
 
 .aui-thread-scroll::-webkit-scrollbar-thumb {
-  background: #1A2E35;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 .aui-thread-scroll::-webkit-scrollbar-thumb:hover {
-  background: #3A5A58;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* assistant-ui 消息样式 */
@@ -280,34 +401,34 @@ html.dark code:not(pre code) {
 
 /* assistant-ui Composer 样式 */
 .aui-composer-root {
-  background: rgba(15, 26, 32, 0.9) !important;
+  background: var(--glass-bg) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid #1A2E35 !important;
+  border: 1px solid var(--input-border) !important;
   border-radius: 16px !important;
   padding: 12px 16px !important;
   transition: all 200ms ease !important;
 }
 
 .aui-composer-root:focus-within {
-  border-color: rgba(0, 217, 192, 0.5) !important;
-  box-shadow: 0 0 0 3px rgba(0, 217, 192, 0.15) !important;
+  border-color: var(--input-focus-border) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
 }
 
 .aui-composer-input {
   background: transparent !important;
-  color: #E8F4F0 !important;
+  color: var(--text-primary) !important;
   font-size: 14px !important;
   line-height: 1.6 !important;
   outline: none !important;
 }
 
 .aui-composer-input::placeholder {
-  color: #3A5A58 !important;
+  color: var(--text-tertiary) !important;
 }
 
 .aui-composer-send {
-  background: linear-gradient(135deg, #00D9C0, #00A8E8) !important;
+  background: linear-gradient(135deg, var(--accent-start), var(--accent-end)) !important;
   color: white !important;
   border: none !important;
   border-radius: 12px !important;
@@ -318,12 +439,12 @@ html.dark code:not(pre code) {
   justify-content: center !important;
   cursor: pointer !important;
   transition: all 200ms ease !important;
-  box-shadow: 0 2px 8px rgba(0, 217, 192, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
 }
 
 .aui-composer-send:hover:not(:disabled) {
   transform: scale(1.02) !important;
-  box-shadow: 0 4px 16px rgba(0, 217, 192, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4) !important;
 }
 
 .aui-composer-send:disabled {
@@ -332,8 +453,8 @@ html.dark code:not(pre code) {
 }
 
 .aui-composer-cancel {
-  background: rgba(255, 71, 87, 0.1) !important;
-  color: #FF4757 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
   border: none !important;
   border-radius: 12px !important;
   width: 36px !important;
@@ -346,7 +467,7 @@ html.dark code:not(pre code) {
 }
 
 .aui-composer-cancel:hover {
-  background: rgba(255, 71, 87, 0.2) !important;
+  background: rgba(239, 68, 68, 0.2) !important;
 }
 
 /* assistant-ui Action Bar 样式 */
@@ -363,7 +484,7 @@ html.dark code:not(pre code) {
   padding: 4px 10px;
   border-radius: 8px;
   font-size: 11px;
-  color: #5C8D8A;
+  color: var(--text-secondary);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -371,8 +492,8 @@ html.dark code:not(pre code) {
 }
 
 .aui-action-bar-button:hover {
-  background: rgba(26, 46, 53, 0.5);
-  color: #E8F4F0;
+  background: var(--action-bar-hover);
+  color: var(--text-primary);
 }
 
 /* assistant-ui Branch Picker 样式 */
@@ -390,17 +511,17 @@ html.dark code:not(pre code) {
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  background: rgba(26, 46, 53, 0.5);
-  border: 1px solid #1A2E35;
-  color: #5C8D8A;
+  background: var(--btn-ghost-hover);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 200ms ease;
 }
 
 .aui-branch-picker-button:hover {
-  background: rgba(0, 217, 192, 0.1);
-  border-color: rgba(0, 217, 192, 0.3);
-  color: #00D9C0;
+  background: var(--accent-light);
+  border-color: var(--accent-border);
+  color: var(--accent);
 }
 
 .aui-branch-picker-button:disabled {
@@ -410,11 +531,11 @@ html.dark code:not(pre code) {
 
 /* assistant-ui Error 样式 */
 .aui-error {
-  background: rgba(255, 71, 87, 0.1);
-  border: 1px solid rgba(255, 71, 87, 0.2);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 12px;
   padding: 12px 16px;
-  color: #FF4757;
+  color: #ef4444;
   font-size: 14px;
 }
 
@@ -424,14 +545,14 @@ html.dark code:not(pre code) {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: #0F1A20;
+  background: var(--surface-secondary);
   border-radius: 12px;
 }
 
 .aui-loading-dot {
   width: 8px;
   height: 8px;
-  background: #00D9C0;
+  background: var(--accent);
   border-radius: 50%;
   animation: bounce-dot 1.4s ease-in-out infinite;
 }
@@ -445,6 +566,6 @@ html.dark code:not(pre code) {
 }
 
 .aui-loading-text {
-  color: #5C8D8A;
+  color: var(--text-secondary);
   font-size: 14px;
 }

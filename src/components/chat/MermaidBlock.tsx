@@ -1,19 +1,37 @@
 import { useEffect, useRef, useState } from "react";
 import mermaid from "mermaid";
 
+function getMermaidTheme() {
+  const isDark = document.documentElement.classList.contains("dark");
+  return {
+    theme: (isDark ? "dark" : "default") as "dark" | "default",
+    themeVariables: isDark
+      ? {
+          background: "#12141c",
+          primaryColor: "#1e2130",
+          primaryTextColor: "#e5e7eb",
+          primaryBorderColor: "#374151",
+          lineColor: "#6b7280",
+          secondaryColor: "#161922",
+          tertiaryColor: "#1a1d2b",
+          fontSize: "14px",
+        }
+      : {
+          background: "#f9fafb",
+          primaryColor: "#e5e7eb",
+          primaryTextColor: "#111827",
+          primaryBorderColor: "#d1d5db",
+          lineColor: "#6b7280",
+          secondaryColor: "#f3f4f6",
+          tertiaryColor: "#e5e7eb",
+          fontSize: "14px",
+        },
+  };
+}
+
 mermaid.initialize({
   startOnLoad: false,
-  theme: "dark",
-  themeVariables: {
-    background: "#0D1117",
-    primaryColor: "#1A2E35",
-    primaryTextColor: "#E8F4F0",
-    primaryBorderColor: "#2A4A50",
-    lineColor: "#5C8D8A",
-    secondaryColor: "#0F1A20",
-    tertiaryColor: "#15252A",
-    fontSize: "14px",
-  },
+  ...getMermaidTheme(),
   flowchart: { useMaxWidth: true, htmlLabels: true },
   sequence: { useMaxWidth: true },
   gantt: { useMaxWidth: true },
@@ -55,9 +73,9 @@ export function MermaidBlock({ code }: Props) {
 
   if (error) {
     return (
-      <div className="my-4 rounded-xl overflow-hidden" style={{ background: '#0D1117', border: '1px solid #1A2E35' }}>
-        <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#0F1A20', borderBottom: '1px solid #1A2E35' }}>
-          <span className="text-[11px] font-mono font-medium" style={{ color: '#5C8D8A' }}>mermaid</span>
+      <div className="my-4 rounded-xl overflow-hidden code-block">
+        <div className="flex items-center justify-between px-4 py-2.5" style={{ background: 'var(--surface-secondary)', borderBottom: '1px solid var(--border)' }}>
+          <span className="text-[11px] font-mono font-medium" style={{ color: 'var(--text-secondary)' }}>mermaid</span>
         </div>
         <div className="p-4 text-xs text-red-400 whitespace-pre-wrap font-mono">{error}</div>
       </div>
@@ -65,12 +83,12 @@ export function MermaidBlock({ code }: Props) {
   }
 
   return (
-    <div className="my-4 rounded-xl overflow-hidden" style={{ background: '#0D1117', border: '1px solid #1A2E35' }}>
-      <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#0F1A20', borderBottom: '1px solid #1A2E35' }}>
-        <span className="text-[11px] font-mono font-medium" style={{ color: '#5C8D8A' }}>mermaid</span>
+    <div className="my-4 rounded-xl overflow-hidden code-block">
+      <div className="flex items-center justify-between px-4 py-2.5" style={{ background: 'var(--surface-secondary)', borderBottom: '1px solid var(--border)' }}>
+        <span className="text-[11px] font-mono font-medium" style={{ color: 'var(--text-secondary)' }}>mermaid</span>
       </div>
       <div ref={containerRef} className="p-4 flex justify-center overflow-x-auto">
-        {loading && <span className="text-xs text-neutral-500">渲染中...</span>}
+        {loading && <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>渲染中...</span>}
       </div>
     </div>
   );

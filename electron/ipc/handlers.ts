@@ -10,22 +10,6 @@ export function registerIPCHandlers(): void {
   ipcMain.on("window:maximize", () => toggleMaximizeWindow());
   ipcMain.on("window:close", () => hideWindow());
 
-  // Python 后端管理（固定返回未运行，由 TS Core 接管）
-  ipcMain.handle("python:status", () => ({
-    status: "stopped",
-    port: 0,
-    url: "",
-    error: "",
-  }));
-  ipcMain.handle("python:logs", () => []);
-  ipcMain.handle("python:clearLogs", () => {});
-  ipcMain.handle("python:restart", async () => ({
-    status: "stopped",
-    port: 0,
-    url: "",
-    error: "TS Core 模式：Python 后端未启用",
-  }));
-
   // 文件对话框
   ipcMain.handle("dialog:openDirectory", async () => {
     const win = getMainWindow();

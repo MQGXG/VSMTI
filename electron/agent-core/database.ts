@@ -16,6 +16,10 @@ function getDbPath(): string | null {
 }
 
 const SCHEMA = `
+  CREATE TABLE IF NOT EXISTS projects (
+    project_id TEXT PRIMARY KEY, name TEXT NOT NULL,
+    workspace_path TEXT DEFAULT '', created_at TEXT DEFAULT (datetime('now'))
+  );
   CREATE TABLE IF NOT EXISTS sessions (
     session_id TEXT PRIMARY KEY, project_id TEXT DEFAULT '', title TEXT DEFAULT '',
     workspace TEXT DEFAULT '', created_at TEXT DEFAULT (datetime('now')),
@@ -85,7 +89,7 @@ export function scheduleSave(): void {
   saveTimer = setTimeout(() => {
     saveTimer = null
     if (!db) return
-    persist()
+    void persist()
   }, 500)
 }
 
@@ -93,14 +97,23 @@ export function scheduleSave(): void {
 export function flushSave(): void {
   if (saveTimer) { clearTimeout(saveTimer); saveTimer = null }
   if (!db) return
-  persist()
+  void persist()
 }
 
-function persist(): void {
+let persisting = false
+
+async function persist(): Promise<void> {
+  if (persisting) return
+  persisting = true
   const p = getDbPath()
-  if (!p) return
+  if (!p) { persisting = false; return }
   try {
     const data = db!.export()
-    fs.writeFileSync(p, Buffer.from(data))
-  } catch {}
+    const buffer = Buffer.from(data)
+    await fs.promises.writeFile(p, buffer)
+  } catch {
+    // 持久化失败时静默处理，下次写入会重试
+  } finally {
+    persisting = false
+  }
 }

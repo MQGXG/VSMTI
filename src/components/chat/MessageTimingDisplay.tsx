@@ -27,7 +27,7 @@ export function MessageTimingDisplay() {
   if (parts.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-1 mt-2 text-[10px] text-neutral-600">
+    <div className="flex items-center gap-1 mt-2 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
       <Clock className="w-2.5 h-2.5" />
       <span>{parts.join(" · ")}</span>
     </div>

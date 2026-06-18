@@ -1,9 +1,5 @@
-import { app } from "electron"
-import { join } from "path"
-import fs from "fs"
 import { randomUUID } from "crypto"
-import { loadSession, listSessions as sqliteListSessions, saveSession } from "./session-store"
-import type { StoredSession } from "./session-store"
+import { loadSession, listSessions as sqliteListSessions } from "./session-store"
 import { getDbAsync, runWrite } from "./database"
 
 export interface SessionInfo {
@@ -22,56 +18,34 @@ export interface ProjectInfo {
   workspace_path: string
 }
 
-const PROJECTS_FILE = "projects.json"
-
-function getDataDir(): string {
-  return app.getPath("userData")
+export async function createProject(name: string, workspacePath: string): Promise<ProjectInfo> {
+  const project_id = `proj_${Date.now().toString(36)}`
+  await getDbAsync()
+  runWrite(
+    "INSERT INTO projects (project_id, name, workspace_path) VALUES (?, ?, ?)",
+    [project_id, name, workspacePath],
+  )
+  return { project_id, name, workspace_path: workspacePath }
 }
 
-function getProjectsPath(): string {
-  return join(getDataDir(), PROJECTS_FILE)
-}
-
-function loadProjects(): ProjectInfo[] {
-  try {
-    const path = getProjectsPath()
-    if (fs.existsSync(path)) {
-      return JSON.parse(fs.readFileSync(path, "utf-8"))
-    }
-  } catch {}
-  return []
-}
-
-function saveProjects(projects: ProjectInfo[]): void {
-  const dir = getDataDir()
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-  fs.writeFileSync(getProjectsPath(), JSON.stringify(projects, null, 2), "utf-8")
-}
-
-export function createProject(name: string, workspacePath: string): ProjectInfo {
-  const project: ProjectInfo = {
-    project_id: `proj_${Date.now().toString(36)}`,
-    name,
-    workspace_path: workspacePath,
-  }
-  const projects = loadProjects()
-  projects.push(project)
-  saveProjects(projects)
-  return project
-}
-
-export function listProjects(): ProjectInfo[] {
-  return loadProjects()
+export async function listProjects(): Promise<ProjectInfo[]> {
+  const db = await getDbAsync()
+  const rows = db.exec("SELECT project_id, name, workspace_path FROM projects")
+  if (rows.length === 0) return []
+  return rows[0].values.map((row) => {
+    const [project_id, name, workspace_path] = row as string[]
+    return { project_id, name, workspace_path: workspace_path || "" }
+  })
 }
 
 export async function createSession(projectId: string, title?: string): Promise<SessionInfo> {
   const sessionId = `ses_${Date.now().toString(36)}_${randomUUID().slice(0, 8)}`
   const now = new Date().toISOString()
-  const projects = loadProjects()
+  const projects = await listProjects()
   const project = projects.find((p) => p.project_id === projectId)
   const workspace = project?.workspace_path || ""
 
-  const db = await getDbAsync()
+  await getDbAsync()
   runWrite(
     "INSERT INTO sessions (session_id, project_id, title, workspace, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
     [sessionId, projectId, title || `新会话 ${new Date().toLocaleDateString("zh-CN")}`, workspace, now, now],
@@ -113,8 +87,7 @@ export async function deleteProjectById(projectId: string): Promise<void> {
   const db = await getDbAsync()
   runWrite("DELETE FROM messages WHERE session_id IN (SELECT session_id FROM sessions WHERE project_id = ?)", [projectId])
   runWrite("DELETE FROM sessions WHERE project_id = ?", [projectId])
-  const projects = loadProjects().filter((p) => p.project_id !== projectId)
-  saveProjects(projects)
+  runWrite("DELETE FROM projects WHERE project_id = ?", [projectId])
 }
 
 export async function searchMessages(query: string): Promise<Array<{ session_id: string; session_title: string; message: { role: string; content: string; timestamp: string }; context: string }>> {

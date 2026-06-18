@@ -98,8 +98,8 @@ export function ChatInput({ input, isLoading, disabled, onInput, onSend, onStop,
       {/* Slash 命令补全下拉 */}
       {showSkills && (
         <div className="absolute bottom-full mb-2 left-0 right-0 z-50 rounded-xl overflow-hidden shadow-glass-lg"
-          style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
-          <div className="px-4 py-2 text-[10px] font-medium text-neutral-500" style={{ borderBottom: '1px solid #1A2E35' }}>
+          style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
+          <div className="px-4 py-2 text-[10px] font-medium" style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
             Skill 命令 (回车选择 / Esc 关闭)
           </div>
           <div className="max-h-64 overflow-y-auto custom-scrollbar">
@@ -132,17 +132,17 @@ export function ChatInput({ input, isLoading, disabled, onInput, onSend, onStop,
             : ""
         }`}
         style={{
-          background: 'rgba(15, 26, 32, 0.9)',
+          background: 'var(--glass-bg)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          border: isFocused ? '1px solid rgba(0, 217, 192, 0.5)' : '1px solid #1A2E35',
+          border: isFocused ? '1px solid rgba(0, 217, 192, 0.5)' : '1px solid var(--input-border)',
           boxShadow: isFocused ? '0 0 0 3px rgba(0, 217, 192, 0.15)' : 'none',
         }}
       >
         {/* 附件按钮 */}
         <button
           className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-neutral-700/50"
-          style={{ color: '#5C8D8A' }}
+          style={{ color: 'var(--text-secondary)' }}
           title="添加附件"
         >
           <Plus className="w-5 h-5" />
@@ -159,8 +159,8 @@ export function ChatInput({ input, isLoading, disabled, onInput, onSend, onStop,
           placeholder={disabled ? "AI 对话需连接后端，工具面板可直接使用" : "输入消息... (/ 查看 Skill, Shift+Enter 换行)"}
           rows={1}
           disabled={disabled}
-          className="flex-1 bg-transparent text-sm text-neutral-200 placeholder-neutral-600 outline-none resize-none leading-relaxed disabled:cursor-not-allowed min-h-[24px] max-h-[200px]"
-          style={{ lineHeight: '1.6' }}
+          className="flex-1 bg-transparent text-sm outline-none resize-none leading-relaxed disabled:cursor-not-allowed min-h-[24px] max-h-[200px]"
+          style={{ lineHeight: '1.6', color: 'var(--text-primary)' }}
         />
 
         {/* 发送/停止按钮 */}
@@ -169,8 +169,8 @@ export function ChatInput({ input, isLoading, disabled, onInput, onSend, onStop,
           disabled={(!input.trim() && !isLoading) || disabled}
           className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:transform-none"
           style={{
-            background: (input.trim() || isLoading) ? 'linear-gradient(135deg, #00D9C0, #00A8E8)' : '#1A2E35',
-            color: (input.trim() || isLoading) ? '#ffffff' : '#5C8D8A',
+            background: (input.trim() || isLoading) ? 'linear-gradient(135deg, var(--accent-start), var(--accent-end))' : 'var(--chip-bg)',
+            color: (input.trim() || isLoading) ? '#ffffff' : 'var(--text-secondary)',
             boxShadow: (input.trim() || isLoading) ? '0 2px 8px rgba(0, 217, 192, 0.3)' : 'none',
           }}
         >

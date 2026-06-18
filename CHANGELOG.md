@@ -32,6 +32,10 @@
 ### 清理
 - 移除未使用的 `electron/python-manager.ts`
 - 删除构建产物和冗余数据目录
+- 移除遗留的 Python 后端 (`agent-backend/`)、`docker-compose.yml`、`.dockerignore`
+- 清理 `start.ps1`、`start.sh`、`setup.ps1` 中的 Python 引用
+- 更新 `CONTEXT.md` 移除 Python 相关内容
+- 新增 ESLint 配置 (`.eslintrc.json`) + `npm run lint` 脚本
 
 ## [0.9.0] - 2026-06-11
 

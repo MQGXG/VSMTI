@@ -144,28 +144,28 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
   };
 
   const inputStyle = {
-    background: '#0D1117',
-    border: '1px solid #1A2E35',
-    color: '#E8F4F0',
+    background: 'var(--input-bg)',
+    border: '1px solid var(--input-border)',
+    color: 'var(--text-primary)',
   };
 
   if (editingProvider) {
     return (
       <div className="max-w-3xl space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium" style={{ color: '#E8F4F0' }}>
+          <h3 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
             {isAdding ? "添加自定义提供商" : `编辑提供商: ${editingProvider.name}`}
           </h3>
           <button onClick={() => setEditingProvider(null)} className="p-1.5 rounded-lg transition-colors hover:bg-neutral-700/50">
-            <X className="w-4 h-4" style={{ color: '#5C8D8A' }} />
+            <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
           </button>
         </div>
 
         <div className="space-y-6">
           <div className="space-y-4">
-            <div className="text-sm font-medium" style={{ color: '#E8F4F0' }}>基本信息</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>基本信息</div>
             <div className="space-y-2">
-              <label className="text-xs" style={{ color: '#5C8D8A' }}>供应商标识 *</label>
+              <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>供应商标识 *</label>
               <input
                 value={editingProvider.id}
                 onChange={(e) => updateForm({ id: e.target.value })}
@@ -177,7 +177,7 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs" style={{ color: '#5C8D8A' }}>供应商名称 *</label>
+                <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>供应商名称 *</label>
                 <input
                   value={editingProvider.name}
                   onChange={(e) => updateForm({ name: e.target.value })}
@@ -187,7 +187,7 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs" style={{ color: '#5C8D8A' }}>显示名称</label>
+                <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>显示名称</label>
                 <input
                   value={editingProvider.displayName}
                   onChange={(e) => updateForm({ displayName: e.target.value })}
@@ -198,9 +198,9 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-xs" style={{ color: '#5C8D8A' }}>官网链接</label>
+              <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>官网链接</label>
               <div className="relative">
-                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#3A5A58' }} />
+                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
                 <input
                   value={editingProvider.website}
                   onChange={(e) => updateForm({ website: e.target.value })}
@@ -212,12 +212,12 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
             </div>
           </div>
 
-          <div style={{ borderTop: '1px solid #1A2E35' }} />
+          <div style={{ borderTop: '1px solid var(--border)' }} />
 
           <div className="space-y-4">
-            <div className="text-sm font-medium" style={{ color: '#E8F4F0' }}>API 配置</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>API 配置</div>
             <div className="space-y-2">
-              <label className="text-xs" style={{ color: '#5C8D8A' }}>接口格式</label>
+              <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>接口格式</label>
               <select
                 value={editingProvider.apiFormat}
                 onChange={(e) => updateForm({ apiFormat: e.target.value as any })}
@@ -230,9 +230,9 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs" style={{ color: '#5C8D8A' }}>API Key</label>
+              <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>API Key</label>
               <div className="relative">
-                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#3A5A58' }} />
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
                 <input
                   type="password"
                   value={editingProvider.apiKey}
@@ -244,9 +244,9 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-xs" style={{ color: '#5C8D8A' }}>Base URL *</label>
+              <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>Base URL *</label>
               <div className="relative">
-                <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#3A5A58' }} />
+                <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
                 <input
                   value={editingProvider.baseUrl}
                   onChange={(e) => updateForm({ baseUrl: e.target.value })}
@@ -258,12 +258,12 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
             </div>
           </div>
 
-          <div style={{ borderTop: '1px solid #1A2E35' }} />
+          <div style={{ borderTop: '1px solid var(--border)' }} />
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-medium" style={{ color: '#E8F4F0' }}>请求头（可选）</div>
-              <button onClick={addHeader} className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-neutral-700/50" style={{ color: '#5C8D8A' }}>
+              <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>请求头（可选）</div>
+              <button onClick={addHeader} className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-neutral-700/50" style={{ color: 'var(--text-secondary)' }}>
                 <Plus className="w-3 h-3" /> 添加请求头
               </button>
             </div>
@@ -273,19 +273,19 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
                   className="flex-1 rounded-lg px-3 py-1.5 text-sm outline-none transition-all duration-200" style={inputStyle} />
                 <input value={header.value} onChange={(e) => updateHeader(index, "value", e.target.value)} placeholder="value"
                   className="flex-1 rounded-lg px-3 py-1.5 text-sm outline-none transition-all duration-200" style={inputStyle} />
-                <button onClick={() => removeHeader(index)} className="p-1.5 rounded-lg transition-colors hover:bg-error/10 hover:text-error" style={{ color: '#5C8D8A' }}>
+                <button onClick={() => removeHeader(index)} className="p-1.5 rounded-lg transition-colors hover:bg-error/10 hover:text-error" style={{ color: 'var(--text-secondary)' }}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}
           </div>
 
-          <div style={{ borderTop: '1px solid #1A2E35' }} />
+          <div style={{ borderTop: '1px solid var(--border)' }} />
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-medium" style={{ color: '#E8F4F0' }}>额外选项</div>
-              <button onClick={addOption} className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-neutral-700/50" style={{ color: '#5C8D8A' }}>
+              <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>额外选项</div>
+              <button onClick={addOption} className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-neutral-700/50" style={{ color: 'var(--text-secondary)' }}>
                 <Plus className="w-3 h-3" /> 添加
               </button>
             </div>
@@ -295,25 +295,25 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
                   className="flex-1 rounded-lg px-3 py-1.5 text-sm outline-none transition-all duration-200" style={inputStyle} />
                 <input value={option.value} onChange={(e) => updateOption(index, "value", e.target.value)} placeholder="值"
                   className="flex-1 rounded-lg px-3 py-1.5 text-sm outline-none transition-all duration-200" style={inputStyle} />
-                <button onClick={() => removeOption(index)} className="p-1.5 rounded-lg transition-colors hover:bg-error/10 hover:text-error" style={{ color: '#5C8D8A' }}>
+                <button onClick={() => removeOption(index)} className="p-1.5 rounded-lg transition-colors hover:bg-error/10 hover:text-error" style={{ color: 'var(--text-secondary)' }}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}
           </div>
 
-          <div style={{ borderTop: '1px solid #1A2E35' }} />
+          <div style={{ borderTop: '1px solid var(--border)' }} />
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-medium" style={{ color: '#E8F4F0' }}>模型配置</div>
+              <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>模型配置</div>
               <div className="flex items-center gap-2">
                 <button onClick={fetchModels} disabled={fetchingModels}
-                  className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-neutral-700/50 disabled:opacity-50" style={{ color: '#5C8D8A' }}>
+                  className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-neutral-700/50 disabled:opacity-50" style={{ color: 'var(--text-secondary)' }}>
                   <Download className={`w-3 h-3 ${fetchingModels ? "animate-bounce" : ""}`} />
                   {fetchingModels ? "获取中..." : "获取模型列表"}
                 </button>
-                <button onClick={addModel} className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-neutral-700/50" style={{ color: '#5C8D8A' }}>
+                <button onClick={addModel} className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-neutral-700/50" style={{ color: 'var(--text-secondary)' }}>
                   <Plus className="w-3 h-3" /> 添加模型
                 </button>
               </div>
@@ -327,7 +327,7 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
                   className="flex-1 rounded-lg px-3 py-1.5 text-sm outline-none transition-all duration-200" style={inputStyle} />
                 <input value={model.name} onChange={(e) => updateModel(index, "name", e.target.value)} placeholder="显示名称"
                   className="flex-1 rounded-lg px-3 py-1.5 text-sm outline-none transition-all duration-200" style={inputStyle} />
-                <button onClick={() => removeModel(index)} className="p-1.5 rounded-lg transition-colors hover:bg-error/10 hover:text-error" style={{ color: '#5C8D8A' }}>
+                <button onClick={() => removeModel(index)} className="p-1.5 rounded-lg transition-colors hover:bg-error/10 hover:text-error" style={{ color: 'var(--text-secondary)' }}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -335,7 +335,7 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4">
-            <button onClick={() => setEditingProvider(null)} className="px-4 py-2 rounded-lg text-sm transition-colors hover:bg-neutral-700/50" style={{ color: '#5C8D8A' }}>取消</button>
+            <button onClick={() => setEditingProvider(null)} className="px-4 py-2 rounded-lg text-sm transition-colors hover:bg-neutral-700/50" style={{ color: 'var(--text-secondary)' }}>取消</button>
             <button onClick={saveProvider} disabled={!editingProvider.name || !editingProvider.baseUrl}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
               <Save className="w-4 h-4" /> {isAdding ? "添加" : "保存"}
@@ -349,30 +349,30 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium" style={{ color: '#E8F4F0' }}>提供商</h3>
-        <button onClick={startAdd} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors hover:bg-neutral-700/50" style={{ color: '#5C8D8A', border: '1px solid #1A2E35' }}>
+        <h3 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>提供商</h3>
+        <button onClick={startAdd} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors hover:bg-neutral-700/50" style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
           <Plus className="w-3.5 h-3.5" /> 添加提供商
         </button>
       </div>
 
       <div className="space-y-4">
         {providers.map((provider) => (
-          <div key={provider.id} className="rounded-xl overflow-hidden" style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #1A2E35' }}>
+          <div key={provider.id} className="rounded-xl overflow-hidden" style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
               <div className="flex items-center gap-3">
-                <div className="text-sm font-medium" style={{ color: '#E8F4F0' }}>{provider.displayName || provider.name}</div>
-                <div className="text-xs" style={{ color: '#5C8D8A' }}>{provider.models.length} 个模型</div>
+                <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{provider.displayName || provider.name}</div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{provider.models.length} 个模型</div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => startEdit(provider)} className="px-2 py-1 rounded text-xs transition-colors hover:bg-neutral-700/50" style={{ color: '#5C8D8A' }}>编辑</button>
+                <button onClick={() => startEdit(provider)} className="px-2 py-1 rounded text-xs transition-colors hover:bg-neutral-700/50" style={{ color: 'var(--text-secondary)' }}>编辑</button>
                 {!["openai", "claude", "deepseek", "ollama"].includes(provider.id) && (
-                  <button onClick={() => deleteProvider(provider.id)} className="p-1 rounded-lg transition-colors hover:bg-error/10 hover:text-error" style={{ color: '#5C8D8A' }}>
+                  <button onClick={() => deleteProvider(provider.id)} className="p-1 rounded-lg transition-colors hover:bg-error/10 hover:text-error" style={{ color: 'var(--text-secondary)' }}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
                 <div onClick={() => toggleProvider(provider.id)}
                   className="w-9 h-5 rounded-full relative cursor-pointer transition-colors"
-                  style={{ background: provider.enabled ? '#00D9C0' : '#1A2E35' }}>
+                  style={{ background: provider.enabled ? '#00D9C0' : 'var(--border)' }}>
                   <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ transform: provider.enabled ? 'translateX(16px)' : 'translateX(2px)' }} />
                 </div>
               </div>
@@ -380,10 +380,10 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
             {provider.enabled && (
               <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {provider.models.slice(0, 4).map((model) => (
-                  <div key={model.id} className="px-3 py-2 rounded-lg text-xs" style={{ background: '#0D1117', color: '#E8F4F0' }}>{model.name}</div>
+                  <div key={model.id} className="px-3 py-2 rounded-lg text-xs" style={{ background: 'var(--input-bg)', color: 'var(--text-primary)' }}>{model.name}</div>
                 ))}
                 {provider.models.length > 4 && (
-                  <div className="px-3 py-2 rounded-lg text-xs" style={{ background: '#0D1117', color: '#5C8D8A' }}>+{provider.models.length - 4} 更多</div>
+                  <div className="px-3 py-2 rounded-lg text-xs" style={{ background: 'var(--input-bg)', color: 'var(--text-secondary)' }}>+{provider.models.length - 4} 更多</div>
                 )}
               </div>
             )}

@@ -141,7 +141,7 @@ export function Sidebar({
 
   if (!isOpen) {
     return (
-      <div className="flex flex-col items-center gap-2 p-2" style={{ borderRight: '1px solid #15252A', background: 'linear-gradient(180deg, #0F2A2E, #0A1418)' }}>
+      <div className="flex flex-col items-center gap-2 p-2" style={{ borderRight: '1px solid var(--sidebar-border)', background: 'var(--sidebar-bg)' }}>
         <button onClick={onToggle} className="w-9 h-9 flex items-center justify-center rounded-xl btn-ghost transition-all duration-200 hover:bg-primary-500/10" title="展开侧边栏">
           <PanelLeft className="w-4 h-4 text-neutral-400" />
         </button>
@@ -150,9 +150,9 @@ export function Sidebar({
   }
 
   return (
-    <div className="w-64 flex flex-col relative" style={{ borderRight: '1px solid #15252A', background: 'linear-gradient(180deg, #0F2A2E 0%, #0A1418 100%)' }}>
+    <div className="w-64 flex flex-col relative" style={{ borderRight: '1px solid var(--sidebar-border)', background: 'var(--sidebar-bg)' }}>
       {/* 头部 */}
-      <div className="p-4" style={{ borderBottom: '1px solid #15252A' }}>
+      <div className="p-4" style={{ borderBottom: '1px solid var(--sidebar-border)' }}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-primary-500/20">
@@ -206,8 +206,8 @@ export function Sidebar({
       {/* 搜索结果 */}
       {searchResults !== null && (
         <div className="absolute left-3 right-3 z-50 rounded-xl overflow-hidden shadow-glass-lg"
-          style={{ top: '160px', background: '#0F1A20', border: '1px solid #1A2E35' }}>
-          <div className="px-3 py-2 text-[10px] font-medium text-neutral-500" style={{ borderBottom: '1px solid #1A2E35' }}>
+          style={{ top: '160px', background: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
+          <div className="px-3 py-2 text-[10px] font-medium" style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
             找到 {searchResults.length} 条结果
           </div>
           {searchResults.length === 0 ? (
@@ -217,7 +217,7 @@ export function Sidebar({
               {searchResults.map((r, i) => (
                 <button key={i} onClick={() => { onSessionChange(r.session_id); setSearchResults(null); setSearchQuery(""); }}
                   className="w-full text-left px-3 py-3 transition-all duration-200 hover:bg-neutral-800/50"
-                  style={{ borderBottom: i < searchResults.length - 1 ? '1px solid #15252A' : 'none' }}>
+                  style={{ borderBottom: i < searchResults.length - 1 ? '1px solid var(--border-light)' : 'none' }}>
                   <div className="flex items-center gap-2">
                     <MessageSquare className="w-3 h-3 shrink-0 text-neutral-500" />
                     <span className="text-xs font-medium truncate text-neutral-200">{r.session_title}</span>
@@ -275,14 +275,14 @@ export function Sidebar({
                             <div className="flex items-center gap-2.5">
                               <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors"
                                 style={{ background: isActive ? 'rgba(0, 217, 192, 0.15)' : 'rgba(26, 46, 53, 0.5)' }}>
-                                {session.kind === "task" ? <FileText className="w-3.5 h-3.5" style={{ color: isActive ? '#00D9C0' : '#5C8D8A' }} />
-                                  : <MessageSquare className="w-3.5 h-3.5" style={{ color: isActive ? '#00D9C0' : '#5C8D8A' }} />}
+                                {session.kind === "task" ? <FileText className="w-3.5 h-3.5" style={{ color: isActive ? 'var(--accent-start)' : 'var(--text-secondary)' }} />
+                                  : <MessageSquare className="w-3.5 h-3.5" style={{ color: isActive ? 'var(--accent-start)' : 'var(--text-secondary)' }} />}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <div className="text-xs font-medium truncate" style={{ color: isActive ? '#E8F4F0' : '#5C8D8A' }}>
+                                <div className="text-xs font-medium truncate" style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                                   {session.title || "新会话"}
                                 </div>
-                                <div className="text-[10px] mt-0.5" style={{ color: '#3A5A58' }}>
+                                <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                                   {session.message_count || 0} 条 · {formatTime(session.updated_at)}
                                 </div>
                               </div>
@@ -308,7 +308,7 @@ export function Sidebar({
       </div>
 
       {/* 底部设置 */}
-      <div className="p-3" style={{ borderTop: '1px solid #15252A' }}>
+      <div className="p-3" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
         <button onClick={() => setSettingsOpen(true)}
           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
           <Settings className="w-4 h-4 text-neutral-400" />

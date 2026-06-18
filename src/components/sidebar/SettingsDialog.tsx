@@ -150,8 +150,8 @@ function ThemeSelector() {
   ];
 
   return (
-    <div className="p-4 rounded-xl" style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
-      <div className="text-sm mb-3" style={{ color: '#E8F4F0' }}>外观</div>
+    <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
+      <div className="text-sm mb-3" style={{ color: 'var(--text-primary)' }}>外观</div>
       <div className="flex gap-2">
         {options.map((option) => {
           const Icon = option.icon;
@@ -162,9 +162,9 @@ function ThemeSelector() {
               onClick={() => setTheme(option.value)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200"
               style={{
-                border: isActive ? '1px solid rgba(0, 217, 192, 0.3)' : '1px solid #1A2E35',
+                border: isActive ? '1px solid rgba(0, 217, 192, 0.3)' : '1px solid var(--border)',
                 background: isActive ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
-                color: isActive ? '#00D9C0' : '#5C8D8A',
+                color: isActive ? 'var(--accent-start)' : 'var(--text-secondary)',
               }}
             >
               <Icon className="w-4 h-4" />
@@ -173,7 +173,7 @@ function ThemeSelector() {
           );
         })}
       </div>
-      <p className="text-xs mt-2" style={{ color: '#3A5A58' }}>
+      <p className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
         当前: {resolvedTheme === "dark" ? "暗色模式" : "浅色模式"} ({theme === "system" ? "跟随系统" : "手动设置"})
       </p>
     </div>
@@ -207,8 +207,8 @@ function ConfigSourceIndicator() {
   return (
     <div className="p-3 rounded-xl flex items-center gap-2" style={{ background: 'rgba(0, 217, 192, 0.05)', border: '1px solid rgba(0, 217, 192, 0.1)' }}>
       {info.apiKeyFrom === "env" ? <Terminal className="w-4 h-4" style={{ color: '#00D9C0' }} /> : <FileText className="w-4 h-4" style={{ color: '#00D9C0' }} />}
-      <div className="text-xs" style={{ color: '#5C8D8A' }}>
-        API Key 来自 <span className="font-medium" style={{ color: '#00D9C0' }}>{info.apiKeyFrom === "env" ? "环境变量" : "配置文件"}</span>
+      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+        API Key 来自 <span className="font-medium" style={{ color: 'var(--accent-start)' }}>{info.apiKeyFrom === "env" ? "环境变量" : "配置文件"}</span>
         ，无需在界面中填写
       </div>
     </div>
@@ -253,22 +253,22 @@ export function SettingsDialog({ open, onClose }: Props) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex" style={{ background: '#0A0F14' }} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="w-48 lg:w-56 flex flex-col" style={{ background: '#0F1A20', borderRight: '1px solid #1A2E35' }}>
-        <div className="px-4 py-5 space-y-3" style={{ borderBottom: '1px solid #1A2E35' }}>
-          <h2 className="text-sm font-medium" style={{ color: '#E8F4F0' }}>设置</h2>
+    <div className="fixed inset-0 z-50 flex" style={{ background: 'var(--surface)' }} onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="w-48 lg:w-56 flex flex-col" style={{ background: 'var(--surface-secondary)', borderRight: '1px solid var(--border)' }}>
+        <div className="px-4 py-5 space-y-3" style={{ borderBottom: '1px solid var(--border)' }}>
+          <h2 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>设置</h2>
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#5C8D8A' }} />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5"               style={{ color: 'var(--text-secondary)' }} />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索设置..."
               className="w-full pl-8 pr-2 py-1.5 rounded-lg text-xs outline-none transition-all duration-200"
-              style={{ background: '#0D1117', border: '1px solid #1A2E35', color: '#E8F4F0' }}
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2">
-                <X className="w-3 h-3 transition-colors hover:text-neutral-300" style={{ color: '#5C8D8A' }} />
+                <X className="w-3 h-3 transition-colors hover:text-neutral-300" style={{ color: 'var(--text-secondary)' }} />
               </button>
             )}
           </div>
@@ -287,7 +287,7 @@ export function SettingsDialog({ open, onClose }: Props) {
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-all duration-200 rounded-lg mx-2"
                 style={{
                   background: tab === t.id ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
-                  color: tab === t.id ? '#00D9C0' : '#5C8D8A',
+                  color: tab === t.id ? 'var(--accent-start)' : 'var(--text-secondary)',
                 }}>
                 <t.icon className="w-4 h-4" /> {t.label}
               </button>
@@ -299,48 +299,48 @@ export function SettingsDialog({ open, onClose }: Props) {
             (t.id === "providers" && "提供商 OpenAI Claude DeepSeek Ollama API Key".includes(searchQuery)) ||
             (t.id === "models" && "模型 启用 禁用 搜索".includes(searchQuery)) ||
             (t.id === "about" && "关于 版本 技术栈".includes(searchQuery)))) && (
-            <div className="px-6 py-4 text-xs text-center" style={{ color: '#5C8D8A' }}>未找到匹配设置</div>
+            <div className="px-6 py-4 text-xs text-center" style={{ color: 'var(--text-secondary)' }}>未找到匹配设置</div>
           )}
         </div>
-        <div className="p-3" style={{ borderTop: '1px solid #1A2E35' }}>
-          <div className="text-[10px] text-center" style={{ color: '#3A5A58' }}>修改即时保存</div>
+        <div className="p-3" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="text-[10px] text-center" style={{ color: 'var(--text-tertiary)' }}>修改即时保存</div>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-        <div className="flex items-center justify-end px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #1A2E35' }}>
+        <div className="flex items-center justify-end px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
           <button onClick={onClose} className="p-1.5 rounded-lg transition-colors hover:bg-neutral-700/50">
-            <X className="w-4 h-4" style={{ color: '#5C8D8A' }} />
+            <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 min-h-0 custom-scrollbar">
           {tab === "general" && (
             <div className="max-w-2xl space-y-6">
-              <h3 className="text-lg font-medium" style={{ color: '#E8F4F0' }}>通用设置</h3>
+              <h3 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>通用设置</h3>
               <ThemeSelector />
 
               {/* 权限 */}
-              <div className="p-4 rounded-xl" style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
-                <div className="text-sm mb-3" style={{ color: '#E8F4F0' }}>权限</div>
+              <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
+                <div className="text-sm mb-3" style={{ color: 'var(--text-primary)' }}>权限</div>
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
-                    <div className="text-sm" style={{ color: '#E8F4F0' }}>自动接受权限</div>
-                    <div className="text-xs mt-0.5" style={{ color: '#5C8D8A' }}>允许 Agent 自动执行操作，不再弹出确认对话框</div>
+                    <div className="text-sm" style={{ color: 'var(--text-primary)' }}>自动接受权限</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>允许 Agent 自动执行操作，不再弹出确认对话框</div>
                   </div>
                   <input type="checkbox" checked={settings.autoAcceptPermissions}
                     onChange={(e) => updateSettings({ autoAcceptPermissions: e.target.checked })}
-                    className="w-4 h-4 rounded" style={{ accentColor: '#00D9C0' }} />
+                    className="w-4 h-4 rounded" style={{ accentColor: 'var(--accent-start)' }} />
                 </label>
               </div>
 
               {/* 终端 */}
-              <div className="p-4 rounded-xl" style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
-                <div className="text-sm mb-3" style={{ color: '#E8F4F0' }}>终端</div>
-                <label className="text-xs mb-1 block" style={{ color: '#5C8D8A' }}>默认 Shell</label>
+              <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
+                <div className="text-sm mb-3" style={{ color: 'var(--text-primary)' }}>终端</div>
+                <label className="text-xs mb-1 block" style={{ color: 'var(--text-secondary)' }}>默认 Shell</label>
                 <select value={settings.terminalShell}
                   onChange={(e) => updateSettings({ terminalShell: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all duration-200"
-                  style={{ background: '#0D1117', border: '1px solid #1A2E35', color: '#E8F4F0' }}>
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}>
                   <option value="default">Auto (Default)</option>
                   <option value="powershell">PowerShell</option>
                   <option value="cmd">CMD</option>
@@ -349,8 +349,8 @@ export function SettingsDialog({ open, onClose }: Props) {
               </div>
 
               {/* 时间线 */}
-              <div className="p-4 rounded-xl" style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
-                <div className="text-sm mb-3" style={{ color: '#E8F4F0' }}>时间线</div>
+              <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
+                <div className="text-sm mb-3" style={{ color: 'var(--text-primary)' }}>时间线</div>
                 <div className="space-y-3">
                   {[
                     { key: "showReasoning" as const, label: "显示推理摘要", desc: "在时间线中显示模型推理摘要" },
@@ -359,47 +359,47 @@ export function SettingsDialog({ open, onClose }: Props) {
                   ].map((item) => (
                     <label key={item.key} className="flex items-center justify-between cursor-pointer">
                       <div>
-                        <div className="text-sm" style={{ color: '#E8F4F0' }}>{item.label}</div>
-                        <div className="text-xs" style={{ color: '#5C8D8A' }}>{item.desc}</div>
+                        <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{item.label}</div>
+                        <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{item.desc}</div>
                       </div>
                       <input type="checkbox" checked={(settings as any)[item.key]}
                         onChange={(e) => updateSettings({ [item.key]: e.target.checked })}
-                        className="w-4 h-4 rounded" style={{ accentColor: '#00D9C0' }} />
+                        className="w-4 h-4 rounded" style={{ accentColor: 'var(--accent-start)' }} />
                     </label>
                   ))}
                 </div>
               </div>
 
               {/* 进度条 */}
-              <div className="p-4 rounded-xl" style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
+              <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
-                    <div className="text-sm" style={{ color: '#E8F4F0' }}>显示会话进度条</div>
-                    <div className="text-xs mt-0.5" style={{ color: '#5C8D8A' }}>当智能体正在工作时，在会话顶部显示动画进度条</div>
+                    <div className="text-sm" style={{ color: 'var(--text-primary)' }}>显示会话进度条</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>当智能体正在工作时，在会话顶部显示动画进度条</div>
                   </div>
                   <input type="checkbox" checked={settings.showProgressBar}
                     onChange={(e) => updateSettings({ showProgressBar: e.target.checked })}
-                    className="w-4 h-4 rounded" style={{ accentColor: '#00D9C0' }} />
+                    className="w-4 h-4 rounded" style={{ accentColor: 'var(--accent-start)' }} />
                 </label>
               </div>
 
               {/* 界面 */}
-              <div className="p-4 rounded-xl" style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
+              <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
-                    <div className="text-sm" style={{ color: '#E8F4F0' }}>新版界面布局</div>
-                    <div className="text-xs mt-0.5" style={{ color: '#5C8D8A' }}>启用重新设计的布局、主页、编辑器和会话界面</div>
+                    <div className="text-sm" style={{ color: 'var(--text-primary)' }}>新版界面布局</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>启用重新设计的布局、主页、编辑器和会话界面</div>
                   </div>
                   <input type="checkbox" checked={settings.newLayout}
                     onChange={(e) => updateSettings({ newLayout: e.target.checked })}
-                    className="w-4 h-4 rounded" style={{ accentColor: '#00D9C0' }} />
+                    className="w-4 h-4 rounded" style={{ accentColor: 'var(--accent-start)' }} />
                 </label>
               </div>
             </div>
           )}
           {tab === "shortcuts" && (
             <div className="max-w-2xl space-y-6">
-              <h3 className="text-lg font-medium" style={{ color: '#E8F4F0' }}>快捷键</h3>
+              <h3 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>快捷键</h3>
               <div className="space-y-2">
                 {[
                   { name: "全局唤出", key: "Ctrl + Shift + A" },
@@ -408,9 +408,9 @@ export function SettingsDialog({ open, onClose }: Props) {
                   { name: "发送消息", key: "Enter" },
                   { name: "换行", key: "Shift + Enter" },
                 ].map((item) => (
-                  <div key={item.name} className="flex items-center justify-between p-4 rounded-xl" style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
-                    <span className="text-sm" style={{ color: '#E8F4F0' }}>{item.name}</span>
-                    <span className="text-xs font-mono px-2 py-1 rounded" style={{ color: '#5C8D8A', background: '#0D1117', border: '1px solid #1A2E35' }}>{item.key}</span>
+                  <div key={item.name} className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{item.name}</span>
+                    <span className="text-xs font-mono px-2 py-1 rounded" style={{ color: 'var(--text-secondary)', background: 'var(--input-bg)', border: '1px solid var(--input-border)' }}>{item.key}</span>
                   </div>
                 ))}
               </div>
@@ -427,21 +427,21 @@ export function SettingsDialog({ open, onClose }: Props) {
           )}
           {tab === "about" && (
             <div className="max-w-2xl space-y-6">
-              <h3 className="text-lg font-medium" style={{ color: '#E8F4F0' }}>关于 Mira</h3>
-              <div className="p-6 rounded-xl space-y-4" style={{ background: '#0F1A20', border: '1px solid #1A2E35' }}>
+              <h3 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>关于 Mira</h3>
+              <div className="p-6 rounded-xl space-y-4" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0, 217, 192, 0.1)' }}>
-                    <Cpu className="w-6 h-6" style={{ color: '#00D9C0' }} />
+                    <Cpu className="w-6 h-6" style={{ color: 'var(--accent-start)' }} />
                   </div>
                   <div>
-                    <div className="text-lg font-medium" style={{ color: '#E8F4F0' }}>Mira</div>
-                    <div className="text-xs" style={{ color: '#5C8D8A' }}>版本 1.0.0</div>
+                    <div className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>Mira</div>
+                    <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>版本 1.0.0</div>
                   </div>
                 </div>
-                <div className="text-sm leading-relaxed" style={{ color: '#5C8D8A' }}>全能 AI 助手桌面应用，支持多模型切换、工具调用、文件分析。</div>
-                <div className="text-xs space-y-1" style={{ color: '#3A5A58' }}>
-                  <div>Electron 31 · React 18 · Python 3.10</div>
-                  <div>OpenAI SDK · Anthropic SDK · FastAPI</div>
+                <div className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>全能 AI 助手桌面应用，支持多模型切换、工具调用、文件分析。</div>
+                <div className="text-xs space-y-1" style={{ color: 'var(--text-tertiary)' }}>
+                  <div>Electron 31 · React 18 · TypeScript 5</div>
+                  <div>OpenAI SDK · Anthropic SDK · SQLite</div>
                 </div>
               </div>
             </div>

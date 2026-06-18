@@ -150,6 +150,10 @@ npm run test
 
 # 类型检查
 npm run typecheck
+
+# 代码检查
+npm run lint
+npm run lint:fix
 ```
 
 ## 环境要求

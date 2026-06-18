@@ -93,15 +93,15 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           });
 
           parts.push(
-            <div key={`t-${key++}`} className="my-4 overflow-x-auto rounded-xl" style={{ border: '1px solid #1A2E35' }}>
+            <div key={`t-${key++}`} className="my-4 overflow-x-auto rounded-xl" style={{ border: '1px solid var(--border)' }}>
               <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ background: '#0F1A20' }}>
+                  <tr style={{ background: 'var(--surface-secondary)' }}>
                     {headers.map((h, j) => (
                       <th key={j} className="px-4 py-2.5 text-left font-medium" 
                           style={{ 
-                            borderBottom: '1px solid #1A2E35', 
-                            color: '#E8F4F0',
+                            borderBottom: '1px solid var(--border)', 
+                            color: 'var(--text-primary)',
                             textAlign: alignments[j] || 'left'
                           }}>
                         {h}
@@ -111,11 +111,11 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
                 </thead>
                 <tbody>
                   {bodyRows.map((row, j) => (
-                    <tr key={j} style={{ borderTop: '1px solid #15252A' }}>
+                    <tr key={j} style={{ borderTop: '1px solid var(--border-light)' }}>
                       {row.map((c, k) => (
                         <td key={k} className="px-4 py-2" 
                             style={{ 
-                              color: '#5C8D8A',
+                              color: 'var(--text-secondary)',
                               textAlign: alignments[k] || 'left'
                             }}>
                           {c}
@@ -142,7 +142,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       parts.push(
         <div key={`img-${key++}`} className="my-3">
           <img src={imgMatch[2]} alt={imgMatch[1]} title={imgMatch[3] || imgMatch[1]}
-            className="max-w-full rounded-xl" loading="lazy" style={{ border: '1px solid #1A2E35' }} />
+            className="max-w-full rounded-xl" loading="lazy" style={{ border: '1px solid var(--border)' }} />
         </div>
       );
       remaining = remaining.slice(imgMatch.index! + imgMatch[0].length);
@@ -155,7 +155,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       const before = remaining.slice(0, linkMatch.index);
       if (before) { parts.push(renderText(before, key++)); }
       parts.push(<a key={`ln-${key++}`} href={linkMatch[2]} target="_blank" rel="noopener noreferrer"
-        className="underline underline-offset-2 transition-colors hover:text-primary-400" style={{ color: '#00D9C0' }}>{linkMatch[1]}</a>);
+        className="underline underline-offset-2 transition-colors hover:text-primary-400" style={{ color: 'var(--accent-start)' }}>{linkMatch[1]}</a>);
       remaining = remaining.slice(linkMatch.index! + linkMatch[0].length);
       continue;
     }
@@ -165,7 +165,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     if (boldMatch) {
       const before = remaining.slice(0, boldMatch.index);
       if (before) { parts.push(renderText(before, key++)); }
-      parts.push(<strong key={`b-${key++}`} className="font-semibold" style={{ color: '#E8F4F0' }}>{boldMatch[1]}</strong>);
+      parts.push(<strong key={`b-${key++}`} className="font-semibold" style={{ color: 'var(--text-primary)' }}>{boldMatch[1]}</strong>);
       remaining = remaining.slice(boldMatch.index! + boldMatch[0].length);
       continue;
     }
@@ -175,7 +175,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     if (italicMatch) {
       const before = remaining.slice(0, italicMatch.index);
       if (before) { parts.push(renderText(before, key++)); }
-      parts.push(<em key={`i-${key++}`} style={{ color: '#5C8D8A' }}>{italicMatch[1]}</em>);
+      parts.push(<em key={`i-${key++}`} style={{ color: 'var(--text-secondary)' }}>{italicMatch[1]}</em>);
       remaining = remaining.slice(italicMatch.index! + italicMatch[0].length);
       continue;
     }
@@ -183,7 +183,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     // 分割线 ---
     const hrMatch = remaining.match(/^---+$/m);
     if (hrMatch && hrMatch.index === 0) {
-      parts.push(<hr key={`hr-${key++}`} className="my-4" style={{ borderColor: '#1A2E35' }} />);
+      parts.push(<hr key={`hr-${key++}`} className="my-4" style={{ borderColor: 'var(--border)' }} />);
       remaining = remaining.slice(hrMatch[0].length).trimStart();
       continue;
     }
@@ -200,7 +200,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       }
       parts.push(
         <blockquote key={`q-${key++}`} className="my-3 pl-4 py-2 text-sm italic" style={{
-          borderLeft: '3px solid #00D9C0', color: '#5C8D8A',
+          borderLeft: '3px solid var(--accent-start)', color: 'var(--text-secondary)',
           background: 'rgba(0, 217, 192, 0.05)', borderRadius: '0 12px 12px 0'
         }}>
           {quoteLines.map((l, j) => <div key={j}>{l || <br />}</div>)}
@@ -215,7 +215,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     if (ulMatch && ulMatch.index === 0) {
       const items = ulMatch[0].split("\n").filter(l => l.trim()).map(l => l.replace(/^[-*]\s/, ""));
       parts.push(
-        <ul key={`ul-${key++}`} className="list-disc list-inside space-y-1.5 my-3 text-sm" style={{ color: '#E8F4F0' }}>
+        <ul key={`ul-${key++}`} className="list-disc list-inside space-y-1.5 my-3 text-sm" style={{ color: 'var(--text-primary)' }}>
           {items.map((item, j) => <li key={j}>{item}</li>)}
         </ul>
       );
@@ -228,7 +228,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     if (olMatch && olMatch.index === 0) {
       const items = olMatch[0].split("\n").filter(l => l.trim()).map(l => l.replace(/^\d+\.\s/, ""));
       parts.push(
-        <ol key={`ol-${key++}`} className="list-decimal list-inside space-y-1.5 my-3 text-sm" style={{ color: '#E8F4F0' }}>
+        <ol key={`ol-${key++}`} className="list-decimal list-inside space-y-1.5 my-3 text-sm" style={{ color: 'var(--text-primary)' }}>
           {items.map((item, j) => <li key={j}>{item}</li>)}
         </ol>
       );
@@ -243,7 +243,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
       const size = ['2xl', 'xl', 'lg', 'base', 'sm', 'xs'][level - 1];
       const weight = level <= 2 ? 'font-semibold' : 'font-medium';
       parts.push(
-        <div key={`h-${key++}`} className={`text-${size} ${weight} mt-5 mb-3`} style={{ color: '#E8F4F0' }}>
+        <div key={`h-${key++}`} className={`text-${size} ${weight} mt-5 mb-3`} style={{ color: 'var(--text-primary)' }}>
           {headingMatch[2]}
         </div>
       );
@@ -283,7 +283,7 @@ function parseTableRow(row: string): string[] {
 function renderText(text: string, key: number): React.ReactNode {
   if (!text) return null;
   return (
-    <span key={key} className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#E8F4F0', lineHeight: '1.6' }}>
+    <span key={key} className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-primary)', lineHeight: '1.6' }}>
       {text}
     </span>
   );
