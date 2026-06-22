@@ -5,6 +5,7 @@ import { Sidebar } from "./components/sidebar/Sidebar";
 import { ProjectBar } from "./components/sidebar/ProjectBar";
 import { NewProjectDialog } from "./components/sidebar/NewProjectDialog";
 import { EditProjectDialog } from "./components/sidebar/EditProjectDialog";
+import { ResizablePanel } from "./components/ui/ResizablePanel";
 
 interface Project {
   project_id: string;
@@ -160,21 +161,31 @@ export function App() {
           onEditProject={setEditingProject}
           onDeleteProject={handleDeleteProject}
         />
-        <Sidebar
-          isOpen={sidebarOpen}
-          onToggle={() => { setSidebarOpen(!sidebarOpen); setSidebarAutoCollapsed(false); }}
-          activeProject={activeProject}
-          activeSession={activeSession}
-          projects={projects}
-          onSessionChange={setActiveSession}
-          onNewSession={handleNewSession}
-        />
-        <main className="flex-1 overflow-hidden">
-          <ChatWindow
-            sessionId={activeSession}
-            onSessionChange={setActiveSession}
-          />
-        </main>
+        <ResizablePanel
+          defaultWidth={256}
+          minWidth={180}
+          maxWidth={400}
+          storageKey="sidebar-width"
+        >
+          {[
+            <Sidebar
+              key="sidebar"
+              isOpen={sidebarOpen}
+              onToggle={() => { setSidebarOpen(!sidebarOpen); setSidebarAutoCollapsed(false); }}
+              activeProject={activeProject}
+              activeSession={activeSession}
+              projects={projects}
+              onSessionChange={setActiveSession}
+              onNewSession={handleNewSession}
+            />,
+            <main key="main" className="flex-1 flex flex-col min-h-0">
+              <ChatWindow
+                sessionId={activeSession}
+                onSessionChange={setActiveSession}
+              />
+            </main>
+          ]}
+        </ResizablePanel>
       </div>
       <NewProjectDialog
         open={newProjectOpen}

@@ -141,7 +141,7 @@ export function Sidebar({
 
   if (!isOpen) {
     return (
-      <div className="flex flex-col items-center gap-2 p-2" style={{ borderRight: '1px solid var(--sidebar-border)', background: 'var(--sidebar-bg)' }}>
+      <div className="w-full h-full flex flex-col items-center gap-2 p-2" style={{ borderRight: '1px solid var(--sidebar-border)', background: 'var(--sidebar-bg)' }}>
         <button onClick={onToggle} className="w-9 h-9 flex items-center justify-center rounded-xl btn-ghost transition-all duration-200 hover:bg-primary-500/10" title="展开侧边栏">
           <PanelLeft className="w-4 h-4 text-neutral-400" />
         </button>
@@ -150,7 +150,7 @@ export function Sidebar({
   }
 
   return (
-    <div className="w-64 flex flex-col relative" style={{ borderRight: '1px solid var(--sidebar-border)', background: 'var(--sidebar-bg)' }}>
+    <div className="w-full h-full flex flex-col relative" style={{ borderRight: '1px solid var(--sidebar-border)', background: 'var(--sidebar-bg)' }}>
       {/* 头部 */}
       <div className="p-4" style={{ borderBottom: '1px solid var(--sidebar-border)' }}>
         <div className="flex items-center justify-between mb-3">

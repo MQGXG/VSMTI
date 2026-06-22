@@ -5,7 +5,8 @@ import { ToolRegistry } from "./registry"
 import { readFileTool } from "./tools/read-file"
 import {
   writeFileTool, listFilesTool,
-  webSearchTool, grepTool, globTool, codeExecTool, bashTool, editFileTool,
+  webSearchTool, webFetchTool, codeSearchTool, questionTool,
+  grepTool, globTool, codeExecTool, bashTool, editFileTool,
 } from "./tools/index"
 import { skillsListTool, skillViewTool } from "./skill/skill-tools"
 import { dataAnalysisTool } from "./tools/data-analysis"
@@ -25,6 +26,9 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(writeFileTool)
   registry.register(listFilesTool)
   registry.register(webSearchTool)
+  registry.register(webFetchTool)
+  registry.register(codeSearchTool)
+  registry.register(questionTool)
   registry.register(grepTool)
   registry.register(globTool)
   registry.register(codeExecTool)

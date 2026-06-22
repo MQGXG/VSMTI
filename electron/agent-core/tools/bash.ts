@@ -106,6 +106,17 @@ function externalCommandDirs(command: string, cwd: string): string[] {
   return [...dirs]
 }
 
+/**
+ * 检测危险命令模式
+ */
+function detectDangerousCommand(command: string): string | null {
+  const lower = command.toLowerCase().trim()
+  for (const deny of HARD_DENY) {
+    if (lower.includes(deny)) return deny
+  }
+  return null
+}
+
 export const bashTool = make({
   name: "bash",
   description: "Execute a shell command and return its output. Use for building, testing, installing, and system operations.",
@@ -117,10 +128,9 @@ export const bashTool = make({
   permission: "bash",
 
   async execute(input, ctx) {
-    for (const deny of HARD_DENY) {
-      if (input.command.toLowerCase().includes(deny)) {
-        return { success: false, error: `Hard denied: dangerous command pattern "${deny}"` }
-      }
+    const dangerous = detectDangerousCommand(input.command)
+    if (dangerous) {
+      return { success: false, error: `Hard denied: dangerous command pattern "${dangerous}"` }
     }
 
     const cwd = ctx.workspace || process.cwd()
@@ -132,7 +142,6 @@ export const bashTool = make({
     let shellArgs: string[]
 
     if (isWin) {
-      // Windows: 优先用 powershell，回退到 cmd
       const psPath = "powershell"
       shell = ctx?.shell === "powershell" ? psPath
         : ctx?.shell === "cmd" ? "cmd"

@@ -106,6 +106,34 @@ export class LSPServerManager {
     }
     this.servers.clear()
   }
+
+  /**
+   * 预热文件 — 通知 LSP 服务器文件已打开
+   * 参考 OpenCode 的 lsp.touchFile() — 读取文件后调用，让 LSP 开始分析
+   */
+  async touchFile(workspace: string, filePath: string): Promise<void> {
+    try {
+      const client = await this.ensureServer(workspace)
+      const uri = pathToFileURL(path.resolve(workspace, filePath)).href
+      const content = require("fs").readFileSync(path.resolve(workspace, filePath), "utf-8")
+      client.notify("textDocument/didOpen", {
+        textDocument: { uri, languageId: this.detectLanguage(filePath), version: 1, text: content },
+      })
+    } catch {
+      // LSP 预热失败不阻塞主流程
+    }
+  }
+
+  /** 根据扩展名检测语言 */
+  private detectLanguage(filePath: string): string {
+    const ext = filePath.split(".").pop()?.toLowerCase() || ""
+    const map: Record<string, string> = {
+      ts: "typescript", tsx: "typescriptreact", js: "javascript", jsx: "javascriptreact",
+      py: "python", java: "java", go: "go", rs: "rust", cpp: "cpp", c: "c",
+      json: "json", md: "markdown", html: "html", css: "css",
+    }
+    return map[ext] || "plaintext"
+  }
 }
 
 export const lspManager = new LSPServerManager()

@@ -3,6 +3,11 @@
  * 参考 MiMo-Code 的 /dream 和 /distill 命令
  * /dream - 扫描近期会话轨迹，提取持久知识到项目记忆
  * /distill - 发现重复的手动工作流，打包成可复用的 skill/subagent/command
+ *
+ * 增强点：
+ * 1. 自动触发 — 每 N 回合自动 Dream（集成到 Agent 循环）
+ * 2. 知识持久化 — 保存到 .mira/knowledge/ 目录
+ * 3. Skill 文件生成 — Distill 结果可自动生成 Skill 文件
  */
 
 import { app } from "electron"
@@ -103,6 +108,10 @@ export class DreamDistillManager {
   private store: KnowledgeStore = { entries: [] }
   private dreamHistory: DreamResult[] = []
   private distillHistory: DistillResult[] = []
+  private turnCount = 0
+  private autoDreamInterval = 15
+  private pendingConversation: LLMMessage[] = []
+  private llmConfig: { apiKey: string; apiUrl: string; model: string; provider: string } | null = null
 
   async initialize(workspace: string): Promise<void> {
     this.knowledgeDir = join(workspace, ".mira", "knowledge")
@@ -111,6 +120,48 @@ export class DreamDistillManager {
     }
     this.knowledgePath = join(this.knowledgeDir, "knowledge.json")
     this.loadStore()
+  }
+
+  /** 设置 LLM 配置（用于自动 Dream） */
+  setLLMConfig(config: { apiKey: string; apiUrl: string; model: string; provider: string }): void {
+    this.llmConfig = config
+  }
+
+  /**
+   * 记录回合（用于自动 Dream 触发）
+   */
+  recordTurn(user: string, assistant: string): void {
+    this.turnCount++
+    this.pendingConversation.push(
+      { role: "user", content: user },
+      { role: "assistant", content: assistant },
+    )
+    // 保留最近 30 条消息
+    if (this.pendingConversation.length > 30) {
+      this.pendingConversation = this.pendingConversation.slice(-30)
+    }
+  }
+
+  /**
+   * 判断是否应该自动触发 Dream
+   */
+  shouldAutoDream(): boolean {
+    return this.turnCount > 0 && this.turnCount % this.autoDreamInterval === 0 && this.llmConfig !== null
+  }
+
+  /**
+   * 自动 Dream — 在 Agent 循环中自动调用
+   */
+  async autoDream(): Promise<DreamResult | null> {
+    if (!this.llmConfig || this.pendingConversation.length === 0) return null
+    try {
+      const result = await this.dream(this.pendingConversation, this.llmConfig)
+      this.pendingConversation = []
+      return result
+    } catch (err) {
+      logError("[DreamDistillManager] Auto dream failed", err)
+      return null
+    }
   }
 
   /**
@@ -128,26 +179,15 @@ export class DreamDistillManager {
     }
 
     try {
-      // 构建分析消息
       const messages: LLMMessage[] = [
-        {
-          role: "system",
-          content: DREAM_SYSTEM_PROMPT,
-        },
+        { role: "system", content: DREAM_SYSTEM_PROMPT },
         {
           role: "user",
           content: `Current knowledge base:\n${this.knowledgeToText()}\n\nConversation history:\n${this.formatConversation(conversationHistory)}\n\nExtract new knowledge and identify outdated entries.`,
         },
       ]
 
-      // 使用配置的模型进行分析
-      const client = createLLMClient({
-        provider: config.provider,
-        model: config.model,
-        apiKey: config.apiKey,
-        apiUrl: config.apiUrl,
-      })
-
+      const client = createLLMClient(config)
       let responseText = ""
       for await (const event of client.stream({ messages })) {
         if (event.type === "delta") {
@@ -155,13 +195,11 @@ export class DreamDistillManager {
         }
       }
 
-      // 解析结果
       const parsed = this.parseDreamResponse(responseText)
 
-      // 添加新知识
       for (const knowledge of parsed.knowledge) {
         const entry: KnowledgeEntry = {
-          id: `k-${Date.now().toString(36)}`,
+          id: `k-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
           content: knowledge.content,
           source: "dream",
           createdAt: new Date().toISOString(),
@@ -172,7 +210,6 @@ export class DreamDistillManager {
         result.knowledgeExtracted.push(knowledge.content)
       }
 
-      // 移除过时知识
       for (const outdated of parsed.outdated) {
         const idx = this.store.entries.findIndex(e => e.content === outdated)
         if (idx !== -1) {
@@ -184,6 +221,9 @@ export class DreamDistillManager {
       result.summary = parsed.summary || "Dream completed"
       this.dreamHistory.push(result)
       this.saveStore()
+
+      // 同步写入 MEMORY.md 文件
+      this.writeMemoryMd()
     } catch (err) {
       logError("[DreamDistillManager] Dream failed", err)
       result.summary = `Dream failed: ${String(err)}`
@@ -206,26 +246,15 @@ export class DreamDistillManager {
     }
 
     try {
-      // 构建分析消息
       const messages: LLMMessage[] = [
-        {
-          role: "system",
-          content: DISTILL_SYSTEM_PROMPT,
-        },
+        { role: "system", content: DISTILL_SYSTEM_PROMPT },
         {
           role: "user",
           content: `Conversation history:\n${this.formatConversation(conversationHistory)}\n\nIdentify repeated workflows that could be automated.`,
         },
       ]
 
-      // 使用配置的模型进行分析
-      const client = createLLMClient({
-        provider: config.provider,
-        model: config.model,
-        apiKey: config.apiKey,
-        apiUrl: config.apiUrl,
-      })
-
+      const client = createLLMClient(config)
       let responseText = ""
       for await (const event of client.stream({ messages })) {
         if (event.type === "delta") {
@@ -233,11 +262,17 @@ export class DreamDistillManager {
         }
       }
 
-      // 解析结果
       const parsed = this.parseDistillResponse(responseText)
       result.workflowsFound = parsed.workflows
       result.summary = parsed.summary || "Distill completed"
       this.distillHistory.push(result)
+
+      // 自动生成 Skill 文件
+      for (const workflow of result.workflowsFound) {
+        if (workflow.confidence >= 0.7) {
+          this.generateSkillFile(workflow)
+        }
+      }
     } catch (err) {
       logError("[DreamDistillManager] Distill failed", err)
       result.summary = `Distill failed: ${String(err)}`
@@ -246,16 +281,10 @@ export class DreamDistillManager {
     return result
   }
 
-  /**
-   * 获取所有知识条目
-   */
   getKnowledge(): KnowledgeEntry[] {
     return [...this.store.entries]
   }
 
-  /**
-   * 获取知识库的文本表示
-   */
   knowledgeToText(): string {
     if (this.store.entries.length === 0) return "(Empty knowledge base)"
     return this.store.entries
@@ -263,9 +292,6 @@ export class DreamDistillManager {
       .join("\n")
   }
 
-  /**
-   * 生成系统提示
-   */
   toSystemPrompt(): string {
     if (this.store.entries.length === 0) return ""
     const recent = this.store.entries.slice(-10)
@@ -275,9 +301,6 @@ export class DreamDistillManager {
     )
   }
 
-  /**
-   * 生成 Dream/Distill 状态的文本
-   */
   toText(): string {
     const lines: string[] = ["# Dream/Distill"]
 
@@ -310,6 +333,57 @@ export class DreamDistillManager {
     return lines.join("\n")
   }
 
+  /**
+   * 将知识同步写入 MEMORY.md 文件
+   */
+  private writeMemoryMd(): void {
+    if (this.store.entries.length === 0) return
+    try {
+      const memoryPath = join(this.knowledgeDir, "MEMORY.md")
+      const content = [
+        "# Project Memory",
+        "",
+        "Auto-generated by Dream/Distill system.",
+        `Last updated: ${new Date().toISOString()}`,
+        "",
+        "## Knowledge",
+        "",
+        ...this.store.entries.map(e => `- ${e.content}`),
+        "",
+      ].join("\n")
+      fs.writeFileSync(memoryPath, content, "utf-8")
+    } catch { /* 静默 */ }
+  }
+
+  /**
+   * 自动生成 Skill 文件
+   */
+  private generateSkillFile(workflow: DistillWorkflow): void {
+    try {
+      const skillsDir = join(this.knowledgeDir, "skills")
+      if (!fs.existsSync(skillsDir)) {
+        fs.mkdirSync(skillsDir, { recursive: true })
+      }
+      const skillPath = join(skillsDir, `${workflow.name}.md`)
+      const content = [
+        `# ${workflow.name}`,
+        "",
+        workflow.description,
+        "",
+        "## Steps",
+        "",
+        ...workflow.steps.map((s, i) => `${i + 1}. ${s}`),
+        "",
+        "## Examples",
+        "",
+        ...workflow.examples.map(e => `- ${e}`),
+        "",
+        `> Auto-generated by Distill (confidence: ${workflow.confidence})`,
+      ].join("\n")
+      fs.writeFileSync(skillPath, content, "utf-8")
+    } catch { /* 静默 */ }
+  }
+
   private formatConversation(messages: LLMMessage[]): string {
     return messages
       .filter(m => m.role === "user" || m.role === "assistant")
@@ -335,10 +409,7 @@ export class DreamDistillManager {
           summary: String(parsed.summary || ""),
         }
       }
-    } catch {
-      // JSON 解析失败
-    }
-
+    } catch { /* JSON 解析失败 */ }
     return { knowledge: [], outdated: [], summary: response.slice(0, 200) }
   }
 
@@ -355,10 +426,7 @@ export class DreamDistillManager {
           summary: String(parsed.summary || ""),
         }
       }
-    } catch {
-      // JSON 解析失败
-    }
-
+    } catch { /* JSON 解析失败 */ }
     return { workflows: [], summary: response.slice(0, 200) }
   }
 

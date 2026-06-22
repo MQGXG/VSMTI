@@ -1,6 +1,6 @@
 import { ipcMain, dialog, Notification, safeStorage } from "electron";
 import { getMainWindow, minimizeWindow, toggleMaximizeWindow, hideWindow } from "../managers/window-manager";
-import { registerAgentIPCHandlers } from "../agent-core/ipc-bridge";
+import { registerAgentIPCHandlers } from "./index";
 
 export function registerIPCHandlers(): void {
   registerAgentIPCHandlers();

@@ -65,6 +65,12 @@ const electronAPI = {
     /** 列出可用 Skill */
     listSkills: () => ipcRenderer.invoke("skill:listSkills"),
 
+    /** Question — Agent 向用户提问 */
+    question: {
+      answer: (questionId: string, answer: string) => ipcRenderer.invoke("question:answer", questionId, answer),
+      listPending: () => ipcRenderer.invoke("question:listPending"),
+    },
+
     /** Task Tracker */
     task: {
       create: (summary: string, parentId?: string) => ipcRenderer.invoke("task:create", summary, parentId),

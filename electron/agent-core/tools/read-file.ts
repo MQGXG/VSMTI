@@ -2,6 +2,7 @@ import * as fs from "fs/promises"
 import * as path from "path"
 import { z } from "zod"
 import { make, type Content } from "../tool"
+import { lspManager } from "../lsp/manager"
 
 const SUPPORTED_IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"])
 const SUPPORTED_IMAGE_MIMES: Record<string, string> = {
@@ -93,11 +94,11 @@ export const readFileTool = make({
       return { success: true, output: `${real} (${stat.size} bytes)\n${"─".repeat(40)}\n[二进制文件] ${hints[ext] || `二进制文件 (${ext})`}` }
     }
 
-    return await readTextFile(real, buffer, input, (input as any).path)
+    return await readTextFile(real, buffer, input, (input as any).path, ctx.workspace)
   },
 })
 
-async function readTextFile(real: string, buffer: Buffer, input: { offset?: number; limit?: number; encoding?: string }, requestPath?: string): Promise<{ success: boolean; output: string }> {
+async function readTextFile(real: string, buffer: Buffer, input: { offset?: number; limit?: number; encoding?: string }, requestPath?: string, workspace?: string): Promise<{ success: boolean; output: string }> {
   const enc = (input.encoding || "utf-8").toLowerCase()
 
   // 解码
@@ -144,6 +145,12 @@ ${text.slice(0, 200)}`,
   if (content.length > 50000) {
     content = content.slice(0, 50000) + "\n... (truncated at 50000 chars)"
   }
+
+  // LSP 预热 — 通知语言服务器文件已打开，后续编辑可获得诊断信息
+  if (workspace) {
+    lspManager.touchFile(workspace, real).catch(() => {})
+  }
+
   return { success: true, output: `${real} (${statSizeText(content.length)})\n${"-".repeat(40)}\n${content}` }
 }
 

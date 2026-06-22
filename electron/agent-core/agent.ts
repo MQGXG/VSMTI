@@ -17,6 +17,7 @@ import { ToolOrchestrator } from "./execution/orchestrator"
 import { AgentStateMachine } from "./agent/state-machine"
 import { buildToolContext, buildSystemMessage } from "./agent/context"
 import { ApprovalStore } from "./permission/approval-store"
+import { DreamDistillManager } from "./dream-distill"
 
 import { AgentMode } from "./modes"
 
@@ -36,7 +37,7 @@ export interface AgentConfig {
   maxContextTokens?: number
   permissions?: PermissionSet
   mode?: AgentMode
-  toolAllowlist?: string[]  // 如果设置，LLM 只可见这些工具
+  toolAllowlist?: string[]
   onPermissionSave?: (rules: PermissionRule[]) => void
 }
 
@@ -56,6 +57,7 @@ export class Agent {
   private approvalStore = new ApprovalStore()
   private orchestrator: ToolOrchestrator
   private checkpointProvider: CheckpointProvider
+  private dreamDistillManager: DreamDistillManager
 
   get aborted(): boolean { return this.stateMachine.aborted }
   abort(): void { this.stateMachine.stop() }
@@ -63,6 +65,7 @@ export class Agent {
   constructor(private registry: ToolRegistry, apiKey?: string, apiUrl?: string, workspace?: string) {
     this.orchestrator = new ToolOrchestrator(registry)
     this.checkpointProvider = new CheckpointProvider()
+    this.dreamDistillManager = new DreamDistillManager()
     this.memoryManager.addProvider(new BuiltinMemoryProvider())
     this.memoryManager.addProvider(this.checkpointProvider)
     if (apiKey) {
@@ -102,8 +105,24 @@ export class Agent {
     await this.memoryManager.initialize(config.sessionID, config.workspace)
     const memoryPrompt = this.memoryManager.buildSystemPrompt()
 
-    const prefetched = await this.memoryManager.prefetch(userMessage, config.sessionID)
+    // 预算注入：按 token 预算控制记忆内容
+    const tokenBudget = config.maxContextTokens ? Math.floor(config.maxContextTokens * 0.15) : 2000
+    const prefetched = await this.memoryManager.prefetch(userMessage, config.sessionID, tokenBudget)
     const enrichedUser = prefetched ? `${prefetched}\n\n${userMessage}` : userMessage
+
+    // 自动 Dream 触发：每 N 回合自动提取知识
+    if (this.dreamDistillManager && this.memoryManager.shouldAutoDream() && config.apiKey) {
+      try {
+        this.dreamDistillManager.setLLMConfig({
+          apiKey: config.apiKey,
+          apiUrl: config.apiUrl,
+          model: config.model,
+          provider: config.provider || "openai",
+        })
+        await this.dreamDistillManager.autoDream()
+        yield { type: "thinking", text: "🧠 Memory consolidated from recent session" }
+      } catch { /* Dream 失败不阻塞主流程 */ }
+    }
 
     if (history.length === 0) {
       const stored = await loadSession(config.sessionID)
@@ -375,6 +394,19 @@ export class Agent {
       // 同步记忆和检查点
       this.memoryManager.syncTurn(userMessage, currentText, config.sessionID).catch(() => {})
       this.checkpointProvider.syncTurn(userMessage, currentText, config.sessionID).catch(() => {})
+
+      // 记录对话给 Dream 系统
+      this.dreamDistillManager.recordTurn(userMessage, currentText)
+
+      // 设置 LLM 配置（用于 LLM 增强摘要）
+      if (config.apiKey && !this.checkpointProvider.hasLLMConfig) {
+        this.checkpointProvider.setLLMConfig({
+          apiKey: config.apiKey,
+          apiUrl: config.apiUrl,
+          model: config.model,
+          provider: config.provider || "openai",
+        })
+      }
     }
 
     // 最终保存检查点

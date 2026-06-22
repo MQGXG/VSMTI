@@ -1,218 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
-import { X, Sliders, Keyboard, Cpu, Info, Server, Layers, Sun, Moon, Monitor, FileText, Terminal, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Sliders, Keyboard, Cpu, Info, Server, Layers, Search } from "lucide-react";
 import type { Provider } from "./types";
 import { ProviderConfigPanel } from "./ProviderConfigPanel";
 import { ModelManager } from "./ModelManager";
-import { useTheme } from "@/contexts/ThemeContext";
+import { ThemeSelector } from "./ThemeSelector";
+import { ConfigSourceIndicator } from "./ConfigSourceIndicator";
+import { defaultProviders, loadProviders, saveProviders, loadSettings, saveSettings } from "./provider-data";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-}
-
-const ENCRYPTED_PREFIX = "enc:";
-
-async function encryptApiKey(key: string): Promise<string> {
-  if (!key) return "";
-  try {
-    const encrypted = await window.electronAPI.encryptApiKey(key);
-    return ENCRYPTED_PREFIX + encrypted;
-  } catch {
-    return key;
-  }
-}
-
-async function decryptApiKey(key: string): Promise<string> {
-  if (!key) return "";
-  if (key.startsWith(ENCRYPTED_PREFIX)) {
-    try {
-      const encrypted = key.slice(ENCRYPTED_PREFIX.length);
-      return await window.electronAPI.decryptApiKey(encrypted);
-    } catch {
-      return key;
-    }
-  }
-  return key;
-}
-
-async function encryptProviders(list: Provider[]): Promise<Provider[]> {
-  const encrypted = await Promise.all(
-    list.map(async (p) => ({ ...p, apiKey: await encryptApiKey(p.apiKey) }))
-  );
-  return encrypted;
-}
-
-async function decryptProviders(list: Provider[]): Promise<Provider[]> {
-  const decrypted = await Promise.all(
-    list.map(async (p) => ({ ...p, apiKey: await decryptApiKey(p.apiKey) }))
-  );
-  return decrypted;
-}
-
-const defaultProviders: Provider[] = [
-  {
-    id: "openai", name: "OpenAI", displayName: "OpenAI",
-    apiKey: "", baseUrl: "https://api.openai.com/v1", enabled: true,
-    website: "https://openai.com", apiFormat: "openai", headers: {}, options: {},
-    models: [
-      { id: "gpt-4o", name: "GPT-4o", enabled: true },
-      { id: "gpt-4o-mini", name: "GPT-4o Mini", enabled: true },
-      { id: "gpt-4-turbo", name: "GPT-4 Turbo", enabled: true },
-    ],
-  },
-  {
-    id: "claude", name: "Claude", displayName: "Anthropic Claude",
-    apiKey: "", baseUrl: "https://api.anthropic.com", enabled: false,
-    website: "https://anthropic.com", apiFormat: "anthropic", headers: {}, options: {},
-    models: [
-      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", enabled: true },
-      { id: "claude-haiku-20241022", name: "Claude Haiku", enabled: true },
-    ],
-  },
-  {
-    id: "deepseek", name: "DeepSeek", displayName: "DeepSeek",
-    apiKey: "", baseUrl: "https://api.deepseek.com", enabled: false,
-    website: "https://deepseek.com", apiFormat: "openai", headers: {}, options: {},
-    models: [
-      { id: "deepseek-chat", name: "DeepSeek V3", enabled: true },
-      { id: "deepseek-reasoner", name: "DeepSeek R1", enabled: true },
-    ],
-  },
-  {
-    id: "ollama", name: "Ollama", displayName: "Ollama (本地)",
-    apiKey: "", baseUrl: "http://localhost:11434", enabled: false,
-    website: "https://ollama.com", apiFormat: "openai", headers: {}, options: {},
-    models: [
-      { id: "llama3.1", name: "Llama 3.1", enabled: true },
-      { id: "qwen2.5", name: "Qwen 2.5", enabled: true },
-    ],
-  },
-];
-
-function migrateProviders(data: any[]): Provider[] {
-  return data.map((p) => ({
-    ...p,
-    displayName: p.displayName || p.name,
-    apiFormat: p.apiFormat || "openai",
-    headers: p.headers || {},
-    options: p.options || {},
-    models: p.models?.map((m: any) => ({
-      id: m.id, name: m.name, enabled: m.enabled !== false,
-    })) || [],
-  }));
-}
-
-async function loadProviders(): Promise<Provider[]> {
-  if (typeof window === "undefined") return defaultProviders;
-  try {
-    const data = localStorage.getItem("providers_v2");
-    if (data) {
-      const parsed = migrateProviders(JSON.parse(data));
-      return await decryptProviders(parsed);
-    }
-    const oldData = localStorage.getItem("providers");
-    if (oldData) {
-      const migrated = migrateProviders(JSON.parse(oldData));
-      const encrypted = await encryptProviders(migrated);
-      localStorage.setItem("providers_v2", JSON.stringify(encrypted));
-      return migrated;
-    }
-    return defaultProviders;
-  } catch { return defaultProviders; }
-}
-
-async function saveProviders(list: Provider[]) {
-  const encrypted = await encryptProviders(list);
-  localStorage.setItem("providers_v2", JSON.stringify(encrypted));
-
-  // 同步保存到 JSON 配置文件
-  try {
-    const active = list.find((p) => p.enabled && p.models.some((m) => m.enabled));
-    const defaultModel = active?.models.find((m) => m.enabled);
-    if (active && defaultModel) {
-      await window.electronAPI.config.save({
-        provider: active.id.startsWith("custom-") ? "custom" : active.id,
-        model: defaultModel.id,
-        apiKey: active.apiKey || "",
-        apiUrl: active.baseUrl || "",
-      });
-    }
-  } catch { /* JSON 文件保存失败不影响主流程 */ }
-}
-
-function ThemeSelector() {
-  const { theme, resolvedTheme, setTheme } = useTheme();
-
-  const options = [
-    { value: "light" as const, label: "浅色", icon: Sun },
-    { value: "dark" as const, label: "暗色", icon: Moon },
-    { value: "system" as const, label: "跟随系统", icon: Monitor },
-  ];
-
-  return (
-    <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
-      <div className="text-sm mb-3" style={{ color: 'var(--text-primary)' }}>外观</div>
-      <div className="flex gap-2">
-        {options.map((option) => {
-          const Icon = option.icon;
-          const isActive = theme === option.value;
-          return (
-            <button
-              key={option.value}
-              onClick={() => setTheme(option.value)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200"
-              style={{
-                border: isActive ? '1px solid rgba(0, 217, 192, 0.3)' : '1px solid var(--border)',
-                background: isActive ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
-                color: isActive ? 'var(--accent-start)' : 'var(--text-secondary)',
-              }}
-            >
-              <Icon className="w-4 h-4" />
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-      <p className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
-        当前: {resolvedTheme === "dark" ? "暗色模式" : "浅色模式"} ({theme === "system" ? "跟随系统" : "手动设置"})
-      </p>
-    </div>
-  );
-}
-
-function loadSettings(): Record<string, any> {
-  try { return JSON.parse(localStorage.getItem("settings") || "{}") }
-  catch { return {} }
-}
-
-function saveSettings(s: Record<string, any>) {
-  localStorage.setItem("settings", JSON.stringify(s))
-}
-
-/** 配置文件/环境变量来源指示器 */
-function ConfigSourceIndicator() {
-  const [info, setInfo] = useState<{ apiKeyFrom: string; show: boolean }>({ apiKeyFrom: "none", show: false });
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const cfg = await window.electronAPI.config.get();
-        if (cfg.apiKeyFrom !== "none") setInfo({ apiKeyFrom: cfg.apiKeyFrom, show: true });
-      } catch { /* ignore */ }
-    })();
-  }, []);
-
-  if (!info.show) return null;
-
-  return (
-    <div className="p-3 rounded-xl flex items-center gap-2" style={{ background: 'rgba(0, 217, 192, 0.05)', border: '1px solid rgba(0, 217, 192, 0.1)' }}>
-      {info.apiKeyFrom === "env" ? <Terminal className="w-4 h-4" style={{ color: '#00D9C0' }} /> : <FileText className="w-4 h-4" style={{ color: '#00D9C0' }} />}
-      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-        API Key 来自 <span className="font-medium" style={{ color: 'var(--accent-start)' }}>{info.apiKeyFrom === "env" ? "环境变量" : "配置文件"}</span>
-        ，无需在界面中填写
-      </div>
-    </div>
-  );
 }
 
 export function SettingsDialog({ open, onClose }: Props) {
@@ -318,8 +115,6 @@ export function SettingsDialog({ open, onClose }: Props) {
             <div className="max-w-2xl space-y-6">
               <h3 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>通用设置</h3>
               <ThemeSelector />
-
-              {/* 权限 */}
               <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
                 <div className="text-sm mb-3" style={{ color: 'var(--text-primary)' }}>权限</div>
                 <label className="flex items-center justify-between cursor-pointer">
@@ -332,8 +127,6 @@ export function SettingsDialog({ open, onClose }: Props) {
                     className="w-4 h-4 rounded" style={{ accentColor: 'var(--accent-start)' }} />
                 </label>
               </div>
-
-              {/* 终端 */}
               <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
                 <div className="text-sm mb-3" style={{ color: 'var(--text-primary)' }}>终端</div>
                 <label className="text-xs mb-1 block" style={{ color: 'var(--text-secondary)' }}>默认 Shell</label>
@@ -347,8 +140,6 @@ export function SettingsDialog({ open, onClose }: Props) {
                   <option value="bash">Bash (WSL)</option>
                 </select>
               </div>
-
-              {/* 时间线 */}
               <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
                 <div className="text-sm mb-3" style={{ color: 'var(--text-primary)' }}>时间线</div>
                 <div className="space-y-3">
@@ -369,8 +160,6 @@ export function SettingsDialog({ open, onClose }: Props) {
                   ))}
                 </div>
               </div>
-
-              {/* 进度条 */}
               <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
@@ -382,8 +171,6 @@ export function SettingsDialog({ open, onClose }: Props) {
                     className="w-4 h-4 rounded" style={{ accentColor: 'var(--accent-start)' }} />
                 </label>
               </div>
-
-              {/* 界面 */}
               <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
@@ -452,40 +239,16 @@ export function SettingsDialog({ open, onClose }: Props) {
   );
 }
 
-/** 读取通用设置（供其他组件使用） */
 export function getSettings(): Record<string, any> {
   return loadSettings()
 }
 
-export async function getActiveProvider(): Promise<{ provider: string; model: string; apiKey: string; apiUrl: string } | null> {
-  const list = await loadProviders();
-  for (const p of list) {
-    if (p.enabled) {
-      const def = p.models.find((m) => m.enabled);
-      if (def) return { provider: p.id.startsWith("custom-") ? "custom" : p.id, model: def.id, apiKey: p.apiKey, apiUrl: p.baseUrl };
-    }
-  }
-  return null;
+export async function getActiveProvider() {
+  const { getActiveProvider } = await import("./provider-data");
+  return getActiveProvider();
 }
 
-export async function getProviderById(providerId: string): Promise<{ apiKey: string; apiUrl: string; headers: Record<string, string>; options: Record<string, any> } | null> {
-  const list = await loadProviders();
-  for (const p of list) {
-    const pid = p.id.startsWith("custom-") ? "custom" : p.id;
-    if (pid === providerId && p.enabled) {
-      // 如果 localStorage 有 API Key 则直接返回
-      if (p.apiKey) {
-        return { apiKey: p.apiKey, apiUrl: p.baseUrl, headers: p.headers, options: p.options };
-      }
-      // 无 Key → 尝试从文件/环境变量配置获取
-      try {
-        const fileConfig = await window.electronAPI.config.get();
-        if (fileConfig.apiKeyFrom !== "none") {
-          return { apiKey: "", apiUrl: p.baseUrl || fileConfig.apiUrl, headers: p.headers, options: p.options };
-        }
-      } catch { /* ignore */ }
-      return { apiKey: "", apiUrl: p.baseUrl, headers: p.headers, options: p.options };
-    }
-  }
-  return null;
+export async function getProviderById(providerId: string) {
+  const { getProviderById } = await import("./provider-data");
+  return getProviderById(providerId);
 }
