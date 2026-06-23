@@ -20,16 +20,15 @@ export function CodeBlock({ code, language }: CodeBlockProps) {
   };
 
   return (
-    <div className="relative group my-4 rounded-xl overflow-hidden" style={{ background: 'var(--code-bg)', border: '1px solid var(--border)' }}>
-      {/* 语言标签和复制按钮 */}
-      <div className="flex items-center justify-between px-4 py-2.5" style={{ background: 'var(--surface-secondary)', borderBottom: '1px solid var(--border)' }}>
-        <span className="text-[11px] font-mono font-medium" style={{ color: 'var(--text-secondary)' }}>
+    <div className="relative group my-3 rounded-xl overflow-hidden" style={{ background: "var(--code-bg)", border: "1px solid var(--border)" }}>
+      <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: "1px solid var(--border-light)" }}>
+        <span className="text-[11px] font-mono font-medium" style={{ color: "var(--text-tertiary)" }}>
           {language || "code"}
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-[11px] transition-all duration-200 px-2 py-1 rounded-lg hover:bg-neutral-700/50"
-          style={{ color: copied ? 'var(--accent-start)' : 'var(--text-secondary)' }}
+          className="flex items-center gap-1.5 text-[11px] transition-all duration-150 px-2 py-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5"
+          style={{ color: copied ? "var(--accent)" : "var(--text-tertiary)" }}
         >
           {copied ? (
             <>
@@ -44,9 +43,8 @@ export function CodeBlock({ code, language }: CodeBlockProps) {
           )}
         </button>
       </div>
-      {/* 代码内容 */}
       <pre className="overflow-x-auto p-4 text-sm leading-relaxed">
-        <code className="font-mono text-[13px] whitespace-pre" style={{ color: 'var(--text-primary)' }}>
+        <code className="font-mono text-[13px] whitespace-pre" style={{ color: "var(--text-primary)" }}>
           {code}
         </code>
       </pre>

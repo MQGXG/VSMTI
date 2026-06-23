@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Cpu, ChevronDown, Shield, Zap, Brain, Sparkles, Search } from "lucide-react";
+import { Cpu, ChevronDown, Shield, Zap, Brain, Search } from "lucide-react";
 import type { AgentMode } from "./types";
 
 interface StoredProvider {
@@ -131,65 +131,66 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
   }, []);
 
   return (
-    <div className="flex items-center justify-between mt-3">
-      <div className="flex items-center gap-3">
-        {/* 模型选择器 */}
-        <div className="relative" ref={modelRef}>
-          <button
-            onClick={() => setModelOpen(!modelOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all duration-200 hover:bg-neutral-700/50"
-            style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
-          >
-            <Cpu className="w-3.5 h-3.5" />
-            <span>{selectedModel.label}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${modelOpen ? "rotate-180" : ""}`} />
-          </button>
+    <div className="flex items-center justify-between gap-3">
+      {/* Model selector */}
+      <div className="relative" ref={modelRef}>
+        <button
+          onClick={() => setModelOpen(!modelOpen)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          <Cpu className="w-3.5 h-3.5" />
+          <span className="max-w-[160px] truncate">{selectedModel.label}</span>
+          <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${modelOpen ? "rotate-180" : ""}`} />
+        </button>
 
-          {modelOpen && (
-            <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl overflow-hidden shadow-glass-lg animate-scale-in z-50"
-              style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
-              <div className="px-3 py-2 text-[10px] font-medium" style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
-                选择模型
-              </div>
-              <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                {availableModels.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => {
-                      onModelChange(opt);
-                      saveModelChoice(opt);
-                      setModelOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2.5 text-xs transition-all duration-200 ${
-                      selectedModel.value === opt.value
-                        ? "bg-primary-500/10 text-primary-400"
-                        : "text-neutral-300 hover:bg-neutral-800/50"
-                    }`}
-                  >
-                    <div className="font-medium">{opt.label}</div>
-                    <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                      {opt.provider === "openai" ? "OpenAI" : opt.provider === "claude" ? "Anthropic" : opt.provider === "ollama" ? "本地" : "自定义"}
-                    </div>
-                  </button>
-                ))}
-                {availableModels.length === 0 && (
-                  <div className="px-3 py-4 text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
-                    请在设置中启用模型
-                  </div>
-                )}
-              </div>
+        {modelOpen && (
+          <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl overflow-hidden shadow-lg z-50 animate-fade-in-up"
+            style={{ background: "var(--surface-elevated)", border: "1px solid var(--border)" }}>
+            <div className="px-3 py-2 text-[10px] font-medium" style={{ color: "var(--text-tertiary)", borderBottom: "1px solid var(--border-light)" }}>
+              选择模型
             </div>
-          )}
-        </div>
-
-        {/* API 类型标识 */}
-        <span className="text-[10px] hidden sm:inline" style={{ color: 'var(--text-tertiary)' }}>
-          {selectedModel.provider === "custom" ? "自定义 API" : selectedModel.provider === "ollama" ? "本地运行" : "云端 API"}
-        </span>
+            <div className="max-h-64 overflow-y-auto custom-scrollbar p-1">
+              {availableModels.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    onModelChange(opt);
+                    saveModelChoice(opt);
+                    setModelOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all duration-150 ${
+                    selectedModel.value === opt.value
+                      ? "bg-primary-500/10 text-primary-400"
+                      : "hover:bg-black/5 dark:hover:bg-white/5"
+                  }`}
+                  style={{ color: selectedModel.value === opt.value ? undefined : "var(--text-secondary)" }}
+                >
+                  <div className="font-medium" style={{ color: selectedModel.value === opt.value ? undefined : "var(--text-primary)" }}>
+                    {opt.label}
+                  </div>
+                  <div className="text-[10px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
+                    {opt.provider === "openai" ? "OpenAI" : opt.provider === "claude" ? "Anthropic" : opt.provider === "ollama" ? "本地" : "自定义"}
+                  </div>
+                </button>
+              ))}
+              {availableModels.length === 0 && (
+                <div className="px-3 py-6 text-xs text-center" style={{ color: "var(--text-tertiary)" }}>
+                  请在设置中启用模型
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Agent 模式选择器 */}
-      <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
+      {/* API type badge */}
+      <span className="text-[10px] hidden sm:inline px-2 py-0.5 rounded-md" style={{ color: "var(--text-tertiary)", background: "var(--chip-bg)" }}>
+        {selectedModel.provider === "custom" ? "自定义 API" : selectedModel.provider === "ollama" ? "本地" : "云端"}
+      </span>
+
+      {/* Mode selector */}
+      <div className="flex items-center gap-0.5 rounded-lg p-0.5" style={{ background: "var(--surface-secondary)" }}>
         {MODE_OPTIONS.map((m) => {
           const Icon = m.icon;
           const active = agentMode === m.value;
@@ -201,12 +202,18 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
                 localStorage.setItem("chat_mode", m.value);
               }}
               title={`${m.label} — ${m.desc}`}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium transition-all duration-200 ${
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all duration-150 ${
                 active
-                  ? "text-primary-400"
-                  : "text-neutral-500 hover:text-neutral-300 hover:bg-neutral-700/50"
+                  ? "shadow-sm"
+                  : "hover:bg-black/5 dark:hover:bg-white/5"
               }`}
-              style={active ? { background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)' } : {}}
+              style={active ? {
+                background: "var(--surface)",
+                color: "var(--accent)",
+                boxShadow: "var(--shadow-sm)",
+              } : {
+                color: "var(--text-tertiary)",
+              }}
             >
               <Icon className="w-3 h-3" />
               <span className="hidden sm:inline">{m.label}</span>

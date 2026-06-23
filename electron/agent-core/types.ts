@@ -1,4 +1,4 @@
-import { ToolCall } from './tool'
+import type { ToolCall } from './tool'
 
 export type AgentEvent =
   | { type: 'content'; text: string }
@@ -9,3 +9,6 @@ export type AgentEvent =
   | { type: 'error'; message: string }
   | { type: 'finish'; reason: string }
   | { type: 'thinking'; text: string }
+  | { type: 'goal_status'; goalId: string; description: string; status: string; reasoning?: string }
+  | { type: 'context_rebuild'; reason: string; tokensBefore: number; tokensAfter: number }
+  | { type: 'subagent_status'; subagentId: string; status: string; description: string }

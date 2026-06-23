@@ -1,48 +1,78 @@
-import { ipcMain } from "electron"
+import { ipcMain, type WebContents } from "electron"
+import { createDefaultRegistry } from "../agent-core/registry-init"
+import { SubagentManager } from "../agent-core/subagent-manager"
 import type { AgentConfig } from "../agent-core/agent"
+import type { SubagentEvent } from "../agent-core/subagent-manager"
 
-let subagentManager: any = null
+const registry = createDefaultRegistry()
+const subagentManager = new SubagentManager(registry, { maxParallel: 5 })
 
-function getSubagentManager() {
-  if (!subagentManager) {
-    const { SubagentManager } = require("../agent-core/subagent-manager")
-    const { createDefaultRegistry } = require("../agent-core/registry-init")
-    subagentManager = new SubagentManager(createDefaultRegistry())
+/** 将子 Agent 事件转发到前端 */
+function forwardSubagentEvent(sender: WebContents, event: SubagentEvent): void {
+  if (!sender.isDestroyed()) {
+    sender.send("agent:event", `subagent-${event.subagentId}`, {
+      type: "subagent_status",
+      subagentId: event.subagentId,
+      status: event.type,
+      description: event.info.description,
+    })
   }
-  return subagentManager
 }
 
 export function registerSubagentIPC(): void {
-  ipcMain.handle("subagent:spawn", async (_, description: string, options?: { parentId?: string; prompt?: string }) => {
-    const config: AgentConfig = {
-      sessionID: "subagent",
-      workspace: process.cwd(),
-      model: "gpt-4o",
-      apiKey: "",
-      apiUrl: "",
-    }
-    return await getSubagentManager().spawn(description, config, options)
+  ipcMain.handle("subagent:spawn", (event, description: string, config: AgentConfig, options?: {
+    parentId?: string
+    prompt?: string
+    model?: string
+  }) => {
+    subagentManager.onEvent((evt) => forwardSubagentEvent(event.sender, evt))
+    return subagentManager.spawn(description, config, options)
   })
+
   ipcMain.handle("subagent:wait", async (_, id: string, timeoutMs?: number) => {
-    return await getSubagentManager().wait(id, timeoutMs)
+    return await subagentManager.wait(id, timeoutMs)
   })
+
   ipcMain.handle("subagent:cancel", (_, id: string) => {
-    return getSubagentManager().cancel(id)
+    return subagentManager.cancel(id)
   })
+
   ipcMain.handle("subagent:get", (_, id: string) => {
-    return getSubagentManager().getInfo(id)
+    return subagentManager.getInfo(id)
   })
+
+  ipcMain.handle("subagent:getEvents", (_, id: string) => {
+    return subagentManager.getEvents(id)
+  })
+
   ipcMain.handle("subagent:list", (_, filter?: { parentId?: string; status?: string }) => {
-    return getSubagentManager().list(filter as any)
+    return subagentManager.list(filter as { parentId?: string; status?: any })
   })
+
   ipcMain.handle("subagent:listActive", () => {
-    return getSubagentManager().listActive()
+    return subagentManager.listActive()
   })
-  ipcMain.handle("subagent:cancelAll", () => {
-    getSubagentManager().cancelAll()
+
+  ipcMain.handle("subagent:listByParent", (_, parentId: string) => {
+    return subagentManager.listByParent(parentId)
+  })
+
+  ipcMain.handle("subagent:cancelByParent", (_, parentId: string) => {
+    subagentManager.cancelAllByParent(parentId)
     return true
   })
+
+  ipcMain.handle("subagent:cancelAll", () => {
+    subagentManager.cancelAll()
+    return true
+  })
+
+  ipcMain.handle("subagent:setMaxParallel", (_, limit: number) => {
+    subagentManager.setMaxParallel(limit)
+    return true
+  })
+
   ipcMain.handle("subagent:toText", () => {
-    return getSubagentManager().toText()
+    return subagentManager.toText()
   })
 }

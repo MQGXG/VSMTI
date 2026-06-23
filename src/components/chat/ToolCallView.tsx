@@ -1,27 +1,35 @@
-import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Loader2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Terminal, FileText, Globe, Wrench } from "lucide-react";
 import type { ToolCallInfo } from "./types";
-import { ToolReadView } from "./tool-views/ToolReadView";
-import { ToolDiffView } from "./tool-views/ToolDiffView";
-import { ToolShellView } from "./tool-views/ToolShellView";
-import { ToolSearchView } from "./tool-views/ToolSearchView";
-import { ToolGenericView } from "./tool-views/ToolGenericView";
 
 interface Props {
   info: ToolCallInfo;
 }
 
-const readTools = new Set(["read_file"]);
-const editTools = new Set(["edit_file", "write_file"]);
-const shellTools = new Set(["bash", "code_exec"]);
-const searchTools = new Set(["web_search", "web_browse"]);
+const TOOL_ICONS: Record<string, typeof Wrench> = {
+  read_file: FileText,
+  write_file: FileText,
+  edit_file: FileText,
+  list_files: FileText,
+  bash: Terminal,
+  code_exec: Terminal,
+  web_search: Globe,
+  web_browse: Globe,
+  grep: Wrench,
+  glob: Wrench,
+};
 
 export function ToolCallView({ info }: Props) {
+  const [expanded, setExpanded] = useState(false);
+  const Icon = TOOL_ICONS[info.name] || Wrench;
+
   if (info.status === "running" && !info.result) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-        <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: '#FFB800' }} />
-        <span className="font-mono">{info.name}</span>
-        <span className="animate-pulse" style={{ color: '#FFB800' }}>执行中...</span>
+      <div className="tool-call-item flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: "var(--surface-secondary)", border: "1px solid var(--border-light)" }}>
+        <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: "var(--accent)" }} />
+        <Icon className="w-3.5 h-3.5" style={{ color: "var(--text-tertiary)" }} />
+        <span className="font-mono font-medium" style={{ color: "var(--text-primary)" }}>{info.name}</span>
+        <span className="text-[10px] ml-auto" style={{ color: "var(--accent)" }}>执行中</span>
       </div>
     );
   }
@@ -30,21 +38,37 @@ export function ToolCallView({ info }: Props) {
     return null;
   }
 
-  if (readTools.has(info.name)) {
-    return <ToolReadView result={info.result} args={info.args} />;
-  }
+  const isSuccess = info.status === "done";
 
-  if (editTools.has(info.name)) {
-    return <ToolDiffView result={info.result} args={info.args} name={info.name} />;
-  }
+  return (
+    <div className="tool-call-item rounded-lg overflow-hidden" style={{ border: "1px solid var(--border-light)" }}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors hover:bg-black/3 dark:hover:bg-white/3"
+        style={{ background: "var(--surface-secondary)" }}
+      >
+        {isSuccess ? (
+          <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "var(--success)" }} />
+        ) : (
+          <XCircle className="w-3.5 h-3.5" style={{ color: "var(--error)" }} />
+        )}
+        <Icon className="w-3.5 h-3.5" style={{ color: "var(--text-tertiary)" }} />
+        <span className="font-mono font-medium" style={{ color: "var(--text-primary)" }}>{info.name}</span>
+        {expanded ? (
+          <ChevronDown className="w-3 h-3 ml-auto" style={{ color: "var(--text-tertiary)" }} />
+        ) : (
+          <ChevronRight className="w-3 h-3 ml-auto" style={{ color: "var(--text-tertiary)" }} />
+        )}
+      </button>
 
-  if (shellTools.has(info.name)) {
-    return <ToolShellView result={info.result} args={info.args} />;
-  }
-
-  if (searchTools.has(info.name)) {
-    return <ToolSearchView result={info.result} args={info.args} />;
-  }
-
-  return <ToolGenericView info={info} />;
+      {expanded && (
+        <div className="border-t" style={{ borderColor: "var(--border-light)" }}>
+          <pre className="px-3 py-2 text-xs font-mono overflow-x-auto max-h-64 overflow-y-auto whitespace-pre-wrap custom-scrollbar"
+            style={{ color: "var(--text-secondary)", background: "var(--code-bg)" }}>
+            {info.result}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
 }

@@ -1,22 +1,27 @@
-/**
- * Compose Mode Manager — Specs-driven 开发流程
- * 参考 MiMo-Code 的 compose 模式
- * 提供结构化的 specs-driven 开发流程
- * 内置规划、执行、代码审查、TDD、调试、验证、合并等技能
- */
+import { Agent, type AgentConfig, type AgentEvent } from "./agent"
+import type { LLMMessage } from "./llm-sdk"
+import type { CheckpointProvider } from "./memory/checkpoint-provider"
+import type { SubagentManager } from "./subagent-manager"
 
 export type ComposePhase =
-  | "plan"      // 规划阶段：理解需求，设计方案
-  | "execute"   // 执行阶段：编写代码
-  | "review"    // 审查阶段：代码审查
-  | "test"      // 测试阶段：TDD
-  | "debug"     // 调试阶段：修复问题
-  | "verify"    // 验证阶段：验证实现
-  | "merge"     // 合并阶段：整合变更
+  | "plan"
+  | "execute"
+  | "review"
+  | "test"
+  | "debug"
+  | "verify"
+  | "merge"
+
+export interface ComposeSpec {
+  title: string
+  description: string
+  requirements: string[]
+  acceptanceCriteria: string[]
+}
 
 export interface ComposeState {
   phase: ComposePhase
-  spec: string
+  spec: ComposeSpec
   plan: string | null
   codeFiles: string[]
   reviewComments: string[]
@@ -161,16 +166,142 @@ const PHASE_ORDER: ComposePhase[] = ["plan", "execute", "review", "test", "debug
 export class ComposeModeManager {
   private state: ComposeState | null = null
   private history: ComposeState[] = []
+  private checkpointProvider: CheckpointProvider | null = null
+  private subagentManager: SubagentManager | null = null
+  private agentConfig: AgentConfig | null = null
+  private subagentIds: string[] = []
 
-  /**
-   * 开始新的 Compose 流程
-   */
-  start(spec: string): ComposeState {
-    // 保存当前状态到历史
-    if (this.state) {
-      this.history.push({ ...this.state })
+  setCheckpointProvider(provider: CheckpointProvider): void {
+    this.checkpointProvider = provider
+  }
+
+  setSubagentManager(manager: SubagentManager): void {
+    this.subagentManager = manager
+  }
+
+  setAgentConfig(config: AgentConfig): void {
+    this.agentConfig = config
+  }
+
+  async *run(
+    spec: string,
+    config: AgentConfig,
+  ): AsyncGenerator<AgentEvent> {
+    const parsedSpec = this.parseSpec(spec)
+    this.startFromParsed(parsedSpec)
+    yield { type: "thinking", text: `📋 Starting compose: ${parsedSpec.title} — phase: plan` }
+
+    for (const phase of PHASE_ORDER) {
+      if (this.state) this.state.phase = phase
+
+      const skill = COMPOSE_SKILLS[phase]
+      const phasePrompt = this.buildPhasePrompt(skill)
+      yield { type: "thinking", text: `🔄 Entering phase: ${phase} — ${skill.description}` }
+
+      let phaseCompleted = false
+      while (!phaseCompleted) {
+        const result = await this.executePhase(phase, phasePrompt, config)
+
+        if (result.status === "completed") {
+          phaseCompleted = true
+          yield { type: "thinking", text: `✅ Phase ${phase} completed` }
+          this.onPhaseComplete(phase, result.output || "")
+        } else if (result.status === "failed") {
+          yield { type: "error", message: `Phase ${phase} failed: ${result.error}` }
+          return
+        } else {
+          phaseCompleted = true
+        }
+      }
     }
 
+    yield { type: "thinking", text: "🎉 All compose phases completed!" }
+    yield { type: "finish", reason: "compose_complete" }
+  }
+
+  private async executePhase(
+    phase: ComposePhase,
+    prompt: string,
+    config: AgentConfig,
+  ): Promise<{ status: "completed" | "failed"; output?: string; error?: string }> {
+    const skill = COMPOSE_SKILLS[phase]
+
+    const phaseConfig: AgentConfig = {
+      ...config,
+      systemPrompt: skill.systemPrompt,
+      toolAllowlist: skill.tools,
+      maxSteps: phase === "plan" ? 15 : phase === "execute" ? 50 : 25,
+    }
+
+    if (this.subagentManager && config.apiKey) {
+      try {
+        const subagentInfo = this.subagentManager.spawn(
+          `compose-${phase}`,
+          phaseConfig,
+          { prompt },
+        )
+        this.subagentIds.push(subagentInfo.id)
+
+        const completedInfo = await this.subagentManager.wait(subagentInfo.id, 600000)
+        if (completedInfo.status === "completed") {
+          return { status: "completed", output: completedInfo.result || undefined }
+        }
+        return { status: "failed", error: completedInfo.error || `Subagent ${completedInfo.status}` }
+      } catch (err) {
+        return { status: "failed", error: String(err) }
+      }
+    }
+
+    return { status: "completed" }
+  }
+
+  private onPhaseComplete(phase: ComposePhase, output: string): void {
+    if (!this.state) return
+
+    if (this.checkpointProvider) {
+      const checkpoint = this.checkpointProvider.getCheckpoint()
+      const summary = checkpoint?.summary || ""
+      const phaseNote = `[Compose] Phase ${phase} completed: ${output.slice(0, 200)}`
+      this.checkpointProvider.updateSummary(summary ? `${summary}\n${phaseNote}` : phaseNote)
+    }
+
+    const completedState = { ...this.state, phase, updatedAt: new Date().toISOString() }
+    this.history.push(completedState)
+  }
+
+  start(spec: string): ComposeState {
+    if (this.state) this.history.push({ ...this.state })
+    const parsed = this.parseSpec(spec)
+    return this.startFromParsed(parsed)
+  }
+
+  private parseSpec(spec: string): ComposeSpec {
+    const lines = spec.split("\n").filter(Boolean)
+    const title = lines[0]?.replace(/^[#\s]*/, "") || "Untitled"
+    const requirements: string[] = []
+    const acceptanceCriteria: string[] = []
+    let inCriteria = false
+
+    for (const line of lines.slice(1)) {
+      const trimmed = line.trim()
+      if (/^(验收|acceptance|criteria)/i.test(trimmed)) {
+        inCriteria = true
+        continue
+      }
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+        const item = trimmed.slice(2).trim()
+        if (inCriteria) {
+          acceptanceCriteria.push(item)
+        } else {
+          requirements.push(item)
+        }
+      }
+    }
+
+    return { title, description: spec.slice(0, 500), requirements, acceptanceCriteria }
+  }
+
+  private startFromParsed(spec: ComposeSpec): ComposeState {
     this.state = {
       phase: "plan",
       spec,
@@ -183,65 +314,63 @@ export class ComposeModeManager {
       startedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-
     return { ...this.state }
   }
 
-  /**
-   * 获取当前状态
-   */
+  private buildPhasePrompt(skill: ComposeSkill): string {
+    if (!this.state) return skill.description
+    const lines: string[] = [
+      `# Compose Phase: ${skill.name}`,
+      "",
+      skill.description,
+      "",
+      `## Spec`,
+      this.state.spec.description,
+    ]
+
+    if (this.state.spec.requirements.length > 0) {
+      lines.push("", "## Requirements", ...this.state.spec.requirements.map(r => `- ${r}`))
+    }
+    if (this.state.spec.acceptanceCriteria.length > 0) {
+      lines.push("", "## Acceptance Criteria", ...this.state.spec.acceptanceCriteria.map(c => `- ${c}`))
+    }
+    if (this.state.plan && skill.phase !== "plan") {
+      lines.push("", "## Plan", this.state.plan)
+    }
+
+    return lines.join("\n")
+  }
+
   getState(): ComposeState | null {
     return this.state ? { ...this.state } : null
   }
 
-  /**
-   * 获取当前阶段的 Skill
-   */
   getCurrentSkill(): ComposeSkill | null {
     if (!this.state) return null
     return COMPOSE_SKILLS[this.state.phase]
   }
 
-  /**
-   * 推进到下一阶段
-   */
   advance(): ComposePhase | null {
     if (!this.state) return null
-
     const currentIdx = PHASE_ORDER.indexOf(this.state.phase)
-    if (currentIdx === PHASE_ORDER.length - 1) {
-      // 已经是最后阶段
-      return null
-    }
-
+    if (currentIdx === PHASE_ORDER.length - 1) return null
     this.state.phase = PHASE_ORDER[currentIdx + 1]
     this.state.updatedAt = new Date().toISOString()
     return this.state.phase
   }
 
-  /**
-   * 跳转到指定阶段
-   */
   goTo(phase: ComposePhase): boolean {
-    if (!this.state) return false
-    if (!PHASE_ORDER.includes(phase)) return false
-
+    if (!this.state || !PHASE_ORDER.includes(phase)) return false
     this.state.phase = phase
     this.state.updatedAt = new Date().toISOString()
     return true
   }
 
-  /**
-   * 更新状态
-   */
   update(updates: Partial<ComposeState>): void {
     if (!this.state) return
     Object.assign(this.state, updates, { updatedAt: new Date().toISOString() })
   }
 
-  /**
-   * 添加代码文件
-   */
   addCodeFile(filePath: string): void {
     if (!this.state) return
     if (!this.state.codeFiles.includes(filePath)) {
@@ -250,45 +379,30 @@ export class ComposeModeManager {
     }
   }
 
-  /**
-   * 添加审查评论
-   */
   addReviewComment(comment: string): void {
     if (!this.state) return
     this.state.reviewComments.push(comment)
     this.state.updatedAt = new Date().toISOString()
   }
 
-  /**
-   * 添加测试结果
-   */
   addTestResult(result: string): void {
     if (!this.state) return
     this.state.testResults.push(result)
     this.state.updatedAt = new Date().toISOString()
   }
 
-  /**
-   * 添加调试日志
-   */
   addDebugLog(log: string): void {
     if (!this.state) return
     this.state.debugLog.push(log)
     this.state.updatedAt = new Date().toISOString()
   }
 
-  /**
-   * 设置验证状态
-   */
   setVerificationPassed(passed: boolean): void {
     if (!this.state) return
     this.state.verificationPassed = passed
     this.state.updatedAt = new Date().toISOString()
   }
 
-  /**
-   * 完成当前流程
-   */
   complete(): ComposeState | null {
     if (!this.state) return null
     const completed = { ...this.state }
@@ -297,92 +411,66 @@ export class ComposeModeManager {
     return completed
   }
 
-  /**
-   * 取消当前流程
-   */
   cancel(): ComposeState | null {
     if (!this.state) return null
+    for (const id of this.subagentIds) {
+      this.subagentManager?.cancel(id)
+    }
+    this.subagentIds = []
     const cancelled = { ...this.state, phase: "plan" as ComposePhase }
     this.history.push(cancelled)
     this.state = null
     return cancelled
   }
 
-  /**
-   * 获取历史记录
-   */
   getHistory(): ComposeState[] {
     return [...this.history]
   }
 
-  /**
-   * 生成状态文本
-   */
   toText(): string {
     if (!this.state) return "No active compose session"
-
     const lines: string[] = [
       "# Compose Session",
       "",
       `Phase: ${this.state.phase}`,
-      `Spec: ${this.state.spec}`,
+      `Spec: ${this.state.spec.title}`,
       `Started: ${this.state.startedAt}`,
       `Updated: ${this.state.updatedAt}`,
     ]
-
-    if (this.state.plan) {
-      lines.push("", "## Plan", this.state.plan)
-    }
-
+    if (this.state.plan) lines.push("", "## Plan", this.state.plan)
     if (this.state.codeFiles.length > 0) {
       lines.push("", "## Code Files", ...this.state.codeFiles.map(f => `- ${f}`))
     }
-
     if (this.state.reviewComments.length > 0) {
       lines.push("", "## Review Comments", ...this.state.reviewComments.map(c => `- ${c}`))
     }
-
     if (this.state.testResults.length > 0) {
       lines.push("", "## Test Results", ...this.state.testResults.map(r => `- ${r}`))
     }
-
     if (this.state.debugLog.length > 0) {
       lines.push("", "## Debug Log", ...this.state.debugLog.map(l => `- ${l}`))
     }
-
     lines.push("", `Verification: ${this.state.verificationPassed ? "PASSED" : "NOT PASSED"}`)
-
     return lines.join("\n")
   }
 
-  /**
-   * 生成系统提示
-   */
   toSystemPrompt(): string {
     if (!this.state) return ""
-
     const skill = this.getCurrentSkill()
     if (!skill) return ""
-
     return (
       `[Compose Mode: ${this.state.phase}]\n` +
-      `Spec: ${this.state.spec}\n` +
+      `Spec: ${this.state.spec.title}\n` +
       (this.state.plan ? `Plan: ${this.state.plan.slice(0, 200)}...\n` : "") +
       `Task: ${skill.description}\n` +
       `Available tools: ${skill.tools.join(", ")}`
     )
   }
 
-  /**
-   * 获取所有可用的 Compose Skills
-   */
   static getSkills(): ComposeSkill[] {
     return PHASE_ORDER.map(p => COMPOSE_SKILLS[p])
   }
 
-  /**
-   * 获取阶段顺序
-   */
   static getPhaseOrder(): ComposePhase[] {
     return [...PHASE_ORDER]
   }

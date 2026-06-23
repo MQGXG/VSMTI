@@ -14,6 +14,7 @@ import fs from "fs"
 import { MemoryProvider } from "./types"
 import { createLLMClient, type LLMMessage } from "../llm-sdk"
 import { logError } from "../logger"
+import type { FTSMemoryProvider } from "./fts-memory-provider"
 
 interface CheckpointData {
   sessionId: string
@@ -43,6 +44,7 @@ Be factual and concise. Do not repeat the user's words verbatim.`
 export class CheckpointProvider implements MemoryProvider {
   name = "checkpoint"
   private checkpointDir = ""
+  private ftsProvider: FTSMemoryProvider | null = null
   private checkpointPath = ""
   private data: CheckpointData | null = null
   private turnCount = 0
@@ -53,6 +55,11 @@ export class CheckpointProvider implements MemoryProvider {
 
   /** 获取 LLM 配置状态 */
   get hasLLMConfig(): boolean { return this.llmConfig !== null }
+
+  /** 设置 FTS Provider 引用（用于联动索引） */
+  setFTSProvider(provider: FTSMemoryProvider): void {
+    this.ftsProvider = provider
+  }
 
   async initialize(sessionId: string, workspace: string): Promise<void> {
     this.checkpointDir = join(app.getPath("userData"), "checkpoints", sessionId)
@@ -211,6 +218,10 @@ export class CheckpointProvider implements MemoryProvider {
       if (summary && this.data) {
         this.data.summary = summary.trim().slice(0, 500)
         this.saveCheckpoint()
+
+        if (this.ftsProvider) {
+          this.ftsProvider.indexCheckpoint(this.data.summary, this.data.sessionId)
+        }
       }
     } catch (err) {
       logError("[CheckpointProvider] LLM summary failed", err)

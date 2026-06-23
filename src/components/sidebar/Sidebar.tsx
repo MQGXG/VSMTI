@@ -7,11 +7,7 @@ import {
   MessageSquare,
   Search,
   X,
-  Plus,
-  Hash,
   FileText,
-  Clock,
-  Calendar,
   ChevronDown,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
@@ -141,42 +137,43 @@ export function Sidebar({
 
   if (!isOpen) {
     return (
-      <div className="w-full h-full flex flex-col items-center gap-2 p-2" style={{ borderRight: '1px solid var(--sidebar-border)', background: 'var(--sidebar-bg)' }}>
-        <button onClick={onToggle} className="w-9 h-9 flex items-center justify-center rounded-xl btn-ghost transition-all duration-200 hover:bg-primary-500/10" title="展开侧边栏">
-          <PanelLeft className="w-4 h-4 text-neutral-400" />
+      <div className="w-full h-full flex flex-col items-center gap-2 p-2" style={{ borderRight: "1px solid var(--sidebar-border)", background: "var(--sidebar-bg)" }}>
+        <button onClick={onToggle} className="w-9 h-9 flex items-center justify-center rounded-lg btn-ghost transition-all duration-200" title="展开侧边栏">
+          <PanelLeft className="w-4 h-4" style={{ color: "var(--text-tertiary)" }} />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col relative" style={{ borderRight: '1px solid var(--sidebar-border)', background: 'var(--sidebar-bg)' }}>
-      {/* 头部 */}
-      <div className="p-4" style={{ borderBottom: '1px solid var(--sidebar-border)' }}>
+    <div className="w-full h-full flex flex-col relative" style={{ borderRight: "1px solid var(--sidebar-border)", background: "var(--sidebar-bg)" }}>
+      {/* Header */}
+      <div className="p-4" style={{ borderBottom: "1px solid var(--sidebar-border)" }}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-primary-500/20">
-              {project ? project.name[0].toUpperCase() : '?'}
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
+              style={{ background: "linear-gradient(135deg, var(--accent-start), var(--accent-end))" }}>
+              {project ? project.name[0].toUpperCase() : "?"}
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-neutral-100 truncate">
+              <div className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
                 {project?.name || "未选择项目"}
               </div>
               {project?.workspace_path && (
-                <div className="text-[10px] text-neutral-500 truncate">
+                <div className="text-[10px] truncate" style={{ color: "var(--text-tertiary)" }}>
                   {project.workspace_path}
                 </div>
               )}
             </div>
           </div>
-          <button onClick={onToggle} className="w-7 h-7 flex items-center justify-center rounded-lg btn-ghost shrink-0 transition-all duration-200 hover:bg-neutral-700/50">
-            <PanelLeftClose className="w-3.5 h-3.5 text-neutral-400" />
+          <button onClick={onToggle} className="w-7 h-7 flex items-center justify-center rounded-md btn-ghost shrink-0 transition-all duration-200">
+            <PanelLeftClose className="w-3.5 h-3.5" style={{ color: "var(--text-tertiary)" }} />
           </button>
         </div>
 
-        {/* 搜索框 */}
+        {/* Search */}
         <div className="relative group">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-400 transition-colors" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: "var(--text-tertiary)" }} />
           <input
             value={searchQuery}
             onChange={async (e) => {
@@ -187,43 +184,48 @@ export function Sidebar({
               catch { setSearchResults([]); }
             }}
             placeholder="搜索消息..."
-            className="w-full pl-9 pr-8 py-2 rounded-xl text-xs outline-none transition-all duration-200 bg-neutral-800/50 text-neutral-200 placeholder-neutral-500 border border-neutral-700/50 focus:border-primary-500/50 focus:shadow-glow-primary"
+            className="w-full pl-9 pr-8 py-2 rounded-lg text-xs outline-none transition-all duration-200"
+            style={{
+              background: "var(--input-bg)",
+              border: "1px solid var(--input-border)",
+              color: "var(--text-primary)",
+            }}
           />
           {searchQuery && (
-            <button onClick={() => { setSearchQuery(""); setSearchResults(null); }} className="absolute right-2 top-1/2 -translate-y-1/2 btn-ghost p-1 rounded-lg transition-colors hover:bg-neutral-700/50">
-              <X className="w-3 h-3 text-neutral-400" />
+            <button onClick={() => { setSearchQuery(""); setSearchResults(null); }} className="absolute right-2 top-1/2 -translate-y-1/2 btn-ghost p-1 rounded-md">
+              <X className="w-3 h-3" style={{ color: "var(--text-tertiary)" }} />
             </button>
           )}
         </div>
 
-        {/* 新建会话按钮 */}
-        <button onClick={onNewSession} className="w-full flex items-center justify-center gap-2 mt-3 px-4 py-2.5 rounded-xl text-xs font-semibold btn-primary transition-all duration-200">
+        {/* New session */}
+        <button onClick={onNewSession} className="w-full flex items-center justify-center gap-2 mt-3 px-4 py-2.5 rounded-lg text-xs font-semibold btn-primary transition-all duration-200">
           <MessageSquarePlus className="w-4 h-4" />
           新建会话
         </button>
       </div>
 
-      {/* 搜索结果 */}
+      {/* Search results */}
       {searchResults !== null && (
-        <div className="absolute left-3 right-3 z-50 rounded-xl overflow-hidden shadow-glass-lg"
-          style={{ top: '160px', background: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
-          <div className="px-3 py-2 text-[10px] font-medium" style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
+        <div className="absolute left-3 right-3 z-50 rounded-xl overflow-hidden shadow-lg"
+          style={{ top: "160px", background: "var(--surface-elevated)", border: "1px solid var(--border)" }}>
+          <div className="px-3 py-2 text-[10px] font-medium" style={{ color: "var(--text-tertiary)", borderBottom: "1px solid var(--border-light)" }}>
             找到 {searchResults.length} 条结果
           </div>
           {searchResults.length === 0 ? (
-            <p className="text-xs py-6 text-center text-neutral-500">未找到匹配内容</p>
+            <p className="text-xs py-6 text-center" style={{ color: "var(--text-tertiary)" }}>未找到匹配内容</p>
           ) : (
             <div className="max-h-64 overflow-y-auto custom-scrollbar">
               {searchResults.map((r, i) => (
                 <button key={i} onClick={() => { onSessionChange(r.session_id); setSearchResults(null); setSearchQuery(""); }}
-                  className="w-full text-left px-3 py-3 transition-all duration-200 hover:bg-neutral-800/50"
-                  style={{ borderBottom: i < searchResults.length - 1 ? '1px solid var(--border-light)' : 'none' }}>
+                  className="w-full text-left px-3 py-3 transition-all duration-200 hover:bg-black/3 dark:hover:bg-white/3"
+                  style={{ borderBottom: i < searchResults.length - 1 ? "1px solid var(--border-light)" : "none" }}>
                   <div className="flex items-center gap-2">
-                    <MessageSquare className="w-3 h-3 shrink-0 text-neutral-500" />
-                    <span className="text-xs font-medium truncate text-neutral-200">{r.session_title}</span>
-                    <span className="text-[10px] ml-auto shrink-0 text-neutral-500">{r.message.role === "user" ? "用户" : "AI"}</span>
+                    <MessageSquare className="w-3 h-3 shrink-0" style={{ color: "var(--text-tertiary)" }} />
+                    <span className="text-xs font-medium truncate" style={{ color: "var(--text-primary)" }}>{r.session_title}</span>
+                    <span className="text-[10px] ml-auto shrink-0" style={{ color: "var(--text-tertiary)" }}>{r.message.role === "user" ? "用户" : "AI"}</span>
                   </div>
-                  <p className="text-[10px] line-clamp-2 mt-1 ml-5 text-neutral-500">{r.message.content}</p>
+                  <p className="text-[10px] line-clamp-2 mt-1 ml-5" style={{ color: "var(--text-tertiary)" }}>{r.message.content}</p>
                 </button>
               ))}
             </div>
@@ -231,21 +233,21 @@ export function Sidebar({
         </div>
       )}
 
-      {/* 会话列表 */}
+      {/* Session list */}
       <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
         {sessions.length === 0 && project && (
           <div className="text-xs py-12 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-neutral-800/50 flex items-center justify-center mx-auto">
-              <MessageSquare className="w-6 h-6 text-neutral-600" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto" style={{ background: "var(--surface-secondary)" }}>
+              <MessageSquare className="w-6 h-6" style={{ color: "var(--text-muted)" }} />
             </div>
-            <p className="text-neutral-500">暂无会话</p>
-            <p className="text-[10px] text-neutral-600">点击上方按钮创建新会话</p>
+            <p style={{ color: "var(--text-tertiary)" }}>暂无会话</p>
+            <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>点击上方按钮创建新会话</p>
           </div>
         )}
 
         {!project && (
           <div className="text-xs py-12 text-center">
-            <p className="text-neutral-500">请先选择一个项目</p>
+            <p style={{ color: "var(--text-tertiary)" }}>请先选择一个项目</p>
           </div>
         )}
 
@@ -256,11 +258,12 @@ export function Sidebar({
             <div key={group} className="mb-2">
               <button
                 onClick={() => toggleGroup(group)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-semibold text-neutral-500 uppercase tracking-wider hover:text-neutral-400 transition-colors"
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-colors"
+                style={{ color: "var(--text-tertiary)" }}
               >
-                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} />
+                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? "" : "-rotate-90"}`} />
                 {group}
-                <span className="ml-auto text-[10px] font-normal text-neutral-600">{groupSessions.length}</span>
+                <span className="ml-auto text-[10px] font-normal" style={{ color: "var(--text-muted)" }}>{groupSessions.length}</span>
               </button>
               {isExpanded && (
                 <div className="space-y-0.5">
@@ -269,20 +272,23 @@ export function Sidebar({
                     .map((session) => {
                       const isActive = activeSession === session.session_id;
                       return (
-                        <div key={session.session_id} className={`group flex items-center rounded-xl text-sm transition-all duration-200 sidebar-item ${isActive ? 'active' : ''}`}>
+                        <div key={session.session_id} className={`group flex items-center rounded-lg text-sm transition-all duration-200 sidebar-item ${isActive ? "active" : ""}`}>
                           <button onClick={() => onSessionChange(session.session_id)}
                             className="flex-1 text-left px-3 py-2 min-w-0">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors"
-                                style={{ background: isActive ? 'rgba(0, 217, 192, 0.15)' : 'rgba(26, 46, 53, 0.5)' }}>
-                                {session.kind === "task" ? <FileText className="w-3.5 h-3.5" style={{ color: isActive ? 'var(--accent-start)' : 'var(--text-secondary)' }} />
-                                  : <MessageSquare className="w-3.5 h-3.5" style={{ color: isActive ? 'var(--accent-start)' : 'var(--text-secondary)' }} />}
+                              <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors"
+                                style={{ background: isActive ? "var(--accent-light)" : "var(--surface-secondary)" }}>
+                                {session.kind === "task" ? (
+                                  <FileText className="w-3.5 h-3.5" style={{ color: isActive ? "var(--accent)" : "var(--text-tertiary)" }} />
+                                ) : (
+                                  <MessageSquare className="w-3.5 h-3.5" style={{ color: isActive ? "var(--accent)" : "var(--text-tertiary)" }} />
+                                )}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <div className="text-xs font-medium truncate" style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                                <div className="text-xs font-medium truncate" style={{ color: isActive ? "var(--text-primary)" : "var(--text-secondary)" }}>
                                   {session.title || "新会话"}
                                 </div>
-                                <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                                <div className="text-[10px] mt-0.5" style={{ color: "var(--text-tertiary)" }}>
                                   {session.message_count || 0} 条 · {formatTime(session.updated_at)}
                                 </div>
                               </div>
@@ -294,7 +300,8 @@ export function Sidebar({
                             catch { /* ignore */ }
                             if (activeSession === session.session_id) onNewSession();
                           }}
-                            className="p-1.5 mr-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 btn-ghost shrink-0 hover:bg-error/10 hover:text-error">
+                            className="p-1.5 mr-1 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200 btn-ghost shrink-0"
+                            style={{ color: "var(--text-tertiary)" }}>
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
@@ -307,12 +314,12 @@ export function Sidebar({
         })}
       </div>
 
-      {/* 底部设置 */}
-      <div className="p-3" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
+      {/* Settings */}
+      <div className="p-3" style={{ borderTop: "1px solid var(--sidebar-border)" }}>
         <button onClick={() => setSettingsOpen(true)}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs btn-ghost transition-all duration-200 hover:bg-neutral-700/50">
-          <Settings className="w-4 h-4 text-neutral-400" />
-          <span className="text-neutral-400">设置</span>
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs btn-ghost transition-all duration-200">
+          <Settings className="w-4 h-4" style={{ color: "var(--text-tertiary)" }} />
+          <span style={{ color: "var(--text-secondary)" }}>设置</span>
         </button>
       </div>
 

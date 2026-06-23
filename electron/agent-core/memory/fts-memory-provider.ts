@@ -48,7 +48,6 @@ export class FTSMemoryProvider implements MemoryProvider {
   private saveTimer: ReturnType<typeof setInterval> | null = null
   private reconciling = false
 
-  /** 文件最后修改时间缓存，用于增量索引 */
   private fileMtimes = new Map<string, number>()
 
   constructor(opts?: FTSMemoryOptions) {
@@ -79,6 +78,9 @@ export class FTSMemoryProvider implements MemoryProvider {
 
     this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_files USING fts5(
       path UNINDEXED, content, filetype UNINDEXED, tokenize='unicode61'
+    )`)
+    this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_memory USING fts5(
+      source UNINDEXED, content, session_id UNINDEXED, tokenize='unicode61'
     )`)
 
     // 启动定时器
@@ -198,6 +200,86 @@ export class FTSMemoryProvider implements MemoryProvider {
         `文件: ${pt.relative(this.workspace, r.path)}\n片段: ${r.snippet}\n相关度: ${(-r.score).toFixed(2)}`
       ).join("\n\n")}`
     } catch { return "" }
+  }
+
+  /**
+   * 索引 checkpoint 摘要到 FTS 记忆表
+   */
+  indexCheckpoint(summary: string, sessionID: string): void {
+    if (!this.db || !summary) return
+    try {
+      this.db.run(
+        "INSERT INTO fts_memory (source, content, session_id) VALUES (?, ?, ?)",
+        ["checkpoint", summary.slice(0, 1000), sessionID],
+      )
+    } catch { /* 重复或错误跳过 */ }
+  }
+
+  /**
+   * 索引 MEMORY.md 内容到 FTS 记忆表
+   */
+  indexMemoryMd(content: string, sessionID: string): void {
+    if (!this.db || !content) return
+    try {
+      this.db.run(
+        "INSERT INTO fts_memory (source, content, session_id) VALUES (?, ?, ?)",
+        ["memory_md", content.slice(0, 2000), sessionID],
+      )
+    } catch { /* 重复或错误跳过 */ }
+  }
+
+  /**
+   * 跨 session 搜索记忆
+   */
+  async searchMemory(query: string, limit = 3): Promise<string> {
+    if (!this.db) return ""
+
+    const terms = query
+      .split(/[\s,，。；;：:！!？?、]+/)
+      .filter(Boolean)
+      .map((t) => `"${t.replace(/"/g, "")}"`)
+      .join(" OR ")
+
+    if (!terms) return ""
+
+    try {
+      const stmt = this.db.prepare(`
+        SELECT source, content, session_id, bm25(fts_memory_idx) AS score
+        FROM fts_memory_idx JOIN fts_memory ON fts_memory.id = fts_memory_idx.rowid
+        WHERE fts_memory_idx MATCH ?
+        ORDER BY score LIMIT ?
+      `)
+      stmt.bind([terms, limit])
+
+      const results: Array<{ source: string; content: string; sessionID: string; score: number }> = []
+      while (stmt.step()) {
+        const row = stmt.getAsObject() as Record<string, unknown>
+        if (row.content) {
+          results.push({
+            source: String(row.source || ""),
+            content: String(row.content),
+            sessionID: String(row.session_id || ""),
+            score: Number(row.score) || 0,
+          })
+        }
+      }
+      stmt.free()
+
+      if (results.length === 0) return ""
+      return `[跨 session 记忆]\n${results.map((r) =>
+        `来源: ${r.source}\n内容: ${r.content.slice(0, 300)}`
+      ).join("\n\n")}`
+    } catch { return "" }
+  }
+
+  /**
+   * 获取记忆表的搜索结果作为 prefetch 补充
+   */
+  async prefetchMemory(query: string): Promise<string> {
+    const fileResults = await this.search(query)
+    const memoryResults = await this.searchMemory(query)
+    const parts = [fileResults, memoryResults].filter(Boolean)
+    return parts.length > 0 ? parts.join("\n\n") : ""
   }
 
   private save(): void {

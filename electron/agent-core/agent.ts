@@ -3,7 +3,7 @@ import type { ToolContext, ToolResult } from "./tool"
 import type { AgentEvent } from "./types"
 import { IterationBudget } from "./iteration-budget"
 import { createLLMClient, type LLMMessage } from "./llm-sdk"
-import { truncateToBudget, needsContextRebuild, rebuildContextFromCheckpoint, estimateTokens } from "./message-utils"
+import { truncateToBudget, estimateTokens } from "./message-utils"
 import { PermissionSet, type PermissionRule } from "./permission"
 import { MemoryManager } from "./memory/manager"
 import { BuiltinMemoryProvider } from "./memory/builtin-provider"
@@ -18,6 +18,8 @@ import { AgentStateMachine } from "./agent/state-machine"
 import { buildToolContext, buildSystemMessage } from "./agent/context"
 import { ApprovalStore } from "./permission/approval-store"
 import { DreamDistillManager } from "./dream-distill"
+import { ContextManager } from "./context-manager"
+import { GoalJudge } from "./goal-judge"
 
 import { AgentMode } from "./modes"
 
@@ -39,6 +41,9 @@ export interface AgentConfig {
   mode?: AgentMode
   toolAllowlist?: string[]
   onPermissionSave?: (rules: PermissionRule[]) => void
+  goalDescription?: string
+  judgeModel?: string
+  judgeProvider?: string
 }
 
 export type { AgentEvent } from "./types"
@@ -58,6 +63,8 @@ export class Agent {
   private orchestrator: ToolOrchestrator
   private checkpointProvider: CheckpointProvider
   private dreamDistillManager: DreamDistillManager
+  private contextManager: ContextManager
+  private goalJudge: GoalJudge
 
   get aborted(): boolean { return this.stateMachine.aborted }
   abort(): void { this.stateMachine.stop() }
@@ -66,6 +73,9 @@ export class Agent {
     this.orchestrator = new ToolOrchestrator(registry)
     this.checkpointProvider = new CheckpointProvider()
     this.dreamDistillManager = new DreamDistillManager()
+    this.contextManager = new ContextManager(this.checkpointProvider, this.memoryManager)
+    this.goalJudge = new GoalJudge()
+    const ftsProvider = new FTSMemoryProvider()
     this.memoryManager.addProvider(new BuiltinMemoryProvider())
     this.memoryManager.addProvider(this.checkpointProvider)
     if (apiKey) {
@@ -73,9 +83,13 @@ export class Agent {
     }
     if (workspace) {
       this.memoryManager.addProvider(new FileMemoryProvider())
-      this.memoryManager.addProvider(new FTSMemoryProvider())
+      this.memoryManager.addProvider(ftsProvider)
     }
+    this.checkpointProvider.setFTSProvider(ftsProvider)
   }
+
+  getGoalJudge(): GoalJudge { return this.goalJudge }
+  getContextManager(): ContextManager { return this.contextManager }
 
   replyPermission(id: string, reply: PermissionReply): void {
     this.stateMachine.replyPermission(id, reply)
@@ -88,7 +102,6 @@ export class Agent {
   ): AsyncGenerator<AgentEvent> {
     const ctx = buildToolContext(config)
 
-    // 注入持久化权限到审批缓存
     if (config.permissions) {
       this.approvalStore.setPermissions(config.permissions)
     }
@@ -96,22 +109,35 @@ export class Agent {
     const materialized = this.registry.materialize(config.permissions)
     let toolSet = materialized.definitions
 
-    // toolAllowlist: 只暴露允许的工具给 LLM，其他工具 LLM 完全不知道
     if (config.toolAllowlist && config.toolAllowlist.length > 0) {
       const allowed = new Set(config.toolAllowlist)
       toolSet = Object.fromEntries(Object.entries(toolSet).filter(([name]) => allowed.has(name)))
     }
 
-    await this.memoryManager.initialize(config.sessionID, config.workspace)
-    const memoryPrompt = this.memoryManager.buildSystemPrompt()
+    await this.contextManager.initialize(config.sessionID, config.workspace)
 
-    // 预算注入：按 token 预算控制记忆内容
-    const tokenBudget = config.maxContextTokens ? Math.floor(config.maxContextTokens * 0.15) : 2000
-    const prefetched = await this.memoryManager.prefetch(userMessage, config.sessionID, tokenBudget)
-    const enrichedUser = prefetched ? `${prefetched}\n\n${userMessage}` : userMessage
+    const { enrichedUser, memoryPrompt } = await this.contextManager.prepareContext(userMessage, config.sessionID)
 
-    // 自动 Dream 触发：每 N 回合自动提取知识
-    if (this.dreamDistillManager && this.memoryManager.shouldAutoDream() && config.apiKey) {
+    if (config.goalDescription) {
+      this.goalJudge.setGoal(config.goalDescription)
+      if (config.judgeModel && config.apiKey) {
+        this.goalJudge.setJudgeConfig({
+          apiKey: config.apiKey,
+          apiUrl: config.apiUrl,
+          model: config.judgeModel,
+          provider: config.judgeProvider || config.provider || "openai",
+        })
+      } else if (config.apiKey) {
+        this.goalJudge.setJudgeConfig({
+          apiKey: config.apiKey,
+          apiUrl: config.apiUrl,
+          model: config.model,
+          provider: config.provider || "openai",
+        })
+      }
+    }
+
+    if (this.dreamDistillManager && this.contextManager.shouldAutoDream() && config.apiKey) {
       try {
         this.dreamDistillManager.setLLMConfig({
           apiKey: config.apiKey,
@@ -159,6 +185,12 @@ export class Agent {
           restored.push(msg)
         }
         history = restored
+
+        const rebuilt = this.contextManager.onSessionResume(history, config.sessionID)
+        if (rebuilt.length > history.length) {
+          history = rebuilt
+          yield { type: "thinking", text: "🔄 Context reconstructed from checkpoint on session resume" }
+        }
       }
     }
 
@@ -168,7 +200,12 @@ export class Agent {
       timestamp: new Date().toISOString(),
     })
 
-    const systemContent = await buildSystemMessage(config, memoryPrompt, DEFAULT_SYSTEM)
+    const goalPrompt = this.goalJudge.toSystemPrompt()
+    const baseSystem = await buildSystemMessage(config, memoryPrompt, DEFAULT_SYSTEM)
+    const systemContent = goalPrompt
+      ? `${baseSystem}\n\n${goalPrompt}`
+      : baseSystem
+
     let messages: LLMMessage[] = [
       { role: "system", content: systemContent },
       ...history.map((m) => {
@@ -211,21 +248,24 @@ export class Agent {
         return
       }
 
-      // 上下文重建：当接近 token 限制时，从 checkpoint 重建
       const maxTokens = config.maxContextTokens || 8000
-      if (needsContextRebuild(messages, maxTokens)) {
-        const checkpoint = this.checkpointProvider.getCheckpoint()
-        if (checkpoint) {
-          messages = rebuildContextFromCheckpoint(messages, {
-            summary: checkpoint.summary,
-            activeTask: checkpoint.activeTask,
-            recentDecisions: checkpoint.recentDecisions,
-            keyFiles: checkpoint.keyFiles,
-          }, maxTokens)
+      const tokensBefore = estimateTokens(messages)
+
+      const { messages: rebuiltMessages, didRebuild, reason } = this.contextManager.checkAndRebuild(messages, config.sessionID)
+      if (didRebuild) {
+        messages = rebuiltMessages
+        const tokensAfter = estimateTokens(messages)
+
+        if (reason === "checkpoint_rebuild") {
           yield { type: "thinking", text: "🔄 Context reconstructed from checkpoint" }
-        } else {
-          messages = truncateToBudget(messages, maxTokens)
         }
+
+        yield {
+          type: "context_rebuild" as any,
+          reason,
+          tokensBefore,
+          tokensAfter,
+        } as AgentEvent
       } else {
         messages = truncateToBudget(messages, maxTokens)
       }
@@ -283,11 +323,47 @@ export class Agent {
             timestamp: new Date().toISOString(),
           })
         }
-        yield { type: "finish", reason: "stop" }
+
+        const activeGoal = this.goalJudge.getActiveGoal()
+        if (activeGoal) {
+          const quickCheck = this.goalJudge.quickCheck(activeGoal, messages)
+          if (quickCheck && quickCheck.satisfied) {
+            activeGoal.status = "satisfied"
+            activeGoal.satisfiedAt = quickCheck.timestamp
+            yield {
+              type: "goal_status" as any,
+              goalId: activeGoal.id,
+              description: activeGoal.description,
+              status: "satisfied",
+              reasoning: quickCheck.reasoning,
+            } as AgentEvent
+            yield { type: "finish", reason: "goal_satisfied" } as AgentEvent
+            return
+          }
+
+          const evaluation = await this.goalJudge.evaluate(activeGoal, messages)
+          yield {
+            type: "goal_status" as any,
+            goalId: activeGoal.id,
+            description: activeGoal.description,
+            status: evaluation.satisfied ? "satisfied" : "still_active",
+            reasoning: evaluation.reasoning,
+          } as AgentEvent
+
+          if (evaluation.satisfied) {
+            yield { type: "finish", reason: "goal_satisfied" }
+          } else {
+            budget.resetRemaining(3)
+            yield { type: "thinking", text: `🎯 Goal still active: ${evaluation.reasoning}` }
+          }
+        }
+
+        if (!this.goalJudge.getActiveGoal()) {
+          yield { type: "finish", reason: "stop" }
+        }
         return
       }
 
-      // 保存 assistant 消息（含 tool_calls）到 DB
       const assistantPayload = JSON.stringify({
         text: currentText,
         tool_calls: toolCallsArray.map((tc) => ({
@@ -302,7 +378,6 @@ export class Agent {
         timestamp: new Date().toISOString(),
       })
 
-      // 权限门控 + 工具执行
       const evaluations = evaluateToolCalls(toolCallsArray, this.registry, config.permissions)
       const approvedCalls: typeof toolCallsArray = []
       const results = new Map<string, ToolResult>()
@@ -371,7 +446,6 @@ export class Agent {
         const parts: Array<{ type: "tool-result" | "text"; toolCallId?: string; toolName?: string; output?: any; text?: string }> = [
           { type: "tool-result" as const, toolCallId: call.id, toolName: call.function.name, output: { type: "text" as const, value: text } },
         ]
-        // 图片支持：将 metadata 中的图片数据作为额外内容发送给模型
         if (result.metadata?.mime && result.metadata?.data) {
           parts.push({
             type: "text" as const,
@@ -391,16 +465,12 @@ export class Agent {
         })
       }
 
-      // 同步记忆和检查点
-      this.memoryManager.syncTurn(userMessage, currentText, config.sessionID).catch(() => {})
-      this.checkpointProvider.syncTurn(userMessage, currentText, config.sessionID).catch(() => {})
+      await this.contextManager.syncTurn(userMessage, currentText, config.sessionID)
 
-      // 记录对话给 Dream 系统
       this.dreamDistillManager.recordTurn(userMessage, currentText)
 
-      // 设置 LLM 配置（用于 LLM 增强摘要）
       if (config.apiKey && !this.checkpointProvider.hasLLMConfig) {
-        this.checkpointProvider.setLLMConfig({
+        this.contextManager.setLLMConfig({
           apiKey: config.apiKey,
           apiUrl: config.apiUrl,
           model: config.model,
@@ -409,8 +479,7 @@ export class Agent {
       }
     }
 
-    // 最终保存检查点
-    await this.checkpointProvider.shutdown()
+    await this.contextManager.shutdown()
     this.memoryManager.shutdown().catch(() => {})
     yield { type: "finish", reason: "length" }
   }

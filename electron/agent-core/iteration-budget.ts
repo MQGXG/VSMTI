@@ -15,4 +15,8 @@ export class IterationBudget {
   get remaining(): number {
     return Math.max(0, this.maxTotal - this.used)
   }
+
+  resetRemaining(count: number): void {
+    this.used = Math.max(0, this.maxTotal - count)
+  }
 }
