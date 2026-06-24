@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -13,9 +14,14 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@mira/core": ["./packages/core/src"],
+      "@mira/core/*": ["./packages/core/src/*"],
+      "@mira/ui": ["./packages/ui/src"],
+      "@mira/ui/*": ["./packages/ui/src/*"],
+      "@mira/electron": ["./packages/electron/src"],
+      "@mira/electron/*": ["./packages/electron/src/*"]
     }
   },
-  "include": ["src/**/*", "electron/**/*"],
+  "include": ["packages/*/src/**/*", "apps/*/src/**/*"],
   "exclude": ["node_modules", "dist", "dist-electron"]
 }

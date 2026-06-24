@@ -1,0 +1,30 @@
+{
+  "name": "@mira/core",
+  "version": "1.0.0",
+  "description": "Mira Core - 核心逻辑包",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "source": "src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "effect": "^3.21.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.2",
+    "vitest": "^4.1.8"
+  }
+}

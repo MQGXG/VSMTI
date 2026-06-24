@@ -1,0 +1,218 @@
+import { useState, useEffect, useRef, useMemo } from "react"
+import { Search, FileText, FileEdit, Globe, Code, FolderOpen, Wrench, X, Terminal, Sparkles } from "lucide-react"
+import type { ToolInfo, ToolResult } from "../types/electron"
+
+interface Props {
+  onResult: (toolName: string, result: ToolResult) => void
+  disabled?: boolean
+  inputHint?: string
+}
+
+const toolIcons: Record<string, typeof Search> = {
+  read_file: FileText,
+  write_file: FileEdit,
+  list_files: FolderOpen,
+  web_search: Globe,
+  grep: Search,
+  glob: Search,
+  run_code: Code,
+  bash: Terminal,
+}
+
+const toolKeywords: Record<string, string[]> = {
+  read_file: ["read", "open", "查看", "读取", "打开", "show", "cat", "content", "文件内容", "看看", "显示"],
+  write_file: ["write", "create", "save", "写入", "创建", "保存", "生成文件", "新建"],
+  list_files: ["list", "ls", "dir", "directory", "文件夹", "目录", "列出", "查看目录", "有哪些文件"],
+  web_search: ["search", "google", "find", "搜索", "查找", "互联网", "网络", "查一下", "搜一下", "百度"],
+  grep: ["grep", "search in", "find text", "查找内容", "搜索内容", "包含", "关键词"],
+  glob: ["find file", "glob", "查找文件", "匹配文件", "文件名", "模糊查找"],
+  run_code: ["run", "execute", "python", "code", "运行", "执行", "代码", "脚本", "node"],
+  edit_file: ["edit", "replace", "modify", "修改", "替换", "编辑", "改动", "更新"],
+  bash: ["bash", "shell", "terminal", "command", "终端", "命令", "cmd", "powershell", "执行命令"],
+}
+
+export function ToolPalette({ onResult, disabled, inputHint }: Props) {
+  const [open, setOpen] = useState(false)
+  const [tools, setTools] = useState<ToolInfo[]>([])
+  const [selectedTool, setSelectedTool] = useState<ToolInfo | null>(null)
+  const [inputs, setInputs] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(false)
+  const [resultMsg, setResultMsg] = useState<string | null>(null)
+  const paletteRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (open) {
+      window.electronAPI.agent.listTools().then(setTools)
+    }
+  }, [open])
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (paletteRef.current && !paletteRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        setSelectedTool(null)
+        setResultMsg(null)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [])
+
+  const suggestedTool = useMemo(() => {
+    if (!inputHint || open) return null
+    const lower = inputHint.toLowerCase()
+    for (const [toolName, keywords] of Object.entries(toolKeywords)) {
+      if (keywords.some((kw) => lower.includes(kw))) {
+        return tools.find((t) => t.name === toolName) || null
+      }
+    }
+    return null
+  }, [inputHint, tools, open])
+
+  const handleSelectTool = (tool: ToolInfo) => {
+    setSelectedTool(tool)
+    setResultMsg(null)
+    setInputs({})
+  }
+
+  const handleExecute = async () => {
+    if (!selectedTool) return
+    setLoading(true)
+    setResultMsg(null)
+    try {
+      const args: Record<string, unknown> = {}
+      const props = selectedTool.parameters?.properties as Record<string, { type: string }> | undefined
+      if (props) {
+        for (const [key] of Object.entries(props)) {
+          if (inputs[key] !== undefined && inputs[key] !== "") {
+            const prop = props[key]
+            args[key] = prop.type === "number" ? Number(inputs[key]) : inputs[key]
+          }
+        }
+      }
+      const result = await window.electronAPI.agent.executeTool(selectedTool.name, args)
+      onResult(selectedTool.name, result)
+      if (result.success) {
+        setResultMsg("✅ 执行成功，结果已添加到对话")
+        setTimeout(() => { setOpen(false); setSelectedTool(null); setResultMsg(null) }, 1000)
+      } else {
+        setResultMsg(`❌ ${result.error || "执行失败"}`)
+      }
+    } catch (e) {
+      onResult(selectedTool.name, { success: false, output: "", error: String(e) })
+      setResultMsg(`❌ ${String(e)}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div ref={paletteRef} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        disabled={disabled}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all duration-200 disabled:opacity-30 ${
+          suggestedTool && !open
+            ? "text-primary-400 animate-pulse-glow"
+            : "text-neutral-500 hover:text-neutral-300 hover:bg-neutral-700/50"
+        }`}
+        style={suggestedTool && !open ? { background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)' } : {}}
+        title="工具面板 (可直接执行，不经过 LLM)"
+      >
+        <Wrench className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">{suggestedTool ? suggestedTool.name : "工具"}</span>
+      </button>
+
+      {open && (
+        <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden shadow-glass-lg z-50 animate-scale-in"
+          style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
+          {resultMsg ? (
+            <div className="p-4 text-sm text-center" style={{ color: 'var(--text-primary)' }}>{resultMsg}</div>
+          ) : !selectedTool ? (
+            <div>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>工具面板</div>
+                <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>直接执行，不需要 AI 参与</div>
+              </div>
+              <div className="max-h-72 overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
+                {tools.map((tool) => {
+                  const Icon = toolIcons[tool.name] || Wrench
+                  const isSuggested = tool.name === suggestedTool?.name
+                  return (
+                    <button
+                      key={tool.name}
+                      onClick={() => handleSelectTool(tool)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ${
+                        isSuggested
+                          ? "text-primary-300"
+                          : "text-neutral-300 hover:bg-neutral-800/50"
+                      }`}
+                      style={isSuggested ? { background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)' } : {}}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" style={{ color: isSuggested ? 'var(--accent-start)' : 'var(--text-secondary)' }} />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium truncate">{tool.name}</div>
+                        <div className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>{tool.description}</div>
+                      </div>
+                      {isSuggested && <Sparkles className="w-3 h-3 shrink-0" style={{ color: 'var(--accent-start)' }} />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {(() => { const Icon = toolIcons[selectedTool.name] || Wrench; return <Icon className="w-4 h-4" style={{ color: 'var(--accent-start)' }} /> })()}
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{selectedTool.name}</span>
+                </div>
+                <button onClick={() => setSelectedTool(null)} className="p-1.5 rounded-lg transition-colors hover:bg-neutral-700/50">
+                  <X className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
+                </button>
+              </div>
+
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{selectedTool.description}</p>
+
+              {!!selectedTool.parameters?.properties && (
+                <div className="space-y-2.5">
+                  {Object.entries(selectedTool.parameters.properties as Record<string, { type: string; description?: string }>).map(([key, prop]) => {
+                    const required = (selectedTool.parameters?.required || []) as string[]
+                    return (
+                      <div key={key}>
+                        <label className="text-xs block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                          {key}
+                          {required.includes(key) && <span className="ml-1" style={{ color: '#FF4757' }}>*</span>}
+                        </label>
+                        <input
+                          type={prop.type === "number" ? "number" : "text"}
+                          value={inputs[key] || ""}
+                          onChange={(e) => setInputs((p) => ({ ...p, [key]: e.target.value }))}
+                          placeholder={prop.description || key}
+                          className="w-full rounded-xl px-3 py-2 text-sm outline-none transition-all duration-200"
+                          style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button onClick={handleExecute} disabled={loading}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium btn-primary disabled:opacity-40">
+                  {loading ? "执行中..." : "执行"}
+                </button>
+                <button onClick={() => setSelectedTool(null)}
+                  className="px-4 py-2.5 rounded-xl text-sm transition-colors hover:bg-neutral-700/50"
+                  style={{ color: 'var(--text-secondary)' }}>
+                  返回
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

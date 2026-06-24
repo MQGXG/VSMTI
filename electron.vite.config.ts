@@ -4,12 +4,20 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ["@mira/core", "@modelcontextprotocol/sdk", "effect", "zod", "docx"] })],
     build: {
       outDir: "dist-electron",
       rollupOptions: {
-        input: { main: resolve(__dirname, "electron/main.ts") },
+        input: { main: resolve(__dirname, "packages/electron/src/main/index.ts") },
       },
+    },
+    resolve: {
+      alias: [
+        {
+          find: /^@mira\/core(\/.*)?$/,
+          replacement: resolve(__dirname, "packages/core/src") + "$1",
+        },
+      ],
     },
   },
   preload: {
@@ -17,7 +25,7 @@ export default defineConfig({
     build: {
       outDir: "dist-electron",
       rollupOptions: {
-        input: { preload: resolve(__dirname, "electron/preload.ts") },
+        input: { preload: resolve(__dirname, "packages/electron/src/preload/index.ts") },
       },
     },
   },
@@ -32,7 +40,9 @@ export default defineConfig({
     plugins: [react()],
     resolve: {
       alias: {
-        "@": resolve(__dirname, "src"),
+        "@mira/core": resolve(__dirname, "packages/core/src"),
+        "@mira/ui": resolve(__dirname, "packages/ui/src"),
+        "@mira/electron": resolve(__dirname, "packages/electron/src"),
       },
     },
   },
