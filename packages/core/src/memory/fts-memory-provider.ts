@@ -160,17 +160,17 @@ export class FTSMemoryProvider implements MemoryProvider {
     }
   }
 
-  /** FTS5 全文搜索 */
+  /** FTS5 全文搜索（参考 MiMo-Code BM25 + OR-join + Unicode tokenization） */
   async search(query: string): Promise<string> {
     if (!this.db) return ""
 
-    const terms = query
-      .split(/[\s,，。；;：:！!？?、]+/)
-      .filter(Boolean)
+    // 使用 Unicode-aware 分词，支持 CJK（中文/日文/韩文）
+    const tokens = query.match(/[\p{L}\p{N}_]+/gu)
+    if (!tokens || tokens.length === 0) return ""
+
+    const terms = tokens
       .map((t) => `"${t.replace(/"/g, "")}"`)
       .join(" OR ")
-
-    if (!terms) return ""
 
     try {
       const stmt = this.db.prepare(`

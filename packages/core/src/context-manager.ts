@@ -1,7 +1,10 @@
 import type { CheckpointProvider } from "./memory/checkpoint-provider"
 import type { MemoryManager } from "./memory/manager"
-import { needsContextRebuild, rebuildContextFromCheckpoint, truncateToBudget, type CheckpointData } from "./message-utils"
-import type { LLMMessage } from "./llm-sdk"
+import { needsContextRebuild, rebuildContextFromCheckpoint, truncateToBudget, estimateTokens, type CheckpointData } from "./message-utils"
+import type { LLMMessage, ContentPart, ToolResultPart } from "./llm/schema/messages"
+import { createLLMClient } from "./llm-sdk"
+import * as fs from "fs"
+import * as path from "path"
 
 export interface ContextConfig {
   maxContextTokens: number
@@ -10,6 +13,11 @@ export interface ContextConfig {
   llmSummaryInterval?: number
   keepRecentRatio?: number
   memoryTokenBudget?: number
+  toolResultBudgetBytes?: number
+  pruneMinimum?: number
+  pruneProtect?: number
+  toolOutputMaxChars?: number
+  tailTurns?: number
 }
 
 const DEFAULT_CONFIG: Required<ContextConfig> = {
@@ -19,6 +27,11 @@ const DEFAULT_CONFIG: Required<ContextConfig> = {
   llmSummaryInterval: 10,
   keepRecentRatio: 0.2,
   memoryTokenBudget: 2000,
+  toolResultBudgetBytes: 200_000,
+  pruneMinimum: 20_000,
+  pruneProtect: 40_000,
+  toolOutputMaxChars: 2_000,
+  tailTurns: 2,
 }
 
 export interface ContextStats {
@@ -39,6 +52,7 @@ export class ContextManager {
   private lastRebuildReason = ""
   private lastRebuildAt: string | null = null
   private llmConfig: { apiKey: string; apiUrl: string; model: string; provider: string } | null = null
+  private workspace = ""
 
   constructor(
     checkpointProvider: CheckpointProvider,
@@ -66,6 +80,7 @@ export class ContextManager {
   }
 
   async initialize(sessionID: string, workspace: string): Promise<void> {
+    this.workspace = workspace
     await this.memoryManager.initialize(sessionID, workspace)
   }
 
@@ -73,10 +88,6 @@ export class ContextManager {
     return this.memoryManager.buildSystemPrompt()
   }
 
-  /**
-   * Token 预算化注入 — 按优先级排序记忆内容
-   * checkpoint > builtin > fts > vector
-   */
   async prepareContext(
     userMessage: string,
     sessionID: string,
@@ -88,9 +99,6 @@ export class ContextManager {
     return { enrichedUser, memoryPrompt }
   }
 
-  /**
-   * 每回合同步 — 创建检查点、更新记忆
-   */
   async syncTurn(user: string, assistant: string, sessionID: string): Promise<void> {
     this.turnCount++
 
@@ -102,23 +110,78 @@ export class ContextManager {
     }
   }
 
-  /**
-   * 检查并重建上下文 — 当接近 token 限制时
-   * 策略：逐步重建，先从 checkpoint 恢复，再逐步裁剪
-   */
-  checkAndRebuild(
+  /** 每轮记忆注入：在 LLM 调用前，将相关记忆注入最后一条用户消息 */
+  async injectMemories(messages: LLMMessage[], sessionID: string): Promise<LLMMessage[]> {
+    const memoryContent = await this.memoryManager.selectMemories(messages, sessionID, this.config.memoryTokenBudget)
+    if (!memoryContent) return messages
+
+    const result = [...messages]
+    for (let i = result.length - 1; i >= 0; i--) {
+      const msg = result[i]
+      if (msg.role === "user" && typeof msg.content === "string") {
+        result[i] = { ...msg, content: `${memoryContent}\n\n${msg.content}` }
+        break
+      }
+    }
+    return result
+  }
+
+  // ── 压缩管线入口 ────────────────────────────────────────────
+  async compactPipeline(
     messages: LLMMessage[],
-    _sessionID: string,
-  ): {
+    sessionID: string,
+  ): Promise<{
     messages: LLMMessage[]
     didRebuild: boolean
     reason: string
-  } {
-    const maxTokens = this.config.maxContextTokens
+  }> {
+    const oldTokens = estimateTokens(messages)
 
-    if (!needsContextRebuild(messages, maxTokens)) {
-      messages = truncateToBudget(messages, maxTokens)
+    // 第 1 层：最便宜的 0-API 操作
+    messages = this.toolResultBudget(messages)
+    messages = this.snipCompact(messages)
+    messages = this.microCompact(messages)
+
+    const currentTokens = estimateTokens(messages)
+    const usage = currentTokens / this.config.maxContextTokens
+
+    if (usage >= this.config.rebuildThreshold) {
+      this.writeTranscript(messages)
+      const checkpoint = this.checkpointProvider.getCheckpoint()
+      if (checkpoint) {
+        const checkpointData: CheckpointData = {
+          summary: checkpoint.summary,
+          activeTask: checkpoint.activeTask,
+          recentDecisions: checkpoint.recentDecisions,
+          keyFiles: checkpoint.keyFiles,
+          userPreferences: checkpoint.userPreferences || [],
+          intent: checkpoint.intent || undefined,
+          taskTree: checkpoint.taskTree || undefined,
+          currentWork: checkpoint.currentWork || undefined,
+          findings: checkpoint.findings || undefined,
+          errorFixes: checkpoint.errorFixes || undefined,
+          designDecisions: checkpoint.designDecisions || undefined,
+        }
+        messages = this.proactiveRebuild(messages, checkpointData, currentTokens)
+        this.rebuildCount++
+        this.lastRebuildReason = "proactive_rebuild"
+        this.lastRebuildAt = new Date().toISOString()
+        return { messages, didRebuild: true, reason: "proactive_rebuild" }
+      }
+    }
+
+    // 超限处理：L1-L3 后仍然超 budget
+    if (currentTokens <= this.config.maxContextTokens) {
+      this.lastRebuildReason = ""
       return { messages, didRebuild: false, reason: "" }
+    }
+
+    if (this.llmConfig && this.turnCount % this.config.llmSummaryInterval === 0) {
+      messages = await this.compactHistory(messages)
+      this.rebuildCount++
+      this.lastRebuildReason = "llm_summary"
+      this.lastRebuildAt = new Date().toISOString()
+      return { messages, didRebuild: true, reason: "llm_summary" }
     }
 
     const checkpoint = this.checkpointProvider.getCheckpoint()
@@ -128,36 +191,298 @@ export class ContextManager {
         activeTask: checkpoint.activeTask,
         recentDecisions: checkpoint.recentDecisions,
         keyFiles: checkpoint.keyFiles,
+        userPreferences: checkpoint.userPreferences || [],
+        intent: checkpoint.intent || undefined,
+        taskTree: checkpoint.taskTree || undefined,
+        currentWork: checkpoint.currentWork || undefined,
+        findings: checkpoint.findings || undefined,
+        errorFixes: checkpoint.errorFixes || undefined,
+        designDecisions: checkpoint.designDecisions || undefined,
       }
-
-      messages = rebuildContextFromCheckpoint(messages, checkpointData, maxTokens)
-
+      messages = rebuildContextFromCheckpoint(messages, checkpointData, this.config.maxContextTokens)
       this.rebuildCount++
       this.lastRebuildReason = "checkpoint_rebuild"
       this.lastRebuildAt = new Date().toISOString()
-
-      return {
-        messages,
-        didRebuild: true,
-        reason: "checkpoint_rebuild",
-      }
+      return { messages, didRebuild: true, reason: "checkpoint_rebuild" }
     }
 
-    messages = truncateToBudget(messages, maxTokens)
+    messages = truncateToBudget(messages, this.config.maxContextTokens)
     this.rebuildCount++
     this.lastRebuildReason = "truncate_only"
     this.lastRebuildAt = new Date().toISOString()
+    return { messages, didRebuild: true, reason: "truncate_only" }
+  }
 
-    return {
-      messages,
-      didRebuild: true,
-      reason: "truncate_only",
+  /** 提前重建：不等满，主动注入 checkpoint 保留上下文 */
+  private proactiveRebuild(
+    messages: LLMMessage[],
+    checkpoint: CheckpointData,
+    currentTokens: number,
+  ): LLMMessage[] {
+    const system = messages.find(m => m.role === "system")
+    const systemContent = typeof system?.content === "string" ? system.content : ""
+    const systemMsg = system ? { ...system } : null
+
+    const sections: string[] = [
+      `[Proactive Checkpoint — context at ${Math.round(currentTokens / this.config.maxContextTokens * 100)}% capacity]`,
+    ]
+    if (checkpoint.intent) sections.push(`Intent: ${checkpoint.intent}`)
+    if (checkpoint.summary) sections.push(`Summary: ${checkpoint.summary}`)
+    if (checkpoint.activeTask) sections.push(`Active: ${checkpoint.activeTask}`)
+    if (checkpoint.currentWork) sections.push(`Current: ${checkpoint.currentWork}`)
+    if (checkpoint.recentDecisions && checkpoint.recentDecisions.length > 0) {
+      sections.push(`Decisions:\n${checkpoint.recentDecisions.slice(-3).map(d => `- ${d}`).join("\n")}`)
+    }
+    if (checkpoint.keyFiles && checkpoint.keyFiles.length > 0) {
+      sections.push(`Files:\n${checkpoint.keyFiles.slice(-5).map(f => `- ${f}`).join("\n")}`)
+    }
+    if (checkpoint.findings && checkpoint.findings.length > 0) {
+      sections.push(`Findings:\n${checkpoint.findings.slice(-3).map(f => `- ${f}`).join("\n")}`)
+    }
+    if (checkpoint.errorFixes && checkpoint.errorFixes.length > 0) {
+      sections.push(`Fixes:\n${checkpoint.errorFixes.slice(-3).map(e => `- ${e}`).join("\n")}`)
+    }
+    if (checkpoint.designDecisions && checkpoint.designDecisions.length > 0) {
+      sections.push(`Design:\n${checkpoint.designDecisions.slice(-3).map(d => `- ${d}`).join("\n")}`)
+    }
+    if (checkpoint.taskTree && checkpoint.taskTree.length > 0) {
+      sections.push(`Tasks:\n${checkpoint.taskTree.slice(-3).map(t => `- ${t}`).join("\n")}`)
+    }
+    if (checkpoint.userPreferences && checkpoint.userPreferences.length > 0) {
+      sections.push(`Prefs:\n${checkpoint.userPreferences.slice(-3).map(p => `- ${p}`).join("\n")}`)
+    }
+
+    const checkpointMsg: LLMMessage = {
+      role: "user",
+      content: sections.filter(Boolean).join("\n\n"),
+    }
+
+    const keepRecentCount = Math.max(this.config.tailTurns * 2, 3)
+    const recentMessages = messages.slice(-keepRecentCount)
+
+    const result = systemMsg
+      ? [systemMsg, checkpointMsg, ...recentMessages]
+      : [checkpointMsg, ...recentMessages]
+
+    return result
+  }
+
+  // ── L3: 大结果持久化 ──────────────────────────────────────
+  private toolResultBudget(messages: LLMMessage[], maxBytes?: number): LLMMessage[] {
+    const limit = maxBytes ?? this.config.toolResultBudgetBytes
+    const last = messages[messages.length - 1]
+    if (!last || last.role !== "user" || typeof last.content === "string") return messages
+
+    const resultParts: Array<{ index: number; part: ToolResultPart; size: number }> = []
+    for (let i = 0; i < last.content.length; i++) {
+      const part = last.content[i]
+      if (part.type === "tool-result") {
+        const output = typeof part.output === "string" ? part.output : part.output?.value || ""
+        resultParts.push({ index: i, part: part as ToolResultPart, size: output.length })
+      }
+    }
+
+    if (resultParts.length === 0) return messages
+    const total = resultParts.reduce((s, r) => s + r.size, 0)
+    if (total <= limit) return messages
+
+    resultParts.sort((a, b) => b.size - a.size)
+    let remaining = total
+    for (const rp of resultParts) {
+      if (remaining <= limit) break
+      if (rp.size <= 30000) continue
+      const output = typeof rp.part.output === "string" ? rp.part.output : rp.part.output?.value || ""
+      const persisted = this.persistOutput(rp.part.toolCallId, output)
+      rp.part.output = persisted
+      remaining = remaining - rp.size + persisted.length
+    }
+
+    return messages
+  }
+
+  private persistOutput(toolCallId: string, output: string): string {
+    if (output.length <= 30000) return output
+    try {
+      const dir = path.join(this.workspace, ".task_outputs", "tool-results")
+      fs.mkdirSync(dir, { recursive: true })
+      const filePath = path.join(dir, `${toolCallId}.txt`)
+      if (!fs.existsSync(filePath)) {
+        fs.writeFileSync(filePath, output, "utf-8")
+      }
+      return `<persisted-output>\nFull: ${filePath}\nPreview:\n${output.slice(0, 2000)}\n</persisted-output>`
+    } catch {
+      return output
     }
   }
 
-  /**
-   * 会话恢复时重建上下文
-   */
+  // ── L1: 消息裁剪（基于 token budget） ──────────────────────
+  private snipCompact(messages: LLMMessage[]): LLMMessage[] {
+    const totalTokens = estimateTokens(messages)
+    const budget = this.config.maxContextTokens + this.config.pruneProtect
+    if (totalTokens <= budget) return messages
+
+    const hasToolUse = (msg: LLMMessage): boolean => {
+      if (msg.role !== "assistant" || typeof msg.content === "string") return false
+      return msg.content.some((p: ContentPart) => p.type === "tool-call")
+    }
+
+    const isToolResult = (msg: LLMMessage): boolean => {
+      if (msg.role !== "user" || typeof msg.content === "string") return false
+      return msg.content.some((p: ContentPart) => p.type === "tool-result")
+    }
+
+    // 保留开头 3 条（system + 开场）
+    const keepHead = 3
+    let headEnd = keepHead
+    if (headEnd > 0 && hasToolUse(messages[headEnd - 1])) {
+      while (headEnd < messages.length && isToolResult(messages[headEnd])) headEnd++
+    }
+
+    // 从后往前计算需要保留多少个 turn（tailTurns 轮对话）
+    const keepRecent = this.config.tailTurns * 2
+    let tailBudget = 0
+    let tailStart = messages.length
+    for (let i = messages.length - 1; i >= headEnd; i--) {
+      tailBudget += estimateTokens([messages[i]])
+      tailStart = i
+      if (tailBudget >= this.config.pruneMinimum) break
+    }
+
+    // 确保不切断 tool_use/tool_result 对
+    if (tailStart > 0 && tailStart < messages.length && isToolResult(messages[tailStart]) && hasToolUse(messages[tailStart - 1])) {
+      tailStart--
+    }
+
+    if (headEnd >= tailStart) return messages
+
+    const snipped = tailStart - headEnd
+    return [
+      ...messages.slice(0, headEnd),
+      { role: "user" as const, content: `[snipped ${snipped} messages — ${estimateTokens(messages.slice(headEnd, tailStart))} tokens]` },
+      ...messages.slice(tailStart),
+    ]
+  }
+
+  // ── L2: 旧结果占位（按 token 预算） ──────────────────────
+  private microCompact(messages: LLMMessage[]): LLMMessage[] {
+    const maxChars = this.config.toolOutputMaxChars
+    let changed = false
+
+    for (const msg of messages) {
+      if (msg.role !== "user" || typeof msg.content === "string") continue
+      for (const part of msg.content) {
+        if (part.type !== "tool-result") continue
+        const tr = part as ToolResultPart
+        const output = typeof tr.output === "string" ? tr.output : tr.output?.value || ""
+        if (output.length > maxChars) {
+          tr.output = output.slice(0, maxChars) + `\n... [truncated ${output.length - maxChars} chars]`
+          changed = true
+        }
+      }
+    }
+
+    return changed ? messages : messages
+  }
+
+  // ── L4: LLM 摘要 ──────────────────────────────────────────
+  private async compactHistory(messages: LLMMessage[]): Promise<LLMMessage[]> {
+    this.writeTranscript(messages)
+    const summary = await this.summarizeHistory(messages)
+    return [{ role: "user" as const, content: `[Compacted]\n\n${summary}` }]
+  }
+
+  private writeTranscript(messages: LLMMessage[]): void {
+    try {
+      const dir = path.join(this.workspace, ".transcripts")
+      fs.mkdirSync(dir, { recursive: true })
+      const filePath = path.join(dir, `transcript_${Date.now()}.jsonl`)
+      const lines = messages.map(m => JSON.stringify(m))
+      fs.writeFileSync(filePath, lines.join("\n"), "utf-8")
+    } catch {
+      // transcript 写入失败不阻塞主流程
+    }
+  }
+
+  private async summarizeHistory(messages: LLMMessage[]): Promise<string> {
+    if (!this.llmConfig) return "(no LLM config for summary)"
+
+    const conversation = messages.map(m => {
+      const content = typeof m.content === "string"
+        ? m.content
+        : m.content.map((p: ContentPart) => {
+            if (p.type === "text") return p.text
+            if (p.type === "tool-call") return `[Tool: ${p.toolName}]`
+            if (p.type === "tool-result") {
+              const out = typeof p.output === "string" ? p.output : p.output?.value || ""
+              return `[Result: ${out.slice(0, 200)}]`
+            }
+            return ""
+          }).join("\n")
+      return `${m.role}: ${content.slice(0, 500)}`
+    }).join("\n").slice(0, 80000)
+
+    const prompt: LLMMessage[] = [
+      {
+        role: "user",
+        content: `Summarize this coding-agent conversation so work can continue.\nPreserve: 1. current goal, 2. key findings/decisions, 3. files read/changed, 4. remaining work, 5. user constraints.\nBe compact but concrete.\n\n${conversation}`,
+      },
+    ]
+
+    try {
+      const client = createLLMClient({
+        provider: this.llmConfig.provider || "openai",
+        model: this.llmConfig.model,
+        apiKey: this.llmConfig.apiKey,
+        apiUrl: this.llmConfig.apiUrl,
+      } as any)
+
+      const stream = client.complete({ messages: prompt })
+      const result = await stream
+      const texts: string[] = []
+      for (const part of result.content as any) {
+        if (part.type === "text") texts.push(part.text)
+      }
+      return texts.join("\n").trim() || "(empty summary)"
+    } catch {
+      return "(summary failed)"
+    }
+  }
+
+  // ── 应急压缩 ──────────────────────────────────────────────
+  async reactiveCompact(messages: LLMMessage[]): Promise<LLMMessage[]> {
+    this.writeTranscript(messages)
+    const tailStart = Math.max(0, messages.length - 5)
+
+    let tailStartAdj = tailStart
+    if (tailStartAdj > 0 && tailStartAdj < messages.length) {
+      const msg = messages[tailStartAdj]
+      if (msg.role === "user" && typeof msg.content !== "string" && msg.content.some((p: ContentPart) => p.type === "tool-result")) {
+        const prev = messages[tailStartAdj - 1]
+        if (prev.role === "assistant" && typeof prev.content !== "string" && prev.content.some((p: ContentPart) => p.type === "tool-call")) {
+          tailStartAdj--
+        }
+      }
+    }
+
+    const summary = await this.summarizeHistory(messages.slice(0, tailStartAdj))
+    return [
+      { role: "user" as const, content: `[Reactive compact]\n\n${summary}` },
+      ...messages.slice(tailStartAdj),
+    ]
+  }
+
+  // ── 向后兼容的 checkAndRebuild ─────────────────────────────
+  async checkAndRebuild(
+    messages: LLMMessage[],
+    sessionID: string,
+  ): Promise<{
+    messages: LLMMessage[]
+    didRebuild: boolean
+    reason: string
+  }> {
+    return this.compactPipeline(messages, sessionID)
+  }
+
   onSessionResume(
     history: LLMMessage[],
     _sessionID: string,

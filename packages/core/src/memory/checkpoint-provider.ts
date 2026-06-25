@@ -1,13 +1,3 @@
-/**
- * Structured Checkpoint Provider — 管理会话状态快照
- * 参考 MiMo-Code 的 checkpoint.md 系统
- *
- * 增强点：
- * 1. LLM 增强摘要 — 每 N 回合用 LLM 生成更精确的摘要
- * 2. 智能提取 — 从对话中提取决策、文件、任务、偏好
- * 3. Token 预算感知 — prefetch 时考虑 token 预算
- */
-
 import { app } from "electron"
 import { join } from "path"
 import fs from "fs"
@@ -27,11 +17,21 @@ interface CheckpointData {
   keyFiles: string[]
   userPreferences: string[]
   contextBudget: number
+  intent: string
+  taskTree: string[]
+  currentWork: string
+  findings: string[]
+  errorFixes: string[]
+  designDecisions: string[]
 }
 
 const MAX_RECENT_DECISIONS = 20
 const MAX_KEY_FILES = 30
 const MAX_USER_PREFERENCES = 15
+const MAX_TASK_TREE = 15
+const MAX_FINDINGS = 15
+const MAX_ERROR_FIXES = 10
+const MAX_DESIGN_DECISIONS = 15
 
 const SUMMARY_SYSTEM_PROMPT = `You are a session summarizer. Given the recent conversation turns, produce a concise checkpoint summary (2-4 sentences) covering:
 1. What the user is trying to accomplish
@@ -53,10 +53,8 @@ export class CheckpointProvider implements MemoryProvider {
   private pendingTurns: Array<{ user: string; assistant: string }> = []
   private llmConfig: { apiKey: string; apiUrl: string; model: string; provider: string } | null = null
 
-  /** 获取 LLM 配置状态 */
   get hasLLMConfig(): boolean { return this.llmConfig !== null }
 
-  /** 设置 FTS Provider 引用（用于联动索引） */
   setFTSProvider(provider: FTSMemoryProvider): void {
     this.ftsProvider = provider
   }
@@ -70,7 +68,6 @@ export class CheckpointProvider implements MemoryProvider {
     this.loadCheckpoint(sessionId, workspace)
   }
 
-  /** 设置 LLM 配置（用于 LLM 增强摘要） */
   setLLMConfig(config: { apiKey: string; apiUrl: string; model: string; provider: string }): void {
     this.llmConfig = config
   }
@@ -78,48 +75,42 @@ export class CheckpointProvider implements MemoryProvider {
   buildSystemPrompt(): string {
     if (!this.data) return ""
     const parts: string[] = []
-    if (this.data.summary) {
-      parts.push(`[Session checkpoint: ${this.data.summary}]`)
-    }
-    if (this.data.activeTask) {
-      parts.push(`[Active task: ${this.data.activeTask}]`)
-    }
+    if (this.data.summary) parts.push(`[Session checkpoint: ${this.data.summary}]`)
+    if (this.data.activeTask) parts.push(`[Active task: ${this.data.activeTask}]`)
+    if (this.data.currentWork) parts.push(`[Current work: ${this.data.currentWork}]`)
     if (this.data.recentDecisions.length > 0) {
-      const recent = this.data.recentDecisions.slice(-5)
-      parts.push(`[Recent decisions: ${recent.join("; ")}]`)
+      parts.push(`[Recent decisions: ${this.data.recentDecisions.slice(-5).join("; ")}]`)
     }
     if (this.data.userPreferences.length > 0) {
-      const prefs = this.data.userPreferences.slice(-5)
-      parts.push(`[User preferences: ${prefs.join("; ")}]`)
+      parts.push(`[User preferences: ${this.data.userPreferences.slice(-5).join("; ")}]`)
+    }
+    if (this.data.findings.length > 0) {
+      parts.push(`[Findings: ${this.data.findings.slice(-3).join("; ")}]`)
     }
     return parts.join("\n")
   }
 
-  /**
-   * 预算注入 — 按 token 预算控制输出
-   * checkpoint 数据按重要性排序：summary > activeTask > decisions > files > preferences
-   */
   async prefetch(query: string, _sessionId: string): Promise<string> {
     if (!this.data) return ""
     const parts: string[] = []
 
-    if (this.data.summary) {
-      parts.push(`Session context: ${this.data.summary}`)
-    }
-    if (this.data.activeTask) {
-      parts.push(`Active task: ${this.data.activeTask}`)
-    }
+    if (this.data.summary) parts.push(`Session context: ${this.data.summary}`)
+    if (this.data.activeTask) parts.push(`Active task: ${this.data.activeTask}`)
+    if (this.data.currentWork) parts.push(`Current work: ${this.data.currentWork}`)
     if (this.data.keyFiles.length > 0) {
-      const recentFiles = this.data.keyFiles.slice(-8)
-      parts.push(`Key files: ${recentFiles.join(", ")}`)
+      parts.push(`Key files: ${this.data.keyFiles.slice(-8).join(", ")}`)
     }
     if (this.data.recentDecisions.length > 0) {
-      const recent = this.data.recentDecisions.slice(-3)
-      parts.push(`Recent decisions: ${recent.join("; ")}`)
+      parts.push(`Recent decisions: ${this.data.recentDecisions.slice(-3).join("; ")}`)
+    }
+    if (this.data.findings.length > 0) {
+      parts.push(`Findings: ${this.data.findings.slice(-3).join("; ")}`)
+    }
+    if (this.data.designDecisions.length > 0) {
+      parts.push(`Design decisions: ${this.data.designDecisions.slice(-3).join("; ")}`)
     }
     if (this.data.userPreferences.length > 0) {
-      const prefs = this.data.userPreferences.slice(-3)
-      parts.push(`User preferences: ${prefs.join("; ")}`)
+      parts.push(`User preferences: ${this.data.userPreferences.slice(-3).join("; ")}`)
     }
 
     if (parts.length === 0) return ""
@@ -134,35 +125,21 @@ export class CheckpointProvider implements MemoryProvider {
   async syncTurn(user: string, assistant: string, sessionId: string): Promise<void> {
     this.turnCount++
     if (!this.data) {
-      this.data = {
-        sessionId,
-        workspace: "",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        summary: "",
-        activeTask: "",
-        recentDecisions: [],
-        keyFiles: [],
-        userPreferences: [],
-        contextBudget: 0,
-      }
+      this.data = this.createEmptyData(sessionId)
     }
 
     this.data.updatedAt = new Date().toISOString()
     this.extractFromTurn(user, assistant)
 
-    // 积累回合用于 LLM 摘要
     this.pendingTurns.push({ user, assistant })
     if (this.pendingTurns.length > 20) {
       this.pendingTurns = this.pendingTurns.slice(-20)
     }
 
-    // 每 N 回合触发 LLM 摘要
     if (this.turnCount % this.llmSummaryInterval === 0 && this.llmConfig) {
       await this.generateLLMSummary()
     }
 
-    // 每 N 回合自动保存 checkpoint
     if (this.turnCount % this.autosaveInterval === 0) {
       this.saveCheckpoint()
     }
@@ -190,9 +167,27 @@ export class CheckpointProvider implements MemoryProvider {
     }
   }
 
-  /**
-   * LLM 增强摘要 — 用 LLM 生成更精确的会话摘要
-   */
+  private createEmptyData(sessionId: string): CheckpointData {
+    return {
+      sessionId,
+      workspace: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      summary: "",
+      activeTask: "",
+      recentDecisions: [],
+      keyFiles: [],
+      userPreferences: [],
+      contextBudget: 0,
+      intent: "",
+      taskTree: [],
+      currentWork: "",
+      findings: [],
+      errorFixes: [],
+      designDecisions: [],
+    }
+  }
+
   private async generateLLMSummary(): Promise<void> {
     if (!this.llmConfig || this.pendingTurns.length === 0) return
 
@@ -250,45 +245,47 @@ export class CheckpointProvider implements MemoryProvider {
   }
 
   private parseCheckpointMd(content: string): CheckpointData {
-    const data: CheckpointData = {
-      sessionId: "",
-      workspace: "",
-      createdAt: "",
-      updatedAt: "",
-      summary: "",
-      activeTask: "",
-      recentDecisions: [],
-      keyFiles: [],
-      userPreferences: [],
-      contextBudget: 0,
-    }
+    const data = this.createEmptyData("")
 
     const lines = content.split("\n")
     let currentSection = ""
 
     for (const line of lines) {
-      if (line.startsWith("## Summary")) {
-        currentSection = "summary"
-      } else if (line.startsWith("## Active Task")) {
-        currentSection = "task"
-      } else if (line.startsWith("## Recent Decisions")) {
-        currentSection = "decisions"
-      } else if (line.startsWith("## Key Files")) {
-        currentSection = "files"
-      } else if (line.startsWith("## User Preferences")) {
-        currentSection = "preferences"
-      } else if (line.startsWith("## Metadata")) {
-        currentSection = "metadata"
-      } else if (currentSection === "summary" && line.trim() && !line.startsWith("#")) {
+      if (line.startsWith("## Summary")) { currentSection = "summary"; continue }
+      if (line.startsWith("## Active Task")) { currentSection = "task"; continue }
+      if (line.startsWith("## Current Work")) { currentSection = "work"; continue }
+      if (line.startsWith("## Intent")) { currentSection = "intent"; continue }
+      if (line.startsWith("## Recent Decisions")) { currentSection = "decisions"; continue }
+      if (line.startsWith("## Key Files")) { currentSection = "files"; continue }
+      if (line.startsWith("## User Preferences")) { currentSection = "preferences"; continue }
+      if (line.startsWith("## Task Tree")) { currentSection = "tasktree"; continue }
+      if (line.startsWith("## Findings")) { currentSection = "findings"; continue }
+      if (line.startsWith("## Error Fixes")) { currentSection = "errors"; continue }
+      if (line.startsWith("## Design Decisions")) { currentSection = "design"; continue }
+      if (line.startsWith("## Metadata")) { currentSection = "metadata"; continue }
+
+      if (currentSection === "summary" && line.trim() && !line.startsWith("#")) {
         data.summary += (data.summary ? "\n" : "") + line.trim()
       } else if (currentSection === "task" && line.trim() && !line.startsWith("#")) {
         data.activeTask += (data.activeTask ? "\n" : "") + line.trim()
+      } else if (currentSection === "work" && line.trim() && !line.startsWith("#")) {
+        data.currentWork += (data.currentWork ? "\n" : "") + line.trim()
+      } else if (currentSection === "intent" && line.trim() && !line.startsWith("#")) {
+        data.intent += (data.intent ? "\n" : "") + line.trim()
       } else if (currentSection === "decisions" && line.trim().startsWith("- ")) {
         data.recentDecisions.push(line.trim().slice(2))
       } else if (currentSection === "files" && line.trim().startsWith("- ")) {
         data.keyFiles.push(line.trim().slice(2))
       } else if (currentSection === "preferences" && line.trim().startsWith("- ")) {
         data.userPreferences.push(line.trim().slice(2))
+      } else if (currentSection === "tasktree" && line.trim().startsWith("- ")) {
+        data.taskTree.push(line.trim().slice(2))
+      } else if (currentSection === "findings" && line.trim().startsWith("- ")) {
+        data.findings.push(line.trim().slice(2))
+      } else if (currentSection === "errors" && line.trim().startsWith("- ")) {
+        data.errorFixes.push(line.trim().slice(2))
+      } else if (currentSection === "design" && line.trim().startsWith("- ")) {
+        data.designDecisions.push(line.trim().slice(2))
       } else if (currentSection === "metadata") {
         if (line.includes("created:")) data.createdAt = line.split(":").slice(1).join(":").trim()
         if (line.includes("updated:")) data.updatedAt = line.split(":").slice(1).join(":").trim()
@@ -305,17 +302,35 @@ export class CheckpointProvider implements MemoryProvider {
       "## Summary",
       data.summary || "(No summary yet)",
       "",
+      "## Intent",
+      data.intent || "(No intent set)",
+      "",
       "## Active Task",
       data.activeTask || "(No active task)",
       "",
+      "## Current Work",
+      data.currentWork || "(Not currently working on anything)",
+      "",
+      "## Task Tree",
+      ...(data.taskTree.length > 0 ? data.taskTree.slice(-MAX_TASK_TREE).map((t) => `- ${t}`) : ["- (No tasks)"]),
+      "",
       "## Recent Decisions",
-      ...data.recentDecisions.slice(-MAX_RECENT_DECISIONS).map((d) => `- ${d}`),
+      ...(data.recentDecisions.length > 0 ? data.recentDecisions.slice(-MAX_RECENT_DECISIONS).map((d) => `- ${d}`) : ["- (No decisions recorded)"]),
       "",
       "## Key Files",
-      ...data.keyFiles.slice(-MAX_KEY_FILES).map((f) => `- ${f}`),
+      ...(data.keyFiles.length > 0 ? data.keyFiles.slice(-MAX_KEY_FILES).map((f) => `- ${f}`) : ["- (No files recorded)"]),
+      "",
+      "## Findings",
+      ...(data.findings.length > 0 ? data.findings.slice(-MAX_FINDINGS).map((f) => `- ${f}`) : ["- (No findings)"]),
+      "",
+      "## Error Fixes",
+      ...(data.errorFixes.length > 0 ? data.errorFixes.slice(-MAX_ERROR_FIXES).map((e) => `- ${e}`) : ["- (No errors recorded)"]),
+      "",
+      "## Design Decisions",
+      ...(data.designDecisions.length > 0 ? data.designDecisions.slice(-MAX_DESIGN_DECISIONS).map((d) => `- ${d}`) : ["- (No design decisions)"]),
       "",
       "## User Preferences",
-      ...data.userPreferences.slice(-MAX_USER_PREFERENCES).map((p) => `- ${p}`),
+      ...(data.userPreferences.length > 0 ? data.userPreferences.slice(-MAX_USER_PREFERENCES).map((p) => `- ${p}`) : ["- (No preferences)"]),
       "",
       "## Metadata",
       `- created: ${data.createdAt}`,
@@ -336,9 +351,9 @@ export class CheckpointProvider implements MemoryProvider {
     for (const pattern of decisionPatterns) {
       let match
       while ((match = pattern.exec(combined)) !== null) {
-        const decision = match[1].trim().slice(0, 150)
-        if (decision.length > 5 && !this.data.recentDecisions.includes(decision)) {
-          this.data.recentDecisions.push(decision)
+        const d = match[1].trim().slice(0, 150)
+        if (d.length > 5 && !this.data.recentDecisions.includes(d)) {
+          this.data.recentDecisions.push(d)
         }
       }
     }
@@ -346,7 +361,25 @@ export class CheckpointProvider implements MemoryProvider {
       this.data.recentDecisions = this.data.recentDecisions.slice(-MAX_RECENT_DECISIONS)
     }
 
-    // 提取文件路径（支持反引号和引号包裹）
+    // 提取设计决策
+    const designPatterns = [
+      /(?:采用|选择|使用)\s*(.+?)(?:技术|框架|库|方案|架构)[。\n]/g,
+      /(?:choose|use|adopt|select|go with)\s*(.+?)(?:framework|library|approach|pattern)[.\n]/gi,
+    ]
+    for (const pattern of designPatterns) {
+      let match
+      while ((match = pattern.exec(combined)) !== null) {
+        const d = match[0].trim().slice(0, 120)
+        if (d.length > 5 && !this.data.designDecisions.includes(d)) {
+          this.data.designDecisions.push(d)
+        }
+      }
+    }
+    if (this.data.designDecisions.length > MAX_DESIGN_DECISIONS) {
+      this.data.designDecisions = this.data.designDecisions.slice(-MAX_DESIGN_DECISIONS)
+    }
+
+    // 提取文件路径
     const filePatterns = [
       /[`]([\w/\\\-_.]+\.[a-z]+)[`]/g,
       /["']([\w/\\\-_.]+\.[a-z]+)["']/g,
@@ -354,10 +387,10 @@ export class CheckpointProvider implements MemoryProvider {
     for (const pattern of filePatterns) {
       let match
       while ((match = pattern.exec(combined)) !== null) {
-        const path = match[1]
-        if (path.includes("node_modules") || path.includes(".git") || path.includes("dist")) continue
-        if (!this.data.keyFiles.includes(path)) {
-          this.data.keyFiles.push(path)
+        const p = match[1]
+        if (p.includes("node_modules") || p.includes(".git") || p.includes("dist")) continue
+        if (!this.data.keyFiles.includes(p)) {
+          this.data.keyFiles.push(p)
         }
       }
     }
@@ -373,9 +406,9 @@ export class CheckpointProvider implements MemoryProvider {
     for (const pattern of prefPatterns) {
       let match
       while ((match = pattern.exec(user)) !== null) {
-        const pref = match[0].trim().slice(0, 100)
-        if (pref.length > 5 && !this.data.userPreferences.includes(pref)) {
-          this.data.userPreferences.push(pref)
+        const p = match[0].trim().slice(0, 100)
+        if (p.length > 5 && !this.data.userPreferences.includes(p)) {
+          this.data.userPreferences.push(p)
         }
       }
     }
@@ -383,7 +416,7 @@ export class CheckpointProvider implements MemoryProvider {
       this.data.userPreferences = this.data.userPreferences.slice(-MAX_USER_PREFERENCES)
     }
 
-    // 提取任务描述
+    // 提取任务
     const taskPatterns = [
       /(?:帮我|请|现在需要|接下来要?|let's|please|I need to|I want to)\s*(.{10,80})/i,
     ]
@@ -393,6 +426,76 @@ export class CheckpointProvider implements MemoryProvider {
         this.data.activeTask = match[1].trim()
         break
       }
+    }
+
+    // 提取意图（仅在 session 开始时）
+    if (!this.data.intent) {
+      const intentPatterns = [
+        /(?:我想|我要|我的目标|目标是|目的|goal|objective|aim)\s*(.{10,100})/i,
+        /(?:这个项目|本次任务|本次目标是?)\s*(.{10,100})/i,
+      ]
+      for (const pattern of intentPatterns) {
+        const match = user.match(pattern)
+        if (match) {
+          this.data.intent = match[1].trim().slice(0, 200)
+          break
+        }
+      }
+    }
+
+    // 提取发现
+    const findingPatterns = [
+      /(?:发现|观察到|注意到|发现是|原因是|because|found that|noticed|turns out)\s*(.{10,120})/gi,
+    ]
+    for (const pattern of findingPatterns) {
+      let match
+      while ((match = pattern.exec(combined)) !== null) {
+        const f = match[1].trim().slice(0, 150)
+        if (f.length > 5 && !this.data.findings.includes(f)) {
+          this.data.findings.push(f)
+        }
+      }
+    }
+    if (this.data.findings.length > MAX_FINDINGS) {
+      this.data.findings = this.data.findings.slice(-MAX_FINDINGS)
+    }
+
+    // 提取错误修复
+    const errorPatterns = [
+      /(?:错误|修复|bug|fix|error|issue|problem|was getting|encountered)\s*(.{10,100})/gi,
+      /(?:解决了|修复了|把|改成)\s*(.{10,80})/gi,
+    ]
+    for (const pattern of errorPatterns) {
+      let match
+      while ((match = pattern.exec(combined)) !== null) {
+        const e = match[0].trim().slice(0, 120)
+        if (e.length > 5 && !this.data.errorFixes.includes(e)) {
+          this.data.errorFixes.push(e)
+        }
+      }
+    }
+    if (this.data.errorFixes.length > MAX_ERROR_FIXES) {
+      this.data.errorFixes = this.data.errorFixes.slice(-MAX_ERROR_FIXES)
+    }
+
+    // 提取当前工作
+    const workPattern = /(?:正在|现在(?:在)?|currently|right now|working on)\s*(.{10,80})/i
+    const workMatch = user.match(workPattern) || assistant.match(workPattern)
+    if (workMatch) {
+      this.data.currentWork = workMatch[1].trim().slice(0, 150)
+    }
+
+    // 更新任务树（检测新的独立任务）
+    const newTaskPattern = /(?:下一步|接下来|然后|还要做|still need to|next|then|after that)\s*(.{10,80})/gi
+    let taskMatch
+    while ((taskMatch = newTaskPattern.exec(combined)) !== null) {
+      const task = taskMatch[1].trim().slice(0, 100)
+      if (task.length > 5 && !this.data.taskTree.includes(task)) {
+        this.data.taskTree.push(task)
+      }
+    }
+    if (this.data.taskTree.length > MAX_TASK_TREE) {
+      this.data.taskTree = this.data.taskTree.slice(-MAX_TASK_TREE)
     }
   }
 }

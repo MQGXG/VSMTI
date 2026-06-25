@@ -3,7 +3,8 @@ import type { ToolContext, ToolResult } from "./tool"
 import type { AgentEvent } from "./types"
 import { IterationBudget } from "./iteration-budget"
 import { createLLMClient, type LLMMessage } from "./llm-sdk"
-import { truncateToBudget, estimateTokens } from "./message-utils"
+import { estimateTokens } from "./message-utils"
+import { pluginHooks } from "./plugin-hooks"
 import { PermissionSet, type PermissionRule } from "./permission"
 import { MemoryManager } from "./memory/manager"
 import { BuiltinMemoryProvider } from "./memory/builtin-provider"
@@ -175,6 +176,12 @@ export class Agent {
       this.memoryManager.addProvider(ftsProvider)
     }
     this.checkpointProvider.setFTSProvider(ftsProvider)
+
+    // 注册 pre_llm hook：每轮 LLM 调用前注入相关记忆
+    pluginHooks.on("pre_llm", async (messages: LLMMessage[], config: AgentConfig) => {
+      if (!config.sessionID || !config.workspace) return messages
+      return this.contextManager.injectMemories(messages, config.sessionID)
+    })
   }
 
   getGoalJudge(): GoalJudge { return this.goalJudge }
@@ -337,16 +344,18 @@ export class Agent {
         return
       }
 
-      const maxTokens = config.maxContextTokens || 8000
       const tokensBefore = estimateTokens(messages)
 
-      const { messages: rebuiltMessages, didRebuild, reason } = this.contextManager.checkAndRebuild(messages, config.sessionID)
+      const { messages: rebuiltMessages, didRebuild, reason } = await this.contextManager.checkAndRebuild(messages, config.sessionID)
       if (didRebuild) {
         messages = rebuiltMessages
         const tokensAfter = estimateTokens(messages)
 
-        if (reason === "checkpoint_rebuild") {
-          yield { type: "thinking", text: "🔄 Context reconstructed from checkpoint" }
+        if (reason === "checkpoint_rebuild" || reason === "llm_summary" || reason === "proactive_rebuild") {
+          const text = reason === "checkpoint_rebuild" ? "Context reconstructed from checkpoint"
+            : reason === "proactive_rebuild" ? "Proactive checkpoint — preserving conversation context"
+            : "Context compacted via summary"
+          yield { type: "thinking" as const, text: `🔄 ${text}` }
         }
 
         yield {
@@ -355,33 +364,71 @@ export class Agent {
           tokensBefore,
           tokensAfter,
         } as AgentEvent
-      } else {
-        messages = truncateToBudget(messages, maxTokens)
       }
 
-      const stream = client.stream({ messages, tools: toolSet })
+      messages = await pluginHooks.emitWaterfall("pre_llm", messages, config)
+
       let currentText = ""
       let eventCount = 0
       const pendingToolCalls: Array<{ id: string; name: string; arguments: string }> = []
 
-      for await (const event of stream) {
-        eventCount++
-        if (event.type === "delta") {
-          currentText += event.delta
-          yield { type: "content", text: event.delta }
-        } else if (event.type === "tool_call" && event.toolCall) {
-          pendingToolCalls.push({
-            id: event.toolCall.id,
-            name: event.toolCall.name,
-            arguments: event.toolCall.arguments,
-          })
-        } else if (event.type === "error") {
-          yield { type: "error", message: event.error?.message || "LLM stream error" }
+      // ── LLM 调用 + 3 种错误恢复 ──
+      let llmError: Error | null = null
+      let retryCount = 0
+      const maxRetries = 5
+      const originalModel = config.model
+
+      do {
+        llmError = null
+        try {
+          const stream = client.stream({ messages, tools: toolSet })
+          for await (const event of stream) {
+            eventCount++
+            if (event.type === "delta") {
+              currentText += event.delta
+              yield { type: "content", text: event.delta }
+            } else if (event.type === "tool_call" && event.toolCall) {
+              pendingToolCalls.push({
+                id: event.toolCall.id,
+                name: event.toolCall.name,
+                arguments: event.toolCall.arguments,
+              })
+            } else if (event.type === "error") {
+              throw new Error(event.error?.message || "LLM stream error")
+            } else if (event.type === "done") {
+              break
+            }
+          }
+        } catch (err) {
+          llmError = err instanceof Error ? err : new Error(String(err))
+          const msg = llmError.message.toLowerCase()
+
+          // 路径 1: prompt_too_long → 应急压缩 + 重试
+          if (msg.includes("prompt_too_long") || msg.includes("context_length_exceeded") || msg.includes("too many tokens")) {
+            yield { type: "thinking" as const, text: "⚠️ Context too long, performing emergency compaction..." }
+            const compacted = await this.contextManager.reactiveCompact(messages)
+            messages = compacted
+            continue
+          }
+
+          // 路径 2: 429/529 → 指数退避
+          if (msg.includes("429") || msg.includes("rate limit") || msg.includes("529") || msg.includes("overloaded")) {
+            if (retryCount >= maxRetries) {
+              yield { type: "error" as const, message: `LLM rate limited after ${maxRetries} retries: ${llmError.message}` }
+              return
+            }
+            const delay = Math.min(1000 * Math.pow(2, retryCount) + Math.random() * 1000, 32000)
+            retryCount++
+            yield { type: "thinking" as const, text: `⏳ Rate limited, retrying in ${Math.round(delay / 1000)}s (${retryCount}/${maxRetries})...` }
+            await new Promise(r => setTimeout(r, delay))
+            continue
+          }
+
+          // 路径 3: 其他错误 → 输出后退出
+          yield { type: "error" as const, message: llmError.message }
           return
-        } else if (event.type === "done") {
-          break
         }
-      }
+      } while (llmError !== null)
 
       const toolCallsArray = pendingToolCalls
         .filter((tc) => tc.id && tc.name)
@@ -448,6 +495,11 @@ export class Agent {
         }
 
         if (!this.goalJudge.getActiveGoal()) {
+          const stopMessage = await pluginHooks.triggerUntil("stop", messages, config)
+          if (stopMessage) {
+            messages.push({ role: "user", content: String(stopMessage) })
+            continue
+          }
           yield { type: "finish", reason: "stop" }
         }
         return
@@ -472,6 +524,10 @@ export class Agent {
       const results = new Map<string, ToolResult>()
 
       for (const ev of evaluations) {
+        if (ev.hardDenied) {
+          results.set(ev.toolCall.id, { success: false, error: ev.hardDenied })
+          continue
+        }
         if (ev.needsApproval) {
           const resources = extractResources(ev.args)
           const cached = this.approvalStore.checkAll(ev.permissionAction, resources)
@@ -504,17 +560,31 @@ export class Agent {
         approvedCalls.push({ id: ev.toolCall.id, type: "function" as const, function: { name: ev.toolCall.name, arguments: JSON.stringify(ev.args) } })
       }
 
+      // pre_tool_use hook: 可额外阻止工具执行
+      const hookBlocked: string[] = []
+      for (const call of toolCallsArray) {
+        const blocked = await pluginHooks.triggerUntil("pre_tool_use", call, config)
+        if (blocked) {
+          hookBlocked.push(call.id)
+          results.set(call.id, { success: false, error: String(blocked) })
+        }
+      }
+
       for (const call of approvedCalls) {
+        if (hookBlocked.includes(call.id)) continue
         yield { type: "tool_start", id: call.id, name: call.function.name, args: JSON.parse(call.function.arguments) }
       }
 
-      const orchestratedCalls = approvedCalls.map((c) => ({
-        id: c.id,
-        name: c.function.name,
-        args: JSON.parse(c.function.arguments),
-      }))
+      const orchestratedCalls = approvedCalls
+        .filter((c) => !hookBlocked.includes(c.id))
+        .map((c) => ({
+          id: c.id,
+          name: c.function.name,
+          args: JSON.parse(c.function.arguments),
+        }))
 
       const orchestratedResults = await this.orchestrator.execute(orchestratedCalls, ctx)
+      await pluginHooks.emitAsync("post_tool_use", orchestratedCalls, orchestratedResults)
       for (const [id, result] of orchestratedResults) {
         results.set(id, result)
       }
@@ -555,6 +625,8 @@ export class Agent {
       }
 
       await this.contextManager.syncTurn(userMessage, currentText, config.sessionID)
+
+      await this.memoryManager.promoteMemories(config.sessionID)
 
       this.dreamDistillManager.recordTurn(userMessage, currentText)
 

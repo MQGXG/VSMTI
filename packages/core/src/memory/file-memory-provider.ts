@@ -90,6 +90,19 @@ export class FileMemoryProvider implements MemoryProvider {
     } catch { /* 静默 */ }
   }
 
+  /** 批量接收提升的事实（来自 session 级记忆） */
+  acceptPromotedFacts(facts: string[]): void {
+    if (facts.length === 0) return
+    let changed = false
+    for (const f of facts) {
+      if (!this.memories.includes(f)) {
+        this.memories.push(f)
+        changed = true
+      }
+    }
+    if (changed) this.saveMemories()
+  }
+
   private extractFacts(user: string, assistant: string): string[] {
     const facts: string[] = []
     const combined = `${user}\n${assistant}`

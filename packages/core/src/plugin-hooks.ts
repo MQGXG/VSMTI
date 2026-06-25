@@ -3,7 +3,8 @@
  * 允许外部模块在 Agent 生命周期关键点注入行为
  */
 
-type HookHandler = (...args: any[]) => void | Promise<void>
+// 返回值 `undefined` 表示"继续"，`非 undefined` 表示"阻断/传递"
+type HookHandler = (...args: any[]) => any | Promise<any>
 
 export class PluginHooks {
   private hooks = new Map<string, Set<HookHandler>>()
@@ -40,6 +41,33 @@ export class PluginHooks {
     for (const handler of handlers) {
       try { await handler(...args) } catch { /* 单个失败不影响后续 */ }
     }
+  }
+
+  /** 触发串行钩子直到有一个返回非 null（阻断模式，如 PreToolUse 权限） */
+  async triggerUntil(event: string, ...args: any[]): Promise<any> {
+    const handlers = this.hooks.get(event)
+    if (!handlers) return null
+    for (const handler of handlers) {
+      try {
+        const result = await handler(...args)
+        if (result !== null && result !== undefined) return result
+      } catch { /* 单个失败不影响后续 */ }
+    }
+    return null
+  }
+
+  /** 触发流水线钩子（waterfall），每个 handler 可以修改并传递值给下一个 */
+  async emitWaterfall(event: string, initial: any, ...args: any[]): Promise<any> {
+    let result = initial
+    const handlers = this.hooks.get(event)
+    if (!handlers) return result
+    for (const handler of handlers) {
+      try {
+        const r = await handler(result, ...args)
+        if (r !== undefined) result = r
+      } catch { /* 单个失败不影响后续 */ }
+    }
+    return result
   }
 
   /** 移除所有钩子 */

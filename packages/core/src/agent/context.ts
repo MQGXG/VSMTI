@@ -13,6 +13,10 @@ export interface AgentRunConfig {
   currentFile?: string
 }
 
+let _cachedCodeSuffix = ""
+let _cachedWs = ""
+let _cachedFile = ""
+
 export function buildToolContext(config: AgentRunConfig): ToolContext {
   return {
     sessionID: config.sessionID,
@@ -29,8 +33,14 @@ export async function buildSystemMessage(config: AgentRunConfig, memoryPrompt?: 
   const base = config.systemPrompt || defaultSystem || "You are a helpful AI assistant."
   const parts = [base]
   if (memoryPrompt) parts.push(memoryPrompt)
-  const codeSuffix = await getCodeContextSuffix(config.workspace, config.currentFile)
-  if (codeSuffix) parts.push(codeSuffix)
+
+  if (config.workspace !== _cachedWs || config.currentFile !== _cachedFile) {
+    _cachedCodeSuffix = await getCodeContextSuffix(config.workspace, config.currentFile)
+    _cachedWs = config.workspace
+    _cachedFile = config.currentFile || ""
+  }
+  if (_cachedCodeSuffix) parts.push(_cachedCodeSuffix)
+
   return parts.join("\n\n")
 }
 

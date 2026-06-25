@@ -20,6 +20,7 @@ import { teamTool } from "./tools/team-tool"
 import { lspDefinitionTool, lspReferencesTool, lspHoverTool } from "./tools/lsp-tool"
 import { gitStatusTool, gitDiffTool, gitLogTool, gitCommitTool } from "./tools/git"
 import { createDocxTool } from "./tools/create-docx"
+import { searchHistoryTool } from "./tools/search-history"
 import type { MCPServerConfig } from "./mcp/index"
 
 export function createDefaultRegistry(): ToolRegistry {
@@ -54,6 +55,7 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(gitLogTool)
   registry.register(gitCommitTool)
   registry.register(createDocxTool)
+  registry.register(searchHistoryTool)
   return registry
 }
 

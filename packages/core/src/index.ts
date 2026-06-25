@@ -9,7 +9,8 @@ export type { AgentEvent } from "./types"
 export { ToolRegistry, type ModelFilter } from "./registry"
 export { make, withPermission, settle } from "./tool"
 export { PermissionSet, defaultPermissions, permissionsForMode } from "./permission"
-export { type AgentMode, getModeConfig, getAllModes, modeToPermissionSet } from "./modes"
+export { type AgentMode, getModeConfig, getAllModes, modeToPermissionSet, loadCustomAgents, registerAgent, registerAgentFromJson, getModeToolAllowlist } from "./modes"
+export { type AgentProfile, AgentProfileRegistry, getGlobalAgentDir, getProjectAgentDir } from "./agent-profile"
 export { ContextManager, type ContextConfig, type ContextStats } from "./context-manager"
 export { GoalJudge, type Goal, type GoalConfig, type GoalEvaluation } from "./goal-judge"
 export { createLLMClient } from "./llm-sdk"
@@ -45,6 +46,8 @@ export { cronTool } from "./tools/cron-tool"
 export { taskTool } from "./tools/task-tool"
 // 委派任务工具
 export { delegateTaskTool } from "./tools/delegate-task"
+// 历史搜索工具
+export { searchHistoryTool } from "./tools/search-history"
 // 图片生成工具
 export { imageGenTool } from "./tools/image-gen"
 // Worktree 工具

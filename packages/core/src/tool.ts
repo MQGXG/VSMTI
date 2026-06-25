@@ -18,6 +18,7 @@ export interface ToolContext {
   assistantMessageID: string
   toolCallID: string
   shell?: string
+  signal?: AbortSignal
 }
 
 export interface ToolResult {

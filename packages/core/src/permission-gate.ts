@@ -1,5 +1,6 @@
 import { ToolCall } from "./tool"
-import type { PermissionSet } from "./permission"
+import type { PermissionSet, PermissionRule } from "./permission"
+import { checkHardDeny } from "./permission"
 import type { ToolRegistry } from "./registry"
 
 export interface PermissionRequest {
@@ -25,11 +26,23 @@ export function extractResources(args: Record<string, unknown>): string[] {
   return resources
 }
 
+/** 从工具调用参数中提取 resource 字符串（用于命令级权限匹配） */
+export function extractActionResource(toolName: string, args: Record<string, unknown>): string | undefined {
+  if (toolName === "bash" && typeof args.command === "string") return args.command
+  if ((toolName === "write_file" || toolName === "edit_file" || toolName === "read_file") && typeof args.path === "string") return args.path
+  if (toolName === "glob" && typeof args.pattern === "string") return args.pattern
+  if (toolName === "grep" && typeof args.pattern === "string") return args.pattern
+  if (toolName === "web_search" && typeof args.query === "string") return args.query
+  if (toolName === "web_fetch" && typeof args.url === "string") return args.url
+  return undefined
+}
+
 export interface ApprovalResult {
   toolCall: ToolCall
   args: Record<string, unknown>
   permissionAction: string
   needsApproval: boolean
+  hardDenied?: string
 }
 
 export function evaluateToolCalls(
@@ -42,7 +55,24 @@ export function evaluateToolCalls(
     try { args = JSON.parse(call.function.arguments) } catch {}
     const def = registry.get(call.function.name)
     const permissionAction = def?.permission || call.function.name
-    const needsApproval = permissions?.needsApproval(call.function.name, def?.permission) ?? false
+    const resource = extractActionResource(call.function.name, args)
+
+    // Gate 1: hard deny — 直接拒绝，不弹窗
+    if (call.function.name === "bash" && typeof args.command === "string") {
+      const hardDenied = checkHardDeny(args.command)
+      if (hardDenied) {
+        return {
+          toolCall: { id: call.id, name: call.function.name, input: args },
+          args,
+          permissionAction,
+          needsApproval: false,
+          hardDenied,
+        }
+      }
+    }
+
+    // Gate 2+3: rule matching + user approval
+    const needsApproval = permissions?.needsApproval(permissionAction, resource) ?? false
 
     return {
       toolCall: { id: call.id, name: call.function.name, input: args },

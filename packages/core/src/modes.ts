@@ -1,98 +1,50 @@
 import { PermissionSet, type PermissionRule } from "./permission"
+import type { AgentProfile } from "./agent-profile"
+import { createDefaultRegistry, getGlobalAgentDir, getProjectAgentDir } from "./agent-profile"
 
-export type AgentMode = "assistant" | "expert" | "action" | "safe" | "plan"
+export type AgentMode = string
 
-export interface ModeConfig {
-  id: AgentMode
-  label: string
-  description: string
-  maxIterations: number
-  systemPromptSuffix: string
-  /** 该模式对应的权限规则（叠加在默认权限之上） */
-  permissionRules: PermissionRule[]
-  /** 工具允许列表：如果设置，LLM 只能看到这些工具 */
-  toolAllowlist?: string[]
+const _registry = createDefaultRegistry()
+
+/** 初始化时从目录加载自定义 Agent 配置 */
+export function loadCustomAgents(workspace?: string): void {
+  const globalDir = getGlobalAgentDir()
+  _registry.loadFromDir(globalDir)
+  if (workspace) {
+    const projectDir = getProjectAgentDir(workspace)
+    _registry.loadFromDir(projectDir)
+  }
 }
 
-const modeConfigs: Record<AgentMode, ModeConfig> = {
-  assistant: {
-    id: "assistant",
-    label: "助手",
-    description: "日常问答、写作、分析",
-    maxIterations: 10,
-    systemPromptSuffix: "You are a helpful assistant. Use tools to provide accurate, up-to-date answers.",
-    permissionRules: [
-      { action: "bash", resource: "*", effect: "deny" },
-      { action: "code_exec", resource: "*", effect: "deny" },
-    ],
-  },
-  expert: {
-    id: "expert",
-    label: "专家",
-    description: "深度研究、数据分析",
-    maxIterations: 25,
-    systemPromptSuffix: "You are a domain expert. Use tools for research, analysis, and verification.",
-    permissionRules: [
-      { action: "bash", resource: "*", effect: "deny" },
-    ],
-  },
-  action: {
-    id: "action",
-    label: "执行",
-    description: "自动化任务、批量处理",
-    maxIterations: 50,
-    systemPromptSuffix: "You are an automation agent. Execute tasks end-to-end using all available tools.",
-    permissionRules: [],
-  },
-  safe: {
-    id: "safe",
-    label: "安全",
-    description: "只读探索",
-    maxIterations: 5,
-    systemPromptSuffix: "You are in read-only mode. Explore and analyze without modifying anything.",
-    permissionRules: [
-      { action: "write_file", resource: "*", effect: "deny" },
-      { action: "edit_file", resource: "*", effect: "deny" },
-      { action: "bash", resource: "*", effect: "deny" },
-      { action: "code_exec", resource: "*", effect: "deny" },
-    ],
-    toolAllowlist: ["read_file", "list_files", "grep", "glob", "web_search", "web_browse", "data_analysis"],
-  },
-  plan: {
-    id: "plan",
-    label: "规划",
-    description: "代码分析、方案设计",
-    maxIterations: 15,
-    systemPromptSuffix: "You are a planning agent. Analyze code and design implementation plans.",
-    permissionRules: [
-      { action: "write_file", resource: "*", effect: "deny" },
-      { action: "edit_file", resource: "*", effect: "deny" },
-      { action: "bash", resource: "*", effect: "deny" },
-      { action: "code_exec", resource: "*", effect: "deny" },
-      { action: "cron_tool", resource: "*", effect: "deny" },
-      { action: "worktree_tool", resource: "*", effect: "deny" },
-      { action: "image_gen", resource: "*", effect: "deny" },
-    ],
-    toolAllowlist: ["read_file", "list_files", "grep", "glob", "web_search", "web_browse", "data_analysis", "lsp_definition", "lsp_references", "lsp_hover"],
-  },
+/** 注册自定义 Agent（运行时动态注册） */
+export function registerAgent(profile: AgentProfile): void {
+  _registry.registerBuiltin(profile)
 }
 
-export function getModeConfig(mode: AgentMode): ModeConfig {
-  return modeConfigs[mode]
+/** 注册自定义 Agent（从 JSON 字符串） */
+export function registerAgentFromJson(jsonStr: string): AgentProfile | null {
+  return _registry.registerFromJson(jsonStr)
 }
 
-export function getAllModes(): ModeConfig[] {
-  return Object.values(modeConfigs)
+export function getModeConfig(mode: string): AgentProfile | undefined {
+  return _registry.get(mode)
 }
 
-export function modeSystemPrompt(mode: AgentMode, basePrompt: string): string {
-  const config = getModeConfig(mode)
+export function getAllModes(): AgentProfile[] {
+  return _registry.getAll()
+}
+
+export function modeSystemPrompt(mode: string, basePrompt: string): string {
+  const config = _registry.get(mode)
+  if (!config) return basePrompt
   return `${basePrompt}\n\n[MODE: ${config.label}]\n${config.systemPromptSuffix}`
 }
 
-/** 将模式配置转为 PermissionSet（叠加在 base 之上） */
-export function modeToPermissionSet(mode: AgentMode, base: PermissionSet): PermissionSet {
-  const config = getModeConfig(mode)
-  const allRules = [...config.permissionRules, ...base.getAll()]
-  return new PermissionSet(allRules)
+export function modeToPermissionSet(mode: string, base: PermissionSet): PermissionSet {
+  return _registry.toPermissionSet(mode, base)
+}
+
+/** 获取工具的 allowlist */
+export function getModeToolAllowlist(mode: string): string[] | undefined {
+  return _registry.getToolAllowlist(mode)
 }

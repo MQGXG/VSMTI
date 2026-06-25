@@ -15,14 +15,16 @@ interface RunResult {
   stdoutTruncated: boolean
   stderrTruncated: boolean
   timedOut: boolean
+  signal?: boolean
 }
 
-function runCommand(shell: string, args: string[], timeoutMs: number): Promise<RunResult> {
+function runCommand(shell: string, args: string[], timeoutMs: number, signal?: AbortSignal): Promise<RunResult> {
   return new Promise((resolve) => {
     const child = spawn(shell, args, {
       shell: false,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
+      signal,
     })
 
     let stdout = ""
@@ -53,8 +55,16 @@ function runCommand(shell: string, args: string[], timeoutMs: number): Promise<R
       }
     })
 
+    const onAbort = () => {
+      clearTimeout(timeout)
+      child.kill("SIGKILL")
+      resolve({ stdout, stderr, exitCode: null, stdoutTruncated, stderrTruncated, timedOut: false, signal: true })
+    }
+    signal?.addEventListener("abort", onAbort, { once: true })
+
     child.on("error", (err: any) => {
       clearTimeout(timeout)
+      signal?.removeEventListener("abort", onAbort)
       const errorMsg = err.code === "ENOENT"
         ? `Shell not found: "${shell}". Make sure it is installed and in your PATH.`
         : `Failed to start shell: ${err.message}`
@@ -63,6 +73,7 @@ function runCommand(shell: string, args: string[], timeoutMs: number): Promise<R
 
     child.on("close", (code) => {
       clearTimeout(timeout)
+      signal?.removeEventListener("abort", onAbort)
       resolve({ stdout, stderr, exitCode: code, stdoutTruncated, stderrTruncated, timedOut })
     })
   })
@@ -154,7 +165,11 @@ export const bashTool = make({
       shellArgs = ["-c", input.command]
     }
 
-    const result = await runCommand(shell, shellArgs, timeout * 1000)
+    const result = await runCommand(shell, shellArgs, timeout * 1000, ctx.signal)
+
+    if (result.signal) {
+      return { success: false, error: "Command cancelled via abort signal", metadata: { exitCode: null } }
+    }
 
     if (result.timedOut) {
       return {

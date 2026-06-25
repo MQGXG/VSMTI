@@ -75,6 +75,13 @@ export interface CheckpointData {
   activeTask: string
   recentDecisions: string[]
   keyFiles: string[]
+  userPreferences?: string[]
+  intent?: string
+  taskTree?: string[]
+  currentWork?: string
+  findings?: string[]
+  errorFixes?: string[]
+  designDecisions?: string[]
 }
 
 export function rebuildContextFromCheckpoint(

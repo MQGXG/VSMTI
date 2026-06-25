@@ -1,4 +1,6 @@
 import { MemoryProvider } from "./types"
+import type { BuiltinMemoryProvider } from "./builtin-provider"
+import type { FileMemoryProvider } from "./file-memory-provider"
 import type { FTSMemoryProvider } from "./fts-memory-provider"
 import { logError } from "../logger"
 
@@ -14,11 +16,18 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4)
 }
 
+interface NotesEntry {
+  user: string
+  assistant: string
+}
+
 export class MemoryManager {
   private providers: MemoryProvider[] = []
   private turnCount = 0
   private dreamAutoTriggerInterval = 10
   private seenFacts = new Set<string>()
+  private notesBuffer: NotesEntry[] = []
+  private flushBatchSize = 3
 
   addProvider(provider: MemoryProvider): void {
     this.providers.push(provider)
@@ -27,6 +36,46 @@ export class MemoryManager {
   /** 获取 FTS Provider（用于联动操作） */
   getFTSProvider(): FTSMemoryProvider | null {
     return (this.providers.find(p => p.name === "fts-memory") as FTSMemoryProvider) || null
+  }
+
+  /** 获取 Builtin Provider（session 级记忆） */
+  getBuiltinProvider(): BuiltinMemoryProvider | null {
+    return (this.providers.find(p => p.name === "builtin") as BuiltinMemoryProvider) || null
+  }
+
+  /** 获取 File Provider（项目级记忆） */
+  getFileProvider(): FileMemoryProvider | null {
+    return (this.providers.find(p => p.name === "file_memory") as FileMemoryProvider) || null
+  }
+
+  /** 记忆提升：session 级 → 项目级 */
+  async promoteMemories(sessionID: string): Promise<void> {
+    await this.flushWriter(sessionID)
+    const builtin = this.getBuiltinProvider()
+    const fileMem = this.getFileProvider()
+    if (!builtin || !fileMem) return
+
+    const frequentFacts = builtin.getFrequentFacts()
+    if (frequentFacts.length > 0) {
+      fileMem.acceptPromotedFacts(frequentFacts)
+    }
+  }
+
+  /** 从消息历史中提取最近用户消息，选择相关记忆并注入 */
+  async selectMemories(messages: any[], sessionID: string, tokenBudget = 1500): Promise<string> {
+    // 从最近的 assistant 消息之后找用户消息
+    let latestUser = ""
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i]
+      if (msg.role === "user") {
+        latestUser = typeof msg.content === "string" ? msg.content : ""
+        break
+      }
+    }
+    if (!latestUser.trim()) return ""
+
+    const memoryContent = await this.prefetch(latestUser, sessionID, tokenBudget)
+    return memoryContent
   }
 
   async initialize(sessionID: string, workspace: string): Promise<void> {
@@ -103,13 +152,29 @@ export class MemoryManager {
     return parts.join("\n\n")
   }
 
+  /** Single-writer: 追加到 notes 缓冲区，批量刷新到 providers */
   async syncTurn(user: string, assistant: string, sessionID: string): Promise<void> {
     this.turnCount++
+    this.notesBuffer.push({ user, assistant })
+
+    if (this.notesBuffer.length >= this.flushBatchSize) {
+      await this.flushWriter(sessionID)
+    }
+  }
+
+  /** 强制刷新缓冲区（shutdown 或手动触发时调用） */
+  async flushWriter(sessionID: string): Promise<void> {
+    if (this.notesBuffer.length === 0) return
+
+    const merged = this.notesBuffer
+      .map((n, i) => `## Turn ${i + 1}\nUser: ${n.user}\nAssistant: ${n.assistant}`)
+      .join("\n\n")
+    this.notesBuffer = []
 
     await Promise.all(
       this.providers.map(async (p) => {
-        try { await p.syncTurn(user, assistant, sessionID) } catch (e) {
-          logError(`[MemoryManager] Provider "${p.name}" syncTurn 失败`, e)
+        try { await p.syncTurn(merged, "", sessionID) } catch (e) {
+          logError(`[MemoryManager] Provider "${p.name}" flushWriter 失败`, e)
         }
       }),
     )
@@ -134,6 +199,7 @@ export class MemoryManager {
   }
 
   async shutdown(): Promise<void> {
+    await this.flushWriter("")
     await Promise.all(
       this.providers.map(async (p) => {
         try { await p.shutdown() } catch (e) {

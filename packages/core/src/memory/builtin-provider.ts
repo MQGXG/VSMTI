@@ -105,26 +105,43 @@ export class BuiltinMemoryProvider implements MemoryProvider {
     } catch { /* 静默忽略写入失败 */ }
   }
 
+  private factCounts = new Map<string, number>()
+
+  /** 返回出现次数 ≥ minCount 的事实（用于提升到项目级记忆） */
+  getFrequentFacts(minCount = 3): string[] {
+    const facts: string[] = []
+    for (const [fact, count] of this.factCounts) {
+      if (count >= minCount) facts.push(fact)
+    }
+    return facts
+  }
+
+  /** 重置频率计数（新 session 时调用） */
+  clearFactCounts(): void {
+    this.factCounts.clear()
+  }
+
   private extractKeyFacts(user: string, assistant: string): string[] {
     const facts: string[] = []
 
-    // 提取用户的主文件路径
     const fileMatch = user.match(/(?:read|write|edit|open|查看|读取|写入)\s+`([^`]+)`/i)
     if (fileMatch) facts.push(`User was working with file: ${fileMatch[1]}`)
 
-    // 提取用户的问题主题
     const questionMatch = user.match(/(什么是|如何|怎样|为什么|能不能|帮我|请)\s*(.+)/)
     if (questionMatch && questionMatch[2]) {
       facts.push(`User asked about: ${questionMatch[2].slice(0, 100)}`)
     }
 
-    // 提取用户偏好
     const prefMatch = user.match(/(?:我喜欢|我习惯|我倾向|请(?:总是|永远))\s*(.+)/i)
     if (prefMatch) facts.push(`User preference: ${prefMatch[1].slice(0, 100)}`)
 
-    // 检测决策
     const decisionMatch = assistant.match(/(?:决定|计划|方案|步骤|summary|plan|steps):?\s*(.+)/is)
     if (decisionMatch) facts.push(`Decision/Plan: ${decisionMatch[1].slice(0, 200)}`)
+
+    // 更新频率计数
+    for (const f of facts) {
+      this.factCounts.set(f, (this.factCounts.get(f) || 0) + 1)
+    }
 
     return facts
   }
