@@ -163,6 +163,17 @@ export function SettingsDialog({ open, onClose }: Props) {
               <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
+                    <div className="text-sm" style={{ color: 'var(--text-primary)' }}>增强模式（Max Mode）</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>并行生成多个候选方案，选最优执行。提升复杂任务质量，但消耗更多 token</div>
+                  </div>
+                  <input type="checkbox" checked={settings.maxMode}
+                    onChange={(e) => updateSettings({ maxMode: e.target.checked })}
+                    className="w-4 h-4 rounded" style={{ accentColor: 'var(--accent-start)' }} />
+                </label>
+              </div>
+              <div className="p-4 rounded-xl" style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border)' }}>
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
                     <div className="text-sm" style={{ color: 'var(--text-primary)' }}>显示会话进度条</div>
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>当智能体正在工作时，在会话顶部显示动画进度条</div>
                   </div>

@@ -1,6 +1,6 @@
 /**
- * 审批缓存 — 参考 Codex 的 ApprovalStore
- * 缓存用户审批决策，避免重复弹窗
+ * 审批缓存 — 参考 Codex 的 ApprovalStore + opencode 的通配符规则
+ * 缓存用户审批决策，避免重复弹窗，支持通配符资源匹配
  * 持久化规则通过 PermissionSet 注入，重启后不丢失
  */
 
@@ -13,6 +13,38 @@ export interface ApprovalRecord {
   decision: "allow" | "deny"
   timestamp: number
   ttlMs: number
+}
+
+/** 简单通配符匹配，支持 * 和 ** */
+function wildcardMatch(pattern: string, value: string): boolean {
+  if (pattern === "*") return true
+  if (pattern === value) return true
+  if (!pattern.includes("*")) return false
+
+  const pSegments = pattern.split("/")
+  const vSegments = value.split("/")
+
+  return matchSegments(pSegments, vSegments, 0, 0)
+}
+
+function matchSegments(p: string[], v: string[], pi: number, vi: number): boolean {
+  if (pi >= p.length) return vi >= v.length
+  if (p[pi] === "**") {
+    if (pi === p.length - 1) return true
+    for (let i = vi; i < v.length; i++) {
+      if (matchSegments(p, v, pi + 1, i)) return true
+    }
+    return false
+  }
+  if (vi >= v.length) return false
+  return segmentMatch(p[pi], v[vi]) && matchSegments(p, v, pi + 1, vi + 1)
+}
+
+function segmentMatch(pattern: string, value: string): boolean {
+  if (pattern === "*") return true
+  if (!pattern.includes("*")) return pattern === value
+  const reStr = "^" + pattern.replace(/\./g, "\\.").replace(/\*/g, ".*") + "$"
+  return new RegExp(reStr).test(value)
 }
 
 export class ApprovalStore {
@@ -42,23 +74,27 @@ export class ApprovalStore {
     }
   }
 
-  /** 检查是否有缓存的审批决策 */
+  /** 检查是否有缓存的审批决策 — 支持通配符匹配缓存 key */
   check(action: string, resource: string): "allow" | "deny" | null {
-    // 先查持久化权限集
+    // 先查持久化权限集（自带通配符匹配）
     if (this.permissions) {
       const effect = this.permissions.evaluate(action)
       if (effect === "allow") return "allow"
       if (effect === "deny") return "deny"
     }
-    // 再查内存缓存
-    const key = this.key(action, resource)
-    const record = this.cache.get(key)
-    if (!record) return null
-    if (Date.now() - record.timestamp > record.ttlMs) {
-      this.cache.delete(key)
-      return null
+    // 再查内存缓存 — 遍历所有 key 做通配符匹配
+    const now = Date.now()
+    for (const [key, record] of this.cache) {
+      const [cachedAction, cachedResource] = key.split(":")
+      if (!wildcardMatch(cachedAction, action)) continue
+      if (!wildcardMatch(cachedResource, resource)) continue
+      if (now - record.timestamp > record.ttlMs) {
+        this.cache.delete(key)
+        continue
+      }
+      return record.decision
     }
-    return record.decision
+    return null
   }
 
   /** 检查一组资源是否全部被允许 */

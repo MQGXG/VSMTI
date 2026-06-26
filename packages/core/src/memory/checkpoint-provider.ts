@@ -1,7 +1,7 @@
-import { app } from "electron"
 import { join } from "path"
 import fs from "fs"
 import { MemoryProvider } from "./types"
+import { getPlatformPaths } from "../platform-paths"
 import { createLLMClient, type LLMMessage } from "../llm-sdk"
 import { logError } from "../logger"
 import type { FTSMemoryProvider } from "./fts-memory-provider"
@@ -60,7 +60,7 @@ export class CheckpointProvider implements MemoryProvider {
   }
 
   async initialize(sessionId: string, workspace: string): Promise<void> {
-    this.checkpointDir = join(app.getPath("userData"), "checkpoints", sessionId)
+    this.checkpointDir = join(getPlatformPaths().userData, "checkpoints", sessionId)
     if (!fs.existsSync(this.checkpointDir)) {
       fs.mkdirSync(this.checkpointDir, { recursive: true })
     }

@@ -25,14 +25,12 @@ export const writeFileTool = make({
     return [{ type: "text", text: typeof output === "string" ? output : "" }]
   },
   async execute(input, ctx) {
-    const absolute = path.resolve(ctx.workspace, input.path)
-    if (!path.isAbsolute(input.path) && !contains(ctx.workspace, absolute)) {
-      return { success: false, error: `Path escapes workspace: ${input.path}` }
-    }
+    const isAbsolute = path.isAbsolute(input.path)
+    const absolute = isAbsolute ? input.path : path.resolve(ctx.workspace, input.path)
     const root = await realPath(ctx.workspace)
-    const resolved = path.resolve(root, input.path)
-    if (!contains(root, resolved)) {
-      return { success: false, error: `Path escapes workspace: ${input.path}` }
+    const resolved = isAbsolute ? absolute : path.resolve(root, input.path)
+    if (!isAbsolute && !contains(root, resolved)) {
+      return { success: false, error: `相对路径逃逸工作区: ${input.path}` }
     }
 
     await fs.mkdir(path.dirname(resolved), { recursive: true })

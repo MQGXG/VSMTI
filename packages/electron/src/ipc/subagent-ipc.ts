@@ -1,11 +1,13 @@
 import { ipcMain, type WebContents } from "electron"
 import { createDefaultRegistry } from "@mira/core/registry-init"
 import { SubagentManager } from "@mira/core/subagent-manager"
+import { setSubagentManager } from "@mira/core/tools/agent-tools"
 import type { AgentConfig } from "@mira/core/agent"
 import type { SubagentEvent } from "@mira/core/subagent-manager"
 
 const registry = createDefaultRegistry()
 const subagentManager = new SubagentManager(registry, { maxParallel: 5 })
+setSubagentManager(subagentManager)
 
 /** 将子 Agent 事件转发到前端 */
 function forwardSubagentEvent(sender: WebContents, event: SubagentEvent): void {

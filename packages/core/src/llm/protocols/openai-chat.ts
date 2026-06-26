@@ -1,4 +1,5 @@
 import type { LLMMessage, LLMEvent } from "../schema"
+import type { Protocol } from "../route/types"
 
 interface OpenAIChunk {
   choices?: Array<{
@@ -82,4 +83,46 @@ export function deserializeChunk(chunk: OpenAIChunk): LLMEvent | null {
 
 export function getFinishReason(chunk: OpenAIChunk): string | undefined {
   return chunk.choices?.[0]?.finish_reason || undefined
+}
+
+/** 完整的 OpenAI Chat Protocol 实现 */
+export const OpenAIChatProtocol: Protocol = {
+  name: "openai-chat",
+  serializeRequest(request) {
+    const body: Record<string, unknown> = {
+      model: request.model,
+      messages: serializeMessages(request.messages),
+      stream: true,
+    }
+    if (request.tools && request.tools.length > 0) {
+      body.tools = request.tools.map((t) => ({
+        type: "function",
+        function: { name: t.name, description: t.description, parameters: t.parameters },
+      }))
+    }
+    const gen = request.generation || {}
+    if (gen.maxTokens !== undefined) body.max_tokens = gen.maxTokens
+    if (gen.temperature !== undefined) body.temperature = gen.temperature
+    if (gen.topP !== undefined) body.top_p = gen.topP
+    if (gen.stop !== undefined) body.stop = gen.stop
+    if (gen.seed !== undefined) body.seed = gen.seed
+    if (gen.presencePenalty !== undefined) body.presence_penalty = gen.presencePenalty
+    if (gen.frequencyPenalty !== undefined) body.frequency_penalty = gen.frequencyPenalty
+    return body
+  },
+
+  deserializeEvent(data) {
+    return deserializeChunk(data as OpenAIChunk)
+  },
+
+  parseResponse(data) {
+    const choice = (data as any)?.choices?.[0]
+    const content = choice?.message?.content || ""
+    const toolCalls = (choice?.message?.tool_calls || []).map((tc: any) => ({
+      id: tc.id,
+      name: tc.function.name,
+      args: tc.function.arguments,
+    }))
+    return { content, toolCalls }
+  },
 }

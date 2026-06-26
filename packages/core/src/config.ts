@@ -1,7 +1,7 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from "fs"
 import { join, resolve, isAbsolute } from "path"
 import { homedir } from "os"
-import { app } from "electron"
+import { getPlatformPaths } from "./platform-paths"
 import type { MCPServerConfig } from "./mcp/index"
 import type { PluginConfigMap } from "./plugin/index"
 
@@ -47,7 +47,7 @@ export interface ResolvedConfig {
 // ─── 路径 ──────────────────────────────────────────────────────────
 
 function getGlobalConfigPath(): string {
-  return join(app.getPath("userData"), "config.json")
+  return join(getPlatformPaths().userData, "config.json")
 }
 
 function getProjectConfigPath(workspace: string): string {

@@ -1,5 +1,6 @@
 import { createLLMClient, type LLMMessage } from "./llm-sdk"
 import { logError } from "./logger"
+import { getDbAsync, runWrite } from "./database"
 
 export interface GoalConfig {
   apiKey: string
@@ -12,9 +13,11 @@ export interface Goal {
   id: string
   description: string
   createdAt: string
-  status: "active" | "satisfied" | "failed" | "cancelled"
+  status: "active" | "satisfied" | "failed" | "cancelled" | "timed_out"
   satisfiedAt: string | null
   evaluations: GoalEvaluation[]
+  /** 超时时间（毫秒），从 createdAt 开始计算，0 表示无超时 */
+  timeoutMs: number
 }
 
 export interface GoalEvaluation {
@@ -43,12 +46,77 @@ export class GoalJudge {
   private goals: Goal[] = []
   private goalCounter = 0
   private judgeConfig: GoalConfig | null = null
+  private sessionID = ""
 
   setJudgeConfig(config: GoalConfig): void {
     this.judgeConfig = config
   }
 
-  setGoal(description: string): Goal {
+  /** 绑定 session ID（用于持久化） */
+  bindSession(sessionID: string): void {
+    this.sessionID = sessionID
+  }
+
+  // ── 持久化 ──────────────────────────────────────────
+
+  /** 从 SQLite 加载当前会话的 goal */
+  async load(sessionID: string): Promise<void> {
+    try {
+      const db = await getDbAsync()
+      const rows = db.exec(
+        "SELECT id, description, created_at, status, satisfied_at, timeout_ms, evaluations_json FROM goals WHERE session_id = ? ORDER BY created_at",
+        [sessionID],
+      )
+      if (rows.length === 0 || rows[0].values.length === 0) return
+
+      this.goals = rows[0].values.map((row: any) => ({
+        id: row[0],
+        description: row[1],
+        createdAt: row[2],
+        status: row[3] as Goal["status"],
+        satisfiedAt: row[4],
+        timeoutMs: row[5] || 0,
+        evaluations: row[6] ? JSON.parse(row[6]) : [],
+      }))
+
+      this.goalCounter = this.goals.length
+      this.sessionID = sessionID
+    } catch (err) {
+      logError("[GoalJudge] Failed to load goals", err)
+    }
+  }
+
+  /** 保存当前 goal 列表到 SQLite */
+  async save(): Promise<void> {
+    if (!this.sessionID) return
+    try {
+      // 先清除旧的 goal 记录
+      runWrite("DELETE FROM goals WHERE session_id = ?", [this.sessionID])
+
+      for (const goal of this.goals) {
+        runWrite(
+          `INSERT INTO goals (session_id, id, description, created_at, status, satisfied_at, timeout_ms, evaluations_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            this.sessionID,
+            goal.id,
+            goal.description,
+            goal.createdAt,
+            goal.status,
+            goal.satisfiedAt,
+            goal.timeoutMs,
+            JSON.stringify(goal.evaluations),
+          ],
+        )
+      }
+    } catch (err) {
+      logError("[GoalJudge] Failed to save goals", err)
+    }
+  }
+
+  // ── CRUD ────────────────────────────────────────────
+
+  setGoal(description: string, timeoutMs = 0): Goal {
     for (const goal of this.goals) {
       if (goal.status === "active") {
         goal.status = "cancelled"
@@ -63,9 +131,11 @@ export class GoalJudge {
       status: "active",
       satisfiedAt: null,
       evaluations: [],
+      timeoutMs,
     }
 
     this.goals.push(goal)
+    this.save()
     return goal
   }
 
@@ -81,25 +151,54 @@ export class GoalJudge {
     const active = this.getActiveGoal()
     if (!active) return false
     active.status = "cancelled"
+    this.save()
     return true
   }
 
-  /**
-   * 判断 agent 是否应该继续工作
-   * 如果有活跃 goal 且未被裁判确认满足，则继续
-   */
   shouldContinue(goal: Goal): boolean {
+    if (goal.status === "active" && this.isTimedOut(goal)) {
+      goal.status = "timed_out"
+      this.save()
+      return false
+    }
     return goal.status === "active"
   }
 
-  /**
-   * 用独立裁判模型评估 goal 是否满足
-   */
+  // ── 超时 ────────────────────────────────────────────
+
+  /** 检查 goal 是否超时 */
+  isTimedOut(goal: Goal): boolean {
+    if (goal.timeoutMs <= 0) return false
+    const elapsed = Date.now() - new Date(goal.createdAt).getTime()
+    return elapsed >= goal.timeoutMs
+  }
+
+  /** 获取超时剩余时间（毫秒），负数表示已超时 */
+  getRemainingTime(goal: Goal): number {
+    if (goal.timeoutMs <= 0) return Infinity
+    const elapsed = Date.now() - new Date(goal.createdAt).getTime()
+    return goal.timeoutMs - elapsed
+  }
+
+  // ── 评估 ────────────────────────────────────────────
+
   async evaluate(
     goal: Goal,
     messages: LLMMessage[],
     config?: GoalConfig,
   ): Promise<GoalEvaluation> {
+    // 超时检测
+    if (this.isTimedOut(goal)) {
+      goal.status = "timed_out"
+      this.save()
+      return {
+        timestamp: new Date().toISOString(),
+        satisfied: false,
+        reasoning: "Goal timed out before completion",
+        confidence: 1,
+      }
+    }
+
     const effectiveConfig = config || this.judgeConfig
     if (!effectiveConfig) {
       return {
@@ -168,13 +267,10 @@ export class GoalJudge {
       goal.satisfiedAt = evaluation.timestamp
     }
 
+    this.save()
     return evaluation
   }
 
-  /**
-   * 快速预检 — 检查是否有明显证据表明 goal 已满足
-   * 轻量级检查，不调用 LLM，基于关键词
-   */
   quickCheck(goal: Goal, messages: LLMMessage[]): GoalEvaluation | null {
     const description = goal.description.toLowerCase()
     const lastMessages = messages.slice(-4)
@@ -208,6 +304,8 @@ export class GoalJudge {
     return null
   }
 
+  // ── 提示生成 ────────────────────────────────────────
+
   toSystemPrompt(): string {
     const active = this.getActiveGoal()
     if (!active) return ""
@@ -215,7 +313,7 @@ export class GoalJudge {
     const satisfied = active.evaluations.filter(e => e.satisfied).length
     const total = active.evaluations.length
 
-    return [
+    const parts = [
       `[Active Goal]`,
       `Description: ${active.description}`,
       `Status: ${active.status}`,
@@ -223,21 +321,38 @@ export class GoalJudge {
       total > 0
         ? `Last evaluation: ${active.evaluations[active.evaluations.length - 1].reasoning}`
         : "No evaluations yet",
+    ]
+
+    // 超时信息注入
+    if (active.timeoutMs > 0) {
+      const remaining = this.getRemainingTime(active)
+      if (remaining > 0) {
+        parts.push(`Time remaining: ${Math.ceil(remaining / 1000)}s`)
+      }
+    }
+
+    parts.push(
       "",
       `[Goal Protocol]`,
       `When you believe the goal is complete, summarize what was done.`,
       `The system will then evaluate whether the goal has been fully achieved.`,
-    ].join("\n")
+    )
+
+    return parts.join("\n")
   }
 
   toText(): string {
     const lines: string[] = ["# Goals"]
     for (const goal of this.goals) {
-      const icon = { active: "●", satisfied: "✓", failed: "✗", cancelled: "⊘" }[goal.status]
+      const icon = { active: "●", satisfied: "✓", failed: "✗", cancelled: "⊘", timed_out: "⏱" }[goal.status]
       lines.push(`\n## ${icon} ${goal.id}: ${goal.description}`)
       lines.push(`- Status: ${goal.status}`)
       lines.push(`- Created: ${goal.createdAt}`)
       if (goal.satisfiedAt) lines.push(`- Satisfied: ${goal.satisfiedAt}`)
+      if (goal.timeoutMs > 0) {
+        const remaining = this.getRemainingTime(goal)
+        lines.push(`- Timeout: ${Math.ceil(goal.timeoutMs / 1000)}s (${remaining > 0 ? `${Math.ceil(remaining / 1000)}s remaining` : "expired"})`)
+      }
       if (goal.evaluations.length > 0) {
         const last = goal.evaluations[goal.evaluations.length - 1]
         lines.push(`- Last evaluation: ${last.satisfied ? "satisfied" : "not satisfied"} (${last.confidence})`)
@@ -246,6 +361,8 @@ export class GoalJudge {
     }
     return lines.join("\n")
   }
+
+  // ── 内部 ────────────────────────────────────────────
 
   private formatConversation(messages: LLMMessage[]): string {
     return messages

@@ -3,7 +3,6 @@
  * 替代 Python agent-backend/app/core/memory_manager.py
  */
 
-import { app } from "electron"
 import { join, relative } from "path"
 import fs from "fs"
 import { MemoryProvider } from "./types"

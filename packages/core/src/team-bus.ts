@@ -3,10 +3,10 @@
  * 替代 Python team_bus.py
  */
 
-import { app } from "electron"
 import { join } from "path"
 import fs from "fs"
 import { randomUUID } from "crypto"
+import { getPlatformPaths } from "./platform-paths"
 
 export interface Message {
   id: string
@@ -25,7 +25,7 @@ let protocolState: ProtocolState = "active"
 
 function ensureInboxDir(): string {
   if (!inboxDir) {
-    inboxDir = join(app.getPath("userData"), "mailboxes")
+    inboxDir = join(getPlatformPaths().userData, "mailboxes")
     if (!fs.existsSync(inboxDir)) fs.mkdirSync(inboxDir, { recursive: true })
   }
   return inboxDir

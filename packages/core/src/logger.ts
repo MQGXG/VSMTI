@@ -2,9 +2,9 @@
  * 简单日志系统 — 工具调用审计 + 调试日志
  */
 
-import { app } from "electron"
 import { join } from "path"
 import fs from "fs"
+import { getPlatformPaths } from "./platform-paths"
 
 export interface ToolCallLog {
   timestamp: string
@@ -21,7 +21,7 @@ const MAX_LOG_ENTRIES = 1000
 let logs: ToolCallLog[] = []
 
 function getLogDir(): string {
-  return join(app.getPath("userData"), "logs")
+  return join(getPlatformPaths().userData, "logs")
 }
 
 /** 记录一次工具调用 */

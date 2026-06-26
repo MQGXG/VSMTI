@@ -4,6 +4,7 @@ import type { AgentConfig, AgentEvent } from "./agent"
 import type { ToolRegistry } from "./registry"
 import type { LLMMessage } from "./llm-sdk"
 import { logError } from "./logger"
+import { sendMessage } from "./team-bus"
 
 export type SubagentStatus = "pending" | "running" | "completing" | "completed" | "failed" | "cancelled"
 
@@ -245,6 +246,42 @@ export class SubagentManager {
     }
   }
 
+  /**
+   * 批量启动多个子 Agent
+   */
+  spawnMany(
+    tasks: Array<{ description: string; config: AgentConfig; options?: { parentId?: string; prompt?: string; model?: string; parentContext?: LLMMessage[] } }>,
+  ): SubagentInfo[] {
+    return tasks.map((t) => this.spawn(t.description, t.config, t.options))
+  }
+
+  /**
+   * 批量等待多个子 Agent 完成
+   */
+  async waitAll(ids: string[], timeoutMs = 300000): Promise<SubagentInfo[]> {
+    const results = await Promise.all(
+      ids.map((id) =>
+        this.wait(id, timeoutMs).catch(() => {
+          const info = this.getInfo(id)
+          return info || { id, parentId: null, description: "unknown", status: "failed" as const, createdAt: "", startedAt: null, completedAt: null, result: null, error: "timeout" }
+        }),
+      ),
+    )
+    return results
+  }
+
+  /**
+   * 竞速等待：任意一个子 Agent 完成时立即返回
+   */
+  async waitAny(ids: string[], timeoutMs = 300000): Promise<SubagentInfo | null> {
+    const results = await Promise.race(
+      ids.map((id) =>
+        this.wait(id, timeoutMs).catch(() => null as SubagentInfo | null),
+      ),
+    )
+    return results
+  }
+
   toText(): string {
     const lines: string[] = []
     const infos = Array.from(this.sessions.values()).map(s => s.info)
@@ -313,6 +350,7 @@ export class SubagentManager {
       for await (const event of agent.run(prompt, parentContext, {
         ...config,
         sessionID: `${config.sessionID}-${info.id}`,
+        agent: info.id,
       })) {
         if (abortController.signal.aborted) {
           info.status = "cancelled"
@@ -329,6 +367,11 @@ export class SubagentManager {
           info.status = "failed"
           info.error = event.message
           info.completedAt = new Date().toISOString()
+          try {
+            if (info.parentId) {
+              sendMessage(info.id, info.parentId, "notification", `[子 Agent 失败] ${info.description}\n\n${event.message}`)
+            }
+          } catch { /* 忽略 */ }
           this.emitEvent("failed", id)
           return info
         } else if (event.type === "finish") {
@@ -341,6 +384,15 @@ export class SubagentManager {
       info.result = finalText
       info.completedAt = new Date().toISOString()
       session.events = events
+
+      // 自动发送结果通知给父 Agent（通过 team_bus）
+      try {
+        if (info.parentId) {
+          const summary = (finalText || "").slice(0, 2000)
+          sendMessage(info.id, info.parentId, "result", `[子 Agent 完成] ${info.description}\n\n${summary}`)
+        }
+      } catch { /* 通知失败不阻塞 */ }
+
       this.emitEvent("completed", id)
       return info
     } catch (err) {

@@ -98,11 +98,13 @@ const electronAPI = {
 
     /** Goal Manager */
     goal: {
-      set: (description: string) => ipcRenderer.invoke("goal:set", description),
+      set: (description: string, timeoutMs?: number) => ipcRenderer.invoke("goal:set", description, timeoutMs),
       getActive: () => ipcRenderer.invoke("goal:getActive"),
       list: () => ipcRenderer.invoke("goal:list"),
       cancel: () => ipcRenderer.invoke("goal:cancel"),
       toText: () => ipcRenderer.invoke("goal:toText"),
+      load: (sessionID: string) => ipcRenderer.invoke("goal:load", sessionID),
+      save: () => ipcRenderer.invoke("goal:save"),
     },
 
     /** Dream/Distill Manager */
@@ -144,6 +146,13 @@ const electronAPI = {
       ipcRenderer.on("agent:event", handler)
       return () => ipcRenderer.removeListener("agent:event", handler)
     },
+  },
+
+  /** 记忆系统 */
+  memory: {
+    search: (query: string, type?: string, limit?: number) =>
+      ipcRenderer.invoke("memory:search", query, type, limit),
+    status: () => ipcRenderer.invoke("memory:status"),
   },
 };
 

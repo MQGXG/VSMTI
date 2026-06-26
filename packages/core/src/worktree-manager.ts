@@ -5,8 +5,8 @@
 
 import { execSync } from "child_process"
 import { join, relative, resolve } from "path"
-import { app } from "electron"
 import fs from "fs"
+import { getPlatformPaths } from "./platform-paths"
 
 export interface WorktreeInfo {
   id: string
@@ -23,7 +23,7 @@ let worktreesDir = ""
 
 function getWorktreesDir(): string {
   if (!worktreesDir) {
-    worktreesDir = join(app.getPath("userData"), WORKTREE_DIR)
+    worktreesDir = join(getPlatformPaths().userData, WORKTREE_DIR)
     if (!fs.existsSync(worktreesDir)) fs.mkdirSync(worktreesDir, { recursive: true })
   }
   return worktreesDir

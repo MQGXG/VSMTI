@@ -1,3 +1,3 @@
-export { serializeMessages, deserializeChunk, getFinishReason } from "./openai-chat"
-export { serializeMessages as serializeAnthropicMessages, serializeSystem, deserializeStreamEvent } from "./anthropic-messages"
-export { createCompatibleBody } from "./openai-compatible-chat"
+export { serializeMessages, deserializeChunk, getFinishReason, OpenAIChatProtocol } from "./openai-chat"
+export { serializeMessages as serializeAnthropicMessages, serializeSystem, deserializeStreamEvent, AnthropicMessagesProtocol } from "./anthropic-messages"
+export { createCompatibleBody, OpenAICompatibleChatProtocol } from "./openai-compatible-chat"

@@ -1,3 +1,13 @@
+/**
+ * @deprecated 已由 sidecar-bridge.ts 替代
+ * 
+ * 旧 in-process Agent IPC 实现。
+ * 自 Sidecar 架构迁移后，Agent 操作通过 HTTP 转发到 Core 进程，
+ * 不再需要在 Electron 主进程中直接创建 Agent 实例。
+ * 
+ * 此文件保留以供参考，将在下一轮清理中移除。
+ */
+
 import { Effect } from "effect"
 import { ipcMain } from "electron"
 import { createDefaultRegistry, defaultPermissions, PermissionSet, Agent, AppLayer, resolveRuntimeConfig } from "@mira/core/index"

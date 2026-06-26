@@ -9,6 +9,7 @@ import {
   grepTool, globTool, codeExecTool, bashTool, editFileTool,
 } from "./tools/index"
 import { skillsListTool, skillViewTool } from "./skill/skill-tools"
+import { memorySearchTool, memoryRecallTool } from "./tools/memory"
 import { dataAnalysisTool } from "./tools/data-analysis"
 import { webBrowseTool } from "./tools/web-browse"
 import { cronTool } from "./tools/cron-tool"
@@ -21,6 +22,7 @@ import { lspDefinitionTool, lspReferencesTool, lspHoverTool } from "./tools/lsp-
 import { gitStatusTool, gitDiffTool, gitLogTool, gitCommitTool } from "./tools/git"
 import { createDocxTool } from "./tools/create-docx"
 import { searchHistoryTool } from "./tools/search-history"
+import { spawnAgentTool, waitAgentsTool, listSubagentsTool } from "./tools/agent-tools"
 import type { MCPServerConfig } from "./mcp/index"
 
 export function createDefaultRegistry(): ToolRegistry {
@@ -56,6 +58,11 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(gitCommitTool)
   registry.register(createDocxTool)
   registry.register(searchHistoryTool)
+  registry.register(memorySearchTool)
+  registry.register(memoryRecallTool)
+  registry.register(spawnAgentTool)
+  registry.register(waitAgentsTool)
+  registry.register(listSubagentsTool)
   return registry
 }
 

@@ -2,7 +2,7 @@ import { ToolRegistry } from "./registry"
 import type { ToolContext, ToolResult } from "./tool"
 import type { AgentEvent } from "./types"
 import { IterationBudget } from "./iteration-budget"
-import { createLLMClient, type LLMMessage } from "./llm-sdk"
+import type { LLMMessage } from "./llm-sdk"
 import { estimateTokens } from "./message-utils"
 import { pluginHooks } from "./plugin-hooks"
 import { PermissionSet, type PermissionRule } from "./permission"
@@ -21,8 +21,11 @@ import { ApprovalStore } from "./permission/approval-store"
 import { DreamDistillManager } from "./dream-distill"
 import { ContextManager } from "./context-manager"
 import { GoalJudge } from "./goal-judge"
-
-import { AgentMode } from "./modes"
+import type { LLMTurnConfig } from "./agent/turn"
+import { runMaxMode, type MaxModeConfig } from "./agent/max-mode"
+import { processTurn, executeCollectedTools } from "./agent/turn-processor"
+import { detectDoomLoop } from "./agent/utils"
+import type { AgentMode } from "./modes"
 
 export type PermissionReply = "allow" | "deny" | "always"
 
@@ -45,6 +48,9 @@ export interface AgentConfig {
   goalDescription?: string
   judgeModel?: string
   judgeProvider?: string
+  maxMode?: boolean
+  maxModeCandidates?: number
+  judgeModelConfig?: LLMTurnConfig
 }
 
 export type { AgentEvent } from "./types"
@@ -168,14 +174,15 @@ export class Agent {
     const ftsProvider = new FTSMemoryProvider()
     this.memoryManager.addProvider(new BuiltinMemoryProvider())
     this.memoryManager.addProvider(this.checkpointProvider)
-    if (apiKey) {
-      this.memoryManager.addProvider(new VectorMemoryProvider({ apiKey, apiUrl }))
-    }
+    this.memoryManager.addProvider(new VectorMemoryProvider())
     if (workspace) {
       this.memoryManager.addProvider(new FileMemoryProvider())
       this.memoryManager.addProvider(ftsProvider)
     }
     this.checkpointProvider.setFTSProvider(ftsProvider)
+
+    // 暴露 FTS provider 给 memory 工具（通过全局引用）
+    ;(globalThis as any).__mira_fts_provider__ = ftsProvider
 
     // 注册 pre_llm hook：每轮 LLM 调用前注入相关记忆
     pluginHooks.on("pre_llm", async (messages: LLMMessage[], config: AgentConfig) => {
@@ -211,6 +218,7 @@ export class Agent {
     }
 
     await this.contextManager.initialize(config.sessionID, config.workspace)
+    this.goalJudge.bindSession(config.sessionID)
 
     const { enrichedUser, memoryPrompt } = await this.contextManager.prepareContext(userMessage, config.sessionID)
 
@@ -268,17 +276,23 @@ export class Agent {
               })
               continue
             }
+            restored.push({ role: "assistant", content: m.content })
+            continue
           }
-          if (m.role === "tool" && restored.length > 0) {
-            const last = restored[restored.length - 1]
-            if (last.role === "assistant" && !hasToolCalls(last.content)) {
-              last.content += `\n\n[Tool result: ${m.content.slice(0, 500)}]`
+          if (m.role === "tool") {
+            if (!m.toolCallId) {
+              restored.push({ role: "tool", content: m.content })
               continue
             }
+            const lastAssistant = [...restored].reverse().find(r => r.role === "assistant")
+            if (lastAssistant && !hasToolCalls(lastAssistant.content)) {
+              lastAssistant.content += `\n\n[Tool result: ${m.content.slice(0, 500)}]`
+              continue
+            }
+            restored.push({ role: "tool", content: m.content, tool_call_id: m.toolCallId })
+            continue
           }
-          const msg: LLMMessage = { role: m.role as LLMMessage["role"], content: m.content }
-          if (m.toolCallId) msg.tool_call_id = m.toolCallId
-          restored.push(msg)
+          restored.push({ role: "user", content: m.content })
         }
         history = restored
 
@@ -327,16 +341,18 @@ export class Agent {
       { role: "user", content: enrichedUser },
     ]
 
-    const client = createLLMClient({
+    const budget = new IterationBudget(config.maxSteps || 10)
+    const llmConfig: LLMTurnConfig = {
       provider: config.provider || "openai",
       model: config.model,
       apiKey: config.apiKey,
       apiUrl: config.apiUrl,
       headers: config.headers,
       options: config.options,
-    } as any)
+    }
 
-    const budget = new IterationBudget(config.maxSteps || 10)
+    // Doom loop 追踪：记录所有轮次的工具调用
+    const allToolCalls: Array<{ name: string; args: string }> = []
 
     while (budget.consume()) {
       if (this.stateMachine.aborted) {
@@ -368,124 +384,150 @@ export class Agent {
 
       messages = await pluginHooks.emitWaterfall("pre_llm", messages, config)
 
-      let currentText = ""
-      let eventCount = 0
-      const pendingToolCalls: Array<{ id: string; name: string; arguments: string }> = []
+      // ── LLM 调用 — processTurn（流式 + 同步工具执行）或 runMaxMode ──
+      const turnInput = {
+        messages,
+        tools: toolSet,
+        sessionID: config.sessionID,
+        workspace: config.workspace,
+        config: {
+          ...llmConfig,
+          maxContextTokens: config.maxContextTokens,
+          permissions: config.permissions,
+          onPermissionSave: config.onPermissionSave,
+        },
+        deps: {
+          registry: this.registry,
+          stateMachine: this.stateMachine,
+          approvalStore: this.approvalStore,
+          orchestrator: this.orchestrator,
+        },
+        ctx,
+      }
 
-      // ── LLM 调用 + 3 种错误恢复 ──
-      let llmError: Error | null = null
-      let retryCount = 0
-      const maxRetries = 5
-      const originalModel = config.model
+      const maxModeResult = config.maxMode
+        ? yield* runMaxMode({
+            messages,
+            tools: toolSet,
+            config: {
+              n: config.maxModeCandidates || 3,
+              candidateConfig: llmConfig,
+              judgeConfig: config.judgeModelConfig,
+            },
+          })
+        : null
 
-      do {
-        llmError = null
-        try {
-          const stream = client.stream({ messages, tools: toolSet })
-          for await (const event of stream) {
-            eventCount++
-            if (event.type === "delta") {
-              currentText += event.delta
-              yield { type: "content", text: event.delta }
-            } else if (event.type === "tool_call" && event.toolCall) {
-              pendingToolCalls.push({
-                id: event.toolCall.id,
-                name: event.toolCall.name,
-                arguments: event.toolCall.arguments,
-              })
-            } else if (event.type === "error") {
-              throw new Error(event.error?.message || "LLM stream error")
-            } else if (event.type === "done") {
-              break
-            }
-          }
-        } catch (err) {
-          llmError = err instanceof Error ? err : new Error(String(err))
-          const msg = llmError.message.toLowerCase()
-
-          // 路径 1: prompt_too_long → 应急压缩 + 重试
-          if (msg.includes("prompt_too_long") || msg.includes("context_length_exceeded") || msg.includes("too many tokens")) {
-            yield { type: "thinking" as const, text: "⚠️ Context too long, performing emergency compaction..." }
-            const compacted = await this.contextManager.reactiveCompact(messages)
-            messages = compacted
-            continue
-          }
-
-          // 路径 2: 429/529 → 指数退避
-          if (msg.includes("429") || msg.includes("rate limit") || msg.includes("529") || msg.includes("overloaded")) {
-            if (retryCount >= maxRetries) {
-              yield { type: "error" as const, message: `LLM rate limited after ${maxRetries} retries: ${llmError.message}` }
-              return
-            }
-            const delay = Math.min(1000 * Math.pow(2, retryCount) + Math.random() * 1000, 32000)
-            retryCount++
-            yield { type: "thinking" as const, text: `⏳ Rate limited, retrying in ${Math.round(delay / 1000)}s (${retryCount}/${maxRetries})...` }
-            await new Promise(r => setTimeout(r, delay))
-            continue
-          }
-
-          // 路径 3: 其他错误 → 输出后退出
-          yield { type: "error" as const, message: llmError.message }
+      if (config.maxMode) {
+        const maxResult = maxModeResult!
+        if (!maxResult.text && (!maxResult.toolCalls || maxResult.toolCalls.length === 0)) {
+          if (this.stateMachine.aborted) yield { type: "finish", reason: "stopped" }
           return
         }
-      } while (llmError !== null)
+        const turnText = maxResult.text
+        const toolCallsArray = (maxResult.toolCalls || [])
+          .filter((tc: any) => tc.id && tc.name)
+          .map((tc: any) => ({
+            id: tc.id,
+            type: "function" as const,
+            function: { name: tc.name, arguments: tc.arguments },
+          }))
 
-      const toolCallsArray = pendingToolCalls
-        .filter((tc) => tc.id && tc.name)
-        .map((tc) => ({
-          id: tc.id,
-          type: "function" as const,
-          function: { name: tc.name, arguments: tc.arguments },
-        }))
+        messages.push({
+          role: "assistant",
+          content: [
+            { type: "text", text: turnText },
+            ...toolCallsArray.map((tc) => ({
+              type: "tool-call" as const,
+              toolCallId: tc.id,
+              toolName: tc.function.name,
+              args: JSON.parse(tc.function.arguments),
+            })),
+          ],
+        })
 
-      messages.push({
-        role: "assistant",
-        content: [
-          { type: "text", text: currentText },
-          ...toolCallsArray.map((tc) => ({
-            type: "tool-call" as const,
-            toolCallId: tc.id,
-            toolName: tc.function.name,
-            args: JSON.parse(tc.function.arguments),
-          })),
-        ],
-      })
+        await appendMessage(config.sessionID, {
+          role: "assistant",
+          content: turnText || JSON.stringify({ text: turnText, tool_calls: toolCallsArray.map(tc => ({ id: tc.id, name: tc.function.name, args: tc.function.arguments })) }),
+          timestamp: new Date().toISOString(),
+        })
 
-      if (toolCallsArray.length === 0) {
-        if (currentText) {
-          await appendMessage(config.sessionID, {
-            role: "assistant",
-            content: currentText,
-            timestamp: new Date().toISOString(),
-          })
+        if (toolCallsArray.length > 0) {
+          yield* executeCollectedTools(
+            toolCallsArray.map(tc => ({ id: tc.id, name: tc.function.name, arguments: tc.function.arguments })),
+            turnText,
+            { messages, sessionID: config.sessionID, workspace: config.workspace, permissions: config.permissions, onPermissionSave: config.onPermissionSave, deps: { registry: this.registry, stateMachine: this.stateMachine, approvalStore: this.approvalStore, orchestrator: this.orchestrator }, ctx },
+          )
         }
 
+        await this.contextManager.syncTurn(userMessage, turnText, config.sessionID)
+        this.dreamDistillManager.recordTurn(userMessage, turnText)
+        continue
+      }
+
+      const ptResult = yield* processTurn(turnInput)
+      messages = ptResult.messages
+
+      if (!ptResult.text && ptResult.toolCalls.length === 0) {
+        if (this.stateMachine.aborted) {
+          yield { type: "finish", reason: "stopped" }
+        }
+        return
+      }
+
+      if (ptResult.text || ptResult.toolCalls.length > 0) {
+        const content = ptResult.toolCalls.length > 0
+          ? JSON.stringify({
+              text: ptResult.text || "",
+              tool_calls: ptResult.toolCalls.map(tc => ({ id: tc.id, name: tc.name, args: tc.arguments })),
+            })
+          : (ptResult.text || "")
+        await appendMessage(config.sessionID, {
+          role: "assistant",
+          content,
+          timestamp: new Date().toISOString(),
+        })
+      }
+
+      // ── Doom Loop 检测 ──
+      for (const tc of ptResult.toolCalls) {
+        allToolCalls.push({ name: tc.name, args: tc.arguments })
+      }
+      if (ptResult.toolCalls.length > 0) {
+        const lastCall = ptResult.toolCalls[ptResult.toolCalls.length - 1]
+        if (detectDoomLoop(
+          { name: lastCall.name, args: lastCall.arguments },
+          allToolCalls.slice(0, -1),
+        )) {
+          const { id, waitForReply } = this.stateMachine.createPermissionRequest()
+          yield {
+            type: "permission_request" as const,
+            id,
+            action: "doom_loop",
+            resources: [`${lastCall.name}(${lastCall.arguments.slice(0, 100)})`],
+            toolCall: { id: lastCall.id, name: lastCall.name, input: {} },
+          }
+          const allowed = await waitForReply()
+          if (!allowed) {
+            yield { type: "thinking" as const, text: "⛔ Doom loop blocked by user" }
+            yield { type: "finish", reason: "doom_loop_blocked" }
+            return
+          }
+          allToolCalls.length = 0
+        }
+      }
+
+      if (ptResult.toolCalls.length === 0) {
         const activeGoal = this.goalJudge.getActiveGoal()
         if (activeGoal) {
           const quickCheck = this.goalJudge.quickCheck(activeGoal, messages)
           if (quickCheck && quickCheck.satisfied) {
             activeGoal.status = "satisfied"
-            activeGoal.satisfiedAt = quickCheck.timestamp
-            yield {
-              type: "goal_status" as any,
-              goalId: activeGoal.id,
-              description: activeGoal.description,
-              status: "satisfied",
-              reasoning: quickCheck.reasoning,
-            } as AgentEvent
+            yield { type: "goal_status" as any, goalId: activeGoal.id, description: activeGoal.description, status: "satisfied", reasoning: quickCheck.reasoning } as AgentEvent
             yield { type: "finish", reason: "goal_satisfied" } as AgentEvent
             return
           }
-
           const evaluation = await this.goalJudge.evaluate(activeGoal, messages)
-          yield {
-            type: "goal_status" as any,
-            goalId: activeGoal.id,
-            description: activeGoal.description,
-            status: evaluation.satisfied ? "satisfied" : "still_active",
-            reasoning: evaluation.reasoning,
-          } as AgentEvent
-
+          yield { type: "goal_status" as any, goalId: activeGoal.id, description: activeGoal.description, status: evaluation.satisfied ? "satisfied" : "still_active", reasoning: evaluation.reasoning } as AgentEvent
           if (evaluation.satisfied) {
             yield { type: "finish", reason: "goal_satisfied" }
           } else {
@@ -505,130 +547,30 @@ export class Agent {
         return
       }
 
-      const assistantPayload = JSON.stringify({
-        text: currentText,
-        tool_calls: toolCallsArray.map((tc) => ({
-          id: tc.id,
-          name: tc.function.name,
-          args: tc.function.arguments,
-        })),
-      })
-      await appendMessage(config.sessionID, {
-        role: "assistant",
-        content: assistantPayload,
-        timestamp: new Date().toISOString(),
-      })
-
-      const evaluations = evaluateToolCalls(toolCallsArray, this.registry, config.permissions)
-      const approvedCalls: typeof toolCallsArray = []
-      const results = new Map<string, ToolResult>()
-
-      for (const ev of evaluations) {
-        if (ev.hardDenied) {
-          results.set(ev.toolCall.id, { success: false, error: ev.hardDenied })
-          continue
-        }
-        if (ev.needsApproval) {
-          const resources = extractResources(ev.args)
-          const cached = this.approvalStore.checkAll(ev.permissionAction, resources)
-          if (cached === "allow") {
-            approvedCalls.push({ id: ev.toolCall.id, type: "function" as const, function: { name: ev.toolCall.name, arguments: JSON.stringify(ev.args) } })
-            continue
-          }
-
-          const { id, waitForReply } = this.stateMachine.createPermissionRequest(
-            () => config.onPermissionSave?.([{ action: ev.permissionAction, resource: "*", effect: "allow" }]),
-          )
-
-          yield {
-            type: "permission_request",
-            id,
-            action: ev.permissionAction,
-            resources,
-            toolCall: ev.toolCall,
-          }
-
-          const allowed = await waitForReply()
-          if (allowed) {
-            this.approvalStore.record(ev.permissionAction, resources, "allow", 300_000, config.workspace)
-          } else {
-            this.approvalStore.record(ev.permissionAction, resources, "deny", 300_000, config.workspace)
-            results.set(ev.toolCall.id, { success: false, error: `Permission denied: ${ev.toolCall.name}` })
-            continue
-          }
-        }
-        approvedCalls.push({ id: ev.toolCall.id, type: "function" as const, function: { name: ev.toolCall.name, arguments: JSON.stringify(ev.args) } })
-      }
-
-      // pre_tool_use hook: 可额外阻止工具执行
-      const hookBlocked: string[] = []
-      for (const call of toolCallsArray) {
-        const blocked = await pluginHooks.triggerUntil("pre_tool_use", call, config)
-        if (blocked) {
-          hookBlocked.push(call.id)
-          results.set(call.id, { success: false, error: String(blocked) })
-        }
-      }
-
-      for (const call of approvedCalls) {
-        if (hookBlocked.includes(call.id)) continue
-        yield { type: "tool_start", id: call.id, name: call.function.name, args: JSON.parse(call.function.arguments) }
-      }
-
-      const orchestratedCalls = approvedCalls
-        .filter((c) => !hookBlocked.includes(c.id))
-        .map((c) => ({
-          id: c.id,
-          name: c.function.name,
-          args: JSON.parse(c.function.arguments),
-        }))
-
-      const orchestratedResults = await this.orchestrator.execute(orchestratedCalls, ctx)
-      await pluginHooks.emitAsync("post_tool_use", orchestratedCalls, orchestratedResults)
-      for (const [id, result] of orchestratedResults) {
-        results.set(id, result)
-      }
-
-      for (const call of toolCallsArray) {
-        const result = results.get(call.id)
-        if (!result) {
-          messages.push({
+      // 持久化工具结果到会话历史
+      for (const tr of ptResult.toolResults) {
+        const tc = ptResult.toolCalls.find(t => t.id === tr.id)
+        if (tc) {
+          await appendMessage(config.sessionID, {
             role: "tool",
-            content: [{ type: "tool-result" as const, toolCallId: call.id, toolName: call.function.name, output: { type: "text" as const, value: "[Tool execution error: no result available]" } }],
-            tool_call_id: call.id,
-          })
-          yield { type: "tool_result", id: call.id, name: call.function.name, result: { success: false, error: "No result available" } }
-          continue
-        }
-        yield { type: "tool_result", id: call.id, name: call.function.name, result: { success: result.success, output: result.output, error: result.error } }
-        const text = result.success ? (result.output || "") : (result.error || "")
-        const parts: Array<{ type: "tool-result" | "text"; toolCallId?: string; toolName?: string; output?: any; text?: string }> = [
-          { type: "tool-result" as const, toolCallId: call.id, toolName: call.function.name, output: { type: "text" as const, value: text } },
-        ]
-        if (result.metadata?.mime && result.metadata?.data) {
-          parts.push({
-            type: "text" as const,
-            text: `![${result.metadata.name || "image"}](data:${result.metadata.mime};base64,${(result.metadata.data as string).slice(0, 100)}... [base64 image data])`,
+            content: tr.result.output || tr.result.error || "",
+            timestamp: new Date().toISOString(),
+            toolCallId: tc.id,
           })
         }
-        messages.push({ role: "tool", content: parts as any, tool_call_id: call.id })
       }
 
-      for (const call of toolCallsArray) {
-        const result = results.get(call.id)!
-        await appendMessage(config.sessionID, {
-          role: "tool",
-          content: result.output || result.error || "",
-          timestamp: new Date().toISOString(),
-          toolCallId: call.id,
-        })
+      const { messages: postToolMessages, didRebuild: postToolRebuild, reason: postToolReason } =
+        await this.contextManager.checkAndRebuild(messages, config.sessionID)
+      if (postToolRebuild) {
+        messages = postToolMessages
+        yield { type: "thinking" as const, text: `🔄 Context compacted after tool execution` }
+        yield { type: "context_rebuild" as any, reason: postToolReason, tokensBefore: 0, tokensAfter: 0 } as AgentEvent
       }
 
-      await this.contextManager.syncTurn(userMessage, currentText, config.sessionID)
-
+      await this.contextManager.syncTurn(userMessage, ptResult.text, config.sessionID)
       await this.memoryManager.promoteMemories(config.sessionID)
-
-      this.dreamDistillManager.recordTurn(userMessage, currentText)
+      this.dreamDistillManager.recordTurn(userMessage, ptResult.text)
 
       if (config.apiKey && !this.checkpointProvider.hasLLMConfig) {
         this.contextManager.setLLMConfig({

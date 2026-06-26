@@ -166,6 +166,8 @@ export function App() {
           minWidth={180}
           maxWidth={400}
           storageKey="sidebar-width"
+          collapsed={!sidebarOpen}
+          collapsedWidth={48}
         >
           {[
             <Sidebar

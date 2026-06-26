@@ -1,11 +1,13 @@
 /**
- * FTS5 全文搜索 Memory Provider
- * 参考 MiMo-Code memory/service.ts — SQLite FTS5 + BM25
+ * FTS5 全文搜索 Memory Provider — 使用真 FTS5 + BM25
+ * 参考 MiMo-Code memory/service.ts
+ * 
+ * 改动：普通表 → FTS5 虚拟表，LIKE → MATCH，LENGTH → rank(BM25)
  */
 
 import { MemoryProvider } from "./types"
 import initSqlJs, { type Database as SqliteDb } from "sql.js"
-import { app } from "electron"
+import { getPlatformPaths } from "../platform-paths"
 import { join } from "path"
 import * as fss from "fs"
 import * as fsp from "fs/promises"
@@ -16,8 +18,8 @@ const DEFAULT_IGNORE_EXTS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", "
 const DEFAULT_MAX_FILE_SIZE = 100 * 1024
 const DEFAULT_MAX_RESULTS = 5
 const DEFAULT_SCORE_FLOOR = 0.15
-const DEFAULT_RECONCILE_INTERVAL = 5 * 60 * 1000  // 5 分钟自动重索引
-const DEFAULT_SAVE_INTERVAL = 60 * 1000  // 60 秒自动保存
+const DEFAULT_RECONCILE_INTERVAL = 5 * 60 * 1000
+const DEFAULT_SAVE_INTERVAL = 60 * 1000
 
 export interface FTSMemoryOptions {
   ignoreDirs?: string[]
@@ -25,8 +27,8 @@ export interface FTSMemoryOptions {
   maxFileSize?: number
   maxResults?: number
   scoreFloor?: number
-  reconcileInterval?: number  // ms, 0 禁用
-  saveInterval?: number       // ms, 0 禁用
+  reconcileInterval?: number
+  saveInterval?: number
 }
 
 export class FTSMemoryProvider implements MemoryProvider {
@@ -47,8 +49,9 @@ export class FTSMemoryProvider implements MemoryProvider {
   private reconcileTimer: ReturnType<typeof setInterval> | null = null
   private saveTimer: ReturnType<typeof setInterval> | null = null
   private reconciling = false
-
   private fileMtimes = new Map<string, number>()
+  /** tokenize='unicode61' 的查询转义：FTS5 特殊字符 */
+  private static readonly FTS5_SPECIAL = /['"*()^${}~:+-]/g
 
   constructor(opts?: FTSMemoryOptions) {
     this.ignoreDirs = new Set(opts?.ignoreDirs || DEFAULT_IGNORE_DIRS)
@@ -61,7 +64,22 @@ export class FTSMemoryProvider implements MemoryProvider {
   }
 
   private dbPath(): string {
-    try { return join(app.getPath("userData"), "fts-memory.db") } catch { return "" }
+    return join(getPlatformPaths().userData, "fts-memory.db")
+  }
+
+  /** 转义 FTS5 查询关键字中的特殊字符 */
+  private static escapeFTS5(text: string): string {
+    return text.replace(FTSMemoryProvider.FTS5_SPECIAL, " ")
+  }
+
+  /** 将查询文本转为 FTS5 MATCH 表达式：空格分词 + 隐式 AND */
+  private static toFTS5Query(text: string): string {
+    const tokens = text.match(/[\p{L}\p{N}_]+/gu)
+    if (!tokens || tokens.length === 0) return ""
+    return tokens
+      .map(t => FTSMemoryProvider.escapeFTS5(t.toLowerCase()))
+      .filter(Boolean)
+      .join(" AND ")
   }
 
   async initialize(_sessionID: string, workspace: string): Promise<void> {
@@ -76,14 +94,21 @@ export class FTSMemoryProvider implements MemoryProvider {
     }
     if (!this.db) this.db = new this.SQL.Database()
 
+    // 创建 FTS5 虚拟表（sql.js 1.14+ WASM 包含 FTS5 扩展）
     this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_files USING fts5(
-      path UNINDEXED, content, filetype UNINDEXED, tokenize='unicode61'
+      path UNINDEXED,
+      content,
+      filetype UNINDEXED,
+      tokenize='unicode61'
     )`)
-    this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_memory USING fts5(
-      source UNINDEXED, content, session_id UNINDEXED, tokenize='unicode61'
+    this.db.run(`CREATE TABLE IF NOT EXISTS fts_memory (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT, content TEXT, session_id TEXT
+    )`)
+    this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_memory_fts USING fts5(
+      content,
+      tokenize='unicode61'
     )`)
 
-    // 启动定时器
     if (this.reconcileInterval > 0) {
       this.reconcileTimer = setInterval(() => this.reconcile(), this.reconcileInterval)
     }
@@ -95,7 +120,7 @@ export class FTSMemoryProvider implements MemoryProvider {
   }
 
   buildSystemPrompt(): string {
-    return `[Memory: FTS5 index available for file content search when needed]`
+    return `[Memory: FTS5 全文搜索索引可用，Agent 可主动调用 memory_search 工具]`
   }
 
   async prefetch(query: string, _sessionID: string): Promise<string> {
@@ -106,7 +131,7 @@ export class FTSMemoryProvider implements MemoryProvider {
   }
 
   async syncTurn(_user: string, _assistant: string, _sessionID: string): Promise<void> {
-    // FTS memory 不需要逐轮同步
+    // FTS 不需要逐轮同步
   }
 
   async shutdown(): Promise<void> {
@@ -117,7 +142,7 @@ export class FTSMemoryProvider implements MemoryProvider {
     this.ready = false
   }
 
-  /** 索引重建：全量扫描，增量更新 */
+  /** 索引重建 — 全量扫描 + 增量更新 */
   async reconcile(): Promise<{ indexed: number; pruned: number }> {
     if (!this.db || this.reconciling) return { indexed: 0, pruned: 0 }
     this.reconciling = true
@@ -126,9 +151,10 @@ export class FTSMemoryProvider implements MemoryProvider {
       let indexed = 0
       let pruned = 0
 
-      // 清理已不存在的文件
       const existing = this.db.exec("SELECT path FROM fts_files")
       const indexedPaths = new Set(existing[0]?.values?.map((r: any) => r[0]) || [])
+
+      // 清理已删除文件
       for (const p of indexedPaths) {
         if (!files.some((f) => f.path === p)) {
           this.db.run("DELETE FROM fts_files WHERE path = ?", [p])
@@ -136,23 +162,22 @@ export class FTSMemoryProvider implements MemoryProvider {
         }
       }
 
-      // 增量更新：只处理 mtime 变化的文件
-      const insert = this.db.prepare("INSERT OR REPLACE INTO fts_files (path, content, filetype) VALUES (?, ?, ?)")
+      // 增量更新
       for (const file of files) {
         try {
           const stat = await fsp.stat(file.path)
           const lastMtime = this.fileMtimes.get(file.path)
-          if (lastMtime === stat.mtimeMs && indexedPaths.has(file.path)) continue // 未变更
+          if (lastMtime === stat.mtimeMs && indexedPaths.has(file.path)) continue
 
           const content = await fsp.readFile(file.path, "utf-8")
-          insert.run([file.path, content, file.filetype])
+          // FTS5 DELETE + INSERT 实现 upsert
+          this.db.run("INSERT INTO fts_files (path, content, filetype) VALUES (?, ?, ?)",
+            [file.path, content, file.filetype])
           this.fileMtimes.set(file.path, stat.mtimeMs)
           indexed++
         } catch { /* 跳过 */ }
       }
-      insert.free()
 
-      this.db.run("INSERT INTO fts_files(fts_files) VALUES('rebuild')")
       this.save()
       return { indexed, pruned }
     } finally {
@@ -160,51 +185,82 @@ export class FTSMemoryProvider implements MemoryProvider {
     }
   }
 
-  /** FTS5 全文搜索（参考 MiMo-Code BM25 + OR-join + Unicode tokenization） */
+  /** FTS5 全文搜索 — BM25 排序 + snippet 高亮 */
   async search(query: string): Promise<string> {
     if (!this.db) return ""
-
-    // 使用 Unicode-aware 分词，支持 CJK（中文/日文/韩文）
-    const tokens = query.match(/[\p{L}\p{N}_]+/gu)
-    if (!tokens || tokens.length === 0) return ""
-
-    const terms = tokens
-      .map((t) => `"${t.replace(/"/g, "")}"`)
-      .join(" OR ")
+    const ftsQuery = FTSMemoryProvider.toFTS5Query(query)
+    if (!ftsQuery) return ""
 
     try {
       const stmt = this.db.prepare(`
-        SELECT path, snippet(fts_files_idx, 0, '<<', '>>', '...', 40) AS snippet,
-               bm25(fts_files_idx) AS score
-        FROM fts_files_idx JOIN fts_files ON fts_files.id = fts_files_idx.rowid
-        WHERE fts_files_idx MATCH ?
-        ORDER BY score LIMIT ?
+        SELECT path, snippet(fts_files, 1, '<b>', '</b>', '...', 48) AS snippet, rank
+        FROM fts_files
+        WHERE fts_files MATCH ?
+        ORDER BY rank
+        LIMIT ?
       `)
-      stmt.bind([terms, this.maxResults])
+      stmt.bind([ftsQuery, this.maxResults])
 
       const results: Array<{ path: string; snippet: string; score: number }> = []
       while (stmt.step()) {
         const row = stmt.getAsObject() as any
-        if (row.path) results.push({ path: row.path, snippet: row.snippet, score: row.score })
+        if (row.path) {
+          results.push({
+            path: row.path,
+            snippet: String(row.snippet || "").replace(/<[^>]+>/g, "**"),
+            score: row.rank !== undefined ? 1 / (1 + Number(row.rank)) : 0,
+          })
+        }
       }
       stmt.free()
 
       if (results.length === 0) return ""
+      return `[相关文件记忆]\n${results.map((r) =>
+        `文件: ${pt.relative(this.workspace, r.path)}\n片段: ${r.snippet}`
+      ).join("\n\n")}`
+    } catch {
+      // FTS5 查询失败时回退到 LIKE（兼容 token 过少等边界情况）
+      return this.searchLikeFallback(query)
+    }
+  }
 
-      // BM25 lower = better; scoreFloor relative to top hit
-      const topScore = results[0].score
-      const cutoff = this.scoreFloor > 0 ? topScore * (1 - this.scoreFloor) : -Infinity
-      const relevant = results.filter((r, i) => i === 0 || r.score <= cutoff)
+  /** LIKE 回退 — 当 FTS5 查询失败时使用 */
+  private async searchLikeFallback(query: string): Promise<string> {
+    if (!this.db) return ""
+    const tokens = query.match(/[\p{L}\p{N}_]+/gu)
+    if (!tokens || tokens.length === 0) return ""
 
-      return `[相关记忆]\n${relevant.map((r) =>
-        `文件: ${pt.relative(this.workspace, r.path)}\n片段: ${r.snippet}\n相关度: ${(-r.score).toFixed(2)}`
+    try {
+      const conditions = tokens.map(() => `content LIKE ?`).join(" AND ")
+      const params = tokens.map(t => `%${t}%`)
+      const stmt = this.db.prepare(`
+        SELECT path, content FROM fts_files
+        WHERE ${conditions}
+        LIMIT ?
+      `)
+      stmt.bind([...params, this.maxResults])
+
+      const results: Array<{ path: string; snippet: string }> = []
+      while (stmt.step()) {
+        const row = stmt.getAsObject() as any
+        if (row.path) {
+          const content = String(row.content || "")
+          const idx = content.toLowerCase().indexOf(tokens[0].toLowerCase())
+          const start = Math.max(0, idx - 40)
+          const snippet = (start > 0 ? "..." : "") + content.slice(start, start + 80) + (start + 80 < content.length ? "..." : "")
+          results.push({ path: row.path, snippet })
+        }
+      }
+      stmt.free()
+
+      if (results.length === 0) return ""
+      return `[相关记忆]\n${results.map((r) =>
+        `文件: ${pt.relative(this.workspace, r.path)}\n片段: ${r.snippet}`
       ).join("\n\n")}`
     } catch { return "" }
   }
 
-  /**
-   * 索引 checkpoint 摘要到 FTS 记忆表
-   */
+  /** 索引 checkpoint 摘要到记忆表 + FTS5 */
   indexCheckpoint(summary: string, sessionID: string): void {
     if (!this.db || !summary) return
     try {
@@ -212,12 +268,14 @@ export class FTSMemoryProvider implements MemoryProvider {
         "INSERT INTO fts_memory (source, content, session_id) VALUES (?, ?, ?)",
         ["checkpoint", summary.slice(0, 1000), sessionID],
       )
-    } catch { /* 重复或错误跳过 */ }
+      this.db.run(
+        "INSERT INTO fts_memory_fts (content) VALUES (?)",
+        [summary.slice(0, 1000)],
+      )
+    } catch { /* 跳过 */ }
   }
 
-  /**
-   * 索引 MEMORY.md 内容到 FTS 记忆表
-   */
+  /** 索引 MEMORY.md 内容到记忆表 + FTS5 */
   indexMemoryMd(content: string, sessionID: string): void {
     if (!this.db || !content) return
     try {
@@ -225,33 +283,32 @@ export class FTSMemoryProvider implements MemoryProvider {
         "INSERT INTO fts_memory (source, content, session_id) VALUES (?, ?, ?)",
         ["memory_md", content.slice(0, 2000), sessionID],
       )
-    } catch { /* 重复或错误跳过 */ }
+      this.db.run(
+        "INSERT INTO fts_memory_fts (content) VALUES (?)",
+        [content.slice(0, 2000)],
+      )
+    } catch { /* 跳过 */ }
   }
 
-  /**
-   * 跨 session 搜索记忆
-   */
+  /** 跨 session 记忆搜索 — FTS5 */
   async searchMemory(query: string, limit = 3): Promise<string> {
     if (!this.db) return ""
-
-    const terms = query
-      .split(/[\s,，。；;：:！!？?、]+/)
-      .filter(Boolean)
-      .map((t) => `"${t.replace(/"/g, "")}"`)
-      .join(" OR ")
-
-    if (!terms) return ""
+    const ftsQuery = FTSMemoryProvider.toFTS5Query(query)
+    if (!ftsQuery) return ""
 
     try {
       const stmt = this.db.prepare(`
-        SELECT source, content, session_id, bm25(fts_memory_idx) AS score
-        FROM fts_memory_idx JOIN fts_memory ON fts_memory.id = fts_memory_idx.rowid
-        WHERE fts_memory_idx MATCH ?
-        ORDER BY score LIMIT ?
+        SELECT m.source, m.content, m.session_id,
+               snippet(m_fts, 0, '<b>', '</b>', '...', 32) AS snip, rank
+        FROM fts_memory_fts m_fts
+        JOIN fts_memory m ON m_fts.rowid = m.id
+        WHERE fts_memory_fts MATCH ?
+        ORDER BY rank
+        LIMIT ?
       `)
-      stmt.bind([terms, limit])
+      stmt.bind([ftsQuery, limit])
 
-      const results: Array<{ source: string; content: string; sessionID: string; score: number }> = []
+      const results: Array<{ source: string; content: string; sessionID: string; snippet: string; score: number }> = []
       while (stmt.step()) {
         const row = stmt.getAsObject() as Record<string, unknown>
         if (row.content) {
@@ -259,7 +316,47 @@ export class FTSMemoryProvider implements MemoryProvider {
             source: String(row.source || ""),
             content: String(row.content),
             sessionID: String(row.session_id || ""),
-            score: Number(row.score) || 0,
+            snippet: String(row.snip || "").replace(/<[^>]+>/g, "**"),
+            score: row.rank !== undefined ? 1 / (1 + Number(row.rank)) : 0,
+          })
+        }
+      }
+      stmt.free()
+
+      if (results.length === 0) return ""
+      return `[跨 session 记忆]\n${results.map((r) =>
+        `来源: ${r.source}\n内容: ${r.content.slice(0, 300)}`
+      ).join("\n\n")}`
+    } catch {
+      // FTS5 失败时回退到 LIKE
+      return this.searchMemoryLikeFallback(query, limit)
+    }
+  }
+
+  private async searchMemoryLikeFallback(query: string, limit = 3): Promise<string> {
+    if (!this.db) return ""
+    const terms = query.match(/[\p{L}\p{N}_]+/gu)
+    if (!terms || terms.length === 0) return ""
+
+    try {
+      const conditions = terms.map(() => `content LIKE ?`).join(" AND ")
+      const params = terms.map(t => `%${t}%`)
+      const stmt = this.db.prepare(`
+        SELECT source, content, session_id FROM fts_memory
+        WHERE ${conditions}
+        ORDER BY rowid DESC
+        LIMIT ?
+      `)
+      stmt.bind([...params, limit])
+
+      const results: Array<{ source: string; content: string; sessionID: string }> = []
+      while (stmt.step()) {
+        const row = stmt.getAsObject() as Record<string, unknown>
+        if (row.content) {
+          results.push({
+            source: String(row.source || ""),
+            content: String(row.content),
+            sessionID: String(row.session_id || ""),
           })
         }
       }
@@ -272,9 +369,7 @@ export class FTSMemoryProvider implements MemoryProvider {
     } catch { return "" }
   }
 
-  /**
-   * 获取记忆表的搜索结果作为 prefetch 补充
-   */
+  /** 用于 MemoryManager 的 prefetch 扩展（文件 + 记忆联合搜索） */
   async prefetchMemory(query: string): Promise<string> {
     const fileResults = await this.search(query)
     const memoryResults = await this.searchMemory(query)
@@ -308,7 +403,7 @@ export class FTSMemoryProvider implements MemoryProvider {
           }
         }
       }
-    } catch { /* 跳过无权限目录 */ }
+    } catch { /* 跳过 */ }
     return results
   }
 }

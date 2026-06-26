@@ -3,9 +3,9 @@
  * 参考 OpenCode packages/core/src/instruction-context.ts
  */
 
-import { app } from "electron"
 import { join, dirname } from "path"
 import fs from "fs"
+import { getPlatformPaths } from "./platform-paths"
 
 /** 从指定路径向上查找直到找到 .git 标志或达到根目录 */
 export function findProjectRoot(start: string): string {
@@ -28,7 +28,7 @@ export function findProjectRoot(start: string): string {
 /** 加载全局 AGENTS.md（~/.config/mira/AGENTS.md） */
 export function loadGlobalInstructions(): string | null {
   try {
-    const configDir = join(app.getPath("home"), ".config", "mira")
+    const configDir = join(getPlatformPaths().home, ".config", "mira")
     const path = join(configDir, "AGENTS.md")
     if (fs.existsSync(path)) {
       return fs.readFileSync(path, "utf-8")

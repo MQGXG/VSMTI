@@ -1,4 +1,4 @@
-import { registerAgentIPC } from "./agent-ipc"
+import { registerSidecarIPCHandlers } from "./sidecar-bridge"
 import { registerSessionIPC } from "./session-ipc"
 import { registerConfigIPC } from "./config-ipc"
 import { registerTaskIPC } from "./task-ipc"
@@ -8,6 +8,7 @@ import { registerDreamIPC } from "./dream-ipc"
 import { registerComposeIPC } from "./compose-ipc"
 import { registerSkillIPC } from "./skill-ipc"
 import { registerQuestionIPC } from "./question-ipc"
+import { registerMemoryIPC } from "./memory-ipc"
 import { setupDefaultHooks } from "@mira/core/hooks-setup"
 import { cronScheduler } from "@mira/core/cron-scheduler"
 
@@ -15,7 +16,10 @@ export function registerAgentIPCHandlers(): void {
   setupDefaultHooks()
   cronScheduler.start()
 
-  registerAgentIPC()
+  // Agent 操作 → Sidecar HTTP 代理
+  registerSidecarIPCHandlers()
+
+  // 其他 IPC（直连 Electron API，无需 Sidecar）
   registerSessionIPC()
   registerConfigIPC()
   registerTaskIPC()
@@ -25,4 +29,5 @@ export function registerAgentIPCHandlers(): void {
   registerComposeIPC()
   registerSkillIPC()
   registerQuestionIPC()
+  registerMemoryIPC()
 }

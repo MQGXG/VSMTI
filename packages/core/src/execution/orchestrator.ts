@@ -43,6 +43,41 @@ export class ToolOrchestrator {
     return results
   }
 
+  async *executeStreaming(
+    calls: OrchestratedToolCall[],
+    ctx: ToolContext,
+    extra?: { provider?: string; model?: string },
+  ): AsyncGenerator<{ id: string; result: ToolResult }> {
+    if (calls.length === 0) return
+
+    const groups = this.groupCalls(calls)
+
+    for (const group of groups) {
+      if (group.length === 1) {
+        const result = await this.executeSingle(group[0], ctx, extra)
+        for (const [id, r] of result) {
+          if (r.output) this.outputStore.store(id, group[0]?.name || "", r.output)
+          yield { id, result: r }
+        }
+      } else {
+        const semaphore = 5
+        const executing = group.map(async (call) => {
+          const result = await this.executeSingle(call, ctx, extra)
+          for (const [id, r] of result) {
+            if (r.output) this.outputStore.store(id, call.name, r.output)
+            return { id, result: r }
+          }
+          return { id: call.id, result: { success: false, error: "No result" } as ToolResult }
+        })
+
+        for (const promise of executing) {
+          const { id, result } = await promise
+          yield { id, result }
+        }
+      }
+    }
+  }
+
   /**
    * 将工具调用分组：
    * - 声明了 supportsParallel 的工具合并为一组并行执行

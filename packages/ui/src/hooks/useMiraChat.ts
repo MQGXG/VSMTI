@@ -155,6 +155,7 @@ export function useMiraChat({
         if (apiKey || provider) {
           const workspace =
             window.electronAPI.platform === "win32" ? "C:\\" : "/";
+          const settings = getSettings()
           const config = {
             sessionID: sessionId || getOfflineSessionId(),
             workspace,
@@ -163,9 +164,11 @@ export function useMiraChat({
             apiUrl,
             provider: selectedModel.provider,
             headers: provider?.headers || {},
+            maxMode: settings.maxMode || false,
+            maxModeCandidates: 3,
             options: {
               ...(provider?.options || {}),
-              shell: getSettings().terminalShell || "default",
+              shell: settings.terminalShell || "default",
             },
           };
 

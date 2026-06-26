@@ -3,9 +3,9 @@
  * 参考 Hermes Agent skill 系统：~/.config/mira/skills/<category>/<skill>/SKILL.md
  */
 
-import { app } from "electron"
 import { join } from "path"
 import fs from "fs"
+import { getPlatformPaths } from "../platform-paths"
 
 export interface SkillMeta {
   name: string
@@ -23,7 +23,7 @@ export interface SkillContent {
 
 /** 获取 skills 根目录 */
 export function getSkillsDir(): string {
-  return join(app.getPath("home"), ".config", "mira", "skills")
+  return join(getPlatformPaths().home, ".config", "mira", "skills")
 }
 
 /** 解析 SKILL.md 的 YAML frontmatter */

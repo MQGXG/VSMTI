@@ -2,8 +2,7 @@ import { spawn } from "child_process"
 import { z } from "zod"
 import { make } from "../tool"
 import path from "path"
-
-const HARD_DENY = ["rm -rf /", "sudo ", "shutdown", "reboot", "mkfs", "dd if="]
+import { checkCommand, normalizeCommand, splitSubCommands, isReadOnlyCommand } from "./bash-security"
 
 const MAX_OUTPUT_LENGTH = 50000
 const MAX_CAPTURE_BYTES = 1024 * 1024
@@ -117,17 +116,6 @@ function externalCommandDirs(command: string, cwd: string): string[] {
   return [...dirs]
 }
 
-/**
- * 检测危险命令模式
- */
-function detectDangerousCommand(command: string): string | null {
-  const lower = command.toLowerCase().trim()
-  for (const deny of HARD_DENY) {
-    if (lower.includes(deny)) return deny
-  }
-  return null
-}
-
 export const bashTool = make({
   name: "bash",
   description: "Execute shell commands (npm, git, system commands). Use for building, testing, installing packages. Use when: installing npm packages, running tests, checking git status, building projects, running scripts.",
@@ -139,9 +127,9 @@ export const bashTool = make({
   permission: "bash",
 
   async execute(input, ctx) {
-    const dangerous = detectDangerousCommand(input.command)
-    if (dangerous) {
-      return { success: false, error: `Hard denied: dangerous command pattern "${dangerous}"` }
+    const check = checkCommand(input.command)
+    if (check.level === "blocked") {
+      return { success: false, error: `Blocked: ${check.reason}` }
     }
 
     const cwd = ctx.workspace || process.cwd()

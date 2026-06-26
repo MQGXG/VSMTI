@@ -1,7 +1,14 @@
 /**
- * Goal Manager — 停止条件系统
- * 参考 MiMo-Code 的 /goal + judge 系统
- * 当 agent 想停下来时，由独立裁判评估条件是否真正满足
+ * @deprecated 由 GoalJudge (goal-judge.ts) 替代
+ *
+ * 此文件是 GoalJudge 的早期实现，现已被 GoalJudge 完全替代。
+ * GoalJudge 提供了：
+ * - 相同的 CRUD API（setGoal/getActiveGoal/getAllGoals/cancelGoal）
+ * - 改进的评估逻辑（流式 LLM、confidence 阈值、三层降级解析）
+ * - quickCheck 快速预检（避免每次评估都调用 LLM）
+ * - 深度集成到 agent 循环（agent.ts 中使用 GoalJudge）
+ *
+ * 请使用 GoalJudge 替代，此文件将在下一轮清理中移除。
  */
 
 import { createLLMClient, type LLMMessage } from "./llm-sdk"

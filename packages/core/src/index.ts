@@ -72,3 +72,14 @@ export { createDefaultRegistry } from "./registry-init"
 // 配置系统
 export { loadConfig, saveGlobalConfig, resolveRuntimeConfig, getConfigForRenderer } from "./config"
 export type { MiraConfig, ResolvedConfig } from "./config"
+
+// 平台路径抽象
+export { initPlatformPaths, getPlatformPaths } from "./platform-paths"
+export type { PlatformPaths } from "./platform-paths"
+
+// Sidecar 服务
+export { ServerManager } from "./server-manager"
+export type { ServerManagerOptions } from "./server-manager"
+export { createServer, startServer } from "./server"
+export type { ServerOptions } from "./server"
+export type { APIContext } from "./server"

@@ -2,6 +2,7 @@ import type { CheckpointProvider } from "./memory/checkpoint-provider"
 import type { MemoryManager } from "./memory/manager"
 import { needsContextRebuild, rebuildContextFromCheckpoint, truncateToBudget, estimateTokens, type CheckpointData } from "./message-utils"
 import type { LLMMessage, ContentPart, ToolResultPart } from "./llm/schema/messages"
+import { compactMessages, type CompactLevel } from "./compaction"
 import { createLLMClient } from "./llm-sdk"
 import * as fs from "fs"
 import * as path from "path"
@@ -126,6 +127,49 @@ export class ContextManager {
     return result
   }
 
+  /**
+   * 计算 token 预算分配 — 参考 MiMo-Code 的 budgeted injection
+   * 在压缩/重建前决定各组件应占多少 token
+   */
+  private computeTokenBudget(currentTokens: number): {
+    systemBudget: number
+    checkpointBudget: number
+    recentBudget: number
+    toolResultBudget: number
+  } {
+    const max = this.config.maxContextTokens
+    const target = Math.floor(max * 0.7)
+
+    return {
+      systemBudget: Math.floor(target * 0.1),
+      checkpointBudget: Math.floor(target * 0.2),
+      recentBudget: Math.floor(target * 0.5),
+      toolResultBudget: Math.floor(target * 0.2),
+    }
+  }
+
+  /**
+   * 轻量压缩 — 在未达重建阈值时做 partial compression
+   * 仅裁剪/占位化旧 tool_result，无需 checkpoint 重建
+   */
+  private budgetedCompress(messages: LLMMessage[]): LLMMessage[] {
+    const currentTokens = estimateTokens(messages)
+    if (currentTokens <= this.config.maxContextTokens) return messages
+
+    // 使用 compaction.ts 的三层管线做轻量压缩
+    const level: CompactLevel =
+      currentTokens > this.config.maxContextTokens * 1.5 ? "l3_auto"
+        : currentTokens > this.config.maxContextTokens * 1.2 ? "l2_micro"
+          : "l1_snip"
+
+    const result = compactMessages(messages, this.config.maxContextTokens, level)
+
+    if (result.level !== "none") {
+      this.lastRebuildReason = `budgeted_${result.level}`
+    }
+    return result.messages
+  }
+
   // ── 压缩管线入口 ────────────────────────────────────────────
   async compactPipeline(
     messages: LLMMessage[],
@@ -139,7 +183,7 @@ export class ContextManager {
 
     // 第 1 层：最便宜的 0-API 操作
     messages = this.toolResultBudget(messages)
-    messages = this.snipCompact(messages)
+    messages = this.budgetedCompress(messages)
     messages = this.microCompact(messages)
 
     const currentTokens = estimateTokens(messages)
@@ -313,54 +357,6 @@ export class ContextManager {
     } catch {
       return output
     }
-  }
-
-  // ── L1: 消息裁剪（基于 token budget） ──────────────────────
-  private snipCompact(messages: LLMMessage[]): LLMMessage[] {
-    const totalTokens = estimateTokens(messages)
-    const budget = this.config.maxContextTokens + this.config.pruneProtect
-    if (totalTokens <= budget) return messages
-
-    const hasToolUse = (msg: LLMMessage): boolean => {
-      if (msg.role !== "assistant" || typeof msg.content === "string") return false
-      return msg.content.some((p: ContentPart) => p.type === "tool-call")
-    }
-
-    const isToolResult = (msg: LLMMessage): boolean => {
-      if (msg.role !== "user" || typeof msg.content === "string") return false
-      return msg.content.some((p: ContentPart) => p.type === "tool-result")
-    }
-
-    // 保留开头 3 条（system + 开场）
-    const keepHead = 3
-    let headEnd = keepHead
-    if (headEnd > 0 && hasToolUse(messages[headEnd - 1])) {
-      while (headEnd < messages.length && isToolResult(messages[headEnd])) headEnd++
-    }
-
-    // 从后往前计算需要保留多少个 turn（tailTurns 轮对话）
-    const keepRecent = this.config.tailTurns * 2
-    let tailBudget = 0
-    let tailStart = messages.length
-    for (let i = messages.length - 1; i >= headEnd; i--) {
-      tailBudget += estimateTokens([messages[i]])
-      tailStart = i
-      if (tailBudget >= this.config.pruneMinimum) break
-    }
-
-    // 确保不切断 tool_use/tool_result 对
-    if (tailStart > 0 && tailStart < messages.length && isToolResult(messages[tailStart]) && hasToolUse(messages[tailStart - 1])) {
-      tailStart--
-    }
-
-    if (headEnd >= tailStart) return messages
-
-    const snipped = tailStart - headEnd
-    return [
-      ...messages.slice(0, headEnd),
-      { role: "user" as const, content: `[snipped ${snipped} messages — ${estimateTokens(messages.slice(headEnd, tailStart))} tokens]` },
-      ...messages.slice(tailStart),
-    ]
   }
 
   // ── L2: 旧结果占位（按 token 预算） ──────────────────────

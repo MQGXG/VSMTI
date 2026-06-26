@@ -6280,7 +6280,7 @@ snapshots:
 
   '@types/minimatch@6.0.0':
     dependencies:
-      minimatch: 5.1.9
+      minimatch: 10.2.5
     optional: true
 
   '@types/ms@2.1.0': {}

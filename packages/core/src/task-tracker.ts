@@ -3,10 +3,10 @@
  * 参考 MiMo-Code 的 T1, T1.1, T1.2 任务树
  */
 
-import { app } from "electron"
 import { join } from "path"
 import fs from "fs"
 import { randomUUID } from "crypto"
+import { getPlatformPaths } from "./platform-paths"
 
 export type TaskStatus = "open" | "in_progress" | "blocked" | "done" | "abandoned"
 
@@ -30,7 +30,7 @@ export class TaskTracker {
   private store: TaskStore = { tasks: [] }
 
   async initialize(sessionId: string): Promise<void> {
-    const dir = join(app.getPath("userData"), "tasks", sessionId)
+    const dir = join(getPlatformPaths().userData, "tasks", sessionId)
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
     this.storePath = join(dir, "tasks.json")
     this.loadStore()

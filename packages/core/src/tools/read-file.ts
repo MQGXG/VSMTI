@@ -52,15 +52,14 @@ export const readFileTool = make({
     return []
   },
   async execute(input, ctx) {
-    const absolute = path.resolve(ctx.workspace, input.path)
-    if (!path.isAbsolute(input.path) && !contains(ctx.workspace, absolute)) {
-      return { success: false, error: `Path escapes workspace: ${input.path}` }
-    }
-
+    const isAbsolute = path.isAbsolute(input.path)
+    const absolute = isAbsolute ? input.path : path.resolve(ctx.workspace, input.path)
     const real = await realPath(absolute)
     const root = await realPath(ctx.workspace)
-    if (!contains(root, real)) {
-      return { success: false, error: `Path escapes workspace after symlink resolution: ${input.path}` }
+
+    // 绝对路径放行（用户有意），相对路径不允许逃逸 workspace
+    if (!isAbsolute && !contains(root, real)) {
+      return { success: false, error: `相对路径逃逸工作区: ${input.path}` }
     }
 
     const stat = await fs.stat(real).catch(() => null)

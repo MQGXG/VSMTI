@@ -3,10 +3,10 @@
  * 在每回合后保存关键信息，下回合前召回
  */
 
-import { app } from "electron"
 import { join } from "path"
 import fs from "fs"
 import { MemoryProvider } from "./types"
+import { getPlatformPaths } from "../platform-paths"
 
 interface MemoryEntry {
   timestamp: string
@@ -29,7 +29,7 @@ export class BuiltinMemoryProvider implements MemoryProvider {
 
   async initialize(sessionID: string, _workspace: string): Promise<void> {
     this.sessionID = sessionID
-    const dir = join(app.getPath("userData"), "memory")
+    const dir = join(getPlatformPaths().userData, "memory")
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
     this.storePath = join(dir, `${sessionID}.json`)
     this.loadStore()

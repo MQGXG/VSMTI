@@ -25,7 +25,9 @@ export class MemoryManager {
   private providers: MemoryProvider[] = []
   private turnCount = 0
   private dreamAutoTriggerInterval = 10
-  private seenFacts = new Set<string>()
+  /** session 级去重（LRU 语义，最多保留 1000 条，超限时裁剪旧条目） */
+  private seenFacts = new Map<string, number>()
+  private seenFactsMaxSize = 1000
   private notesBuffer: NotesEntry[] = []
   private flushBatchSize = 3
 
@@ -160,6 +162,13 @@ export class MemoryManager {
     if (this.notesBuffer.length >= this.flushBatchSize) {
       await this.flushWriter(sessionID)
     }
+
+    // 索引到 FTS 供跨会话搜索
+    const fts = this.getFTSProvider()
+    if (fts && user.trim()) {
+      const preview = `[${sessionID.slice(0, 12)}] 用户: ${user.slice(0, 200)}\n回复: ${assistant.slice(0, 300)}`
+      fts.indexCheckpoint(preview, sessionID)
+    }
   }
 
   /** 强制刷新缓冲区（shutdown 或手动触发时调用） */
@@ -184,18 +193,30 @@ export class MemoryManager {
     return this.turnCount > 0 && this.turnCount % this.dreamAutoTriggerInterval === 0
   }
 
-  /** 去重：移除跨 provider 的重复内容 */
+  /** 去重：移除跨 provider 的重复内容（LRU 语义，session 维度） */
   private deduplicateContent(content: string): string {
     const lines = content.split("\n").filter(Boolean)
     const unique: string[] = []
     for (const line of lines) {
       const normalized = line.trim().toLowerCase()
       if (!this.seenFacts.has(normalized)) {
-        this.seenFacts.add(normalized)
+        // 超限时裁剪最早的一半
+        if (this.seenFacts.size >= this.seenFactsMaxSize) {
+          const entries = [...this.seenFacts.entries()]
+            .sort((a, b) => a[1] - b[1])
+            .slice(0, this.seenFactsMaxSize / 2)
+          this.seenFacts = new Map(entries)
+        }
+        this.seenFacts.set(normalized, Date.now())
         unique.push(line)
       }
     }
     return unique.join("\n")
+  }
+
+  /** 清理去重缓存（session 切换时调用） */
+  clearDedupCache(): void {
+    this.seenFacts.clear()
   }
 
   async shutdown(): Promise<void> {

@@ -19,6 +19,7 @@
   "dependencies": {
     "@assistant-ui/react": "^0.14.22",
     "@assistant-ui/react-markdown": "^0.14.4",
+    "@huggingface/transformers": "^3.0.0-alpha.2",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@radix-ui/react-dialog": "^1.1.17",
     "@radix-ui/react-select": "^2.3.1",
@@ -57,6 +58,7 @@
     "eslint": "^8.57.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
+    "tsx": "^4.22.4",
     "typescript": "^5.5.2",
     "vite": "^5.3.1",
     "vitest": "^4.1.8"

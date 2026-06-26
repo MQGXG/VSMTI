@@ -1,5 +1,5 @@
 import initSqlJs, { type Database as SqliteDb } from "sql.js"
-import { app } from "electron"
+import { getPlatformPaths } from "./platform-paths"
 import { join } from "path"
 import fs from "fs"
 
@@ -9,7 +9,7 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null
 
 function getDbPath(): string | null {
   try {
-    return join(app.getPath("userData"), "mira.db")
+    return join(getPlatformPaths().userData, "mira.db")
   } catch {
     return null // 测试环境中 app 不可用
   }
@@ -36,6 +36,14 @@ const SCHEMA = `
     resource TEXT DEFAULT '*', effect TEXT NOT NULL,
     PRIMARY KEY (workspace, action, resource)
   );
+  CREATE TABLE IF NOT EXISTS goals (
+    session_id TEXT NOT NULL, id TEXT NOT NULL,
+    description TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')),
+    status TEXT NOT NULL DEFAULT 'active', satisfied_at TEXT,
+    timeout_ms INTEGER DEFAULT 0,
+    evaluations_json TEXT DEFAULT '[]',
+    PRIMARY KEY (session_id, id)
+  );
 `
 
 async function createDb(): Promise<SqliteDb> {
@@ -44,7 +52,7 @@ async function createDb(): Promise<SqliteDb> {
   let buffer: Buffer | undefined
   if (dbPath) {
     try {
-      const dir = app.getPath("userData")
+      const dir = getPlatformPaths().userData
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
       if (fs.existsSync(dbPath)) buffer = fs.readFileSync(dbPath)
     } catch {}

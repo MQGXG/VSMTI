@@ -6,6 +6,8 @@ interface Props {
   minWidth?: number;
   maxWidth?: number;
   storageKey?: string;
+  collapsed?: boolean;
+  collapsedWidth?: number;
 }
 
 export function ResizablePanel({
@@ -14,6 +16,8 @@ export function ResizablePanel({
   minWidth = 180,
   maxWidth = 400,
   storageKey,
+  collapsed,
+  collapsedWidth = 48,
 }: Props) {
   const [width, setWidth] = useState(() => {
     if (storageKey) {
@@ -27,6 +31,7 @@ export function ResizablePanel({
   });
 
   const [isDragging, setIsDragging] = useState(false);
+  const displayWidth = collapsed ? collapsedWidth : width;
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
 
@@ -71,18 +76,20 @@ export function ResizablePanel({
   return (
     <div className="flex flex-1 overflow-hidden">
       {/* 左侧面板 */}
-      <div className="shrink-0 overflow-hidden" style={{ width }}>
+      <div className="shrink-0 overflow-hidden" style={{ width: displayWidth }}>
         {left}
       </div>
 
-      {/* 拖拽手柄 */}
-      <div
-        className="w-1 shrink-0 cursor-col-resize transition-colors duration-150"
-        style={{
-          background: isDragging ? 'var(--accent)' : 'var(--border)',
-        }}
-        onMouseDown={handleMouseDown}
-      />
+      {/* 拖拽手柄（折叠时隐藏） */}
+      {!collapsed && (
+        <div
+          className="w-1 shrink-0 cursor-col-resize transition-colors duration-150"
+          style={{
+            background: isDragging ? 'var(--accent)' : 'var(--border)',
+          }}
+          onMouseDown={handleMouseDown}
+        />
+      )}
 
       {/* 右侧内容 */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

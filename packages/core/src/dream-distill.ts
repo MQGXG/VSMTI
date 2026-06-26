@@ -10,7 +10,6 @@
  * 3. Skill 文件生成 — Distill 结果可自动生成 Skill 文件
  */
 
-import { app } from "electron"
 import { join } from "path"
 import fs from "fs"
 import { createLLMClient, type LLMMessage } from "./llm-sdk"

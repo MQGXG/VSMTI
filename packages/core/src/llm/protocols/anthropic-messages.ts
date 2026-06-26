@@ -1,4 +1,5 @@
 import type { LLMMessage, LLMEvent } from "../schema"
+import type { Protocol } from "../route/types"
 
 interface AnthropicMessage {
   role: "user" | "assistant"
@@ -89,7 +90,7 @@ export function deserializeStreamEvent(event: AnthropicStreamEvent): LLMEvent | 
           cacheReadTokens: usage.cache_read_input_tokens,
           cacheWriteTokens: usage.cache_creation_input_tokens,
         } : undefined,
-      }
+      } as LLMEvent
     }
     case "message_stop":
       return { type: "finish", reason: "stop" }
@@ -98,4 +99,46 @@ export function deserializeStreamEvent(event: AnthropicStreamEvent): LLMEvent | 
     default:
       return undefined
   }
+}
+
+/** 完整的 Anthropic Messages Protocol 实现 */
+export const AnthropicMessagesProtocol: Protocol = {
+  name: "anthropic-messages",
+  serializeRequest(request) {
+    const system = serializeSystem(request.messages)
+    const body: Record<string, unknown> = {
+      model: request.model,
+      messages: serializeMessages(request.messages.filter((m) => m.role !== "system")),
+      max_tokens: (request.generation?.maxTokens as number) || 4096,
+      stream: true,
+    }
+    if (system) body.system = system
+    if (request.tools && request.tools.length > 0) {
+      body.tools = request.tools.map((t) => ({
+        name: t.name,
+        description: t.description,
+        input_schema: t.parameters,
+      }))
+    }
+    const gen = request.generation || {}
+    if (gen.temperature !== undefined) body.temperature = gen.temperature
+    if (gen.topP !== undefined) body.top_p = gen.topP
+    if (gen.stop !== undefined) body.stop_sequences = gen.stop
+    return body
+  },
+
+  deserializeEvent(data) {
+    return deserializeStreamEvent(data as AnthropicStreamEvent)
+  },
+
+  parseResponse(data) {
+    const response = data as any
+    const content = response?.content?.map?.((block: any) => block.text).filter(Boolean).join("") || ""
+    const toolCalls = response?.content?.filter?.((b: any) => b.type === "tool_use").map((tc: any) => ({
+      id: tc.id,
+      name: tc.name,
+      args: JSON.stringify(tc.input),
+    })) || []
+    return { content, toolCalls }
+  },
 }
