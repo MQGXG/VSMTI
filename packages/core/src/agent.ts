@@ -14,6 +14,7 @@ import { FileMemoryProvider } from "./memory/file-memory-provider"
 import { FTSMemoryProvider } from "./memory/fts-memory-provider"
 import { CheckpointProvider } from "./memory/checkpoint-provider"
 import { evaluateToolCalls, extractResources } from "./permission-gate"
+import { setFTSProvider } from "./tools/memory"
 import { ToolOrchestrator } from "./execution/orchestrator"
 import { AgentStateMachine } from "./agent/state-machine"
 import { buildToolContext, buildSystemMessage } from "./agent/context"
@@ -26,6 +27,7 @@ import { runMaxMode, type MaxModeConfig } from "./agent/max-mode"
 import { processTurn, executeCollectedTools } from "./agent/turn-processor"
 import { detectDoomLoop } from "./agent/utils"
 import type { AgentMode } from "./modes"
+import { getModeMaxIterations, getModeSystemPromptSuffix, modeSystemPrompt } from "./modes"
 
 export type PermissionReply = "allow" | "deny" | "always"
 
@@ -51,6 +53,7 @@ export interface AgentConfig {
   maxMode?: boolean
   maxModeCandidates?: number
   judgeModelConfig?: LLMTurnConfig
+  autoAcceptPermissions?: boolean
 }
 
 export type { AgentEvent } from "./types"
@@ -180,9 +183,7 @@ export class Agent {
       this.memoryManager.addProvider(ftsProvider)
     }
     this.checkpointProvider.setFTSProvider(ftsProvider)
-
-    // 暴露 FTS provider 给 memory 工具（通过全局引用）
-    ;(globalThis as any).__mira_fts_provider__ = ftsProvider
+    setFTSProvider(ftsProvider)
 
     // 注册 pre_llm hook：每轮 LLM 调用前注入相关记忆
     pluginHooks.on("pre_llm", async (messages: LLMMessage[], config: AgentConfig) => {
@@ -193,6 +194,7 @@ export class Agent {
 
   getGoalJudge(): GoalJudge { return this.goalJudge }
   getContextManager(): ContextManager { return this.contextManager }
+  getFTSProvider(): any { return (this.memoryManager as any).getFTSProvider() }
 
   replyPermission(id: string, reply: PermissionReply): void {
     this.stateMachine.replyPermission(id, reply)
@@ -209,7 +211,8 @@ export class Agent {
       this.approvalStore.setPermissions(config.permissions)
     }
 
-    const materialized = this.registry.materialize(config.permissions)
+    const modelFilter = { providerID: config.provider || "openai", modelID: config.model }
+    const materialized = this.registry.materializeWithModel(modelFilter, config.permissions)
     let toolSet = materialized.definitions
 
     if (config.toolAllowlist && config.toolAllowlist.length > 0) {
@@ -241,7 +244,7 @@ export class Agent {
       }
     }
 
-    if (this.dreamDistillManager && this.contextManager.shouldAutoDream() && config.apiKey) {
+    if (this.dreamDistillManager && this.contextManager.shouldAutoDream()) {
       try {
         this.dreamDistillManager.setLLMConfig({
           apiKey: config.apiKey,
@@ -311,37 +314,42 @@ export class Agent {
     })
 
     const goalPrompt = this.goalJudge.toSystemPrompt()
+    const modeSuffix = getModeSystemPromptSuffix(config.mode || "assistant")
     const baseSystem = await buildSystemMessage(config, memoryPrompt, DEFAULT_SYSTEM)
+    const systemWithMode = modeSuffix ? `${baseSystem}\n\n[MODE: ${config.mode}]\n${modeSuffix}` : baseSystem
     const systemContent = goalPrompt
-      ? `${baseSystem}\n\n${goalPrompt}`
-      : baseSystem
+      ? `${systemWithMode}\n\n${goalPrompt}`
+      : systemWithMode
 
     let messages: LLMMessage[] = [
       { role: "system", content: systemContent },
-      ...history.map((m) => {
-        if (m.role === "assistant" && (m as any).tool_calls && typeof m.content === "string") {
-          const oldTc = (m as any).tool_calls || []
+      ...history.map((m: Record<string, unknown>) => {
+        const role = String(m.role || "user") as LLMMessage["role"]
+        const content = m.content as LLMMessage["content"]
+        if (role === "assistant" && m.tool_calls && typeof content === "string") {
+          const oldTc = (m.tool_calls || []) as Array<Record<string, unknown>>
           return {
             role: "assistant" as const,
             content: [
-              { type: "text", text: m.content },
-              ...oldTc.map((tc: any) => ({
+              { type: "text", text: content },
+              ...oldTc.map((tc) => ({
                 type: "tool-call" as const,
-                toolCallId: tc.id || tc.toolCallId || "",
-                toolName: tc.function?.name || tc.toolName || "",
-                args: typeof tc.function?.arguments === "string" ? JSON.parse(tc.function.arguments) : (tc.args || {}),
+                toolCallId: String(tc.id || tc.toolCallId || ""),
+                toolName: String((tc.function as Record<string, unknown>)?.name || tc.toolName || ""),
+                args: typeof (tc.function as Record<string, unknown>)?.arguments === "string" ? JSON.parse((tc.function as Record<string, unknown>).arguments as string) : ((tc.args as Record<string, unknown>) || {}),
               })),
             ],
           }
         }
-        const msg: LLMMessage = { role: m.role as LLMMessage["role"], content: m.content }
-        if ((m as any).tool_call_id) msg.tool_call_id = (m as any).tool_call_id
+        const msg: LLMMessage = { role, content }
+        if (m.tool_call_id) msg.tool_call_id = String(m.tool_call_id)
         return msg
       }),
       { role: "user", content: enrichedUser },
     ]
 
-    const budget = new IterationBudget(config.maxSteps || 10)
+    const modeMaxSteps = getModeMaxIterations(config.mode || config.mode || "assistant")
+    const budget = new IterationBudget(config.maxSteps || modeMaxSteps || 10)
     const llmConfig: LLMTurnConfig = {
       provider: config.provider || "openai",
       model: config.model,
@@ -374,12 +382,13 @@ export class Agent {
           yield { type: "thinking" as const, text: `🔄 ${text}` }
         }
 
-        yield {
-          type: "context_rebuild" as any,
+        const rebuildEvent: AgentEvent = {
+          type: "context_rebuild" as const,
           reason,
           tokensBefore,
           tokensAfter,
-        } as AgentEvent
+        }
+        yield rebuildEvent
       }
 
       messages = await pluginHooks.emitWaterfall("pre_llm", messages, config)
@@ -395,6 +404,7 @@ export class Agent {
           maxContextTokens: config.maxContextTokens,
           permissions: config.permissions,
           onPermissionSave: config.onPermissionSave,
+          autoAcceptPermissions: config.autoAcceptPermissions,
         },
         deps: {
           registry: this.registry,
@@ -455,7 +465,7 @@ export class Agent {
           yield* executeCollectedTools(
             toolCallsArray.map(tc => ({ id: tc.id, name: tc.function.name, arguments: tc.function.arguments })),
             turnText,
-            { messages, sessionID: config.sessionID, workspace: config.workspace, permissions: config.permissions, onPermissionSave: config.onPermissionSave, deps: { registry: this.registry, stateMachine: this.stateMachine, approvalStore: this.approvalStore, orchestrator: this.orchestrator }, ctx },
+            { messages, sessionID: config.sessionID, workspace: config.workspace, permissions: config.permissions, onPermissionSave: config.onPermissionSave, autoAcceptPermissions: config.autoAcceptPermissions, deps: { registry: this.registry, stateMachine: this.stateMachine, approvalStore: this.approvalStore, orchestrator: this.orchestrator }, ctx },
           )
         }
 
@@ -522,12 +532,15 @@ export class Agent {
           const quickCheck = this.goalJudge.quickCheck(activeGoal, messages)
           if (quickCheck && quickCheck.satisfied) {
             activeGoal.status = "satisfied"
-            yield { type: "goal_status" as any, goalId: activeGoal.id, description: activeGoal.description, status: "satisfied", reasoning: quickCheck.reasoning } as AgentEvent
-            yield { type: "finish", reason: "goal_satisfied" } as AgentEvent
+            const goalEvent: AgentEvent = { type: "goal_status", goalId: activeGoal.id, description: activeGoal.description, status: "satisfied", reasoning: quickCheck.reasoning }
+            yield goalEvent
+            const finishEvent: AgentEvent = { type: "finish", reason: "goal_satisfied" }
+            yield finishEvent
             return
           }
           const evaluation = await this.goalJudge.evaluate(activeGoal, messages)
-          yield { type: "goal_status" as any, goalId: activeGoal.id, description: activeGoal.description, status: evaluation.satisfied ? "satisfied" : "still_active", reasoning: evaluation.reasoning } as AgentEvent
+          const gsEvent: AgentEvent = { type: "goal_status", goalId: activeGoal.id, description: activeGoal.description, status: evaluation.satisfied ? "satisfied" : "still_active", reasoning: evaluation.reasoning }
+          yield gsEvent
           if (evaluation.satisfied) {
             yield { type: "finish", reason: "goal_satisfied" }
           } else {
@@ -565,7 +578,8 @@ export class Agent {
       if (postToolRebuild) {
         messages = postToolMessages
         yield { type: "thinking" as const, text: `🔄 Context compacted after tool execution` }
-        yield { type: "context_rebuild" as any, reason: postToolReason, tokensBefore: 0, tokensAfter: 0 } as AgentEvent
+        const postRebuildEvent: AgentEvent = { type: "context_rebuild", reason: postToolReason, tokensBefore: 0, tokensAfter: 0 }
+        yield postRebuildEvent
       }
 
       await this.contextManager.syncTurn(userMessage, ptResult.text, config.sessionID)

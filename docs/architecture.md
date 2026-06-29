@@ -12,244 +12,164 @@
 │  │          │  │          │  │ │ ChatInput             │  │  │
 │  │          │  │          │  │ │ MarkdownRenderer       │  │  │
 │  │          │  │          │  │ │ ToolCallView           │  │  │
-│  │          │  │          │  │ └─────────────────────┘  │  │
+│  │          │  │          │  │ └─────────────────────┘  │  │  │
 │  └──────────┘  └──────────┘  └───────────────────────────┘  │
 │                           │                                   │
 │                  ┌────────┴────────┐                          │
-│                  ▼ IPC             ▼ HTTP/SSE                  │
+│                  ▼ IPC (contextBridge)                        │
 ├──────────────────────────────────────────────────────────────┤
 │                    主进程 (Node.js)                             │
 │  ┌─────────────────────────────────────────────────────────┐  │
-│  │ electron/agent-core/  ← TypeScript Agent Core           │  │
-│  │  tool.ts          工具定义工厂 (make/settle/toOpenAI)    │  │
-│  │  registry.ts      注册表 + 物化 + 权限过滤               │  │
-│  │  permission.ts    声明式权限系统                          │  │
-│  │  tools/read-file.ts  读文件 (fs)                        │  │
-│  │  tools/write-file.ts 写文件 (fs)                        │  │
-│  │  tools/list-files.ts 列目录 (fs)                        │  │
-│  │  tools/web-search.ts 网络搜索 (fetch)                   │  │
-│  │  tools/grep.ts     文件内容搜索 (ripgrep)                │  │
-│  │  tools/glob.ts     文件查找 (rglob)                     │  │
-│  │  tools/code-exec.ts Python代码执行 (subprocess)          │  │
-│  │  tools/bash.ts     Shell命令 (execFile)                  │  │
-│  │  ipc-bridge.ts     IPC 桥接 → 暴露给渲染进程              │  │
+│  │ @mira/core — TypeScript Agent Core                      │  │
+│  │  agent.ts          Agent 核心循环                        │  │
+│  │  llm/              LLM 分层架构                         │  │
+│  │    schema/         消息/事件/错误类型                    │  │
+│  │    protocols/      OpenAI/Anthropic/Gemini 协议适配     │  │
+│  │    providers/      Provider 实现                        │  │
+│  │    route/          路由客户端                           │  │
+│  │  tools/            32 个工具（文件/执行/网络/Git/LSP）   │  │
+│  │  memory/           四层记忆系统                         │  │
+│  │  permission.ts     声明式权限系统                       │  │
+│  │  modes.ts          Agent 模式配置                       │  │
+│  │  workflow/         Dynamic Workflow 编排                │  │
+│  │  mcp/              MCP 协议支持                         │  │
+│  │  lsp/              LSP 代码智能                         │  │
 │  └─────────────────────────────────────────────────────────┘  │
-│                           │ spawn                              │
-├──────────────────────────────────────────────────────────────┤
-│                    Python FastAPI                               │
-│  ┌─────────────────────────────────────────────────────────┐  │
-│  │ app/core/    Agent 循环 / LLM 调用 / 权限 / 记忆 / 压缩  │  │
-│  │ app/api/     REST API (chat/projects/sessions/files)     │  │
-│  │ app/tools/   Python 工具系统 (32 个工具自动注册)          │  │
-│  │ app/config   配置加载 (.env → 环境变量)                   │  │
-│  └─────────────────────────────────────────────────────────┘  │
+│                           │                                    │
+│                  ┌────────┴────────┐                           │
+│                  ▼ LLM APIs        ▼ MCP Servers               │
+│  ┌──────────────────┐  ┌──────────────────┐                  │
+│  │ OpenAI / Claude  │  │ 外部工具服务器    │                  │
+│  │ DeepSeek / Ollama│  │                  │                  │
+│  │ Groq / Gemini    │  │                  │                  │
+│  └──────────────────┘  └──────────────────┘                  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## 二、目录规范
+## 二、包架构
 
 ```
-D:\开发\VSMTI\
-├── electron/                        # Electron 主进程 (TypeScript)
-│   ├── main.ts                      # 应用入口
-│   ├── preload.ts                   # IPC 安全桥接
-│   ├── agent-core/                  # TypeScript Agent Core ★ 核心
-│   │   ├── tool.ts                  # 工具定义工厂
-│   │   ├── registry.ts              # 工具注册表
-│   │   ├── permission.ts            # 权限系统
-│   │   ├── ipc-bridge.ts            # IPC 暴露
-│   │   ├── index.ts                 # 统一导出
-│   │   └── tools/                   # 工具实现
-│   │       ├── read-file.ts         # 读文件
-│   │       ├── write-file.ts        # 写文件
-│   │       ├── list-files.ts        # 列目录
-│   │       ├── web-search.ts        # 网络搜索
-│   │       ├── grep.ts              # 内容搜索
-│   │       ├── glob.ts              # 文件查找
-│   │       ├── code-exec.ts         # 代码执行
-│   │       ├── bash.ts              # Shell 命令
-│   │       └── index.ts             # 工具统一导出
-│   ├── ipc/
-│   │   └── handlers.ts              # IPC 处理器
-│   ├── managers/
-│   │   ├── window-manager.ts        # 窗口管理
-│   │   └── tray-manager.ts          # 托盘管理
-│   └── utils/
-│       ├── logger.ts                # 日志
-│       ├── python-finder.ts         # Python 路径查找
-│       └── shell-env.ts             # 环境变量注入
-│
-├── src/                             # 渲染进程 (React + TypeScript)
-│   ├── App.tsx                      # 根组件
-│   ├── main.tsx                     # React 入口
-│   ├── contexts/
-│   │   └── ThemeContext.tsx          # 主题上下文
-│   ├── styles/
-│   │   └── globals.css              # 全局样式 + CSS 变量 + 工具类
-│   ├── types/
-│   │   └── electron.d.ts            # Electron API 类型定义
-│   └── components/
-│       ├── chat/                    # 聊天相关
-│       │   ├── ChatWindow.tsx       # 主聊天窗口 (状态管理)
-│       │   ├── ChatInput.tsx        # 输入框
-│       │   ├── ModelSelector.tsx    # 模型/模式选择
-│       │   ├── ToolPalette.tsx       # 工具面板 (IPC 直调) ★
-│       │   ├── ToolCallView.tsx     # 工具调用展示
-│       │   ├── MarkdownRenderer.tsx # Markdown 渲染
-│       │   ├── CodeBlock.tsx        # 代码块
-│       │   ├── PermissionDialog.tsx # 权限审批弹窗
-│       │   ├── QuestionDialog.tsx   # 提问弹窗
-│       │   ├── types.ts            # 类型定义
-│       │   └── useChatStream.ts    # SSE 流式聊天 Hook
-│       ├── sidebar/                 # 侧边栏
-│       │   ├── Sidebar.tsx          # 主侧边栏
-│       │   ├── ProjectBar.tsx       # 项目栏
-│       │   ├── SettingsDialog.tsx   # 设置
-│       │   ├── ProviderConfigPanel.tsx  # 提供商配置
-│       │   ├── ModelManager.tsx    # 模型管理
-│       │   ├── NewProjectDialog.tsx # 新建项目
-│       │   ├── EditProjectDialog.tsx# 编辑项目
-│       │   ├── NewTaskDialog.tsx   # 新建任务
-│       │   └── types.ts            # 类型定义
-│       ├── layout/
-│       │   └── TitleBar.tsx        # 标题栏
-│       └── ui/                     # 共享 UI 组件
-│           ├── GlassPanel.tsx      # 玻璃面板
-│           ├── Modal.tsx           # 弹窗
-│           ├── IconButton.tsx      # 图标按钮
-│           └── index.ts            # 统一导出
-│
-├── agent-backend/                   # Python FastAPI 后端
-│   ├── app/
-│   │   ├── main.py                 # FastAPI 应用入口
-│   │   ├── config.py               # 配置加载 (.env)
-│   │   ├── api/                    # REST API
-│   │   │   ├── chat.py             # 聊天 SSE 流
-│   │   │   ├── projects.py         # 项目 CRUD
-│   │   │   ├── sessions.py         # 会话/任务管理
-│   │   │   ├── files.py            # 文件上传
-│   │   │   ├── models.py           # 模型列表
-│   │   │   └── workspace_api.py    # 工作目录
-│   │   ├── core/                   # 核心逻辑
-│   │   │   ├── agent.py            # Agent ReAct 循环
-│   │   │   ├── llm.py              # LLM Provider 抽象
-│   │   │   ├── modes.py            # 模式配置
-│   │   │   ├── normalize.py        # 消息规范化
-│   │   │   ├── events.py           # 事件/SSE 格式
-│   │   │   ├── hooks.py            # Hook 系统
-│   │   │   ├── hooks_setup.py      # 默认 Hook
-│   │   │   ├── permission.py       # 权限检查
-│   │   │   ├── permission_config.py# 权限配置文件
-│   │   │   ├── permission_store.py # 审批存储
-│   │   │   ├── question_store.py   # 问题存储
-│   │   │   ├── prompt_builder.py   # 提示词组装
-│   │   │   ├── compaction.py       # 上下文压缩
-│   │   │   ├── recovery.py         # 错误恢复
-│   │   │   ├── memory.py           # SQLite 会话存储
-│   │   │   ├── memory_manager.py   # 文件级记忆
-│   │   │   ├── workspace.py        # 工作目录
-│   │   │   ├── background.py       # 后台任务
-│   │   │   ├── cron_scheduler.py   # 定时调度
-│   │   │   ├── task_system.py      # 任务系统
-│   │   │   ├── skill_manager.py    # 技能管理
-│   │   │   └── team_bus.py         # 团队通信
-│   │   ├── tools/                  # Python 工具 (32个自动注册)
-│   │   │   ├── base.py             # BaseTool 基类
-│   │   │   ├── registry.py         # 工具注册表
-│   │   │   ├── discovery.py        # 自动发现注册
-│   │   │   ├── file_ops.py         # 文件操作
-│   │   │   ├── search_tools.py     # 搜索 (web/grep/glob)
-│   │   │   ├── code_exec.py        # 代码执行
-│   │   │   ├── data_analysis.py    # 数据分析
-│   │   │   ├── image_gen.py        # 图片生成
-│   │   │   ├── web_browse.py       # 网页浏览
-│   │   │   ├── question_tool.py    # 提问
-│   │   │   ├── todo_write.py       # 待办
-│   │   │   ├── task_tool.py        # 子智能体
-│   │   │   ├── task_management_tools.py  # 任务管理
-│   │   │   ├── cron_tools.py       # 定时任务
-│   │   │   ├── team_tools.py       # 团队工具
-│   │   │   ├── worktree_tools.py   # Worktree
-│   │   │   ├── skill_tool.py       # 技能加载
-│   │   │   └── schema_tool.py      # Schema 基类
-│   │   └── prompts/
-│   │       └── system.py           # 系统提示词
-│   ├── mira.json              # 权限配置
-│   └── requirements.txt            # Python 依赖
-│
-├── docs/                           # 文档
-│   ├── architecture.md             # 本文件
-│   └── plans/                      # 设计/实施计划
-│
-├── data/                           # 运行时数据
-│   ├── sessions.db                 # SQLite 会话
-│   ├── chroma/                     # ChromaDB 向量
-│   ├── uploads/                    # 上传文件
-│   └── workspace.json              # 工作目录
-│
-├── package.json                    # 前端依赖
-├── electron.vite.config.ts         # Vite 构建配置
-├── electron-builder.yml            # 打包配置
-├── tailwind.config.js              # Tailwind 主题
-├── postcss.config.js               # PostCSS
-├── tsconfig.json                   # TypeScript
-├── .env.example                    # 环境变量模板
-├── .env                            # 环境变量 (gitignore)
-└── start.ps1                       # 启动脚本
+mira/
+├── packages/
+│   ├── core/          # @mira/core — 核心逻辑（无外部依赖）
+│   ├── electron/      # @mira/electron — Electron 主进程
+│   ├── ui/            # @mira/ui — React 前端组件
+│   └── apps/desktop/  # @mira/desktop — Electron 应用壳
+├── docs/
+├── data/              # 运行时数据 (SQLite)
+└── package.json       # 根 package.json (pnpm monorepo)
+```
+
+### 包依赖关系
+
+```
+@mira/desktop
+  ├── @mira/core
+  ├── @mira/ui
+  └── @mira/electron
+
+@mira/electron
+  └── @mira/core
+
+@mira/ui
+  └── @mira/core
+
+@mira/core（独立，无外部依赖）
 ```
 
 ## 三、数据流
 
-### 3.1 工具面板流（TypeScript Agent Core）
+### 3.1 AI 对话流
 
 ```
-用户点击 🔧 → ToolPalette → IPC "agent:executeTool"
-    → ipc-bridge.ts → registry.execute()
-    → 具体工具 (readFile / webSearch / bash...)
-    → 结果返回 → 显示在聊天区
-```
-
-**全程 2 次 IPC 调用，不经过 Python、不经过 HTTP、不依赖 API Key。**
-
-### 3.2 AI 对话流（Python + LLM）
-
-```
-用户输入 → ChatInput → ChatWindow.sendMessage()
-    → fetch POST /api/chat (SSE)
-    → Python Agent.run() → LLM 调用 → 工具执行
-    → SSE 流回 (content / tool_start / tool_result / finish)
+用户输入 → ChatWindow → useMiraChat hook
+    → IPC "agent:run" → Agent.run()
+    → LLM.stream() → Provider API
+    → AgentEvent (AsyncGenerator)
     → ChatWindow 逐事件渲染
 ```
 
-**全程 HTTP/SSE，需要 Python 后端运行 + API Key 配置。**
+**全程 IPC 通信，零 HTTP 开销。**
 
-### 3.3 混合模式（未来）
+### 3.2 工具执行流
 
 ```
-用户输入 → Python Agent 决定调用工具
-    → Agent 发出 tool_start SSE
-    → 前端截获 → IPC 调 TypeScript Core 执行
-    → 结果通过 HTTP 送回 Python Agent
-    → Agent 继续 ReAct 循环
+Agent 循环 → tool_call → PermissionSet.evaluate()
+    → 允许/拒绝/询问用户
+    → ToolOrchestrator.execute()
+    → 具体工具 (readFile / bash / webSearch / git...)
+    → 结果返回 Agent 继续循环
 ```
 
-## 四、代码规范
+### 3.3 记忆注入流
 
-### 4.1 TypeScript Agent Core 规范
+```
+Agent 启动 → MemoryManager.selectMemories()
+    → 搜索各层记忆（checkpoint/builtin/fts/file/vector）
+    → 注入系统提示词
+    → Agent 带着上下文继续工作
+```
+
+### 3.4 子 Agent 流
+
+```
+主 Agent → delegate_task → SubagentManager.spawn()
+    → 子 Agent 独立运行（最大并行 5）
+    → 完成后结果返回主 Agent
+    → 主 Agent 继续工作
+```
+
+## 四、Agent Core 核心模块
+
+### 4.1 Agent 主循环 (`agent.ts`)
+
+```
+Agent.run()
+  ├→ AgentStateMachine 管理生命周期
+  ├→ ContextManager 管理上下文窗口
+  ├→ processTurn() 执行单回合
+  │   ├→ buildSystemMessage() 组装系统提示
+  │   ├→ LLM.stream() 获取模型输出
+  │   ├→ 工具调用 → PermissionSet → ToolOrchestrator
+  │   └→ 返回 AgentEvent 流
+  ├→ GoalJudge 验证任务完成度
+  └→ DoomLoop 检测防止死循环
+```
+
+### 4.2 LLM 分层架构
+
+```
+schema/          → 类型定义（LLMMessage, LLMStreamEvent, LLMError）
+    │
+protocols/       → 协议适配（将统一类型转换为各 API 格式）
+    ├── openai-chat.ts          → OpenAI Chat Completions
+    ├── openai-responses.ts     → OpenAI Responses API
+    ├── openai-compatible-chat.ts → OpenAI 兼容协议
+    ├── anthropic-messages.ts   → Anthropic Messages API
+    └── gemini.ts               → Google Gemini
+    │
+providers/       → Provider 实现（管理认证、路由、重试）
+    ├── openai.ts               → OpenAI
+    ├── anthropic.ts            → Anthropic
+    └── openai-compatible.ts    → DeepSeek/Ollama/Groq/自定义
+    │
+route/           → 路由客户端（根据 provider 自动选择协议）
+```
+
+### 4.3 工具系统
 
 ```typescript
-// 工具定义规范 — 使用 make() + Zod Schema
+// 工具定义 — 使用 make() + Zod Schema
 export const myTool = make({
-  name: "my_tool",                    // 短横线命名
-  description: "What this tool does", // 一句话描述
-  inputSchema: z.object({             // Zod 定义输入
+  name: "my_tool",
+  description: "What this tool does",
+  inputSchema: z.object({
     path: z.string().describe("Path to file"),
-    option: z.number().optional(),
   }),
-  outputSchema: z.string(),           // 输出类型
-  permission: "read",                 // 权限组: read/edit/bash/run_code/web_search
-  async execute(input, ctx) {         // 实现
-    // 1. 参数已由 Zod 验证，直接使用
+  outputSchema: z.string(),
+  permission: "read",
+  async execute(input, ctx) {
+    // 1. 参数已由 Zod 验证
     // 2. 路径操作用 ctx.workspace 做基路径
     // 3. 捕获异常返回 { success: false, error }
     // 4. 成功返回 { success: true, output }
@@ -257,126 +177,250 @@ export const myTool = make({
 })
 ```
 
-### 4.2 React 组件规范
+工具通过 `registry.ts` 注册，支持：
+- 分类元数据（core/knowledge/execution/orchestration/infrastructure）
+- 并行执行声明
+- 权限过滤
+- 工具 allowlist（按模式过滤）
+
+### 4.4 权限系统
 
 ```typescript
-// Props 接口放在组件文件顶部
-interface Props {
-  sessionId: string
-  onSessionChange?: (id: string) => void
-}
+// 声明式权限规则
+const rules: PermissionRule[] = [
+  { action: "read_file", resource: "*", effect: "allow" },
+  { action: "bash", resource: "ls *", effect: "allow" },
+  { action: "bash", resource: "*", effect: "ask" },
+  { action: "write_file", resource: "*", effect: "ask" },
+]
+```
 
-// 函数组件
-export function ComponentName({ prop1, prop2 }: Props) {
-  // 1. useState / useRef / useCallback 在顶部
-  // 2. useEffect 在中间
-  // 3. 事件处理函数用 useCallback
-  // 4. JSX 在 return 中
+- 通配符匹配（`*` 和 `**`）
+- 硬拒绝列表（`rm -rf /`, `sudo` 等）
+- 运行时审批（用户可选 allow/deny/always）
+- 审批存储（记住用户选择）
+
+### 4.5 记忆系统
+
+四层记忆，5 个 Provider：
+
+| Provider | 层级 | 存储 | 说明 |
+|----------|------|------|------|
+| CheckpointProvider | Session | JSON 文件 | Writer subagent 异步写入 |
+| BuiltinMemoryProvider | Session | 内存 | 高频事实追踪 |
+| FTSMemoryProvider | Session | SQLite FTS | 全文检索 |
+| FileMemoryProvider | Project | .mira/knowledge/ | 项目级持久知识 |
+| VectorMemoryProvider | Project | 本地 ONNX | Transformers.js 向量嵌入 |
+
+### 4.6 上下文管理
+
+```
+ContextManager
+  ├→ 监控上下文 token 用量
+  ├→ 触发 checkpoint（早期，20%/45%/70%）
+  ├→ Writer subagent 异步提取结构化状态
+  ├→ 触发 rebuild（接近上限时）
+  ├→ 注入 checkpoint + 项目记忆 + 全局记忆
+  └→ Agent 在新窗口中醒来，状态连续
+```
+
+## 五、高级特性
+
+### 5.1 Goal Judge
+
+独立的验证 Agent，判断任务是否真正完成。
+
+```
+Agent 尝试终止 → GoalJudge.evaluate()
+    → 独立 LLM 调用审查完整对话
+    → 满足 → 允许终止
+    → 不满足 → 反馈差距，Agent 继续
+    → 连续失败 3 次 → 自动终止
+```
+
+### 5.2 Max Mode
+
+并行采样选优，每轮生成 N 个候选方案。
+
+```
+Agent 决策点 → 并行生成 5 个候选
+    → 每个候选独立推理 + 工具规划
+    → Judge 模型对比选出最优
+    → 执行最优方案
+```
+
+### 5.3 Dynamic Workflow
+
+代码级编排，将流程从 prompt 变为代码。
+
+```javascript
+// 主 Agent 生成的 workflow 脚本
+export const meta = { name: "refactor", description: "重构流程" }
+
+export default async function(args) {
+  const result = await agent("分析代码结构")
+  const plan = await agent(`基于分析制定重构计划: ${result}`)
+  await parallel([
+    () => agent("重构模块 A"),
+    () => agent("重构模块 B"),
+  ])
+  await agent("运行测试验证")
 }
 ```
 
-### 4.3 Python 工具规范
+### 5.4 Dream/Distill
 
-```python
-class MyTool(BaseTool):
-    name = "my_tool"
-    description = "工具描述"
-    parameters = [
-        ToolParam(name="path", type="string", description="文件路径"),
-    ]
+- **Dream**：扫描会话轨迹，提取持久知识到项目记忆
+- **Distill**：发现重复工作流，打包为可复用 skill/subagent
 
-    async def execute(self, **kwargs) -> ToolResult:
-        try:
-            path = self._check_path(kwargs.get("path", ""))
-            # 实现逻辑
-            return ToolResult(success=True, output=result)
-        except Exception as e:
-            return ToolResult(success=False, error=str(e))
+### 5.5 Subagent 管理
 
-    def to_model_output(self, result: ToolResult) -> str:
-        """格式化输出给 LLM（可选覆写）"""
-        return result.output
+```
+SubagentManager
+  ├→ 最大并行 5 个子 Agent
+  ├→ 委派任务 → 子 Agent 独立运行
+  ├→ 团队通信总线 (team-bus)
+  ├→ 任务追踪 (task-tracker)
+  └→ 结果汇总回主 Agent
 ```
 
-## 五、工具系统对比
+## 六、IPC 通信层
 
-### TypeScript Agent Core（8 工具）
+### 6.1 模块划分
 
-| 工具 | 实现 | 依赖 | 权限组 |
-|------|------|------|--------|
-| `read_file` | `fs.readFile` | 无 | read |
-| `write_file` | `fs.writeFile` | 无 | edit |
-| `list_files` | `fs.readdir` | 无 | read |
-| `web_search` | `fetch(DuckDuckGo)` | 网络 | web_search |
-| `grep` | `ripgrep` / `findstr` | rg 可选 | read |
-| `glob` | `fs.readdir` 递归 | 无 | read |
-| `run_code` | `subprocess("python")` | Python | run_code |
-| `bash` | `execFile` | 无 | bash |
+| 模块 | 职责 |
+|------|------|
+| agent-ipc.ts | Agent 流式执行、权限回复、工具调用 |
+| compose-ipc.ts | 组合模式 |
+| config-ipc.ts | 配置读写 |
+| dream-ipc.ts | Dream/Distill 操作 |
+| goal-ipc.ts | Goal 管理 |
+| memory-ipc.ts | 记忆操作 |
+| question-ipc.ts | 用户交互 |
+| session-ipc.ts | 会话/项目 CRUD |
+| sidecar-bridge.ts | Sidecar 进程通信 |
+| skill-ipc.ts | Skill 加载 |
+| subagent-ipc.ts | 子 Agent 状态 |
+| task-ipc.ts | 任务管理 |
 
-**调用方式**: IPC (`window.electronAPI.agent.executeTool`)
-**速度**: 毫秒级
-**可用条件**: 任何时候
+### 6.2 Preload 桥接
 
-### Python 工具（32 工具自动注册）
+```typescript
+// preload/index.ts
+contextBridge.exposeInMainWorld("electronAPI", {
+  agent: { run, cancel, replyPermission, ... },
+  session: { create, list, delete, ... },
+  config: { get, set, ... },
+  dream: { run, ... },
+  goal: { create, evaluate, ... },
+  memory: { search, recall, ... },
+  // ...
+})
+```
 
-| 类别 | 工具 | 说明 |
-|------|------|------|
-| 文件 | read_file, write_file, list_files | 编码检测 |
-| 搜索 | web_search, grep, glob | 异步实现 |
-| 代码 | run_code | asyncio subprocess |
-| 数据 | data_analysis | pandas + matplotlib |
-| 图片 | image_generate | DALL-E API |
-| 网络 | browse_web | Playwright |
-| 任务 | create_task, list_tasks, get_task, claim_task, complete_task | DAG 依赖 |
-| 定时 | schedule_cron, list_crons, cancel_cron | cron 表达式 |
-| 团队 | spawn_teammate, send_message, check_inbox, request_shutdown, request_plan, review_plan | 通信总线 |
-| Worktree | worktree_*, 5 个 | Git worktree |
-| 其他 | todo_write, question, load_skill | |
+## 七、数据库
 
-**调用方式**: HTTP/SSE (`POST /api/chat`)
-**速度**: 百毫秒级（含 HTTP 开销）
-**可用条件**: 需要 Python 后端运行
+SQLite (sql.js WASM)，表结构：
 
-## 六、关键设计决策
+```sql
+CREATE TABLE projects (
+  project_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  workspace_path TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now'))
+);
 
-| 决策 | 选择 | 原因 |
-|------|------|------|
-| 前端框架 | React 18 | 生态成熟，类型安全 |
-| 样式方案 | Tailwind CSS | 原子化 CSS，避免样式冲突 |
-| 构建工具 | electron-vite | 快速 HMR，原生 Electron 支持 |
-| 打包 | electron-builder | 跨平台分发 |
-| 后端语言 | Python | 数据分析/图表生态不可替代 |
-| 核心工具语言 | TypeScript | 零依赖，IPC 直调 |
-| Schema 验证 | Zod (TS) / Pydantic (Python) | 编译时 + 运行时双校验 |
-| 状态管理 | React useState + Immer-style | 简单项目，不需要 Redux |
-| IPC 通信 | contextBridge + ipcRenderer | 安全隔离 |
-| HTTP 通信 | SSE (Server-Sent Events) | 单向流式，适合 AI 响应 |
-| 数据库 | SQLite + ChromaDB | 零配置，单文件 |
-| 权限配置 | mira.json | 声明式，用户可编辑 |
+CREATE TABLE sessions (
+  session_id TEXT PRIMARY KEY,
+  project_id TEXT DEFAULT '',
+  title TEXT DEFAULT '',
+  workspace TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
 
-## 七、开发工作流
+CREATE TABLE messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  timestamp TEXT DEFAULT (datetime('now')),
+  tool_call_id TEXT,
+  FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+);
+
+CREATE TABLE permissions (
+  workspace TEXT NOT NULL,
+  action TEXT NOT NULL,
+  resource TEXT DEFAULT '*',
+  effect TEXT NOT NULL,
+  PRIMARY KEY (workspace, action, resource)
+);
+
+CREATE TABLE goals (
+  session_id TEXT NOT NULL,
+  id TEXT NOT NULL,
+  description TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  status TEXT NOT NULL DEFAULT 'active',
+  satisfied_at TEXT,
+  timeout_ms INTEGER DEFAULT 0,
+  evaluations_json TEXT DEFAULT '[]',
+  PRIMARY KEY (session_id, id)
+);
+```
+
+## 八、配置系统
+
+多层配置合并（优先级从高到低）：
+
+1. **环境变量** — `{env:VAR_NAME}` 语法引用
+2. **项目配置** — `{workspace}/mira.json`
+3. **全局配置** — `~/.config/mira/config.json`
+4. **默认值** — 代码内置
+
+支持配置项：
+- `provider` / `model` — LLM 选择
+- `apiKey` / `apiUrl` — 认证
+- `providers` — 多 Provider 配置
+- `maxSteps` / `maxContextTokens` — Agent 限制
+- `mode` — 默认 Agent 模式
+- `mcp` — MCP 服务器配置
+- `plugins` — 插件配置
+
+## 九、开发工作流
 
 ```bash
 # 开发启动
-.\start.ps1 dev
-# → 启动 Vite HMR → Electron → Python 后端
+pnpm dev
+# → Vite HMR → Electron → Agent Core
 
-# 仅启动后端
-.\start.ps1 backend
-
-# 构建前端
-npm run build
-
-# 打包桌面应用
-npm run package:win   # Windows
-npm run package:mac   # macOS
-npm run package:linux # Linux
-
-# 添加新工具 (TypeScript Core)
-# 1. 在 electron/agent-core/tools/ 创建 .ts 文件
+# 添加新工具
+# 1. 在 packages/core/src/tools/ 创建 .ts 文件
 # 2. 使用 make() + Zod Schema
 # 3. 在 tools/index.ts 导出
-# 4. 在 index.ts 的 createDefaultRegistry() 注册
-# 5. 自动出现在前端工具面板
+# 4. 在 registry-init.ts 注册
 
+# 添加新 Provider
+# 1. 在 packages/core/src/llm/providers/ 创建实现
+# 2. 在 packages/core/src/llm/protocols/ 创建协议适配（如需要）
+# 3. 在 route/route.ts 注册路由
+
+# 添加新模式
+# 1. 在 agent-profile.ts 的 createDefaultRegistry() 中注册
+# 2. 或在 ~/.config/mira/agents/ 创建 JSON 配置文件
 ```
+
+## 十、关键设计决策
+
+| 决策 | 选择 | 原因 |
+|------|------|------|
+| 技术栈 | 全 TypeScript | 零 Python 依赖，单一技术栈 |
+| 数据库 | SQLite (sql.js WASM) | 零配置，适合桌面应用 |
+| 通信方式 | IPC (contextBridge) | 安全、高效、Electron 原生 |
+| 前端 UI | @assistant-ui/react | 现代化 AI 聊天组件 |
+| 状态管理 | React hooks | 轻量级，桌面应用足够 |
+| LLM 架构 | 分层（schema→protocols→providers→route） | 可扩展，新协议/Provider 无侵入 |
+| 权限 | 声明式规则 + 硬拒绝 | 灵活且安全 |
+| 记忆 | 四层 + Writer subagent | 可审查、可扩展、不阻塞主 Agent |
+| 打包 | 便携模式 | 目标电脑无需安装任何运行时 |

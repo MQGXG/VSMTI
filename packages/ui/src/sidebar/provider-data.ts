@@ -1,11 +1,12 @@
 import type { Provider } from "./types";
+import { ConfigService } from "../services/config.service";
 
 const ENCRYPTED_PREFIX = "enc:";
 
 async function encryptApiKey(key: string): Promise<string> {
   if (!key) return "";
   try {
-    const encrypted = await window.electronAPI.encryptApiKey(key);
+    const encrypted = await ConfigService.encryptApiKey(key);
     return ENCRYPTED_PREFIX + encrypted;
   } catch {
     return key;
@@ -17,7 +18,7 @@ async function decryptApiKey(key: string): Promise<string> {
   if (key.startsWith(ENCRYPTED_PREFIX)) {
     try {
       const encrypted = key.slice(ENCRYPTED_PREFIX.length);
-      return await window.electronAPI.decryptApiKey(encrypted);
+      return await ConfigService.decryptApiKey(encrypted);
     } catch {
       return key;
     }
@@ -117,7 +118,7 @@ export async function saveProviders(list: Provider[]) {
     const active = list.find((p) => p.enabled && p.models.some((m) => m.enabled));
     const defaultModel = active?.models.find((m) => m.enabled);
     if (active && defaultModel) {
-      await window.electronAPI.config.save({
+      await ConfigService.save({
         provider: active.id.startsWith("custom-") ? "custom" : active.id,
         model: defaultModel.id,
         apiKey: active.apiKey || "",
@@ -156,7 +157,7 @@ export async function getProviderById(providerId: string): Promise<{ apiKey: str
         return { apiKey: p.apiKey, apiUrl: p.baseUrl, headers: p.headers, options: p.options };
       }
       try {
-        const fileConfig = await window.electronAPI.config.get();
+        const fileConfig = await ConfigService.get();
         if (fileConfig.apiKeyFrom !== "none") {
           return { apiKey: "", apiUrl: p.baseUrl || fileConfig.apiUrl, headers: p.headers, options: p.options };
         }

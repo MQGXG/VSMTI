@@ -47,6 +47,9 @@ export class GoalJudge {
   private goalCounter = 0
   private judgeConfig: GoalConfig | null = null
   private sessionID = ""
+  private consecutiveFails = 0
+  private readonly MAX_CONSECUTIVE_FAILS = 3
+  private readonly MAX_TOTAL_EVALS = 12
 
   setJudgeConfig(config: GoalConfig): void {
     this.judgeConfig = config
@@ -199,6 +202,17 @@ export class GoalJudge {
       }
     }
 
+    // 最大评估次数保护 — 防止无限循环
+    if (goal.evaluations.length >= this.MAX_TOTAL_EVALS) {
+      const last = goal.evaluations[goal.evaluations.length - 1]
+      return {
+        timestamp: new Date().toISOString(),
+        satisfied: last.satisfied,
+        reasoning: `Max evaluations (${this.MAX_TOTAL_EVALS}) reached. Last result: ${last.reasoning}`,
+        confidence: last.confidence,
+      }
+    }
+
     const effectiveConfig = config || this.judgeConfig
     if (!effectiveConfig) {
       return {
@@ -259,6 +273,26 @@ export class GoalJudge {
     } catch (err) {
       logError(`[GoalJudge] Evaluation failed for goal ${goal.id}`, err)
       evaluation.reasoning = `Evaluation error: ${String(err)}`
+    }
+
+    // 连续失败计数：不满足 → 计数+1；满足 → 重置
+    if (evaluation.satisfied) {
+      this.consecutiveFails = 0
+    } else {
+      this.consecutiveFails++
+      if (this.consecutiveFails >= this.MAX_CONSECUTIVE_FAILS) {
+        goal.evaluations.push(evaluation)
+        goal.status = "failed"
+        this.save()
+        return { ...evaluation, reasoning: `${evaluation.reasoning} (auto-failed after ${this.MAX_CONSECUTIVE_FAILS} consecutive unsuccessful evaluations)` }
+      }
+    }
+
+    // 增量评估：跳过重复结果相同的评估
+    const lastEval = goal.evaluations[goal.evaluations.length - 1]
+    if (lastEval && lastEval.satisfied === evaluation.satisfied && lastEval.reasoning === evaluation.reasoning) {
+      // 结果与上次完全相同，跳过追加
+      return lastEval
     }
 
     goal.evaluations.push(evaluation)

@@ -2,6 +2,7 @@ import { Minus, Square, X, Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "../contexts/ThemeContext";
 import { MiraLogoSmall } from "../chat/MiraLogo";
+import { AgentService } from "../services/agent.service";
 
 export function TitleBar() {
   const [tsCoreAvailable, setTsCoreAvailable] = useState(false);
@@ -10,7 +11,7 @@ export function TitleBar() {
   const isMac = window.electronAPI?.platform === "darwin";
 
   useEffect(() => {
-    window.electronAPI.agent.listTools().then((tools) => setTsCoreAvailable(tools.length > 0)).catch(() => {});
+    AgentService.listTools().then((tools) => setTsCoreAvailable(tools.length > 0)).catch(() => {});
   }, []);
 
   const toggleTheme = () => {

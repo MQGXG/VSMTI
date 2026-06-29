@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { FileText, Terminal } from "lucide-react";
+import { ConfigService } from "../services/config.service";
 
 export function ConfigSourceIndicator() {
   const [info, setInfo] = useState<{ apiKeyFrom: string; show: boolean }>({ apiKeyFrom: "none", show: false });
@@ -7,7 +8,7 @@ export function ConfigSourceIndicator() {
   useEffect(() => {
     (async () => {
       try {
-        const cfg = await window.electronAPI.config.get();
+        const cfg = await ConfigService.get();
         if (cfg.apiKeyFrom !== "none") setInfo({ apiKeyFrom: cfg.apiKeyFrom, show: true });
       } catch { /* ignore */ }
     })();

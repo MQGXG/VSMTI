@@ -1,3 +1,10 @@
+/**
+ * Checkpoint Provider — 写作子 Agent 驱动
+ * 
+ * 主 Agent 的 syncTurn 只做缓冲，不阻塞。
+ * checkpoint 摘要由后台 writer 异步生成。
+ */
+
 import { join } from "path"
 import fs from "fs"
 import { MemoryProvider } from "./types"
@@ -33,13 +40,20 @@ const MAX_FINDINGS = 15
 const MAX_ERROR_FIXES = 10
 const MAX_DESIGN_DECISIONS = 15
 
-const SUMMARY_SYSTEM_PROMPT = `You are a session summarizer. Given the recent conversation turns, produce a concise checkpoint summary (2-4 sentences) covering:
-1. What the user is trying to accomplish
-2. Key decisions made
-3. Files and areas of code being worked on
-4. Any blockers or open questions
+const WRITER_PROMPT = `Analyze the recent conversation turns and extract structured information. Focus on concrete facts, not general statements.
 
-Be factual and concise. Do not repeat the user's words verbatim.`
+Output in this format:
+SUMMARY: 2-4 sentence summary of what happened
+INTENT: The user's overall goal
+ACTIVE_TASK: Current specific task
+CURRENT_WORK: What is being worked on right now
+DECISIONS: Each significant decision on its own line, prefixed with -
+FILES: Each file path mentioned, prefixed with -
+FINDINGS: Each discovery or finding, prefixed with -
+ERROR_FIXES: Each error or fix, prefixed with -
+DESIGN: Each design decision, prefixed with -
+TASKS: Each pending task, prefixed with -
+PREFERENCES: Each user preference, prefixed with -`
 
 export class CheckpointProvider implements MemoryProvider {
   name = "checkpoint"
@@ -48,10 +62,10 @@ export class CheckpointProvider implements MemoryProvider {
   private checkpointPath = ""
   private data: CheckpointData | null = null
   private turnCount = 0
-  private autosaveInterval = 5
-  private llmSummaryInterval = 10
+  private writerInterval = 5
   private pendingTurns: Array<{ user: string; assistant: string }> = []
   private llmConfig: { apiKey: string; apiUrl: string; model: string; provider: string } | null = null
+  private writerRunning = false
 
   get hasLLMConfig(): boolean { return this.llmConfig !== null }
 
@@ -93,7 +107,6 @@ export class CheckpointProvider implements MemoryProvider {
   async prefetch(query: string, _sessionId: string): Promise<string> {
     if (!this.data) return ""
     const parts: string[] = []
-
     if (this.data.summary) parts.push(`Session context: ${this.data.summary}`)
     if (this.data.activeTask) parts.push(`Active task: ${this.data.activeTask}`)
     if (this.data.currentWork) parts.push(`Current work: ${this.data.currentWork}`)
@@ -112,36 +125,27 @@ export class CheckpointProvider implements MemoryProvider {
     if (this.data.userPreferences.length > 0) {
       parts.push(`User preferences: ${this.data.userPreferences.slice(-3).join("; ")}`)
     }
-
     if (parts.length === 0) return ""
-    return (
-      `<checkpoint-context>\n` +
-      `[System note: Session checkpoint context]\n\n` +
-      parts.join("\n") +
-      `\n</checkpoint-context>`
-    )
+    return `<checkpoint-context>\n[System note: Session checkpoint context]\n\n${parts.join("\n")}\n</checkpoint-context>`
   }
 
+  /** 只做缓冲和保存，不阻塞，不跑正则提取 */
   async syncTurn(user: string, assistant: string, sessionId: string): Promise<void> {
     this.turnCount++
     if (!this.data) {
       this.data = this.createEmptyData(sessionId)
     }
-
     this.data.updatedAt = new Date().toISOString()
-    this.extractFromTurn(user, assistant)
+    this.saveCheckpoint()
 
     this.pendingTurns.push({ user, assistant })
-    if (this.pendingTurns.length > 20) {
-      this.pendingTurns = this.pendingTurns.slice(-20)
+    if (this.pendingTurns.length > 30) {
+      this.pendingTurns = this.pendingTurns.slice(-30)
     }
 
-    if (this.turnCount % this.llmSummaryInterval === 0 && this.llmConfig) {
-      await this.generateLLMSummary()
-    }
-
-    if (this.turnCount % this.autosaveInterval === 0) {
-      this.saveCheckpoint()
+    // 每 writerInterval 轮触发一次后台 writer（不阻塞主循环）
+    if (this.turnCount % this.writerInterval === 0 && this.llmConfig && !this.writerRunning) {
+      this.runWriterAsync()
     }
   }
 
@@ -167,59 +171,129 @@ export class CheckpointProvider implements MemoryProvider {
     }
   }
 
-  private createEmptyData(sessionId: string): CheckpointData {
-    return {
-      sessionId,
-      workspace: "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      summary: "",
-      activeTask: "",
-      recentDecisions: [],
-      keyFiles: [],
-      userPreferences: [],
-      contextBudget: 0,
-      intent: "",
-      taskTree: [],
-      currentWork: "",
-      findings: [],
-      errorFixes: [],
-      designDecisions: [],
-    }
-  }
-
-  private async generateLLMSummary(): Promise<void> {
-    if (!this.llmConfig || this.pendingTurns.length === 0) return
-
+  /** 后台 Writer — 不阻塞主 Agent，fire-and-forget */
+  private async runWriterAsync(): Promise<void> {
+    if (this.writerRunning || !this.llmConfig || this.pendingTurns.length === 0) return
+    this.writerRunning = true
     try {
       const client = createLLMClient(this.llmConfig)
       const conversationText = this.pendingTurns
-        .slice(-10)
-        .map((t) => `[user]: ${t.user.slice(0, 300)}\n[assistant]: ${t.assistant.slice(0, 500)}`)
+        .slice(-this.writerInterval)
+        .map((t) => `[user]: ${t.user.slice(0, 400)}\n[assistant]: ${t.assistant.slice(0, 600)}`)
         .join("\n\n")
 
+      const previousSummary = this.data?.summary || "(none)"
       const messages: LLMMessage[] = [
-        { role: "system", content: SUMMARY_SYSTEM_PROMPT },
-        { role: "user", content: `Current checkpoint summary: ${this.data?.summary || "(none)"}\n\nRecent conversation:\n${conversationText}\n\nGenerate an updated checkpoint summary.` },
+        { role: "system", content: WRITER_PROMPT },
+        { role: "user", content: `Previous summary: ${previousSummary}\n\nRecent conversation:\n${conversationText}\n\nExtract and update the checkpoint.` },
       ]
 
-      let summary = ""
+      let raw = ""
       for await (const event of client.stream({ messages })) {
-        if (event.type === "delta") {
-          summary += event.delta
-        }
+        if (event.type === "delta") raw += event.delta
       }
 
-      if (summary && this.data) {
-        this.data.summary = summary.trim().slice(0, 500)
-        this.saveCheckpoint()
-
-        if (this.ftsProvider) {
-          this.ftsProvider.indexCheckpoint(this.data.summary, this.data.sessionId)
-        }
+      this.parseWriterOutput(raw)
+      this.saveCheckpoint()
+      if (this.ftsProvider && this.data?.summary) {
+        this.ftsProvider.indexCheckpoint(this.data.summary, this.data.sessionId)
       }
     } catch (err) {
-      logError("[CheckpointProvider] LLM summary failed", err)
+      logError("[CheckpointProvider] Writer failed", err)
+    } finally {
+      this.writerRunning = false
+    }
+  }
+
+  /** 解析 Writer 的输出，更新 checkpoint data */
+  private parseWriterOutput(raw: string): void {
+    if (!this.data) return
+    const lines = raw.split("\n")
+    let currentKey = ""
+
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+
+      if (trimmed.startsWith("SUMMARY:")) {
+        this.data.summary = trimmed.slice(8).trim().slice(0, 500)
+        currentKey = ""
+      } else if (trimmed.startsWith("INTENT:")) {
+        this.data.intent = trimmed.slice(7).trim().slice(0, 200)
+        currentKey = ""
+      } else if (trimmed.startsWith("ACTIVE_TASK:")) {
+        this.data.activeTask = trimmed.slice(12).trim().slice(0, 200)
+        currentKey = ""
+      } else if (trimmed.startsWith("CURRENT_WORK:")) {
+        this.data.currentWork = trimmed.slice(13).trim().slice(0, 200)
+        currentKey = ""
+      } else if (trimmed.startsWith("DECISIONS:")) { currentKey = "decisions"
+      } else if (trimmed.startsWith("FILES:")) { currentKey = "files"
+      } else if (trimmed.startsWith("FINDINGS:")) { currentKey = "findings"
+      } else if (trimmed.startsWith("ERROR_FIXES:")) { currentKey = "errors"
+      } else if (trimmed.startsWith("DESIGN:")) { currentKey = "design"
+      } else if (trimmed.startsWith("TASKS:")) { currentKey = "tasks"
+      } else if (trimmed.startsWith("PREFERENCES:")) { currentKey = "preferences"
+      } else if (trimmed.startsWith("- ") && currentKey) {
+        const value = trimmed.slice(2).trim()
+        if (!value) continue
+        switch (currentKey) {
+          case "decisions":
+            if (!this.data.recentDecisions.includes(value)) {
+              this.data.recentDecisions.push(value)
+            }
+            break
+          case "files":
+            if (!this.data.keyFiles.includes(value)) {
+              this.data.keyFiles.push(value)
+            }
+            break
+          case "findings":
+            if (!this.data.findings.includes(value)) {
+              this.data.findings.push(value)
+            }
+            break
+          case "errors":
+            if (!this.data.errorFixes.includes(value)) {
+              this.data.errorFixes.push(value)
+            }
+            break
+          case "design":
+            if (!this.data.designDecisions.includes(value)) {
+              this.data.designDecisions.push(value)
+            }
+            break
+          case "tasks":
+            if (!this.data.taskTree.includes(value)) {
+              this.data.taskTree.push(value)
+            }
+            break
+          case "preferences":
+            if (!this.data.userPreferences.includes(value)) {
+              this.data.userPreferences.push(value)
+            }
+            break
+        }
+      }
+    }
+
+    // 裁剪到上限
+    if (this.data.recentDecisions.length > MAX_RECENT_DECISIONS) this.data.recentDecisions = this.data.recentDecisions.slice(-MAX_RECENT_DECISIONS)
+    if (this.data.keyFiles.length > MAX_KEY_FILES) this.data.keyFiles = this.data.keyFiles.slice(-MAX_KEY_FILES)
+    if (this.data.findings.length > MAX_FINDINGS) this.data.findings = this.data.findings.slice(-MAX_FINDINGS)
+    if (this.data.errorFixes.length > MAX_ERROR_FIXES) this.data.errorFixes = this.data.errorFixes.slice(-MAX_ERROR_FIXES)
+    if (this.data.designDecisions.length > MAX_DESIGN_DECISIONS) this.data.designDecisions = this.data.designDecisions.slice(-MAX_DESIGN_DECISIONS)
+    if (this.data.taskTree.length > MAX_TASK_TREE) this.data.taskTree = this.data.taskTree.slice(-MAX_TASK_TREE)
+    if (this.data.userPreferences.length > MAX_USER_PREFERENCES) this.data.userPreferences = this.data.userPreferences.slice(-MAX_USER_PREFERENCES)
+  }
+
+  private createEmptyData(sessionId: string): CheckpointData {
+    return {
+      sessionId, workspace: "",
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      summary: "", activeTask: "", recentDecisions: [], keyFiles: [],
+      userPreferences: [], contextBudget: 0, intent: "", taskTree: [],
+      currentWork: "", findings: [], errorFixes: [], designDecisions: [],
     }
   }
 
@@ -246,10 +320,8 @@ export class CheckpointProvider implements MemoryProvider {
 
   private parseCheckpointMd(content: string): CheckpointData {
     const data = this.createEmptyData("")
-
     const lines = content.split("\n")
     let currentSection = ""
-
     for (const line of lines) {
       if (line.startsWith("## Summary")) { currentSection = "summary"; continue }
       if (line.startsWith("## Active Task")) { currentSection = "task"; continue }
@@ -263,7 +335,6 @@ export class CheckpointProvider implements MemoryProvider {
       if (line.startsWith("## Error Fixes")) { currentSection = "errors"; continue }
       if (line.startsWith("## Design Decisions")) { currentSection = "design"; continue }
       if (line.startsWith("## Metadata")) { currentSection = "metadata"; continue }
-
       if (currentSection === "summary" && line.trim() && !line.startsWith("#")) {
         data.summary += (data.summary ? "\n" : "") + line.trim()
       } else if (currentSection === "task" && line.trim() && !line.startsWith("#")) {
@@ -291,211 +362,34 @@ export class CheckpointProvider implements MemoryProvider {
         if (line.includes("updated:")) data.updatedAt = line.split(":").slice(1).join(":").trim()
       }
     }
-
     return data
   }
 
   private toCheckpointMd(data: CheckpointData): string {
     const parts: string[] = [
-      "# Session Checkpoint",
-      "",
-      "## Summary",
-      data.summary || "(No summary yet)",
-      "",
-      "## Intent",
-      data.intent || "(No intent set)",
-      "",
-      "## Active Task",
-      data.activeTask || "(No active task)",
-      "",
-      "## Current Work",
-      data.currentWork || "(Not currently working on anything)",
-      "",
+      "# Session Checkpoint", "",
+      "## Summary", data.summary || "(No summary yet)", "",
+      "## Intent", data.intent || "(No intent set)", "",
+      "## Active Task", data.activeTask || "(No active task)", "",
+      "## Current Work", data.currentWork || "(Not currently working on anything)", "",
       "## Task Tree",
-      ...(data.taskTree.length > 0 ? data.taskTree.slice(-MAX_TASK_TREE).map((t) => `- ${t}`) : ["- (No tasks)"]),
-      "",
+      ...(data.taskTree.length > 0 ? data.taskTree.slice(-MAX_TASK_TREE).map((t) => `- ${t}`) : ["- (No tasks)"]), "",
       "## Recent Decisions",
-      ...(data.recentDecisions.length > 0 ? data.recentDecisions.slice(-MAX_RECENT_DECISIONS).map((d) => `- ${d}`) : ["- (No decisions recorded)"]),
-      "",
+      ...(data.recentDecisions.length > 0 ? data.recentDecisions.slice(-MAX_RECENT_DECISIONS).map((d) => `- ${d}`) : ["- (No decisions recorded)"]), "",
       "## Key Files",
-      ...(data.keyFiles.length > 0 ? data.keyFiles.slice(-MAX_KEY_FILES).map((f) => `- ${f}`) : ["- (No files recorded)"]),
-      "",
+      ...(data.keyFiles.length > 0 ? data.keyFiles.slice(-MAX_KEY_FILES).map((f) => `- ${f}`) : ["- (No files recorded)"]), "",
       "## Findings",
-      ...(data.findings.length > 0 ? data.findings.slice(-MAX_FINDINGS).map((f) => `- ${f}`) : ["- (No findings)"]),
-      "",
+      ...(data.findings.length > 0 ? data.findings.slice(-MAX_FINDINGS).map((f) => `- ${f}`) : ["- (No findings)"]), "",
       "## Error Fixes",
-      ...(data.errorFixes.length > 0 ? data.errorFixes.slice(-MAX_ERROR_FIXES).map((e) => `- ${e}`) : ["- (No errors recorded)"]),
-      "",
+      ...(data.errorFixes.length > 0 ? data.errorFixes.slice(-MAX_ERROR_FIXES).map((e) => `- ${e}`) : ["- (No errors recorded)"]), "",
       "## Design Decisions",
-      ...(data.designDecisions.length > 0 ? data.designDecisions.slice(-MAX_DESIGN_DECISIONS).map((d) => `- ${d}`) : ["- (No design decisions)"]),
-      "",
+      ...(data.designDecisions.length > 0 ? data.designDecisions.slice(-MAX_DESIGN_DECISIONS).map((d) => `- ${d}`) : ["- (No design decisions)"]), "",
       "## User Preferences",
-      ...(data.userPreferences.length > 0 ? data.userPreferences.slice(-MAX_USER_PREFERENCES).map((p) => `- ${p}`) : ["- (No preferences)"]),
-      "",
+      ...(data.userPreferences.length > 0 ? data.userPreferences.slice(-MAX_USER_PREFERENCES).map((p) => `- ${p}`) : ["- (No preferences)"]), "",
       "## Metadata",
       `- created: ${data.createdAt}`,
       `- updated: ${data.updatedAt}`,
     ]
     return parts.join("\n")
-  }
-
-  private extractFromTurn(user: string, assistant: string): void {
-    if (!this.data) return
-    const combined = `${user}\n${assistant}`
-
-    // 提取决策
-    const decisionPatterns = [
-      /(?:决定|计划|方案|改用|迁移|架构|选型|采用|实现|拆分)[：:]\s*(.+?)[。\n]/g,
-      /(?:we'll|let's|I'll|plan|decide|implement|refactor)[：:]\s*(.+?)[.\n]/gi,
-    ]
-    for (const pattern of decisionPatterns) {
-      let match
-      while ((match = pattern.exec(combined)) !== null) {
-        const d = match[1].trim().slice(0, 150)
-        if (d.length > 5 && !this.data.recentDecisions.includes(d)) {
-          this.data.recentDecisions.push(d)
-        }
-      }
-    }
-    if (this.data.recentDecisions.length > MAX_RECENT_DECISIONS) {
-      this.data.recentDecisions = this.data.recentDecisions.slice(-MAX_RECENT_DECISIONS)
-    }
-
-    // 提取设计决策
-    const designPatterns = [
-      /(?:采用|选择|使用)\s*(.+?)(?:技术|框架|库|方案|架构)[。\n]/g,
-      /(?:choose|use|adopt|select|go with)\s*(.+?)(?:framework|library|approach|pattern)[.\n]/gi,
-    ]
-    for (const pattern of designPatterns) {
-      let match
-      while ((match = pattern.exec(combined)) !== null) {
-        const d = match[0].trim().slice(0, 120)
-        if (d.length > 5 && !this.data.designDecisions.includes(d)) {
-          this.data.designDecisions.push(d)
-        }
-      }
-    }
-    if (this.data.designDecisions.length > MAX_DESIGN_DECISIONS) {
-      this.data.designDecisions = this.data.designDecisions.slice(-MAX_DESIGN_DECISIONS)
-    }
-
-    // 提取文件路径
-    const filePatterns = [
-      /[`]([\w/\\\-_.]+\.[a-z]+)[`]/g,
-      /["']([\w/\\\-_.]+\.[a-z]+)["']/g,
-    ]
-    for (const pattern of filePatterns) {
-      let match
-      while ((match = pattern.exec(combined)) !== null) {
-        const p = match[1]
-        if (p.includes("node_modules") || p.includes(".git") || p.includes("dist")) continue
-        if (!this.data.keyFiles.includes(p)) {
-          this.data.keyFiles.push(p)
-        }
-      }
-    }
-    if (this.data.keyFiles.length > MAX_KEY_FILES) {
-      this.data.keyFiles = this.data.keyFiles.slice(-MAX_KEY_FILES)
-    }
-
-    // 提取用户偏好
-    const prefPatterns = [
-      /(?:我喜欢|我习惯|我倾向|请(?:总是|永远)|prefer|always use|never use)\s*(.+)/gi,
-      /(?:不要|别|don't|never)\s*(.{5,50})/gi,
-    ]
-    for (const pattern of prefPatterns) {
-      let match
-      while ((match = pattern.exec(user)) !== null) {
-        const p = match[0].trim().slice(0, 100)
-        if (p.length > 5 && !this.data.userPreferences.includes(p)) {
-          this.data.userPreferences.push(p)
-        }
-      }
-    }
-    if (this.data.userPreferences.length > MAX_USER_PREFERENCES) {
-      this.data.userPreferences = this.data.userPreferences.slice(-MAX_USER_PREFERENCES)
-    }
-
-    // 提取任务
-    const taskPatterns = [
-      /(?:帮我|请|现在需要|接下来要?|let's|please|I need to|I want to)\s*(.{10,80})/i,
-    ]
-    for (const pattern of taskPatterns) {
-      const match = user.match(pattern)
-      if (match && !this.data.activeTask) {
-        this.data.activeTask = match[1].trim()
-        break
-      }
-    }
-
-    // 提取意图（仅在 session 开始时）
-    if (!this.data.intent) {
-      const intentPatterns = [
-        /(?:我想|我要|我的目标|目标是|目的|goal|objective|aim)\s*(.{10,100})/i,
-        /(?:这个项目|本次任务|本次目标是?)\s*(.{10,100})/i,
-      ]
-      for (const pattern of intentPatterns) {
-        const match = user.match(pattern)
-        if (match) {
-          this.data.intent = match[1].trim().slice(0, 200)
-          break
-        }
-      }
-    }
-
-    // 提取发现
-    const findingPatterns = [
-      /(?:发现|观察到|注意到|发现是|原因是|because|found that|noticed|turns out)\s*(.{10,120})/gi,
-    ]
-    for (const pattern of findingPatterns) {
-      let match
-      while ((match = pattern.exec(combined)) !== null) {
-        const f = match[1].trim().slice(0, 150)
-        if (f.length > 5 && !this.data.findings.includes(f)) {
-          this.data.findings.push(f)
-        }
-      }
-    }
-    if (this.data.findings.length > MAX_FINDINGS) {
-      this.data.findings = this.data.findings.slice(-MAX_FINDINGS)
-    }
-
-    // 提取错误修复
-    const errorPatterns = [
-      /(?:错误|修复|bug|fix|error|issue|problem|was getting|encountered)\s*(.{10,100})/gi,
-      /(?:解决了|修复了|把|改成)\s*(.{10,80})/gi,
-    ]
-    for (const pattern of errorPatterns) {
-      let match
-      while ((match = pattern.exec(combined)) !== null) {
-        const e = match[0].trim().slice(0, 120)
-        if (e.length > 5 && !this.data.errorFixes.includes(e)) {
-          this.data.errorFixes.push(e)
-        }
-      }
-    }
-    if (this.data.errorFixes.length > MAX_ERROR_FIXES) {
-      this.data.errorFixes = this.data.errorFixes.slice(-MAX_ERROR_FIXES)
-    }
-
-    // 提取当前工作
-    const workPattern = /(?:正在|现在(?:在)?|currently|right now|working on)\s*(.{10,80})/i
-    const workMatch = user.match(workPattern) || assistant.match(workPattern)
-    if (workMatch) {
-      this.data.currentWork = workMatch[1].trim().slice(0, 150)
-    }
-
-    // 更新任务树（检测新的独立任务）
-    const newTaskPattern = /(?:下一步|接下来|然后|还要做|still need to|next|then|after that)\s*(.{10,80})/gi
-    let taskMatch
-    while ((taskMatch = newTaskPattern.exec(combined)) !== null) {
-      const task = taskMatch[1].trim().slice(0, 100)
-      if (task.length > 5 && !this.data.taskTree.includes(task)) {
-        this.data.taskTree.push(task)
-      }
-    }
-    if (this.data.taskTree.length > MAX_TASK_TREE) {
-      this.data.taskTree = this.data.taskTree.slice(-MAX_TASK_TREE)
-    }
   }
 }

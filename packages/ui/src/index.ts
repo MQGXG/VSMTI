@@ -4,6 +4,18 @@
  * 包含所有 React UI 组件
  */
 
+// ─── Service 层 ────────────────────────────────────────────────
+export { SessionService } from "./services/session.service"
+export { ProjectService } from "./services/project.service"
+export { AgentService } from "./services/agent.service"
+export { ConfigService } from "./services/config.service"
+export { MemoryService } from "./services/memory.service"
+export type { SessionInfo, SessionMessage, SearchResult } from "./services/session.service"
+export type { ProjectInfo } from "./services/project.service"
+export type { ToolInfo, ToolResult, SkillInfo } from "./services/agent.service"
+export type { ConfigInfo } from "./services/config.service"
+export type { MemoryEntry } from "./services/memory.service"
+
 // ─── 通用 UI 组件 ──────────────────────────────────────────────
 export { Modal } from "./ui/Modal"
 export { ResizablePanel } from "./ui/ResizablePanel"

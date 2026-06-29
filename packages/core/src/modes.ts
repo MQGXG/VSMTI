@@ -48,3 +48,15 @@ export function modeToPermissionSet(mode: string, base: PermissionSet): Permissi
 export function getModeToolAllowlist(mode: string): string[] | undefined {
   return _registry.getToolAllowlist(mode)
 }
+
+/** 根据 mode 获取最大迭代次数 */
+export function getModeMaxIterations(mode: string): number {
+  const config = _registry.get(mode)
+  return config?.maxIterations ?? 10
+}
+
+/** 根据 mode 获取系统提示后缀 */
+export function getModeSystemPromptSuffix(mode: string): string {
+  const config = _registry.get(mode)
+  return config?.systemPromptSuffix ?? ""
+}

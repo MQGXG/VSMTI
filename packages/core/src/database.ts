@@ -6,6 +6,7 @@ import fs from "fs"
 let db: SqliteDb | null = null
 let dbInitPromise: Promise<SqliteDb> | null = null
 let saveTimer: ReturnType<typeof setTimeout> | null = null
+let _SQL: Awaited<ReturnType<typeof initSqlJs>> | null = null
 
 function getDbPath(): string | null {
   try {
@@ -47,7 +48,7 @@ const SCHEMA = `
 `
 
 async function createDb(): Promise<SqliteDb> {
-  const SQL = await initSqlJs()
+  _SQL = await initSqlJs()
   const dbPath = getDbPath()
   let buffer: Buffer | undefined
   if (dbPath) {
@@ -57,7 +58,7 @@ async function createDb(): Promise<SqliteDb> {
       if (fs.existsSync(dbPath)) buffer = fs.readFileSync(dbPath)
     } catch {}
   }
-  const newDb = new SQL.Database(buffer)
+  const newDb = new _SQL.Database(buffer)
   newDb.run("PRAGMA journal_mode=WAL")
   newDb.run(SCHEMA)
   return newDb
@@ -74,6 +75,19 @@ export async function initDatabase(): Promise<SqliteDb> {
 export async function getDbAsync(): Promise<SqliteDb> {
   if (db) return db
   return initDatabase()
+}
+
+/** 重载数据库文件（跨进程同步：Sidecar 写入后主进程需要重读） */
+export function reloadDatabase(): void {
+  if (!_SQL) return
+  const dbPath = getDbPath()
+  if (!dbPath) return
+  try {
+    const buffer = fs.readFileSync(dbPath)
+    if (db) db.close()
+    db = new _SQL.Database(buffer)
+    db.run("PRAGMA journal_mode=WAL")
+  } catch { /* 文件不存在或读取失败时保留当前内存数据库 */ }
 }
 
 /** 执行 SQL 写入并自动触发持久化 */

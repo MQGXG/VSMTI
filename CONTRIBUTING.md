@@ -5,15 +5,16 @@
 ## 开发环境
 
 - Node.js 18+
-- Python 3.10+（或使用 `portable-python/`）
-- 包管理器：npm
+- pnpm 8+
+- Windows / macOS / Linux
+- **无需 Python**（Agent Core 完全由 TypeScript 实现）
 
 ```powershell
 # 克隆后首次设置
-.\setup.ps1
+pnpm install
 
 # 开发模式启动
-npm run dev
+pnpm dev
 ```
 
 ## 代码规范
@@ -26,11 +27,23 @@ npm run dev
 - 类型定义放在独立的 `types.ts` 中
 - 样式使用 Tailwind CSS 原子类，避免手写 CSS
 
-### Python
+### 工具定义
 
-- 遵循 PEP 8 规范
-- 异步路由使用 `async def`
-- 类型注解完整
+```typescript
+// 使用 make() + Zod Schema
+export const myTool = make({
+  name: "my_tool",
+  description: "What this tool does",
+  inputSchema: z.object({
+    path: z.string().describe("Path to file"),
+  }),
+  outputSchema: z.string(),
+  permission: "read",
+  async execute(input, ctx) {
+    // 实现
+  },
+})
+```
 
 ### 提交信息
 
@@ -56,24 +69,34 @@ style: 优化空状态引导布局
 
 1. 从 `main` 创建功能分支
 2. 实现功能或修复问题
-3. 运行 `npm run typecheck` 确保类型正确
-4. 运行 `npm run build` 确保构建通过
-5. 运行 `npm test` 确保测试通过
+3. 运行 `pnpm typecheck` 确保类型正确
+4. 运行 `pnpm build` 确保构建通过
+5. 运行 `pnpm test` 确保测试通过
 6. 创建 Pull Request
 
 ## 测试
 
 ```powershell
 # 运行所有测试
-npm test
+pnpm test
 
 # TypeScript 类型检查
-npm run typecheck
+pnpm typecheck
 
 # 构建验证
-npm run build
+pnpm build
 ```
 
 ## 目录结构
 
 参见 `docs/architecture.md` 了解完整架构说明。
+
+## 包结构
+
+```
+packages/
+├── core/          # 核心逻辑（Agent/LLM/Tools/Memory）
+├── electron/      # Electron 主进程
+├── ui/            # React 前端组件
+└── apps/desktop/  # Electron 应用壳
+```

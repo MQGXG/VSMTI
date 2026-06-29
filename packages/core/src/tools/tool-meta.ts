@@ -19,25 +19,26 @@ export interface ToolMeta {
 
 export const toolMetadata: Record<string, ToolMeta> = {
   read_file:    { category: "core", timeout: 10000, supportsParallel: true },
-  write_file:   { category: "core", timeout: 10000 },
-  edit_file:    { category: "core", timeout: 10000 },
+  write_file:   { category: "core", timeout: 10000, supportsParallel: true },
+  edit_file:    { category: "core", timeout: 10000, supportsParallel: true },
   list_files:   { category: "core", timeout: 5000, supportsParallel: true },
   grep:         { category: "core", timeout: 15000, supportsParallel: true },
   glob:         { category: "core", timeout: 15000, supportsParallel: true },
 
   web_search:   { category: "knowledge", timeout: 15000, supportsParallel: true },
   web_browse:   { category: "knowledge", timeout: 30000, supportsParallel: true },
+  web_fetch:    { category: "knowledge", timeout: 15000, supportsParallel: true },
   data_analysis:{ category: "knowledge", timeout: 60000, supportsParallel: true },
 
-  bash:         { category: "execution", requiresPermission: true, timeout: 60000 },
-  code_exec:    { category: "execution", requiresPermission: true, timeout: 60000 },
-  image_gen:    { category: "execution", requiresPermission: true, timeout: 60000 },
+  bash:         { category: "execution", requiresPermission: true, timeout: 60000, supportsParallel: true },
+  code_exec:    { category: "execution", requiresPermission: true, timeout: 60000, supportsParallel: true },
+  image_gen:    { category: "execution", requiresPermission: true, timeout: 60000, supportsParallel: true },
 
   task_planner: { category: "orchestration", supportsParallel: true },
-  delegate_task:{ category: "orchestration", timeout: 120000 },
-  team_tool:    { category: "orchestration" },
-  cron_tool:    { category: "orchestration" },
-  worktree_tool:{ category: "orchestration", timeout: 30000 },
+  delegate_task:{ category: "orchestration", timeout: 120000, supportsParallel: true },
+  team_tool:    { category: "orchestration", supportsParallel: true },
+  cron_tool:    { category: "orchestration", supportsParallel: true },
+  worktree_tool:{ category: "orchestration", timeout: 30000, supportsParallel: true },
 
   lsp_definition:  { category: "infrastructure", supportsParallel: true },
   lsp_references:  { category: "infrastructure", supportsParallel: true },
@@ -46,7 +47,10 @@ export const toolMetadata: Record<string, ToolMeta> = {
   git_status:      { category: "core", timeout: 15000, supportsParallel: true },
   git_diff:        { category: "core", timeout: 15000, supportsParallel: true },
   git_log:         { category: "core", timeout: 15000, supportsParallel: true },
-  git_commit:      { category: "execution", requiresPermission: true, timeout: 15000 },
+  git_commit:      { category: "execution", requiresPermission: true, timeout: 15000, supportsParallel: false },
+  workflow_run:    { category: "orchestration", timeout: 300000, supportsParallel: true },
+  memory_search:   { category: "knowledge", timeout: 15000, supportsParallel: true },
+  memory_recall:   { category: "knowledge", timeout: 15000, supportsParallel: true },
 }
 
 export function isToolParallel(name: string): boolean {

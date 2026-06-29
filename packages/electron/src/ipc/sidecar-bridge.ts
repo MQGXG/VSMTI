@@ -15,6 +15,10 @@ interface SSESession {
 
 const sseSessions = new Map<string, SSESession>()
 let serverManager: ServerManager | null = null
+
+export function getServerManager(): ServerManager | null {
+  return serverManager
+}
 let healthCheckTimer: ReturnType<typeof setInterval> | null = null
 
 const HEALTH_CHECK_INTERVAL = 10_000
@@ -28,8 +32,9 @@ export async function startSidecar(port = 0): Promise<{ port: number; token: str
 
   // 开发模式用 tsx 跑 TypeScript 源码，生产用编译后的 JS
   const useTsx = process.env.NODE_ENV !== "production" && !app.isPackaged
+  const userData = app.getPath("userData")
 
-  serverManager = new ServerManager({ port, useTsx })
+  serverManager = new ServerManager({ port, useTsx, userData })
   const info = await serverManager.start()
   console.log(`[Sidecar] Core server ready on port ${info.port}`)
 

@@ -26,6 +26,7 @@ export interface PipelineInput {
     workspace: string
     permissions?: PermissionSet
     onPermissionSave?: (rules: PermissionRule[]) => void
+    autoAcceptPermissions?: boolean
     signal?: AbortSignal
   }
 }
@@ -62,6 +63,13 @@ export async function* runToolPipeline(
       const resources = extractResources(ev.args)
       const cached = deps.approvalStore.checkAll(ev.permissionAction, resources)
       if (cached === "allow") {
+        approvedCalls.push({ id: ev.toolCall.id, type: "function" as const, function: { name: ev.toolCall.name, arguments: JSON.stringify(ev.args) } })
+        continue
+      }
+
+      // 自动接受权限模式：跳过用户确认
+      if (config.autoAcceptPermissions) {
+        deps.approvalStore.record(ev.permissionAction, resources, "allow", 86400_000, config.workspace)
         approvedCalls.push({ id: ev.toolCall.id, type: "function" as const, function: { name: ev.toolCall.name, arguments: JSON.stringify(ev.args) } })
         continue
       }

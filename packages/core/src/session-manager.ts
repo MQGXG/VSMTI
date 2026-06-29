@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto"
 import { loadSession, listSessions as sqliteListSessions } from "./session-store"
-import { getDbAsync, runWrite } from "./database"
+import { getDbAsync, runWrite, reloadDatabase } from "./database"
 
 export interface SessionInfo {
   session_id: string
@@ -29,6 +29,7 @@ export async function createProject(name: string, workspacePath: string): Promis
 }
 
 export async function listProjects(): Promise<ProjectInfo[]> {
+  reloadDatabase()
   const db = await getDbAsync()
   const rows = db.exec("SELECT project_id, name, workspace_path FROM projects")
   if (rows.length === 0) return []
@@ -55,6 +56,7 @@ export async function createSession(projectId: string, title?: string): Promise<
 }
 
 export async function listSessions(projectId?: string): Promise<SessionInfo[]> {
+  reloadDatabase()
   const db = await getDbAsync()
   const rows = db.exec(
     projectId
@@ -78,9 +80,21 @@ export async function listSessions(projectId?: string): Promise<SessionInfo[]> {
 }
 
 export async function getSessionMessages(sessionId: string): Promise<Array<{ role: string; content: string; id: number }>> {
+  reloadDatabase()
   const stored = await loadSession(sessionId)
   if (!stored) return []
   return stored.messages.map((m, i) => ({ id: i, role: m.role, content: m.content }))
+}
+
+export async function updateProject(projectId: string, data: { name?: string; workspace_path?: string }): Promise<void> {
+  const db = await getDbAsync()
+  const updates: string[] = []
+  const params: string[] = []
+  if (data.name !== undefined) { updates.push("name = ?"); params.push(data.name) }
+  if (data.workspace_path !== undefined) { updates.push("workspace_path = ?"); params.push(data.workspace_path) }
+  if (updates.length === 0) return
+  params.push(projectId)
+  runWrite(`UPDATE projects SET ${updates.join(", ")} WHERE project_id = ?`, params)
 }
 
 export async function deleteProjectById(projectId: string): Promise<void> {

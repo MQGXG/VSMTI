@@ -38,6 +38,7 @@ interface Props {
   selectedModel: ModelOption;
   agentMode: AgentMode;
   goalCondition?: string | null;
+  onSessionChange?: (sessionId: string) => void;
   children: ReactNode | ((ctx: MiraRuntimeContext) => ReactNode);
 }
 
@@ -46,6 +47,7 @@ export function MiraRuntimeProvider({
   selectedModel,
   agentMode,
   goalCondition,
+  onSessionChange,
   children,
 }: Props) {
   const chat = useMiraChat({
@@ -53,6 +55,7 @@ export function MiraRuntimeProvider({
     selectedModel,
     agentMode,
     goalCondition,
+    onSessionChange,
   });
 
   const onNew = useCallback(

@@ -23,6 +23,7 @@ import { gitStatusTool, gitDiffTool, gitLogTool, gitCommitTool } from "./tools/g
 import { createDocxTool } from "./tools/create-docx"
 import { searchHistoryTool } from "./tools/search-history"
 import { spawnAgentTool, waitAgentsTool, listSubagentsTool } from "./tools/agent-tools"
+import { workflowRunTool } from "./tools/workflow-tool"
 import type { MCPServerConfig } from "./mcp/index"
 
 export function createDefaultRegistry(): ToolRegistry {
@@ -63,6 +64,7 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(spawnAgentTool)
   registry.register(waitAgentsTool)
   registry.register(listSubagentsTool)
+  registry.register(workflowRunTool)
   return registry
 }
 

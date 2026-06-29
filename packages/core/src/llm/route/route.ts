@@ -1,32 +1,7 @@
-/**
- * Route 组合层 — 将 Protocol + Endpoint + Auth + Framing 组合为可调用的 Route
- * 参考 OpenCode 的 Route.make() + route.prepareTransport + route.streamPrepared
- */
-
 import { LLMError, type LLMEvent } from "../schema"
-import type { RouteConfig, Protocol, Auth, Framing } from "./types"
+import type { RouteConfig, RouteInstance, Protocol, Auth, Framing, Endpoint } from "./types"
 import type { LLMMessage } from "../schema"
 
-export interface RouteInstance {
-  readonly name: string
-  readonly protocol: Protocol
-  readonly framing: Framing
-  stream(request: {
-    model: string
-    messages: LLMMessage[]
-    tools?: Array<{ name: string; description: string; parameters: Record<string, unknown> }>
-    generation?: Record<string, unknown>
-  }): AsyncGenerator<LLMEvent>
-
-  complete(request: {
-    model: string
-    messages: LLMMessage[]
-    tools?: Array<{ name: string; description: string; parameters: Record<string, unknown> }>
-    generation?: Record<string, unknown>
-  }): Promise<{ content: string; toolCalls: Array<{ id: string; name: string; arguments: string }> }>
-}
-
-/** 构建请求头 */
 function buildHeaders(auth: Auth, framing: Framing, extra?: Record<string, string>): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -45,37 +20,15 @@ function buildHeaders(auth: Auth, framing: Framing, extra?: Record<string, strin
   return { ...headers, ...extra }
 }
 
-/** 创建 Route 实例 */
-export function makeRoute(config: RouteConfig): RouteInstance {
-  const { protocol, endpoint, auth, framing, headers: extraHeaders, timeout } = config
-  const url = `${endpoint.baseUrl.replace(/\/+$/, "")}${endpoint.path}`
-  const headers = buildHeaders(auth, framing, extraHeaders)
-
-  async function* stream(
-    request: Parameters<RouteInstance["stream"]>[0],
-  ): AsyncGenerator<LLMEvent> {
+function makeStream(
+  protocol: Protocol,
+  url: string,
+  headers: Record<string, string>,
+  timeout: number | undefined,
+): (request: Parameters<RouteInstance["stream"]>[0]) => AsyncGenerator<LLMEvent> {
+  return async function* (request) {
     const body = protocol.serializeRequest(request)
 
-    if (framing === "json") {
-      const response = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-        signal: timeout ? AbortSignal.timeout(timeout) : undefined,
-      })
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw LLMError.provider(protocol.name, `HTTP ${response.status}: ${errorText.slice(0, 1000)}`)
-      }
-      const data = await response.json()
-      if (protocol.parseResponse) {
-        yield { type: "text-delta", delta: protocol.parseResponse(data).content }
-      }
-      yield { type: "finish", reason: "stop" }
-      return
-    }
-
-    // SSE 模式
     const response = await fetch(url, {
       method: "POST",
       headers,
@@ -86,6 +39,19 @@ export function makeRoute(config: RouteConfig): RouteInstance {
     if (!response.ok) {
       const errorText = await response.text()
       throw LLMError.provider(protocol.name, `HTTP ${response.status}: ${errorText.slice(0, 1000)}`)
+    }
+
+    const contentType = response.headers.get("content-type") || ""
+    const isSSE = contentType.includes("text/event-stream")
+
+    if (!isSSE) {
+      const data = await response.json()
+      if (protocol.parseResponse) {
+        const parsed = protocol.parseResponse(data)
+        if (parsed.content) yield { type: "text-delta", delta: parsed.content }
+      }
+      yield { type: "finish", reason: "stop" }
+      return
     }
 
     const reader = response.body?.getReader()
@@ -115,7 +81,7 @@ export function makeRoute(config: RouteConfig): RouteInstance {
               const event = protocol.deserializeEvent(parsed)
               if (event) yield event
             } catch {
-              // 跳过无法解析的 chunk
+              // skip unparseable chunks
             }
           }
         }
@@ -131,10 +97,15 @@ export function makeRoute(config: RouteConfig): RouteInstance {
       reader.releaseLock()
     }
   }
+}
 
-  async function complete(
-    request: Parameters<RouteInstance["complete"]>[0],
-  ): Promise<{ content: string; toolCalls: Array<{ id: string; name: string; arguments: string }> }> {
+function makeComplete(
+  protocol: Protocol,
+  url: string,
+  headers: Record<string, string>,
+  timeout: number | undefined,
+): (request: Parameters<RouteInstance["complete"]>[0]) => Promise<{ content: string; toolCalls: Array<{ id: string; name: string; arguments: string }> }> {
+  return async (request) => {
     const body = protocol.serializeRequest(request)
     body.stream = false
 
@@ -156,17 +127,53 @@ export function makeRoute(config: RouteConfig): RouteInstance {
     }
     return { content: JSON.stringify(data), toolCalls: [] }
   }
-
-  return {
-    name: protocol.name,
-    protocol,
-    framing,
-    stream,
-    complete,
-  }
 }
 
-/** 封装 Protocol 为 RouteConfig 的快捷工厂 */
+function computeUrl(endpoint: Endpoint): string {
+  return `${endpoint.baseUrl.replace(/\/+$/, "")}${endpoint.path}`
+}
+
+export function makeRoute(config: RouteConfig): RouteInstance {
+  const headers = buildHeaders(config.auth, config.framing, config.headers)
+  const url = computeUrl(config.endpoint)
+
+  const stream = makeStream(config.protocol, url, headers, config.timeout)
+  const complete = makeComplete(config.protocol, url, headers, config.timeout)
+
+  const instance: RouteInstance = {
+    name: config.protocol.name,
+    protocol: config.protocol,
+    framing: config.framing,
+    endpoint: config.endpoint,
+    auth: config.auth,
+    headers,
+    timeout: config.timeout,
+    stream,
+    complete,
+
+    with(overrides) {
+      const newEndpoint: Endpoint = overrides.endpoint
+        ? { ...config.endpoint, ...overrides.endpoint }
+        : config.endpoint
+      const newAuth = overrides.auth ?? config.auth
+      const newFraming = overrides.framing ?? config.framing
+      const newHeaders = { ...config.headers, ...overrides.headers }
+      const newTimeout = overrides.timeout ?? config.timeout
+
+      return makeRoute({
+        protocol: config.protocol,
+        endpoint: newEndpoint,
+        auth: newAuth,
+        framing: newFraming,
+        headers: newHeaders,
+        timeout: newTimeout,
+      })
+    },
+  }
+
+  return instance
+}
+
 export function executeRoute(
   route: RouteInstance,
   request: Parameters<RouteInstance["stream"]>[0],

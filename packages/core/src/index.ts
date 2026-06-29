@@ -50,6 +50,10 @@ export { delegateTaskTool } from "./tools/delegate-task"
 export { searchHistoryTool } from "./tools/search-history"
 // 图片生成工具
 export { imageGenTool } from "./tools/image-gen"
+// Workflow 工具
+export { workflowRunTool } from "./tools/workflow-tool"
+export { WorkflowEngine } from "./workflow/index"
+export type { WorkflowDefinition, WorkflowStep, WorkflowResult } from "./workflow/index"
 // Worktree 工具
 export { worktreeTool } from "./tools/worktree-tool"
 // 团队工具

@@ -152,7 +152,7 @@ async function routeRequest(
       const config = body.config || {}
 
       if (!sessionId || !message) {
-        errorResponse(res, 400, "sessionId and message are required")
+        errorResponse(res, 400, `sessionId and message are required (got sessionId=${JSON.stringify(sessionId)}, message length=${(message || "").length})`)
         return
       }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { Search, FileText, FileEdit, Globe, Code, FolderOpen, Wrench, X, Terminal, Sparkles } from "lucide-react"
-import type { ToolInfo, ToolResult } from "../types/electron"
+import type { ToolInfo, ToolResult } from "../services/agent.service"
+import { AgentService } from "../services/agent.service"
 
 interface Props {
   onResult: (toolName: string, result: ToolResult) => void
@@ -42,7 +43,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
 
   useEffect(() => {
     if (open) {
-      window.electronAPI.agent.listTools().then(setTools)
+      AgentService.listTools().then(setTools)
     }
   }, [open])
 
@@ -90,7 +91,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
           }
         }
       }
-      const result = await window.electronAPI.agent.executeTool(selectedTool.name, args)
+      const result = await AgentService.executeTool(selectedTool.name, args)
       onResult(selectedTool.name, result)
       if (result.success) {
         setResultMsg("✅ 执行成功，结果已添加到对话")

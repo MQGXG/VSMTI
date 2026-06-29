@@ -6,15 +6,15 @@ import { make } from "../tool"
  * 底层使用 FTSMemoryProvider 的 FTS5 + BM25 全文搜索
  */
 
-/** 获取 FTSProvider 实例（通过 MemoryManager 间接获取） */
+/** 模块级单例，由 agent.ts 初始化时注入 */
+let ftsProvider: any = null
+
+export function setFTSProvider(p: any): void {
+  ftsProvider = p
+}
+
 function getFTS() {
-  try {
-    // 从全局内存中获取 — Agent 初始化时由 agent.ts 设置
-    const g = globalThis as any
-    return g.__mira_fts_provider__ || null
-  } catch {
-    return null
-  }
+  return ftsProvider
 }
 
 export const memorySearchTool = make({

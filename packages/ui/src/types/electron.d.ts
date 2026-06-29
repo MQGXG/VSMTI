@@ -1,37 +1,14 @@
+/**
+ * Electron API 类型声明
+ *
+ * 此文件保留全局 Window 类型声明。
+ * 具体业务类型请从 services/ 目录导入。
+ */
+
 export interface LogEntry {
   timestamp: string;
   level: "info" | "error";
   message: string;
-}
-
-export interface ToolInfo {
-  name: string;
-  description: string;
-  parameters: Record<string, unknown>;
-}
-
-export interface ToolResult {
-  success: boolean;
-  output?: string;
-  error?: string;
-}
-
-export type AgentEvent =
-  | { type: "content"; text: string }
-  | { type: "tool_start"; id: string; name: string; args: Record<string, unknown> }
-  | { type: "tool_result"; id: string; name: string; result: { success: boolean; output?: string; error?: string } }
-  | { type: "permission_request"; id: string; action: string; resources: string[]; toolCall: { id: string; name: string; input: Record<string, unknown> } }
-  | { type: "question"; id: string; question: string; options?: string[] }
-  | { type: "error"; message: string }
-  | { type: "finish"; reason: string }
-  | { type: "thinking"; text: string };
-
-export interface ConfigInfo {
-  provider: string;
-  model: string;
-  apiUrl: string;
-  mode: string;
-  apiKeyFrom: "env" | "file" | "none";
 }
 
 export interface ElectronAPI {
@@ -53,7 +30,7 @@ export interface ElectronAPI {
 
   // 配置系统（JSON 文件 + 环境变量）
   config: {
-    get: (workspace?: string) => Promise<ConfigInfo>;
+    get: (workspace?: string) => Promise<{ provider: string; model: string; apiUrl: string; mode: string; apiKeyFrom: "env" | "file" | "none" }>;
     save: (config: Record<string, unknown>) => Promise<void>;
   };
 
@@ -61,6 +38,7 @@ export interface ElectronAPI {
   ts: {
     listProjects: () => Promise<Array<{ project_id: string; name: string; workspace_path: string }>>;
     createProject: (name: string, workspace: string) => Promise<{ project_id: string }>;
+    updateProject: (projectId: string, data: { name?: string; workspace_path?: string }) => Promise<void>;
     deleteProject: (projectId: string) => Promise<void>;
     createSession: (projectId: string, title?: string) => Promise<{ session_id: string; title: string; kind: string; workspace_path: string; message_count: number; updated_at: string }>;
     listSessions: (projectId?: string) => Promise<Array<{ session_id: string; title: string; kind: string; workspace_path: string; message_count: number; updated_at: string }>>;
@@ -71,10 +49,10 @@ export interface ElectronAPI {
 
   // TypeScript Agent Core
   agent: {
-    executeTool: (name: string, args: Record<string, unknown>) => Promise<ToolResult>;
-    listTools: (mode?: string) => Promise<ToolInfo[]>;
-    chat: (config: Record<string, unknown>, message: string, history: Array<{ role: string; content: string }>) => Promise<AgentEvent[]>;
-    runAgentStream: (sessionId: string, message: string, config: Record<string, unknown>) => Promise<AgentEvent[]>;
+    executeTool: (name: string, args: Record<string, unknown>) => Promise<{ success: boolean; output?: string; error?: string }>;
+    listTools: (mode?: string) => Promise<Array<{ name: string; description: string; parameters: Record<string, unknown> }>>;
+    chat: (config: Record<string, unknown>, message: string, history: Array<{ role: string; content: string }>) => Promise<Array<{ type: string; [key: string]: unknown }>>;
+    runAgentStream: (sessionId: string, message: string, config: Record<string, unknown>) => Promise<Array<{ type: string; [key: string]: unknown }>>;
 
     /** 列出可用 Skill */
     listSkills: () => Promise<Array<{ name: string; description: string; category: string | null }>>;
@@ -151,6 +129,11 @@ export interface ElectronAPI {
     stopStream: (channel: string) => Promise<void>;
     /** 监听 Agent 事件 */
     onEvent: (channel: string, callback: (event: any) => void) => () => void;
+  };
+
+  memory: {
+    search: (query: string, type?: string, limit?: number) => Promise<Array<{ id: string; content: string; tags: string[] }>>;
+    status: () => Promise<{ ready: boolean; count: number }>;
   };
 }
 

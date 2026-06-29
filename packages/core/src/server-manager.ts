@@ -20,6 +20,8 @@ export interface ServerManagerOptions {
   timeout?: number
   /** 是否使用 tsx（开发模式） */
   useTsx?: boolean
+  /** 数据库路径（主进程 userData） */
+  userData?: string
 }
 
 const DEFAULT_OPTIONS: Required<Omit<ServerManagerOptions, "serverEntry">> & { serverEntry: string } = {
@@ -76,9 +78,11 @@ export class ServerManager {
     const hasTsx = fs.existsSync(tsxPath)
 
     const runner = opts.useTsx && hasTsx ? tsxPath : "node"
-    const args = opts.useTsx && hasTsx
-      ? [entry, "--port", String(this.options.port || 0)]
-      : [entry, "--port", String(this.options.port || 0)]
+    const baseArgs = ["--port", String(this.options.port || 0)]
+    if (this.options.userData) {
+      baseArgs.push("--userData", this.options.userData)
+    }
+    const args = [entry, ...baseArgs]
 
     console.log(`[Sidecar] Spawning: ${runner} ${args.join(" ")}`)
 

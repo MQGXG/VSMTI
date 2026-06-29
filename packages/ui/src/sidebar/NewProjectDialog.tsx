@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Folder, Plus } from "lucide-react";
 import { Modal } from "../ui/Modal";
+import { DialogService } from "../services/dialog.service";
 
 interface Props {
   open: boolean;
@@ -22,7 +23,7 @@ export function NewProjectDialog({ open, onClose, onCreate }: Props) {
   }, [open]);
 
   const handleChooseDir = async () => {
-    const dirs = await window.electronAPI.openDirectory?.();
+    const dirs = await DialogService.openDirectory();
     if (dirs && dirs.length > 0) {
       setWorkspacePath(dirs[0]);
       if (!name) {

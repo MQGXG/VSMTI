@@ -19,6 +19,7 @@ import { taskTracker } from "../task-tracker"
 import { Effect } from "effect"
 import { AppLayer } from "../layers"
 import { setParentConfig } from "../tools/agent-tools"
+import { setFTSProvider } from "../tools/memory"
 
 // ── 初始化 ──────────────────────────────────────────
 
@@ -112,6 +113,12 @@ export async function handleStartStream(
   })
 
   const agent = new Agent(registry, mergedConfig.apiKey, mergedConfig.apiUrl, workspace)
+  // 将 FTS provider 注册到模块级单例（供 memory 工具和 HTTP 端点使用）
+  const fts = agent.getFTSProvider()
+  if (fts) {
+    setFTSProvider(fts)
+    setMemoryFTS(fts)
+  }
 
   const { processed } = processSkillCommand(message)
 
@@ -142,6 +149,7 @@ export async function handleStartStream(
     permissions,
     mode: config.mode as any,
     toolAllowlist: modeConfig?.toolAllowlist,
+    autoAcceptPermissions: config.autoAcceptPermissions as boolean,
     onPermissionSave: (rules) => {
       for (const rule of rules) {
         saveWorkspacePermission(workspace, rule)
@@ -255,12 +263,14 @@ export async function handleExecuteBatch(calls: Array<{ name: string; args: Reco
 
 // ── Memory 搜索 ──────────────────────────────────────
 
-function getMemoryFTS() {
-  try { return (globalThis as any).__mira_fts_provider__ || null } catch { return null }
+let memoryFTS: any = null
+
+export function setMemoryFTS(p: any): void {
+  memoryFTS = p
 }
 
 export async function handleMemorySearch(query: string, type?: string, limit?: number): Promise<{ results: string[]; error: string | null }> {
-  const fts = getMemoryFTS()
+  const fts = memoryFTS
   if (!fts) return { results: [], error: "FTS not initialized" }
 
   const results: string[] = []
@@ -282,9 +292,8 @@ export async function handleMemorySearch(query: string, type?: string, limit?: n
 }
 
 export function handleMemoryStatus(): { available: boolean; provider: string } {
-  const fts = getMemoryFTS()
   return {
-    available: !!fts,
-    provider: fts ? "fts5" : "none",
+    available: !!memoryFTS,
+    provider: memoryFTS ? "fts5" : "none",
   }
 }

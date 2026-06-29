@@ -432,13 +432,13 @@ export class ContextManager {
         apiUrl: this.llmConfig.apiUrl,
       } as any)
 
-      const stream = client.complete({ messages: prompt })
-      const result = await stream
-      const texts: string[] = []
-      for (const part of result.content as any) {
-        if (part.type === "text") texts.push(part.text)
-      }
-      return texts.join("\n").trim() || "(empty summary)"
+      const result = await client.complete({ messages: prompt })
+      const text = typeof result.content === "string"
+        ? result.content
+        : Array.isArray(result.content)
+          ? (result.content as any[]).filter((p: any) => p.type === "text").map((p: any) => p.text).join("")
+          : ""
+      return text.trim() || "(empty summary)"
     } catch {
       return "(summary failed)"
     }

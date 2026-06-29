@@ -50,8 +50,9 @@ export function SettingsDialog({ open, onClose }: Props) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex" style={{ background: 'var(--surface)' }} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="w-48 lg:w-56 flex flex-col" style={{ background: 'var(--surface-secondary)', borderRight: '1px solid var(--border)' }}>
+    <div className="fixed inset-0 z-50 flex" style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', animation: 'fadeIn 200ms ease' }} onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="w-full h-full flex" style={{ background: 'var(--bg)', maxWidth: '100vw', animation: 'slideIn 250ms cubic-bezier(0.16, 1, 0.3, 1)' }}>
+      <div className="w-56 flex flex-col shrink-0" style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)' }}>
         <div className="px-4 py-5 space-y-3" style={{ borderBottom: '1px solid var(--border)' }}>
           <h2 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>设置</h2>
           <div className="relative">
@@ -104,7 +105,7 @@ export function SettingsDialog({ open, onClose }: Props) {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0" style={{ background: 'var(--bg)' }}>
         <div className="flex items-center justify-end px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
           <button onClick={onClose} className="p-1.5 rounded-lg transition-colors hover:bg-neutral-700/50">
             <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
@@ -246,6 +247,7 @@ export function SettingsDialog({ open, onClose }: Props) {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }

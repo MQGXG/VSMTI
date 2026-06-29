@@ -69,34 +69,37 @@ export class VectorMemoryProvider implements MemoryProvider {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
     this.storePath = join(dir, `${sessionID}.json`)
     this.loadStore()
-    this.loadModel()
+    // 模型懒加载：不阻塞初始化，首次使用时再加载
   }
 
   buildSystemPrompt(): string {
     const count = this.store.documents.length
-    if (!this.modelReady) return ""
-    return count > 0
+    return count > 0 && this.modelReady
       ? `[Vector Memory: ${count} semantic memory entries available. I can recall past decisions and context from previous turns.]`
-      : "[Vector Memory: ready]"
+      : ""
   }
 
-  private async loadModel(): Promise<void> {
-    if (this.modelLoading || this.modelReady) return
+  /** 懒加载模型，失败时静默跳过 */
+  private async ensureModel(): Promise<boolean> {
+    if (this.modelReady) return true
+    if (this.modelLoading) return false
     this.modelLoading = true
     try {
       const mod = await import("@huggingface/transformers")
       this.extract = await mod.pipeline("feature-extraction", this.modelName) as ExtractPipeline
       this.modelReady = true
-      console.log(`[VectorMemory] Model '${this.modelName}' loaded (${this.store.documents.length} existing entries)`)
+      console.log(`[VectorMemory] Model '${this.modelName}' loaded`)
     } catch (err) {
-      console.warn(`[VectorMemory] Failed to load model '${this.modelName}': ${err}. Vector memory disabled.`)
+      console.warn(`[VectorMemory] Model '${this.modelName}' not available: ${err instanceof Error ? err.message : String(err)}. Vector memory disabled.`)
     } finally {
       this.modelLoading = false
     }
+    return this.modelReady
   }
 
   async prefetch(query: string, _sessionID: string): Promise<string> {
-    if (!this.modelReady || !this.extract || this.store.documents.length === 0) return ""
+    if (this.store.documents.length === 0) return ""
+    if (!await this.ensureModel()) return ""
 
     try {
       const queryEmbedding = await this.getEmbedding(query)
@@ -123,7 +126,7 @@ export class VectorMemoryProvider implements MemoryProvider {
   }
 
   async syncTurn(user: string, assistant: string, _sessionID: string): Promise<void> {
-    if (!this.modelReady || !this.extract) return
+    if (!await this.ensureModel()) return
 
     const combined = `${user}\n${assistant}`
     const chunks = chunkText(combined)

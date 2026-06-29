@@ -172,13 +172,15 @@ export class PermissionSet {
 }
 
 const basePermissionRules: PermissionRule[] = [
-  // 只读工具：直接允许
+  // 只读工具：直接允许（使用别名匹配）
+  { action: "read", resource: "*", effect: "allow" },
   { action: "read_file", resource: "*", effect: "allow" },
   { action: "list_files", resource: "*", effect: "allow" },
   { action: "glob", resource: "*", effect: "allow" },
   { action: "grep", resource: "*", effect: "allow" },
   { action: "web_search", resource: "*", effect: "allow" },
   { action: "web_fetch", resource: "*", effect: "allow" },
+  { action: "web_browse", resource: "*", effect: "allow" },
   // bash: 安全的命令自动允许
   { action: "bash", resource: "ls *", effect: "allow" },
   { action: "bash", resource: "cat *", effect: "allow" },
@@ -188,12 +190,12 @@ const basePermissionRules: PermissionRule[] = [
   { action: "bash", resource: "node --version", effect: "allow" },
   // bash: 其他需要确认
   { action: "bash", resource: "*", effect: "ask" },
-  // 写操作：需要确认
+  // 写操作：需要确认（使用别名匹配）
+  { action: "edit", resource: "*", effect: "ask" },
   { action: "write_file", resource: "*", effect: "ask" },
   { action: "edit_file", resource: "*", effect: "ask" },
+  { action: "run_code", resource: "*", effect: "ask" },
   { action: "code_exec", resource: "*", effect: "ask" },
-  // 网络操作：直接允许
-  { action: "web_browse", resource: "*", effect: "allow" },
 ]
 
 export const defaultPermissions = new PermissionSet(basePermissionRules)

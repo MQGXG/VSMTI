@@ -7,15 +7,18 @@ import {
   addToolCallToMessage,
   updateToolCallInMessage,
 } from "../chat/mira-runtime";
-import type { AgentEvent, ToolResult } from "../types/electron";
+import type { AgentEvent, ToolResult } from "../services/agent.service";
 import type { ModelOption } from "../chat/ModelSelector";
 import type { AgentMode } from "../chat/types";
+import { AgentService } from "../services/agent.service";
+import { SessionService } from "../services/session.service";
 
 interface UseMiraChatOptions {
   sessionId: string;
   selectedModel: ModelOption;
   agentMode: AgentMode;
   goalCondition?: string | null;
+  onSessionChange?: (sessionId: string) => void;
 }
 
 interface UseMiraChatReturn {
@@ -48,6 +51,7 @@ export function useMiraChat({
   selectedModel,
   agentMode,
   goalCondition,
+  onSessionChange,
 }: UseMiraChatOptions): UseMiraChatReturn {
   const [messages, setMessages] = useState<MiraMessage[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -94,7 +98,7 @@ export function useMiraChat({
       return;
     }
     try {
-      const tsMsgs = await window.electronAPI.ts.getSessionMessages(sessionId);
+      const tsMsgs = await SessionService.getMessages(sessionId);
       if (tsMsgs && tsMsgs.length > 0) {
         const formattedMessages: MiraMessage[] = tsMsgs
           .filter((msg: any) => msg.role !== "tool")
@@ -122,7 +126,7 @@ export function useMiraChat({
     return () => {
       if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
       const ch = currentChannelRef.current;
-      if (ch) window.electronAPI.agent.stopStream(ch);
+      if (ch) AgentService.stopStream(ch);
     };
   }, []);
 
@@ -166,18 +170,21 @@ export function useMiraChat({
             headers: provider?.headers || {},
             maxMode: settings.maxMode || false,
             maxModeCandidates: 3,
+            autoAcceptPermissions: settings.autoAcceptPermissions || false,
             options: {
               ...(provider?.options || {}),
               shell: settings.terminalShell || "default",
             },
           };
 
-          const channel = await window.electronAPI.agent.startStream(
-            sessionId || getOfflineSessionId(),
+          const actualSessionId = sessionId || getOfflineSessionId();
+          const channel = await AgentService.startStream(
+            actualSessionId,
             effectiveContent,
             config
           );
           currentChannelRef.current = channel;
+          if (onSessionChange && !sessionId) onSessionChange(actualSessionId);
 
           timingRef.current = {
             streamStartTime: Date.now(),
@@ -186,7 +193,7 @@ export function useMiraChat({
             toolCallCount: 0,
           };
 
-          const cleanup = window.electronAPI.agent.onEvent(
+          const cleanup = AgentService.onEvent(
             channel,
             (event: AgentEvent) => {
               if (event.type === "content") {
@@ -285,7 +292,7 @@ export function useMiraChat({
               } else if (event.type === "permission_request") {
                 const s = getSettings();
                 if (s.autoAcceptPermissions) {
-                  window.electronAPI.agent.replyPermission(
+                  AgentService.replyPermission(
                     channel,
                     event.id,
                     "allow"
@@ -306,15 +313,23 @@ export function useMiraChat({
                   request_id: event.id,
                 });
               } else if (event.type === "error") {
-                const cleanMsg = event.message
+                const raw = event.message || "";
+                const cleanMsg = raw
                   .replace(/\[TOOL_ERROR\]\s*/g, "")
                   .replace(/\s*\{.*\}/s, "")
                   .trim();
+                const lower = raw.toLowerCase();
+                let hint = "";
+                if (lower.includes("401")) hint = "API Key 无效，请在设置中检查";
+                else if (lower.includes("400") && (lower.includes("api key") || lower.includes("apikey") || lower.includes("token"))) hint = "API Key 格式错误，请在设置中重新配置";
+                else if (lower.includes("400") || lower.includes("bad request")) hint = "请求参数错误，检查模型名/Provider 配置是否正确";
+                else if (lower.includes("429")) hint = "请求过于频繁，请稍后重试";
+                else if (lower.includes("500") || lower.includes("502") || lower.includes("503")) hint = "服务端暂时不可用，请稍后重试";
                 setMessages((prev) => [
                   ...prev,
                   createMiraMessage(
                     "assistant",
-                    `⚠️ ${cleanMsg || event.message}`
+                    `⚠️ ${cleanMsg || raw}${hint ? `\n\n💡 ${hint}` : ""}`
                   ),
                 ]);
               } else if (event.type === "finish") {
@@ -350,7 +365,7 @@ export function useMiraChat({
                 setIsRunning(false);
                 cleanup();
                 currentChannelRef.current = null;
-                window.electronAPI.agent.stopStream(channel);
+                AgentService.stopStream(channel);
               }
             }
           );
@@ -358,14 +373,12 @@ export function useMiraChat({
         }
 
         // 无 API Key → 关键词路由
-        const tools = await window.electronAPI.agent
-          .listTools()
-          .catch(() => []);
+        const tools = await AgentService.listTools().catch(() => []);
         if (tools.length > 0) {
           const { routeToolMessage } = await import("../chat/tool-router");
           const toolRoute = routeToolMessage(content, tools);
           if (toolRoute) {
-            const result = await window.electronAPI.agent.executeTool(
+            const result = await AgentService.executeTool(
               toolRoute.name,
               toolRoute.args
             );
@@ -438,7 +451,7 @@ export function useMiraChat({
     setIsRunning(false);
     const ch = currentChannelRef.current;
     if (ch) {
-      window.electronAPI.agent.stopStream(ch);
+      AgentService.stopStream(ch);
       currentChannelRef.current = null;
     }
   }, []);
@@ -449,7 +462,7 @@ export function useMiraChat({
       if (!req) return;
       setPermissionReq(null);
       if (req.channel) {
-        await window.electronAPI.agent.replyPermission(
+        await AgentService.replyPermission(
           req.channel,
           req.request_id,
           approved === "always" ? "always" : approved ? "allow" : "deny"

@@ -32,6 +32,7 @@ const electronAPI = {
   ts: {
     listProjects: () => ipcRenderer.invoke("ts:listProjects"),
     createProject: (name: string, workspace: string) => ipcRenderer.invoke("ts:createProject", name, workspace),
+    updateProject: (projectId: string, data: { name?: string; workspace_path?: string }) => ipcRenderer.invoke("ts:updateProject", projectId, data),
     deleteProject: (projectId: string) => ipcRenderer.invoke("ts:deleteProject", projectId),
     createSession: (projectId: string, title?: string) => ipcRenderer.invoke("ts:createSession", projectId, title),
     listSessions: (projectId?: string) => ipcRenderer.invoke("ts:listSessions", projectId),

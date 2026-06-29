@@ -50,6 +50,7 @@ export class FTSMemoryProvider implements MemoryProvider {
   private saveTimer: ReturnType<typeof setInterval> | null = null
   private reconciling = false
   private fileMtimes = new Map<string, number>()
+  private _hasFTS5 = false
   /** tokenize='unicode61' 的查询转义：FTS5 特殊字符 */
   private static readonly FTS5_SPECIAL = /['"*()^${}~:+-]/g
 
@@ -94,19 +95,28 @@ export class FTSMemoryProvider implements MemoryProvider {
     }
     if (!this.db) this.db = new this.SQL.Database()
 
-    // 创建 FTS5 虚拟表（sql.js 1.14+ WASM 包含 FTS5 扩展）
-    this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_files USING fts5(
-      path UNINDEXED,
-      content,
-      filetype UNINDEXED,
-      tokenize='unicode61'
-    )`)
+    // 尝试创建 FTS5 虚拟表，失败则回退到普通表 + LIKE
+    try {
+      this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_files USING fts5(
+        path UNINDEXED,
+        content,
+        filetype UNINDEXED,
+        tokenize='unicode61'
+      )`)
+      this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_memory_fts USING fts5(
+        content,
+        tokenize='unicode61'
+      )`)
+      this._hasFTS5 = true
+    } catch {
+      // FTS5 不可用（sql.js 标准 WASM 不包含此扩展），使用普通表 + LIKE
+      this._hasFTS5 = false
+      this.db.run(`CREATE TABLE IF NOT EXISTS fts_files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT, content TEXT, filetype TEXT
+      )`)
+    }
     this.db.run(`CREATE TABLE IF NOT EXISTS fts_memory (
       id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT, content TEXT, session_id TEXT
-    )`)
-    this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_memory_fts USING fts5(
-      content,
-      tokenize='unicode61'
     )`)
 
     if (this.reconcileInterval > 0) {
@@ -120,7 +130,8 @@ export class FTSMemoryProvider implements MemoryProvider {
   }
 
   buildSystemPrompt(): string {
-    return `[Memory: FTS5 全文搜索索引可用，Agent 可主动调用 memory_search 工具]`
+    const mode = this._hasFTS5 ? "FTS5 全文搜索" : "关键词搜索"
+    return `[Memory: ${mode}索引可用，Agent 可主动调用 memory_search 工具]`
   }
 
   async prefetch(query: string, _sessionID: string): Promise<string> {
@@ -151,7 +162,7 @@ export class FTSMemoryProvider implements MemoryProvider {
       let indexed = 0
       let pruned = 0
 
-      const existing = this.db.exec("SELECT path FROM fts_files")
+      const existing = this.db.exec(this._hasFTS5 ? "SELECT path FROM fts_files" : "SELECT path FROM fts_files")
       const indexedPaths = new Set(existing[0]?.values?.map((r: any) => r[0]) || [])
 
       // 清理已删除文件
@@ -170,9 +181,15 @@ export class FTSMemoryProvider implements MemoryProvider {
           if (lastMtime === stat.mtimeMs && indexedPaths.has(file.path)) continue
 
           const content = await fsp.readFile(file.path, "utf-8")
-          // FTS5 DELETE + INSERT 实现 upsert
-          this.db.run("INSERT INTO fts_files (path, content, filetype) VALUES (?, ?, ?)",
-            [file.path, content, file.filetype])
+          if (this._hasFTS5) {
+            // FTS5 表不支持 UPDATE，使用 DELETE + INSERT 实现 upsert
+            this.db.run("DELETE FROM fts_files WHERE path = ?", [file.path])
+            this.db.run("INSERT INTO fts_files (path, content, filetype) VALUES (?, ?, ?)",
+              [file.path, content, file.filetype])
+          } else {
+            this.db.run("INSERT OR REPLACE INTO fts_files (path, content, filetype) VALUES (?, ?, ?)",
+              [file.path, content, file.filetype])
+          }
           this.fileMtimes.set(file.path, stat.mtimeMs)
           indexed++
         } catch { /* 跳过 */ }
@@ -185,8 +202,15 @@ export class FTSMemoryProvider implements MemoryProvider {
     }
   }
 
-  /** FTS5 全文搜索 — BM25 排序 + snippet 高亮 */
+  /** 全文搜索 — FTS5 优先，回退到 LIKE */
   async search(query: string): Promise<string> {
+    if (!this.db) return ""
+    if (this._hasFTS5) return this.searchFTS5(query)
+    return this.searchLikeFallback(query)
+  }
+
+  /** FTS5 全文搜索 — BM25 排序 + snippet 高亮 */
+  private async searchFTS5(query: string): Promise<string> {
     if (!this.db) return ""
     const ftsQuery = FTSMemoryProvider.toFTS5Query(query)
     if (!ftsQuery) return ""
@@ -219,7 +243,6 @@ export class FTSMemoryProvider implements MemoryProvider {
         `文件: ${pt.relative(this.workspace, r.path)}\n片段: ${r.snippet}`
       ).join("\n\n")}`
     } catch {
-      // FTS5 查询失败时回退到 LIKE（兼容 token 过少等边界情况）
       return this.searchLikeFallback(query)
     }
   }
@@ -260,7 +283,7 @@ export class FTSMemoryProvider implements MemoryProvider {
     } catch { return "" }
   }
 
-  /** 索引 checkpoint 摘要到记忆表 + FTS5 */
+  /** 索引 checkpoint 摘要到记忆表（有 FTS5 时同步索引） */
   indexCheckpoint(summary: string, sessionID: string): void {
     if (!this.db || !summary) return
     try {
@@ -268,14 +291,13 @@ export class FTSMemoryProvider implements MemoryProvider {
         "INSERT INTO fts_memory (source, content, session_id) VALUES (?, ?, ?)",
         ["checkpoint", summary.slice(0, 1000), sessionID],
       )
-      this.db.run(
-        "INSERT INTO fts_memory_fts (content) VALUES (?)",
-        [summary.slice(0, 1000)],
-      )
+      if (this._hasFTS5) {
+        this.db.run("INSERT INTO fts_memory_fts (content) VALUES (?)", [summary.slice(0, 1000)])
+      }
     } catch { /* 跳过 */ }
   }
 
-  /** 索引 MEMORY.md 内容到记忆表 + FTS5 */
+  /** 索引 MEMORY.md 内容到记忆表（有 FTS5 时同步索引） */
   indexMemoryMd(content: string, sessionID: string): void {
     if (!this.db || !content) return
     try {
@@ -283,15 +305,21 @@ export class FTSMemoryProvider implements MemoryProvider {
         "INSERT INTO fts_memory (source, content, session_id) VALUES (?, ?, ?)",
         ["memory_md", content.slice(0, 2000), sessionID],
       )
-      this.db.run(
-        "INSERT INTO fts_memory_fts (content) VALUES (?)",
-        [content.slice(0, 2000)],
-      )
+      if (this._hasFTS5) {
+        this.db.run("INSERT INTO fts_memory_fts (content) VALUES (?)", [content.slice(0, 2000)])
+      }
     } catch { /* 跳过 */ }
   }
 
-  /** 跨 session 记忆搜索 — FTS5 */
+  /** 跨 session 记忆搜索 — FTS5 优先，回退到 LIKE */
   async searchMemory(query: string, limit = 3): Promise<string> {
+    if (!this.db) return ""
+    if (this._hasFTS5) return this.searchMemoryFTS5(query, limit)
+    return this.searchMemoryLikeFallback(query, limit)
+  }
+
+  /** 跨 session 记忆搜索 — FTS5 */
+  private async searchMemoryFTS5(query: string, limit = 3): Promise<string> {
     if (!this.db) return ""
     const ftsQuery = FTSMemoryProvider.toFTS5Query(query)
     if (!ftsQuery) return ""
@@ -328,7 +356,6 @@ export class FTSMemoryProvider implements MemoryProvider {
         `来源: ${r.source}\n内容: ${r.content.slice(0, 300)}`
       ).join("\n\n")}`
     } catch {
-      // FTS5 失败时回退到 LIKE
       return this.searchMemoryLikeFallback(query, limit)
     }
   }

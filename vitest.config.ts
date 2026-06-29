@@ -6,7 +6,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['electron/**/*.{test,spec}.{ts,tsx}', 'src/**/*.{test,spec}.{ts,tsx}'],
-    setupFiles: ['./electron/agent-core/__tests__/setup.ts'],
+    include: ['packages/core/src/**/*.test.ts', 'packages/*/src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/dist-electron/**'],
+    testTimeout: 15000,
   },
 })
