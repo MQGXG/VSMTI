@@ -1,4 +1,4 @@
-import type { ToolCall } from './tool'
+import type { ToolCall } from './shared/tool'
 
 export type AgentEvent =
   | { type: 'content'; text: string }

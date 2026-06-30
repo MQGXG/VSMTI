@@ -10,7 +10,7 @@ import { convertMessage, type MiraMessage } from "./mira-runtime";
 import type { ModelOption } from "./ModelSelector";
 import type { AgentMode } from "./types";
 
-interface MiraRuntimeContext {
+export interface MiraRuntimeContext {
   messages: MiraMessage[];
   isRunning: boolean;
   permissionReq: {

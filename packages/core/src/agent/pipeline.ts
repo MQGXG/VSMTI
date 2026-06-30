@@ -1,14 +1,14 @@
-import type { ToolContext, ToolResult } from "../tool"
-import type { LLMMessage } from "../llm-sdk"
+import type { ToolContext, ToolResult } from "../shared/tool"
+import type { LLMMessage } from "../llm/client"
 import type { AgentEvent } from "../types"
-import type { ToolRegistry } from "../registry"
-import type { PermissionSet, PermissionRule } from "../permission"
+import type { ToolRegistry } from "../system/registry"
+import type { PermissionSet, PermissionRule } from "../system/permission"
 import type { AgentStateMachine, PermissionReply } from "./state-machine"
-import type { ApprovalStore } from "../permission/approval-store"
-import type { ToolOrchestrator, OrchestratedToolCall } from "../execution/orchestrator"
-import { evaluateToolCalls, extractResources } from "../permission-gate"
-import { pluginHooks } from "../plugin-hooks"
-import { appendMessage } from "../session-store"
+import type { ApprovalStore } from "../system/permission/approval-store"
+import type { ToolOrchestrator, OrchestratedToolCall } from "../orchestrate/execution"
+import { evaluateToolCalls, extractResources } from "../system/permission/gate"
+import { pluginHooks } from "../shared/plugin-hooks"
+import { appendMessage } from "../session/store"
 
 export interface PipelineInput {
   toolCalls: Array<{ id: string; type: "function"; function: { name: string; arguments: string } }>
@@ -172,3 +172,5 @@ function injectToolResult(
   }
   messages.push({ role: "tool", content: parts as any, tool_call_id: call.id })
 }
+
+

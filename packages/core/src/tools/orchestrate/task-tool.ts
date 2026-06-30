@@ -3,8 +3,8 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
-import { TaskPlanner } from "../task-planner"
+import { make } from "../../shared/tool"
+import { TaskPlanner } from "../../task/planner"
 
 const planners = new Map<string, TaskPlanner>()
 
@@ -99,3 +99,4 @@ export const taskTool = make({
     }
   },
 })
+

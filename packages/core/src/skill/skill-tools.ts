@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../shared/tool"
 import { scanSkills, loadSkill, loadSkillFile } from "./skill-loader"
 
 /** skills_list 工具：列出所有可用 Skill */

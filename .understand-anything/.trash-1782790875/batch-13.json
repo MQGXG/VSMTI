@@ -1,0 +1,784 @@
+{
+  "batch": 13,
+  "totalBatches": 17,
+  "nodes": [
+    {
+      "id": "file::docs/plans/2026-06-11-agent-loop-core-design.md",
+      "type": "file",
+      "name": "2026-06-11-agent-loop-core-design.md",
+      "filePath": "docs/plans/2026-06-11-agent-loop-core-design.md",
+      "summary": "Agent 循环核心增强设计文档，描述将 learn-claude-code 的 Hook 系统、权限系统、TodoWrite 工具集成到 OmniAgent 的架构变更方案。定义了 4 个 Hook 事件点（UserPromptSubmit、PreToolUse、PostToolUse、Stop）和三道闸门权限机制。",
+      "tags": [
+        "设计文档",
+        "Agent循环",
+        "Hook系统",
+        "权限系统",
+        "TodoWrite",
+        "架构变更"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "doc-section::2026-06-11-agent-loop-core-design::hook-system",
+      "type": "concept",
+      "name": "Hook 系统设计",
+      "filePath": "docs/plans/2026-06-11-agent-loop-core-design.md",
+      "summary": "定义 4 个异步 Hook 事件点：UserPromptSubmit（用户输入后修改 query）、PreToolUse（工具执行前拦截/阻止）、PostToolUse（工具执行后副作用）、Stop（循环退出前强制续跑）。每个事件支持多个异步回调。",
+      "tags": [
+        "Hook",
+        "事件总线",
+        "异步回调"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "doc-section::2026-06-11-agent-loop-core-design::permission-system",
+      "type": "concept",
+      "name": "三道闸门权限系统",
+      "filePath": "docs/plans/2026-06-11-agent-loop-core-design.md",
+      "summary": "基于 PreToolUse 钩子实现的权限检查机制：闸门 1 硬拒绝（DENY_LIST）、闸门 2 规则匹配（PERMISSION_RULES）、闸门 3 用户审批（SSE permission_request 弹窗）。",
+      "tags": [
+        "权限",
+        "安全",
+        "PreToolUse"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::docs/plans/2026-06-11-agent-loop-core.md",
+      "type": "file",
+      "name": "2026-06-11-agent-loop-core.md",
+      "filePath": "docs/plans/2026-06-11-agent-loop-core.md",
+      "summary": "Agent Loop Core 完整实现计划，包含 9 个 Task：Hook 系统（hooks.py）、权限系统（permission.py）、TodoWrite 工具（todo_write.py）、工具注册、事件系统增强、Agent 循环集成（管线编排）、默认钩子注册、系统提示词更新、集成验证。技术栈为 Python 3.10+ / FastAPI / asyncio。",
+      "tags": [
+        "实现计划",
+        "Python",
+        "Agent循环",
+        "Hook",
+        "权限",
+        "TodoWrite",
+        "FastAPI"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class::2026-06-11-agent-loop-core::Hooks",
+      "type": "class",
+      "name": "Hooks 事件总线",
+      "filePath": "docs/plans/2026-06-11-agent-loop-core.md",
+      "summary": "Python 事件总线类，管理 4 个事件点的异步回调注册与触发。register() 注册回调，trigger() 顺序执行回调链，返回非 None 值即为短路结果。",
+      "tags": [
+        "Hooks",
+        "事件总线",
+        "Python类"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "class::2026-06-11-agent-loop-core::TodoWriteTool",
+      "type": "class",
+      "name": "TodoWriteTool 计划管理工具",
+      "filePath": "docs/plans/2026-06-11-agent-loop-core.md",
+      "summary": "继承 BaseTool 的任务管理工具，接收 [{content, status}] 数组，支持 pending/in_progress/completed 三种状态。提供 OpenAI 和 Claude 两种 Schema 格式。",
+      "tags": [
+        "TodoWrite",
+        "工具",
+        "任务管理"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "function::2026-06-11-agent-loop-core::need_user_approval",
+      "type": "function",
+      "name": "need_user_approval 权限检查",
+      "filePath": "docs/plans/2026-06-11-agent-loop-core.md",
+      "summary": "权限系统入口函数，依次检查硬拒绝列表和权限规则，返回需要审批的原因字符串（None 表示通过）。",
+      "tags": [
+        "权限检查",
+        "安全",
+        "函数"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "function::2026-06-11-agent-loop-core::setup_default_hooks",
+      "type": "function",
+      "name": "setup_default_hooks 默认钩子注册",
+      "filePath": "docs/plans/2026-06-11-agent-loop-core.md",
+      "summary": "注册默认钩子：log_user_prompt（日志）、permission_check（权限闸门）、log_tool_call（工具日志）、log_tool_result（结果日志）、log_stop（循环结束日志）。",
+      "tags": [
+        "钩子注册",
+        "日志",
+        "函数"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "doc-section::2026-06-11-agent-loop-core::agent-loop-pipeline",
+      "type": "concept",
+      "name": "Agent 循环管线集成",
+      "filePath": "docs/plans/2026-06-11-agent-loop-core.md",
+      "summary": "Agent.run() 的完整管线流程：UserPromptSubmit → LLM → PreToolUse(含权限) → 执行工具 → PostToolUse → Stop。集成 TodoWrite reminder（3 轮未更新自动提醒）、has_tool_use 循环继续信号、max_tokens 截断恢复。",
+      "tags": [
+        "Agent循环",
+        "管线",
+        "流程编排"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "file::docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "type": "file",
+      "name": "2026-06-12-fix-tools-execution-plan.md",
+      "filePath": "docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "summary": "OmniAgent 工具系统修复与重构实施计划，识别三大断裂点（配置断裂、消息断裂、执行断裂），包含 12 个 Task 按 P0-P4 优先级排列：修复 .env 加载、消息规范化、工具模式限制、ToolContext、异步阻塞、WebSearch 阻塞、路径安全检查、Schema 验证、LLM 错误恢复、工具超时、输出截断、前端错误显示。",
+      "tags": [
+        "修复计划",
+        "工具系统",
+        "Bug修复",
+        "执行链",
+        "安全性"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "doc-section::2026-06-12-fix-tools-execution::three-breakpoints",
+      "type": "concept",
+      "name": "工具系统三大断裂点",
+      "filePath": "docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "summary": "1. 配置断裂：.env 找不到/API Key 未加载导致 LLM 初始化失败；2. 消息断裂：normalize_messages 丢弃 tool_calls/tool_call_id 导致工具链断裂；3. 执行断裂：工具模式过滤限制、缺少 ToolContext、异步阻塞调用。",
+      "tags": [
+        "断裂点",
+        "配置",
+        "消息",
+        "执行"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "function::2026-06-12-fix-tools-execution::_check_path_safety",
+      "type": "function",
+      "name": "_check_path_safety 路径安全检查",
+      "filePath": "docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "summary": "BaseTool 基类统一路径安全方法，禁止文件路径逃逸到工作目录之外。使用 workspace.resolve + workspace.is_inside 进行路径校验。",
+      "tags": [
+        "路径安全",
+        "BaseTool",
+        "工具基类"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::docs/plans/2026-06-12-ui-ux-redesign-plan.md",
+      "type": "file",
+      "name": "2026-06-12-ui-ux-redesign-plan.md",
+      "filePath": "docs/plans/2026-06-12-ui-ux-redesign-plan.md",
+      "summary": "OmniAgent UI/UX 全面重写实施计划，采用玻璃拟态（Glassmorphism）风格 + 蓝紫渐变配色。包含 8 个 Task：Tailwind 配置、共享组件体系（GlassPanel/Modal/IconButton）、TitleBar、ProjectBar、Sidebar、ChatWindow、弹窗体系、浅色模式适配。",
+      "tags": [
+        "UI重写",
+        "实施计划",
+        "Glassmorphism",
+        "Tailwind",
+        "React"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "doc-section::2026-06-12-ui-ux-redesign-plan::shared-components",
+      "type": "concept",
+      "name": "共享组件体系",
+      "filePath": "docs/plans/2026-06-12-ui-ux-redesign-plan.md",
+      "summary": "基础 UI 组件库：GlassPanel（玻璃面板容器）、Modal（统一弹窗，玻璃背景 + backdrop-blur + 动画）、IconButton（统一图标按钮），通过 index.ts 统一导出。",
+      "tags": [
+        "组件库",
+        "GlassPanel",
+        "Modal",
+        "共享组件"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::docs/plans/2026-06-12-ui-ux-redesign.md",
+      "type": "file",
+      "name": "2026-06-12-ui-ux-redesign.md",
+      "filePath": "docs/plans/2026-06-12-ui-ux-redesign.md",
+      "summary": "OmniAgent UI/UX 全面重写设计文档，定义配色系统（深色/浅色模式 CSS 变量）、6 类组件设计（TitleBar、ProjectBar、Sidebar、ChatWindow、弹窗、共享组件）、动画系统（fadeInUp、scale+fade、hover scale）。实施顺序从底层配置到顶层组件。",
+      "tags": [
+        "设计文档",
+        "配色系统",
+        "CSS变量",
+        "动画系统",
+        "Glassmorphism"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "doc-section::2026-06-12-ui-ux-redesign::color-system",
+      "type": "concept",
+      "name": "配色系统",
+      "filePath": "docs/plans/2026-06-12-ui-ux-redesign.md",
+      "summary": "深色模式主背景 #0c0c14，玻璃效果 rgba(255,255,255,0.04) + 16px blur，渐变主色靛蓝#6366f1 到青#06b6d4。浅色模式主背景 #f8fafc，玻璃效果 rgba(255,255,255,0.7)。",
+      "tags": [
+        "配色",
+        "CSS变量",
+        "深色模式",
+        "浅色模式"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "type": "file",
+      "name": "2026-06-14-phases-2-5-plus-extensions.md",
+      "filePath": "docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "summary": "OmniAgent TypeScript Agent Core 后续阶段实施计划（Phase 2-5 + 扩展项）。Phase 2 权限门控（PermissionGate 中断循环 + 前端 PermissionDialog + 持久化规则）；Phase 3 Skill/指令上下文（AGENTS.md 加载 + Skill 目录 + slash 命令）；Phase 4 记忆与持久化（Memory Provider 架构 + 会话持久化）；Phase 5 质量与可观测性（Provider 降级链 + 日志审计 + 性能基准）。扩展项包含 Subagent、Background Tasks、Context Compaction、MCP、自动标题、Worktree、LSP。",
+      "tags": [
+        "实施计划",
+        "TypeScript",
+        "Agent Core",
+        "权限门控",
+        "Skill",
+        "记忆",
+        "质量"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "doc-section::2026-06-14-phases-2-5::phase2-permission",
+      "type": "concept",
+      "name": "Phase 2: 权限门控",
+      "filePath": "docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "summary": "将 permission.ts 的 ask 效果接入 Agent 循环。Agent 维护 pendingPermissions Map，工具调用前检查 needsApproval，yield permission_request 事件暂停循环，等待 replyPermission 回复。支持 allow/deny/always 三种决策，always 持久化规则。",
+      "tags": [
+        "权限门控",
+        "PermissionGate",
+        "Agent循环中断"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class::2026-06-14-phases-2-5::MemoryManager",
+      "type": "class",
+      "name": "MemoryManager 记忆管理器",
+      "filePath": "docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "summary": "多 Provider 记忆管理器，协调 initialize/prefetch/syncTurn/shutdown 生命周期。支持多个 MemoryProvider 并行 prefetch，回合后台 sync 不阻塞。",
+      "tags": [
+        "记忆系统",
+        "Provider架构",
+        "Manager"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "type": "file",
+      "name": "2026-06-14-typescript-agent-core-react-upgrade.md",
+      "filePath": "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "summary": "TypeScript Agent Core ReAct 升级实施计划，将 OmniAgent 的 agent.ts 从单请求顺序循环升级为事件驱动、可中断、带预算与压缩的多步 ReAct 引擎。Phase 1 包含 7 个 Task：Vitest 测试框架、多 Provider LLM 客户端（OpenAI/Anthropic）、流式事件驱动循环、消息序列修复与上下文截断、工具错误清洗与参数强制转换、前端 ChatWindow 流式接入、端到端类型检查。Phase 2-5 为后续迭代。参考 Learn Claude Code / Hermes Agent / OpenCode 三大项目。",
+      "tags": [
+        "TypeScript",
+        "ReAct",
+        "Agent Core",
+        "升级计划",
+        "LLM客户端",
+        "流式",
+        "测试"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class::2026-06-14-react-upgrade::IterationBudget",
+      "type": "class",
+      "name": "IterationBudget 迭代预算",
+      "filePath": "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "summary": "迭代预算控制器，限制 Agent 循环最大步数。consume() 消耗预算，refund() 退还，remaining 属性显示剩余。",
+      "tags": [
+        "迭代预算",
+        "控制",
+        "Agent循环"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "function::2026-06-14-react-upgrade::createLLMClient",
+      "type": "function",
+      "name": "createLLMClient 工厂函数",
+      "filePath": "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "summary": "LLM 客户端工厂函数，根据 provider 类型（openai/anthropic）创建对应的 LLMClient 实现。支持 complete（非流式）和 stream（AsyncGenerator 流式）两种调用方式。",
+      "tags": [
+        "LLM客户端",
+        "工厂模式",
+        "OpenAI",
+        "Anthropic"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "function::2026-06-14-react-upgrade::repairMessageSequence",
+      "type": "function",
+      "name": "repairMessageSequence 消息修复",
+      "filePath": "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "summary": "消息序列修复函数：修复 tool 后缺少 assistant、合并连续 user/assistant、确保最后一条不是 tool 消息。保证消息序列符合 LLM API 规范。",
+      "tags": [
+        "消息修复",
+        "序列校验",
+        "工具链"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "function::2026-06-14-react-upgrade::sanitizeToolError",
+      "type": "function",
+      "name": "sanitizeToolError 错误清洗",
+      "filePath": "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "summary": "工具错误消息清洗函数，移除 XML/HTML 角色标签、代码围栏、CDATA 块，截断过长错误消息，防止污染模型上下文。",
+      "tags": [
+        "错误清洗",
+        "安全",
+        "工具"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "function::2026-06-14-react-upgrade::coerceToolArgs",
+      "type": "function",
+      "name": "coerceToolArgs 参数强制转换",
+      "filePath": "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "summary": "工具参数强制转换函数，将字符串类型的数字/布尔值自动转换为正确的 JavaScript 类型，避免 LLM 返回字符串参数导致的类型错误。",
+      "tags": [
+        "参数转换",
+        "类型安全",
+        "工具"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "type": "file",
+      "name": "2026-06-16-mira-agent-core-optimization.md",
+      "filePath": "docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "summary": "Mira Agent Core 优化实施计划，修复 17 个已识别问题。P0 安全性（Bash 工具误报、子代理权限门控、SQL 注入修复、ApprovalStore 持久化）；P1 稳定性（LLM 流式重试、MemoryManager 错误日志、冗余 IPC Handler 清理）；P2 增强（代码执行沙箱、工具元数据补全、console.log 迁移、消息截断保护、模式权限去重）；P3 新功能（Git 基础工具、前端引用统一）。",
+      "tags": [
+        "优化计划",
+        "安全修复",
+        "稳定性",
+        "技术债务",
+        "Git工具"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "doc-section::2026-06-16-optimization::p0-security",
+      "type": "concept",
+      "name": "P0 安全性修复",
+      "filePath": "docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "summary": "4 项安全修复：1. Bash 工具 catch 块误报 success:true；2. 子代理绕过权限门控直接执行；3. SQL 模板字符串拼接注入风险；4. ApprovalStore 仅内存缓存 5 分钟导致 always 规则重启丢失。",
+      "tags": [
+        "P0",
+        "安全性",
+        "Bug修复",
+        "SQL注入"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "function::2026-06-16-optimization::withRetry",
+      "type": "function",
+      "name": "withRetry LLM 流式重试",
+      "filePath": "docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "summary": "LLM 流式调用重试包装器，指数退避策略（baseDelay * 2^attempt），最多重试 maxRetries 次。支持流式错误事件检测和网络异常重连。",
+      "tags": [
+        "重试机制",
+        "指数退避",
+        "LLM"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "function::2026-06-16-optimization::truncateToBudget",
+      "type": "function",
+      "name": "truncateToBudget 消息截断保护",
+      "filePath": "docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "summary": "改进的消息截断函数，从尾部向前保留消息，确保不截断 tool-call/tool-result 链，始终保留 system message，至少保留最后 2 轮完整对话。",
+      "tags": [
+        "消息截断",
+        "工具链保护",
+        "上下文管理"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "type": "file",
+      "name": "2026-06-16-mira-dual-mode-platform.md",
+      "filePath": "docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "summary": "Mira 双模平台实施计划，将现有桌面应用改造为一套引擎，两套界面的 Monorepo 架构。Phase 0 优化修复；Phase 1 Monorepo + Core 提取（packages/core 纯 TS + packages/desktop Electron + packages/cli 终端代理）；Phase 2 CLI/TUI 终端编码代理（CLI 入口 + Ink TUI + 全局安装）；Phase 3 差异化竞争策略（GUI+CLI 双模、Python 后端、LSP 深度集成、多模态、IDE 插件）。",
+      "tags": [
+        "双模平台",
+        "Monorepo",
+        "CLI",
+        "TUI",
+        "架构改造",
+        "竞争策略"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "doc-section::2026-06-16-dual-mode::monorepo",
+      "type": "concept",
+      "name": "Monorepo 架构设计",
+      "filePath": "docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "summary": "三包架构：packages/core（纯 TS Agent 引擎，零 Electron 依赖，通过 PlatformPaths 适配器抽象平台路径）；packages/desktop（Electron 桌面应用，依赖 core）；packages/cli（终端编码代理，依赖 core）。使用 Turborepo 管理。",
+      "tags": [
+        "Monorepo",
+        "Turborepo",
+        "packages",
+        "PlatformPaths"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class::2026-06-16-dual-mode::PlatformPaths",
+      "type": "class",
+      "name": "PlatformPaths 平台路径适配器",
+      "filePath": "docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "summary": "适配器模式接口，抽象平台路径获取：getUserDataPath、getConfigPath、getDBPath、getProjectsPath。desktop 包传入 Electron 实现，cli 包传入 Node.js 实现。",
+      "tags": [
+        "适配器模式",
+        "平台抽象",
+        "接口设计"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "doc-section::2026-06-16-dual-mode::cli",
+      "type": "concept",
+      "name": "CLI 终端编码代理",
+      "filePath": "docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "summary": "CLI 入口支持单轮对话和 REPL 交互模式。使用 meow 参数解析、readline REPL、可选 Ink TUI。通过 nodePlatformPaths 适配纯 Node.js 环境。",
+      "tags": [
+        "CLI",
+        "REPL",
+        "Ink",
+        "终端代理"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "doc-section::2026-06-16-dual-mode::strategies",
+      "type": "concept",
+      "name": "差异化竞争策略",
+      "filePath": "docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "summary": "5 大策略：1. GUI+CLI 双模（独有桌面端）；2. Python 后端生态（数据分析等）；3. LSP 深度集成（code_action/completion/rename）；4. 多模态（图片生成/浏览器自动化/代码可视化）；5. IDE 插件（VS Code 扩展）。",
+      "tags": [
+        "竞争策略",
+        "差异化",
+        "Python",
+        "LSP",
+        "多模态",
+        "IDE插件"
+      ],
+      "complexity": "medium"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge::2026-06-11-design::contains::hook-system",
+      "source": "file::docs/plans/2026-06-11-agent-loop-core-design.md",
+      "target": "doc-section::2026-06-11-agent-loop-core-design::hook-system",
+      "type": "contains",
+      "label": "包含 Hook 系统设计"
+    },
+    {
+      "id": "edge::2026-06-11-design::contains::permission",
+      "source": "file::docs/plans/2026-06-11-agent-loop-core-design.md",
+      "target": "doc-section::2026-06-11-agent-loop-core-design::permission-system",
+      "type": "contains",
+      "label": "包含权限系统设计"
+    },
+    {
+      "id": "edge::2026-06-11-core::contains::Hooks",
+      "source": "file::docs/plans/2026-06-11-agent-loop-core.md",
+      "target": "class::2026-06-11-agent-loop-core::Hooks",
+      "type": "contains",
+      "label": "包含 Hooks 事件总线类"
+    },
+    {
+      "id": "edge::2026-06-11-core::contains::TodoWriteTool",
+      "source": "file::docs/plans/2026-06-11-agent-loop-core.md",
+      "target": "class::2026-06-11-agent-loop-core::TodoWriteTool",
+      "type": "contains",
+      "label": "包含 TodoWriteTool 工具类"
+    },
+    {
+      "id": "edge::2026-06-11-core::contains::need_user_approval",
+      "source": "file::docs/plans/2026-06-11-agent-loop-core.md",
+      "target": "function::2026-06-11-agent-loop-core::need_user_approval",
+      "type": "contains",
+      "label": "包含权限检查函数"
+    },
+    {
+      "id": "edge::2026-06-11-core::contains::setup_default_hooks",
+      "source": "file::docs/plans/2026-06-11-agent-loop-core.md",
+      "target": "function::2026-06-11-agent-loop-core::setup_default_hooks",
+      "type": "contains",
+      "label": "包含默认钩子注册函数"
+    },
+    {
+      "id": "edge::2026-06-11-core::contains::pipeline",
+      "source": "file::docs/plans/2026-06-11-agent-loop-core.md",
+      "target": "doc-section::2026-06-11-agent-loop-core::agent-loop-pipeline",
+      "type": "contains",
+      "label": "包含 Agent 循环管线"
+    },
+    {
+      "id": "edge::2026-06-11-design::refines::agent-loop-core",
+      "source": "file::docs/plans/2026-06-11-agent-loop-core-design.md",
+      "target": "file::docs/plans/2026-06-11-agent-loop-core.md",
+      "type": "refines",
+      "label": "设计文档细化为实现计划"
+    },
+    {
+      "id": "edge::2026-06-11-design::hook::refines::core-hooks",
+      "source": "doc-section::2026-06-11-agent-loop-core-design::hook-system",
+      "target": "class::2026-06-11-agent-loop-core::Hooks",
+      "type": "refines",
+      "label": "Hook 设计细化为 Hooks 类实现"
+    },
+    {
+      "id": "edge::2026-06-11-design::permission::refines::core-approval",
+      "source": "doc-section::2026-06-11-agent-loop-core-design::permission-system",
+      "target": "function::2026-06-11-agent-loop-core::need_user_approval",
+      "type": "refines",
+      "label": "权限设计细化为 need_user_approval"
+    },
+    {
+      "id": "edge::2026-06-12-fix::contains::breakpoints",
+      "source": "file::docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "target": "doc-section::2026-06-12-fix-tools-execution::three-breakpoints",
+      "type": "contains",
+      "label": "包含三大断裂点分析"
+    },
+    {
+      "id": "edge::2026-06-12-fix::contains::path_safety",
+      "source": "file::docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "target": "function::2026-06-12-fix-tools-execution::_check_path_safety",
+      "type": "contains",
+      "label": "包含路径安全检查函数"
+    },
+    {
+      "id": "edge::2026-06-12-ui-plan::contains::shared",
+      "source": "file::docs/plans/2026-06-12-ui-ux-redesign-plan.md",
+      "target": "doc-section::2026-06-12-ui-ux-redesign-plan::shared-components",
+      "type": "contains",
+      "label": "包含共享组件体系"
+    },
+    {
+      "id": "edge::2026-06-12-ui-plan::implements::ui-design",
+      "source": "file::docs/plans/2026-06-12-ui-ux-redesign-plan.md",
+      "target": "file::docs/plans/2026-06-12-ui-ux-redesign.md",
+      "type": "implements",
+      "label": "实施计划实现设计文档"
+    },
+    {
+      "id": "edge::2026-06-12-ui-design::contains::color",
+      "source": "file::docs/plans/2026-06-12-ui-ux-redesign.md",
+      "target": "doc-section::2026-06-12-ui-ux-redesign::color-system",
+      "type": "contains",
+      "label": "包含配色系统设计"
+    },
+    {
+      "id": "edge::2026-06-14-phases::contains::phase2",
+      "source": "file::docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "target": "doc-section::2026-06-14-phases-2-5::phase2-permission",
+      "type": "contains",
+      "label": "包含 Phase 2 权限门控"
+    },
+    {
+      "id": "edge::2026-06-14-phases::contains::MemoryManager",
+      "source": "file::docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "target": "class::2026-06-14-phases-2-5::MemoryManager",
+      "type": "contains",
+      "label": "包含 MemoryManager 记忆管理器"
+    },
+    {
+      "id": "edge::2026-06-14-react::contains::IterationBudget",
+      "source": "file::docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "target": "class::2026-06-14-react-upgrade::IterationBudget",
+      "type": "contains",
+      "label": "包含 IterationBudget 类"
+    },
+    {
+      "id": "edge::2026-06-14-react::contains::createLLMClient",
+      "source": "file::docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "target": "function::2026-06-14-react-upgrade::createLLMClient",
+      "type": "contains",
+      "label": "包含 createLLMClient 工厂函数"
+    },
+    {
+      "id": "edge::2026-06-14-react::contains::repairMessage",
+      "source": "file::docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "target": "function::2026-06-14-react-upgrade::repairMessageSequence",
+      "type": "contains",
+      "label": "包含消息修复函数"
+    },
+    {
+      "id": "edge::2026-06-14-react::contains::sanitizeToolError",
+      "source": "file::docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "target": "function::2026-06-14-react-upgrade::sanitizeToolError",
+      "type": "contains",
+      "label": "包含错误清洗函数"
+    },
+    {
+      "id": "edge::2026-06-14-react::contains::coerceToolArgs",
+      "source": "file::docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "target": "function::2026-06-14-react-upgrade::coerceToolArgs",
+      "type": "contains",
+      "label": "包含参数转换函数"
+    },
+    {
+      "id": "edge::2026-06-16-opt::contains::p0",
+      "source": "file::docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "target": "doc-section::2026-06-16-optimization::p0-security",
+      "type": "contains",
+      "label": "包含 P0 安全性修复"
+    },
+    {
+      "id": "edge::2026-06-16-opt::contains::withRetry",
+      "source": "file::docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "target": "function::2026-06-16-optimization::withRetry",
+      "type": "contains",
+      "label": "包含重试包装器函数"
+    },
+    {
+      "id": "edge::2026-06-16-opt::contains::truncateToBudget",
+      "source": "file::docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "target": "function::2026-06-16-optimization::truncateToBudget",
+      "type": "contains",
+      "label": "包含消息截断保护函数"
+    },
+    {
+      "id": "edge::2026-06-16-dual::contains::monorepo",
+      "source": "file::docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "target": "doc-section::2026-06-16-dual-mode::monorepo",
+      "type": "contains",
+      "label": "包含 Monorepo 架构设计"
+    },
+    {
+      "id": "edge::2026-06-16-dual::contains::PlatformPaths",
+      "source": "file::docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "target": "class::2026-06-16-dual-mode::PlatformPaths",
+      "type": "contains",
+      "label": "包含 PlatformPaths 适配器"
+    },
+    {
+      "id": "edge::2026-06-16-dual::contains::cli",
+      "source": "file::docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "target": "doc-section::2026-06-16-dual-mode::cli",
+      "type": "contains",
+      "label": "包含 CLI 终端代理设计"
+    },
+    {
+      "id": "edge::2026-06-16-dual::contains::strategies",
+      "source": "file::docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "target": "doc-section::2026-06-16-dual-mode::strategies",
+      "type": "contains",
+      "label": "包含差异化竞争策略"
+    },
+    {
+      "id": "edge::2026-06-16-dual::depends_on::optimization",
+      "source": "file::docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "target": "file::docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "type": "depends_on",
+      "label": "双模平台前置依赖优化修复"
+    },
+    {
+      "id": "edge::2026-06-14-phases::extends::2026-06-11-design",
+      "source": "file::docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "target": "file::docs/plans/2026-06-11-agent-loop-core-design.md",
+      "type": "extends",
+      "label": "Phase 2-5 扩展初始 Hook/权限设计"
+    },
+    {
+      "id": "edge::2026-06-14-react::extends::2026-06-14-phases",
+      "source": "file::docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "target": "file::docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "type": "extends",
+      "label": "ReAct 升级是 Phase 1 的更详细实现"
+    },
+    {
+      "id": "edge::2026-06-16-opt::references::2026-06-14-react",
+      "source": "file::docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "target": "file::docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "type": "extends",
+      "label": "优化基于 ReAct 升级后的 Agent Core"
+    },
+    {
+      "id": "edge::2026-06-16-dual::extends::2026-06-14-react",
+      "source": "file::docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "target": "file::docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "type": "extends",
+      "label": "双模平台将 ReAct Core 抽象为 packages/core"
+    },
+    {
+      "id": "edge::2026-06-12-fix::related_to::2026-06-11-core",
+      "source": "file::docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "target": "file::docs/plans/2026-06-11-agent-loop-core.md",
+      "type": "related_to",
+      "label": "工具修复与 Agent 循环实现相互关联"
+    },
+    {
+      "id": "edge::2026-06-12-ui-design::related_to::ui-plan",
+      "source": "file::docs/plans/2026-06-12-ui-ux-redesign.md",
+      "target": "file::docs/plans/2026-06-12-ui-ux-redesign-plan.md",
+      "type": "related_to",
+      "label": "设计文档与实施计划相互补充"
+    },
+    {
+      "id": "edge::2026-06-16-opt::extends::2026-06-12-fix",
+      "source": "file::docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "target": "file::docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "type": "extends",
+      "label": "优化扩展了早期工具系统修复"
+    },
+    {
+      "id": "edge::phase2::implements::design-permission",
+      "source": "doc-section::2026-06-14-phases-2-5::phase2-permission",
+      "target": "doc-section::2026-06-11-agent-loop-core-design::permission-system",
+      "type": "implements",
+      "label": "Phase 2 权限门控实现初始权限设计"
+    },
+    {
+      "id": "edge::p0-security::fixes::breakpoints",
+      "source": "doc-section::2026-06-16-optimization::p0-security",
+      "target": "doc-section::2026-06-12-fix-tools-execution::three-breakpoints",
+      "type": "fixes",
+      "label": "P0 安全修复解决工具系统断裂点"
+    }
+  ],
+  "metadata": {
+    "batchSize": 9,
+    "fileCount": 9,
+    "nodeCount": 33,
+    "edgeCount": 40,
+    "files": [
+      "docs/plans/2026-06-11-agent-loop-core-design.md",
+      "docs/plans/2026-06-11-agent-loop-core.md",
+      "docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "docs/plans/2026-06-12-ui-ux-redesign-plan.md",
+      "docs/plans/2026-06-12-ui-ux-redesign.md",
+      "docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "docs/plans/2026-06-16-mira-dual-mode-platform.md"
+    ],
+    "categoryBreakdown": {
+      "docs/plans": 9
+    },
+    "dateRange": {
+      "earliest": "2026-06-11",
+      "latest": "2026-06-16"
+    },
+    "planTimeline": "2026-06-11 到 2026-06-16 的 9 份实施/设计文档，覆盖 Agent 循环核心、工具系统修复、UI/UX 重写、TypeScript Agent Core ReAct 升级、优化修复、双模平台架构"
+  }
+}

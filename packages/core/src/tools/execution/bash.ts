@@ -1,8 +1,8 @@
 import { spawn } from "child_process"
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../../shared/tool"
 import path from "path"
-import { checkCommand, normalizeCommand, splitSubCommands, isReadOnlyCommand } from "./bash-security"
+import { checkCommand, normalizeCommand, splitSubCommands, isReadOnlyCommand } from "../core/bash-security"
 
 const MAX_OUTPUT_LENGTH = 50000
 const MAX_CAPTURE_BYTES = 1024 * 1024
@@ -182,3 +182,4 @@ export const bashTool = make({
     }
   },
 })
+

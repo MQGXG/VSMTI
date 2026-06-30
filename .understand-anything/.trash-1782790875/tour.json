@@ -1,0 +1,161 @@
+[
+  {
+    "order": 1,
+    "title": "项目概览 — 从 README 与 AGENTS.md 全局认知",
+    "description": "从项目的顶层文档入手，理解 Mira 是什么：一个零 Python 依赖的全能 AI 助手桌面应用，基于 Electron + TypeScript Agent Core 架构。重点阅读 README.md 了解技术栈选型，阅读 AGENTS.md 了解目录结构、包依赖关系、Agent 模式（5 种）、工具清单（32 个）和高级特性（Goal Judge / Max Mode / Dream Distill / Dynamic Workflow）。同时浏览 package.json 了解 monorepo 结构（pnpm workspace）和 scripts。",
+    "nodeIds": [
+      "file:README.md",
+      "file:AGENTS.md",
+      "file:package.json",
+      "file:pnpm-workspace.yaml"
+    ]
+  },
+  {
+    "order": 2,
+    "title": "构建体系 — electron-vite 与 TypeScript 配置",
+    "description": "理解项目的构建管线：electron.vite.config.ts 定义了三个构建目标（main/preload/renderer），tsconfig.json 配置 TypeScript 项目引用，electron-builder.yml 配置打包策略（便携模式）。这三个文件构成了从源码到可运行应用的完整构建链。关注 pnpm-workspace.yaml 如何定义 packages/ 和 apps/ 两个 workspace。",
+    "nodeIds": [
+      "file:electron.vite.config.ts",
+      "file:tsconfig.json",
+      "file:electron-builder.yml",
+      "file:packages/core/package.json",
+      "file:packages/core/tsconfig.json",
+      "file:apps/desktop/package.json"
+    ]
+  },
+  {
+    "order": 3,
+    "title": "应用启动 — Electron 主进程初始化流程",
+    "description": "深入 Electron 主进程入口 main/index.ts，理解 initializeApp 函数的完整初始化流程：平台路径注入 → Shell 环境 → 日志系统 → Sidecar Core 服务启动 → IPC 处理器注册 → 窗口创建 → 系统托盘 → 全局快捷键。这是整个应用的启动链。同时了解 window-manager.ts 如何管理 BrowserWindow 生命周期（开发模式自动探测 Vite 端口），tray-manager.ts 如何创建系统托盘。",
+    "nodeIds": [
+      "file:packages/electron/src/main/index.ts",
+      "file:packages/electron/src/managers/window-manager.ts",
+      "file:packages/electron/src/managers/tray-manager.ts",
+      "file:packages/electron/src/utils/logger.ts",
+      "file:packages/electron/src/utils/shell-env.ts"
+    ]
+  },
+  {
+    "order": 4,
+    "title": "IPC 通信层 — 主进程与渲染进程的桥梁",
+    "description": "理解 Electron 的 IPC 通信架构：preload/index.ts 通过 contextBridge 暴露 electronAPI，handlers.ts 是系统级 IPC 的总注册入口，index.ts（IPC barrel）按序注册 11 个子模块。重点理解 sidecar-bridge.ts — 它是 @mira/core Sidecar 进程与 Electron 主进程之间的 HTTP/SSE 代理层，管理 ServerManager 生命周期、健康检查自动重连和 SSE 事件流转发。这是整个应用最关键的通信枢纽。",
+    "nodeIds": [
+      "file::packages/electron/src/preload/index.ts",
+      "file:packages/electron/src/ipc/handlers.ts",
+      "file:packages/electron/src/ipc/index.ts",
+      "file:packages/electron/src/ipc/sidecar-bridge.ts",
+      "file:packages/electron/src/ipc/session-ipc.ts",
+      "file:packages/electron/src/ipc/config-ipc.ts"
+    ]
+  },
+  {
+    "order": 5,
+    "title": "核心工具体系 — Tool 定义工厂与注册表",
+    "description": "理解 Mira 的工具系统基础架构。tool.ts 是工具定义工厂（参考 OpenCode Tool.define），提供 make 创建函数、Zod 到 JSON Schema 转换、settle 执行结算和参数类型自动转换。registry.ts（ToolRegistry 类，20 个方法）管理工具的注册、查询、过滤和物化为 AI SDK 格式。registry-init.ts 创建默认注册表并注册 30+ 个内置工具。理解 ToolDef / ToolContext / ToolResult 的数据流。",
+    "nodeIds": [
+      "file::packages/core/src/tool.ts",
+      "file::packages/core/src/registry.ts",
+      "file::packages/core/src/registry-init.ts",
+      "file::packages/core/src/tool-effect.ts",
+      "file::packages/core/src/zod-converter.ts"
+    ]
+  },
+  {
+    "order": 6,
+    "title": "工具执行管线 — 从 LLM 调用到工具执行",
+    "description": "深入 Agent 的工具执行管线。turn-processor.ts 是单回合工具调用编排器（复杂度：complex），负责 LLM 流式调用、工具调用解析、权限检查、并行/串行执行的完整回合流程，实现并发控制信号量。pipeline.ts 负责工具调用的完整生命周期管理：权限评估 → 工具执行 → 结果注入消息列表。orchestrator.ts（ToolOrchestrator）实现声明式并行 + Promise.allSettled 并发执行。tool-executor.ts 是最终的并行执行器。",
+    "nodeIds": [
+      "file::packages/core/src/agent/turn-processor.ts",
+      "file::packages/core/src/agent/pipeline.ts",
+      "file::packages/core/src/execution/orchestrator.ts",
+      "file::packages/core/src/tool-executor.ts",
+      "file::packages/core/src/tools/bash.ts"
+    ]
+  },
+  {
+    "order": 7,
+    "title": "Agent 核心循环 — 状态机驱动的智能体主循环",
+    "description": "到达整个代码库的心脏：agent.ts（618 行，Agent 类）。理解 Agent.run() 的完整主循环：构建系统提示 → LLM 流式调用 → 工具调用解析 → 权限审批 → 工具执行 → 结果注入 → Goal 验证 → 记忆提升。状态机（state-machine.ts）管理 idle/running/waiting_permission/stopped/done 五种状态。context.ts 构建工具上下文和系统提示。utils.ts 实现三种 Doom Loop 检测模式。agent-profile.ts 定义 5 种内置 Agent 配置（assistant/expert/action/safe/plan）。",
+    "nodeIds": [
+      "file:packages/core/src/agent.ts",
+      "file::packages/core/src/agent/state-machine.ts",
+      "file:packages/core/src/agent/context.ts",
+      "file:packages/core/src/agent/utils.ts",
+      "file:packages/core/src/agent-profile.ts",
+      "file:packages/core/src/modes.ts",
+      "file:packages/core/src/types.ts"
+    ]
+  },
+  {
+    "order": 8,
+    "title": "LLM 抽象层 — 多 Provider 统一架构",
+    "description": "理解 Mira 如何支持 10+ 种 LLM Provider。llm-sdk.ts 是向后兼容封装层，底层已迁移到 llm/ 分层架构。schema/ 定义消息/事件/错误类型（Zod 验证）。protocols/ 包含 5 种协议适配器（OpenAI Chat/Responses、Anthropic Messages、Gemini、OpenAI 兼容）。providers/ 实现 3 种 Provider（OpenAI、Anthropic、OpenAI-compatible）。route/ 是自动协议选择的路由客户端。failover.ts 实现 FallbackClient 降级链。cache-policy.ts 管理 Anthropic/OpenAI 缓存策略。",
+    "nodeIds": [
+      "file:packages/core/src/llm-sdk.ts",
+      "file:packages/core/src/llm/schema/messages.ts",
+      "file:packages/core/src/llm/schema/errors.ts",
+      "file:packages/core/src/llm/schema/options.ts",
+      "file::packages/core/src/llm/schema/events.ts",
+      "file:packages/core/src/llm/cache-policy.ts",
+      "file::packages/core/src/failover.ts"
+    ]
+  },
+  {
+    "order": 9,
+    "title": "权限与安全 — 声明式权限规则引擎",
+    "description": "理解 Mira 的多层权限安全体系。permission.ts 实现声明式权限规则引擎（通配符匹配 + 硬拒绝检查 + PermissionSet 类）。permission-gate.ts 是权限评估网关，负责评估工具调用是否需要审批。approval-store.ts 缓存用户审批决策（通配符资源匹配 + TTL 过期）。permission-store.ts 通过 SQLite 持久化权限规则。bash-security.ts 提供 Bash 命令危险级别评估（safe/requires_approval/blocked）。snapshot.ts 实现文件快照回滚机制。",
+    "nodeIds": [
+      "file::packages/core/src/permission.ts",
+      "file::packages/core/src/permission-gate.ts",
+      "file::packages/core/src/permission/approval-store.ts",
+      "file::packages/core/src/permission-store.ts",
+      "file::packages/core/src/tools/bash-security.ts",
+      "file::packages/core/src/snapshot.ts"
+    ]
+  },
+  {
+    "order": 10,
+    "title": "数据与记忆系统 — 四层记忆架构",
+    "description": "深入理解 Mira 的数据持久化和记忆系统。database.ts 基于 sql.js WASM 实现 SQLite，定义 5 张核心表（projects/sessions/messages/permissions/goals）。memory/ 目录包含四层记忆 Provider：builtin-provider（会话级关键事实提取）、checkpoint-provider（异步 Writer 驱动的结构化摘要）、fts-memory-provider（FTS5 全文搜索 + BM25 排序）、file-memory-provider（项目级 MEMORY.md 持久化）、vector-provider（Transformers.js 本地 ONNX 向量记忆）。manager.ts 协调四层 Provider 的统一接口。context-manager.ts 管理上下文窗口生命周期。",
+    "nodeIds": [
+      "file::packages/core/src/database.ts",
+      "file::packages/core/src/memory/manager.ts",
+      "file::packages/core/src/memory/types.ts",
+      "file::packages/core/src/memory/fts-memory-provider.ts",
+      "file::packages/core/src/memory/vector-provider.ts",
+      "file::packages/core/src/context-manager.ts",
+      "file::packages/core/src/compaction.ts"
+    ]
+  },
+  {
+    "order": 11,
+    "title": "前端界面 — React 组件与运行时桥接",
+    "description": "从后端转向前端，理解 React 前端如何与 Electron 主进程通信。ChatWindow.tsx 是主聊天界面组件（组装 MiraRuntimeProvider、ModelSelector、PermissionDialog 等子组件）。MiraRuntimeProvider.tsx 将 useMiraChat hook 的状态与 assistant-ui 的 useExternalStoreRuntime 桥接。useMiraChat.ts（505 行）是前端最复杂的 Hook，管理消息状态、流式执行、工具调用事件处理、权限/问题请求。agent.service.ts 封装前端与主进程的 IPC 通信。sidebar/ 目录包含会话列表、项目切换、设置面板等。",
+    "nodeIds": [
+      "file:packages/ui/src/chat/ChatWindow.tsx",
+      "file:packages/ui/src/chat/MiraRuntimeProvider.tsx",
+      "file:packages/ui/src/hooks/useMiraChat.ts",
+      "file:packages/ui/src/services/agent.service.ts",
+      "file:packages/ui/src/sidebar/Sidebar.tsx",
+      "file:packages/ui/src/sidebar/SettingsDialog.tsx",
+      "file:packages/ui/src/chat/ModelSelector.tsx"
+    ]
+  },
+  {
+    "order": 12,
+    "title": "高级特性 — Subagent、Compose Mode 与扩展能力",
+    "description": "探索 Mira 的高级编排和扩展能力。subagent-manager.ts（406 行）管理子 Agent 完整生命周期（最大并行 5 个）。compose-mode.ts（477 行）实现软件开发全流程编排（plan→execute→review→test→debug→verify→merge 七阶段）。goal-judge.ts 通过独立 LLM Judge 验证任务完成度。dream-distill.ts 实现知识进化（Dream 提取持久知识 + Distill 打包可复用 skill）。mcp/ 支持 MCP 协议扩展工具。lsp/ 提供代码智能（定义跳转/引用查找/悬停）。plugin/ 和 skill/ 提供插件和 Skill 扩展机制。workflow/ 实现 Dynamic Workflow 代码级编排。",
+    "nodeIds": [
+      "file:packages/core/src/subagent-manager.ts",
+      "file:packages/core/src/compose-mode.ts",
+      "file:packages/core/src/goal-judge.ts",
+      "file:packages/core/src/dream-distill.ts",
+      "file::packages/core/src/mcp/index.ts",
+      "file::packages/core/src/lsp/client.ts",
+      "file::packages/core/src/lsp/manager.ts",
+      "file::packages/core/src/plugin/index.ts",
+      "file::packages/core/src/workflow/index.ts",
+      "file::packages/core/src/task-tracker.ts"
+    ]
+  }
+]

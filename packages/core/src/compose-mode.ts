@@ -1,7 +1,7 @@
-import { Agent, type AgentConfig, type AgentEvent } from "./agent"
-import type { LLMMessage } from "./llm-sdk"
+import { Agent, type AgentConfig, type AgentEvent } from "./agent/agent"
+import type { LLMMessage } from "./llm/client"
 import type { CheckpointProvider } from "./memory/checkpoint-provider"
-import type { SubagentManager } from "./subagent-manager"
+import type { SubagentManager } from "./orchestrate/subagent"
 
 export type ComposePhase =
   | "plan"
@@ -475,3 +475,7 @@ export class ComposeModeManager {
     return [...PHASE_ORDER]
   }
 }
+
+
+
+

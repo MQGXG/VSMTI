@@ -1,0 +1,301 @@
+{
+  "nodes": [
+    {
+      "id": "file:tailwind.config.js",
+      "type": "file",
+      "name": "tailwind.config.js",
+      "filePath": "tailwind.config.js",
+      "summary": "Tailwind CSS 主题配置文件，定义了项目全局样式系统，包括颜色主题（基于 CSS 变量的暗色模式支持）、自定义渐变背景、阴影效果、圆角、动画关键帧、字体族以及 tailwindcss-animate 插件。",
+      "tags": [
+        "tailwind",
+        "css",
+        "theme",
+        "config",
+        "样式配置",
+        "暗色模式"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:vector-memory/test-session.json",
+      "type": "file",
+      "name": "test-session.json",
+      "filePath": "vector-memory/test-session.json",
+      "summary": "向量记忆系统的测试会话数据文件，当前为空文档列表，用于测试向量记忆功能。",
+      "tags": [
+        "json",
+        "vector-memory",
+        "test",
+        "测试数据",
+        "向量记忆"
+      ],
+      "complexity": "trivial"
+    },
+    {
+      "id": "file:vitest.config.ts",
+      "type": "file",
+      "name": "vitest.config.ts",
+      "filePath": "vitest.config.ts",
+      "summary": "Vitest 测试框架全局配置文件，使用 React 插件，配置为 Node 环境，匹配 packages 目录下的测试文件，排除 node_modules 和 dist 目录，超时时间 15 秒。",
+      "tags": [
+        "vitest",
+        "testing",
+        "config",
+        "测试配置",
+        "React"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "export:tailwind.config.js:theme",
+      "type": "export",
+      "name": "theme.extend",
+      "filePath": "tailwind.config.js",
+      "summary": "Tailwind 主题扩展配置对象，包含 colors（语义化颜色 + 功能色）、backgroundImage（渐变背景）、boxShadow（发光/毛玻璃阴影）、borderRadius（卡片/按钮/输入框圆角）、animation（7 种动画）、keyframes（对应关键帧定义）、fontFamily（sans/mono 两套字体栈）。",
+      "tags": [
+        "tailwind",
+        "theme",
+        "颜色系统",
+        "动画",
+        "字体"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "config:tailwind:colors",
+      "type": "config",
+      "name": "colors",
+      "filePath": "tailwind.config.js",
+      "summary": "语义化颜色体系，包含 background/foreground、card、popover、primary（蓝色渐变）、secondary、muted、destructive、accent（青色渐变）、neutral（灰色梯度）、border/input/ring，以及 success/warning/error 功能色。",
+      "tags": [
+        "colors",
+        "design-system",
+        "颜色变量",
+        "CSS变量"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "config:tailwind:animations",
+      "type": "config",
+      "name": "animations & keyframes",
+      "filePath": "tailwind.config.js",
+      "summary": "7 种自定义动画：pulse-glow（脉冲发光）、fade-in-up（上浮淡入）、scale-in（缩放淡入）、slide-in-right（右侧滑入）、bounce-dot（跳动圆点，用于加载指示）、in/out（通用进出过渡）。",
+      "tags": [
+        "animation",
+        "keyframes",
+        "动画系统",
+        "UI动效"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "config:tailwind:gradients",
+      "type": "config",
+      "name": "backgroundImage gradients",
+      "filePath": "tailwind.config.js",
+      "summary": "6 种渐变背景定义：gradient-primary、gradient-primary-hover、gradient-primary-subtle、gradient-brand、gradient-brand-glow、gradient-user-msg，主色调为蓝→青渐变。",
+      "tags": [
+        "gradient",
+        "渐变背景",
+        "品牌色"
+      ],
+      "complexity": "trivial"
+    },
+    {
+      "id": "config:tailwind:shadows",
+      "type": "config",
+      "name": "boxShadow",
+      "filePath": "tailwind.config.js",
+      "summary": "自定义阴影效果：glow-primary/glow-primary-lg（主色发光）、glow-accent（强调色发光）、glass/glass-lg（毛玻璃阴影）、card/card-hover（卡片阴影）。",
+      "tags": [
+        "shadow",
+        "box-shadow",
+        "毛玻璃",
+        "发光效果"
+      ],
+      "complexity": "trivial"
+    },
+    {
+      "id": "config:tailwind:fonts",
+      "type": "config",
+      "name": "fontFamily",
+      "filePath": "tailwind.config.js",
+      "summary": "字体栈配置：sans 使用 Inter + SF Pro Display + PingFang SC + Microsoft YaHei，mono 使用 Cascadia Code + Fira Code + JetBrains Mono + Consolas。",
+      "tags": [
+        "font",
+        "字体",
+        "等宽字体",
+        "中文字体"
+      ],
+      "complexity": "trivial"
+    },
+    {
+      "id": "config:tailwind:plugins",
+      "type": "config",
+      "name": "plugins",
+      "filePath": "tailwind.config.js",
+      "summary": "插件列表，当前仅加载 tailwindcss-animate 插件，提供预定义的动画 utility classes。",
+      "tags": [
+        "plugin",
+        "tailwindcss-animate"
+      ],
+      "complexity": "trivial"
+    },
+    {
+      "id": "config:tailwind:content",
+      "type": "config",
+      "name": "content paths",
+      "filePath": "tailwind.config.js",
+      "summary": "内容扫描路径配置：index.html 以及 packages/**/*.{js,ts,jsx,tsx} 和 apps/**/*.{js,ts,jsx,tsx}，确保所有源文件中的 Tailwind class 被正确编译。",
+      "tags": [
+        "content",
+        "文件扫描",
+        "purge"
+      ],
+      "complexity": "trivial"
+    },
+    {
+      "id": "config:tailwind:darkmode",
+      "type": "config",
+      "name": "darkMode",
+      "filePath": "tailwind.config.js",
+      "summary": "暗色模式配置，使用 class 策略，通过 html 元素的 dark class 切换明暗主题。",
+      "tags": [
+        "dark-mode",
+        "暗色模式",
+        "class策略"
+      ],
+      "complexity": "trivial"
+    },
+    {
+      "id": "export:vitest.config.ts:defineConfig",
+      "type": "export",
+      "name": "defineConfig",
+      "filePath": "vitest.config.ts",
+      "summary": "Vitest 配置导出，加载 @vitejs/plugin-react 插件，测试环境为 node，包含 packages/core 和 packages/*/src 下的测试文件，排除 node_modules/dist/dist-electron。",
+      "tags": [
+        "vitest",
+        "defineConfig",
+        "测试配置"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "config:vitest:patterns",
+      "type": "config",
+      "name": "test include/exclude patterns",
+      "filePath": "vitest.config.ts",
+      "summary": "测试文件匹配模式：包含 packages/core/src/**/*.test.ts 和 packages/*/src/**/*.{test,spec}.{ts,tsx}，排除 node_modules、dist、dist-electron 目录。",
+      "tags": [
+        "test-pattern",
+        "glob",
+        "文件匹配"
+      ],
+      "complexity": "trivial"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:tailwind.config.js",
+      "target": "export:tailwind.config.js:theme",
+      "type": "contains",
+      "label": "定义主题配置"
+    },
+    {
+      "source": "file:tailwind.config.js",
+      "target": "config:tailwind:colors",
+      "type": "contains",
+      "label": "定义颜色系统"
+    },
+    {
+      "source": "file:tailwind.config.js",
+      "target": "config:tailwind:animations",
+      "type": "contains",
+      "label": "定义动画"
+    },
+    {
+      "source": "file:tailwind.config.js",
+      "target": "config:tailwind:gradients",
+      "type": "contains",
+      "label": "定义渐变背景"
+    },
+    {
+      "source": "file:tailwind.config.js",
+      "target": "config:tailwind:shadows",
+      "type": "contains",
+      "label": "定义阴影"
+    },
+    {
+      "source": "file:tailwind.config.js",
+      "target": "config:tailwind:fonts",
+      "type": "contains",
+      "label": "定义字体"
+    },
+    {
+      "source": "file:tailwind.config.js",
+      "target": "config:tailwind:plugins",
+      "type": "contains",
+      "label": "加载插件"
+    },
+    {
+      "source": "file:tailwind.config.js",
+      "target": "config:tailwind:content",
+      "type": "contains",
+      "label": "配置内容路径"
+    },
+    {
+      "source": "file:tailwind.config.js",
+      "target": "config:tailwind:darkmode",
+      "type": "contains",
+      "label": "配置暗色模式"
+    },
+    {
+      "source": "export:tailwind.config.js:theme",
+      "target": "config:tailwind:colors",
+      "type": "contains",
+      "label": "包含颜色配置"
+    },
+    {
+      "source": "export:tailwind.config.js:theme",
+      "target": "config:tailwind:animations",
+      "type": "contains",
+      "label": "包含动画配置"
+    },
+    {
+      "source": "export:tailwind.config.js:theme",
+      "target": "config:tailwind:gradients",
+      "type": "contains",
+      "label": "包含渐变配置"
+    },
+    {
+      "source": "export:tailwind.config.js:theme",
+      "target": "config:tailwind:shadows",
+      "type": "contains",
+      "label": "包含阴影配置"
+    },
+    {
+      "source": "export:tailwind.config.js:theme",
+      "target": "config:tailwind:fonts",
+      "type": "contains",
+      "label": "包含字体配置"
+    },
+    {
+      "source": "file:vitest.config.ts",
+      "target": "export:vitest.config.ts:defineConfig",
+      "type": "contains",
+      "label": "导出配置"
+    },
+    {
+      "source": "export:vitest.config.ts:defineConfig",
+      "target": "config:vitest:patterns",
+      "type": "contains",
+      "label": "定义测试匹配模式"
+    },
+    {
+      "source": "file:vector-memory/test-session.json",
+      "type": "data",
+      "label": "向量记忆测试数据（空文档列表）"
+    }
+  ]
+}

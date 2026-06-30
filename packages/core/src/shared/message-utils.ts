@@ -1,4 +1,4 @@
-import { LLMMessage } from './llm-sdk'
+import { LLMMessage } from '../llm/client'
 
 function contentLength(content: string | Array<any>): number {
   if (typeof content === 'string') return content.length
@@ -145,3 +145,4 @@ export function needsContextRebuild(messages: LLMMessage[], maxTokens: number): 
   const currentTokens = estimateTokens(messages)
   return currentTokens > maxTokens * 0.6
 }
+

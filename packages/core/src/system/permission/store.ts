@@ -1,5 +1,5 @@
-import { getDbAsync, runWrite } from "./database"
-import { PermissionSet, type PermissionRule } from "./permission"
+import { getDbAsync, runWrite } from "../database"
+import { PermissionSet, type PermissionRule } from "./index"
 
 export async function loadWorkspacePermissions(workspace: string): Promise<PermissionRule[]> {
   try {

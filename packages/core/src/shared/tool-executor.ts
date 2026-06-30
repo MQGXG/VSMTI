@@ -1,6 +1,6 @@
 import { ToolContext, ToolResult } from "./tool"
-import type { ToolRegistry } from "./registry"
-import { logToolCall } from "./logger"
+import type { ToolRegistry } from "../system/registry"
+import { logToolCall } from "../system/logger"
 
 export interface ExecutorResult {
   results: Map<string, ToolResult>
@@ -26,7 +26,7 @@ export async function executeToolCalls(
     toolResults = await Promise.all(
       approvedCalls.map(async (call) => {
         let args: Record<string, unknown> = {}
-        try { args = JSON.parse(call.function.arguments) } catch {}
+        try { args = JSON.parse(call.function.arguments) } catch { /* LLM 可能返回非法 JSON，用空对象 */ }
         const startTime = Date.now()
         const result = await registry.execute(call.function.name, args, ctx)
         try {

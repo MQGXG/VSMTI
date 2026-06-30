@@ -1,0 +1,63 @@
+{
+  "batchImportData": {
+    "docs/api.md": [],
+    "docs/architecture.md": [],
+    "docs/deployment.md": [],
+    "docs/learn-claude-code-essentials.md": [],
+    "docs/learn-claude-code-vs-omniagent.md": [],
+    "docs/monorepo-design.md": [],
+    "docs/ref-agent-patterns.md": [],
+    "docs/testing.md": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "docs/api.md",
+      "language": "markdown",
+      "sizeLines": 161,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/architecture.md",
+      "language": "markdown",
+      "sizeLines": 426,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/deployment.md",
+      "language": "markdown",
+      "sizeLines": 144,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/learn-claude-code-essentials.md",
+      "language": "markdown",
+      "sizeLines": 504,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/learn-claude-code-vs-omniagent.md",
+      "language": "markdown",
+      "sizeLines": 60,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/monorepo-design.md",
+      "language": "markdown",
+      "sizeLines": 206,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/ref-agent-patterns.md",
+      "language": "markdown",
+      "sizeLines": 885,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/testing.md",
+      "language": "markdown",
+      "sizeLines": 188,
+      "fileCategory": "docs"
+    }
+  ]
+}

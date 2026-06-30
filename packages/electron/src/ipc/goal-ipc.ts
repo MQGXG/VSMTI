@@ -1,6 +1,6 @@
 import { ipcMain } from "electron"
-import { GoalJudge } from "@mira/core/goal-judge"
-import { initDatabase } from "@mira/core/database"
+import { GoalJudge } from "@mira/core/orchestrate/goal-judge"
+import { initDatabase } from "@mira/core/system/database"
 
 const goalJudge = new GoalJudge()
 
@@ -32,3 +32,4 @@ export function registerGoalIPC(): void {
     return goalJudge.save()
   })
 }
+

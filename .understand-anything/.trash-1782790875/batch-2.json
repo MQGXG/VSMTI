@@ -1,0 +1,1564 @@
+{
+  "batch": 2,
+  "project": "mira",
+  "nodes": [
+    {
+      "id": "file::packages/core/src/tools/bash.ts",
+      "type": "file",
+      "name": "bash.ts",
+      "filePath": "packages/core/src/tools/bash.ts",
+      "summary": "Bash 工具，通过 child_process.spawn 执行 Shell 命令。支持超时、AbortSignal 取消、输出截断。",
+      "tags": [
+        "tool",
+        "execution",
+        "shell",
+        "bash"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "func::packages/core/src/tools/bash.ts::runCommand",
+      "type": "function",
+      "name": "runCommand",
+      "filePath": "packages/core/src/tools/bash.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/bash.ts::compactOutput",
+      "type": "function",
+      "name": "compactOutput",
+      "filePath": "packages/core/src/tools/bash.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/bash.ts::captureNotice",
+      "type": "function",
+      "name": "captureNotice",
+      "filePath": "packages/core/src/tools/bash.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/bash.ts::formatOutput",
+      "type": "function",
+      "name": "formatOutput",
+      "filePath": "packages/core/src/tools/bash.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/bash.ts::stderrDisplay",
+      "type": "function",
+      "name": "stderrDisplay",
+      "filePath": "packages/core/src/tools/bash.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/bash.ts::externalCommandDirs",
+      "type": "function",
+      "name": "externalCommandDirs",
+      "filePath": "packages/core/src/tools/bash.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/code-exec.ts",
+      "type": "file",
+      "name": "code-exec.ts",
+      "filePath": "packages/core/src/tools/code-exec.ts",
+      "summary": "代码执行工具，在临时目录创建 Python 脚本并执行。",
+      "tags": [
+        "tool",
+        "execution",
+        "python"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/tools/code-search.ts",
+      "type": "file",
+      "name": "code-search.ts",
+      "filePath": "packages/core/src/tools/code-search.ts",
+      "summary": "代码搜索工具，通过 DuckDuckGo 搜索 API 文档和代码示例。",
+      "tags": [
+        "tool",
+        "knowledge",
+        "search",
+        "duckduckgo"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/code-search.ts::searchCodeDocs",
+      "type": "function",
+      "name": "searchCodeDocs",
+      "filePath": "packages/core/src/tools/code-search.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/code-search.ts::fetchSnippet",
+      "type": "function",
+      "name": "fetchSnippet",
+      "filePath": "packages/core/src/tools/code-search.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/create-docx.ts",
+      "type": "file",
+      "name": "create-docx.ts",
+      "filePath": "packages/core/src/tools/create-docx.ts",
+      "summary": "Word 文档生成工具，使用 docx 库创建 .docx 文件。",
+      "tags": [
+        "tool",
+        "document",
+        "docx",
+        "word"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "func::packages/core/src/tools/create-docx.ts::realPath",
+      "type": "function",
+      "name": "realPath",
+      "filePath": "packages/core/src/tools/create-docx.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/create-docx.ts::contains",
+      "type": "function",
+      "name": "contains",
+      "filePath": "packages/core/src/tools/create-docx.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/cron-tool.ts",
+      "type": "file",
+      "name": "cron-tool.ts",
+      "filePath": "packages/core/src/tools/cron-tool.ts",
+      "summary": "定时任务调度工具。",
+      "tags": [
+        "tool",
+        "orchestration",
+        "cron"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/tools/data-analysis.ts",
+      "type": "file",
+      "name": "data-analysis.ts",
+      "filePath": "packages/core/src/tools/data-analysis.ts",
+      "summary": "数据分析工具，纯 JS 实现 CSV 解析和 SVG 图表生成。",
+      "tags": [
+        "tool",
+        "knowledge",
+        "data-analysis",
+        "csv",
+        "chart"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "func::packages/core/src/tools/data-analysis.ts::parseCSV",
+      "type": "function",
+      "name": "parseCSV",
+      "filePath": "packages/core/src/tools/data-analysis.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/data-analysis.ts::getNumericColumns",
+      "type": "function",
+      "name": "getNumericColumns",
+      "filePath": "packages/core/src/tools/data-analysis.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/data-analysis.ts::generateBarChart",
+      "type": "function",
+      "name": "generateBarChart",
+      "filePath": "packages/core/src/tools/data-analysis.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/data-analysis.ts::generateLineChart",
+      "type": "function",
+      "name": "generateLineChart",
+      "filePath": "packages/core/src/tools/data-analysis.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/data-analysis.ts::generatePieChart",
+      "type": "function",
+      "name": "generatePieChart",
+      "filePath": "packages/core/src/tools/data-analysis.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/delegate-task.ts",
+      "type": "file",
+      "name": "delegate-task.ts",
+      "filePath": "packages/core/src/tools/delegate-task.ts",
+      "summary": "任务委派工具，启动子代理执行子任务。",
+      "tags": [
+        "tool",
+        "orchestration",
+        "delegate",
+        "subagent"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "file::packages/core/src/tools/edit-file.ts",
+      "type": "file",
+      "name": "edit-file.ts",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "增强版文件编辑工具，多策略匹配、Levenshtein 相似度检测。",
+      "tags": [
+        "tool",
+        "core",
+        "edit",
+        "snapshot",
+        "levenshtein"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::realPath",
+      "type": "function",
+      "name": "realPath",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::contains",
+      "type": "function",
+      "name": "contains",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::previewLines",
+      "type": "function",
+      "name": "previewLines",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::stripBom",
+      "type": "function",
+      "name": "stripBom",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::joinBom",
+      "type": "function",
+      "name": "joinBom",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::normalizeLineEndings",
+      "type": "function",
+      "name": "normalizeLineEndings",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::detectLineEnding",
+      "type": "function",
+      "name": "detectLineEnding",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::convertToLineEnding",
+      "type": "function",
+      "name": "convertToLineEnding",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::countOccurrences",
+      "type": "function",
+      "name": "countOccurrences",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::levenshtein",
+      "type": "function",
+      "name": "levenshtein",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::isDisproportionate",
+      "type": "function",
+      "name": "isDisproportionate",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/edit-file.ts::replace",
+      "type": "function",
+      "name": "replace",
+      "filePath": "packages/core/src/tools/edit-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/git.ts",
+      "type": "file",
+      "name": "git.ts",
+      "filePath": "packages/core/src/tools/git.ts",
+      "summary": "Git 工具集，封装 git_status/diff/log/commit。",
+      "tags": [
+        "tool",
+        "core",
+        "git"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "func::packages/core/src/tools/git.ts::git",
+      "type": "function",
+      "name": "git",
+      "filePath": "packages/core/src/tools/git.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/glob.ts",
+      "type": "file",
+      "name": "glob.ts",
+      "filePath": "packages/core/src/tools/glob.ts",
+      "summary": "文件名模式匹配工具。",
+      "tags": [
+        "tool",
+        "core",
+        "glob",
+        "wildcard"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "func::packages/core/src/tools/glob.ts::globRecursive",
+      "type": "function",
+      "name": "globRecursive",
+      "filePath": "packages/core/src/tools/glob.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/glob.ts::matchGlob",
+      "type": "function",
+      "name": "matchGlob",
+      "filePath": "packages/core/src/tools/glob.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/grep.ts",
+      "type": "file",
+      "name": "grep.ts",
+      "filePath": "packages/core/src/tools/grep.ts",
+      "summary": "正则搜索工具，优先 ripgrep。",
+      "tags": [
+        "tool",
+        "core",
+        "grep",
+        "ripgrep"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/tools/image-gen.ts",
+      "type": "file",
+      "name": "image-gen.ts",
+      "filePath": "packages/core/src/tools/image-gen.ts",
+      "summary": "图片生成工具，调用 DALL-E 3。",
+      "tags": [
+        "tool",
+        "execution",
+        "image",
+        "dall-e"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/tools/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/core/src/tools/index.ts",
+      "summary": "工具统一导出入口。",
+      "tags": [
+        "index",
+        "export",
+        "barrel"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/tools/list-files.ts",
+      "type": "file",
+      "name": "list-files.ts",
+      "filePath": "packages/core/src/tools/list-files.ts",
+      "summary": "目录列表工具。",
+      "tags": [
+        "tool",
+        "core",
+        "directory",
+        "list"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/tools/lsp-tool.ts",
+      "type": "file",
+      "name": "lsp-tool.ts",
+      "filePath": "packages/core/src/tools/lsp-tool.ts",
+      "summary": "LSP 代码智能工具集。",
+      "tags": [
+        "tool",
+        "infrastructure",
+        "lsp"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/question.ts",
+      "type": "file",
+      "name": "question.ts",
+      "filePath": "packages/core/src/tools/question.ts",
+      "summary": "用户交互提问工具。",
+      "tags": [
+        "tool",
+        "interaction",
+        "question"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/question.ts::answerQuestion",
+      "type": "function",
+      "name": "answerQuestion",
+      "filePath": "packages/core/src/tools/question.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/question.ts::getPendingQuestions",
+      "type": "function",
+      "name": "getPendingQuestions",
+      "filePath": "packages/core/src/tools/question.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/read-file-effect.ts",
+      "type": "file",
+      "name": "read-file-effect.ts",
+      "filePath": "packages/core/src/tools/read-file-effect.ts",
+      "summary": "Effect-TS 文件读取工具。",
+      "tags": [
+        "tool",
+        "core",
+        "read-file",
+        "effect"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/read-file.ts",
+      "type": "file",
+      "name": "read-file.ts",
+      "filePath": "packages/core/src/tools/read-file.ts",
+      "summary": "增强版文件读取，多编码、图片、LSP。",
+      "tags": [
+        "tool",
+        "core",
+        "read-file",
+        "encoding",
+        "lsp"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "func::packages/core/src/tools/read-file.ts::realPath",
+      "type": "function",
+      "name": "realPath",
+      "filePath": "packages/core/src/tools/read-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/read-file.ts::contains",
+      "type": "function",
+      "name": "contains",
+      "filePath": "packages/core/src/tools/read-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/read-file.ts::decodeText",
+      "type": "function",
+      "name": "decodeText",
+      "filePath": "packages/core/src/tools/read-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/read-file.ts::readTextFile",
+      "type": "function",
+      "name": "readTextFile",
+      "filePath": "packages/core/src/tools/read-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/read-file.ts::readDirectory",
+      "type": "function",
+      "name": "readDirectory",
+      "filePath": "packages/core/src/tools/read-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/read-file.ts::statSizeText",
+      "type": "function",
+      "name": "statSizeText",
+      "filePath": "packages/core/src/tools/read-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/task-tool.ts",
+      "type": "file",
+      "name": "task-tool.ts",
+      "filePath": "packages/core/src/tools/task-tool.ts",
+      "summary": "任务规划工具，DAG 依赖执行。",
+      "tags": [
+        "tool",
+        "orchestration",
+        "task-planner"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/tool-loader.ts",
+      "type": "file",
+      "name": "tool-loader.ts",
+      "filePath": "packages/core/src/tools/tool-loader.ts",
+      "summary": "延迟工具加载器。",
+      "tags": [
+        "tool",
+        "loader",
+        "search",
+        "deferred"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/tool-loader.ts::getToolInfoList",
+      "type": "function",
+      "name": "getToolInfoList",
+      "filePath": "packages/core/src/tools/tool-loader.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/tool-loader.ts::getToolDescription",
+      "type": "function",
+      "name": "getToolDescription",
+      "filePath": "packages/core/src/tools/tool-loader.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/tool-loader.ts::searchTools",
+      "type": "function",
+      "name": "searchTools",
+      "filePath": "packages/core/src/tools/tool-loader.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/tool-loader.ts::getRecommendedTools",
+      "type": "function",
+      "name": "getRecommendedTools",
+      "filePath": "packages/core/src/tools/tool-loader.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/tool-loader.ts::shouldLoadTool",
+      "type": "function",
+      "name": "shouldLoadTool",
+      "filePath": "packages/core/src/tools/tool-loader.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/tool-meta.ts",
+      "type": "file",
+      "name": "tool-meta.ts",
+      "filePath": "packages/core/src/tools/tool-meta.ts",
+      "summary": "工具元数据定义，26 个工具配置。",
+      "tags": [
+        "metadata",
+        "tool",
+        "category"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "func::packages/core/src/tools/tool-meta.ts::isToolParallel",
+      "type": "function",
+      "name": "isToolParallel",
+      "filePath": "packages/core/src/tools/tool-meta.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/tool-meta.ts::getToolsByCategory",
+      "type": "function",
+      "name": "getToolsByCategory",
+      "filePath": "packages/core/src/tools/tool-meta.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/tool-output-store.ts",
+      "type": "file",
+      "name": "tool-output-store.ts",
+      "filePath": "packages/core/src/tools/tool-output-store.ts",
+      "summary": "工具输出管理器。",
+      "tags": [
+        "tool",
+        "output",
+        "store",
+        "truncation"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "class::packages/core/src/tools/tool-output-store.ts::ToolOutputStore",
+      "type": "class",
+      "name": "ToolOutputStore",
+      "filePath": "packages/core/src/tools/tool-output-store.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/web-browse.ts",
+      "type": "file",
+      "name": "web-browse.ts",
+      "filePath": "packages/core/src/tools/web-browse.ts",
+      "summary": "网页浏览工具，Playwright 实现。",
+      "tags": [
+        "tool",
+        "knowledge",
+        "web",
+        "playwright"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "func::packages/core/src/tools/web-browse.ts::getContext",
+      "type": "function",
+      "name": "getContext",
+      "filePath": "packages/core/src/tools/web-browse.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/web-browse.ts::pageText",
+      "type": "function",
+      "name": "pageText",
+      "filePath": "packages/core/src/tools/web-browse.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/web-fetch.ts",
+      "type": "file",
+      "name": "web-fetch.ts",
+      "filePath": "packages/core/src/tools/web-fetch.ts",
+      "summary": "轻量网页获取，HTML 转 Markdown。",
+      "tags": [
+        "tool",
+        "knowledge",
+        "web",
+        "fetch"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "func::packages/core/src/tools/web-fetch.ts::extractTextFromHTML",
+      "type": "function",
+      "name": "extractTextFromHTML",
+      "filePath": "packages/core/src/tools/web-fetch.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/web-fetch.ts::convertHTMLToMarkdown",
+      "type": "function",
+      "name": "convertHTMLToMarkdown",
+      "filePath": "packages/core/src/tools/web-fetch.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/web-fetch.ts::fetchWithTimeout",
+      "type": "function",
+      "name": "fetchWithTimeout",
+      "filePath": "packages/core/src/tools/web-fetch.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/web-search.ts",
+      "type": "file",
+      "name": "web-search.ts",
+      "filePath": "packages/core/src/tools/web-search.ts",
+      "summary": "网络搜索，DDG + SearXNG 双引擎。",
+      "tags": [
+        "tool",
+        "knowledge",
+        "search",
+        "searxng"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/workflow-tool.ts",
+      "type": "file",
+      "name": "workflow-tool.ts",
+      "filePath": "packages/core/src/tools/workflow-tool.ts",
+      "summary": "Workflow 执行工具。",
+      "tags": [
+        "tool",
+        "orchestration",
+        "workflow"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/worktree-tool.ts",
+      "type": "file",
+      "name": "worktree-tool.ts",
+      "filePath": "packages/core/src/tools/worktree-tool.ts",
+      "summary": "Git Worktree 管理工具。",
+      "tags": [
+        "tool",
+        "orchestration",
+        "worktree"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/tools/write-file.ts",
+      "type": "file",
+      "name": "write-file.ts",
+      "filePath": "packages/core/src/tools/write-file.ts",
+      "summary": "文件写入工具，BOM 保留、快照。",
+      "tags": [
+        "tool",
+        "core",
+        "write-file",
+        "snapshot"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/write-file.ts::realPath",
+      "type": "function",
+      "name": "realPath",
+      "filePath": "packages/core/src/tools/write-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/tools/write-file.ts::contains",
+      "type": "function",
+      "name": "contains",
+      "filePath": "packages/core/src/tools/write-file.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/workflow/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/core/src/workflow/index.ts",
+      "summary": "WorkflowEngine 工作流引擎。",
+      "tags": [
+        "workflow",
+        "engine",
+        "orchestration"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class::packages/core/src/workflow/index.ts::WorkflowEngine",
+      "type": "class",
+      "name": "WorkflowEngine",
+      "filePath": "packages/core/src/workflow/index.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/worktree-manager.ts",
+      "type": "file",
+      "name": "worktree-manager.ts",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "Git Worktree 隔离系统。",
+      "tags": [
+        "worktree",
+        "git",
+        "isolation"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::getWorktreesDir",
+      "type": "function",
+      "name": "getWorktreesDir",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::isGitRepo",
+      "type": "function",
+      "name": "isGitRepo",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::createWorktree",
+      "type": "function",
+      "name": "createWorktree",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::runInWorktree",
+      "type": "function",
+      "name": "runInWorktree",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::closeoutWorktree",
+      "type": "function",
+      "name": "closeoutWorktree",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::getRecordsPath",
+      "type": "function",
+      "name": "getRecordsPath",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::loadAllWorktrees",
+      "type": "function",
+      "name": "loadAllWorktrees",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::saveWorktreeInfo",
+      "type": "function",
+      "name": "saveWorktreeInfo",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::getWorktreeInfo",
+      "type": "function",
+      "name": "getWorktreeInfo",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::listWorktrees",
+      "type": "function",
+      "name": "listWorktrees",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::packages/core/src/worktree-manager.ts::cleanupWorktrees",
+      "type": "function",
+      "name": "cleanupWorktrees",
+      "filePath": "packages/core/src/worktree-manager.ts",
+      "summary": "",
+      "tags": [],
+      "complexity": "medium"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file::packages/core/src/tools/bash.ts",
+      "target": "func::packages/core/src/tools/bash.ts::runCommand",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/bash.ts",
+      "target": "func::packages/core/src/tools/bash.ts::compactOutput",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/bash.ts",
+      "target": "func::packages/core/src/tools/bash.ts::captureNotice",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/bash.ts",
+      "target": "func::packages/core/src/tools/bash.ts::formatOutput",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/bash.ts",
+      "target": "func::packages/core/src/tools/bash.ts::stderrDisplay",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/bash.ts",
+      "target": "func::packages/core/src/tools/bash.ts::externalCommandDirs",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/code-search.ts",
+      "target": "func::packages/core/src/tools/code-search.ts::searchCodeDocs",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/code-search.ts",
+      "target": "func::packages/core/src/tools/code-search.ts::fetchSnippet",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/create-docx.ts",
+      "target": "func::packages/core/src/tools/create-docx.ts::realPath",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/create-docx.ts",
+      "target": "func::packages/core/src/tools/create-docx.ts::contains",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/data-analysis.ts",
+      "target": "func::packages/core/src/tools/data-analysis.ts::parseCSV",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/data-analysis.ts",
+      "target": "func::packages/core/src/tools/data-analysis.ts::getNumericColumns",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/data-analysis.ts",
+      "target": "func::packages/core/src/tools/data-analysis.ts::generateBarChart",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/data-analysis.ts",
+      "target": "func::packages/core/src/tools/data-analysis.ts::generateLineChart",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/data-analysis.ts",
+      "target": "func::packages/core/src/tools/data-analysis.ts::generatePieChart",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::realPath",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::contains",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::previewLines",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::stripBom",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::joinBom",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::normalizeLineEndings",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::detectLineEnding",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::convertToLineEnding",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::countOccurrences",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::levenshtein",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::isDisproportionate",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/edit-file.ts",
+      "target": "func::packages/core/src/tools/edit-file.ts::replace",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/git.ts",
+      "target": "func::packages/core/src/tools/git.ts::git",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/glob.ts",
+      "target": "func::packages/core/src/tools/glob.ts::globRecursive",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/glob.ts",
+      "target": "func::packages/core/src/tools/glob.ts::matchGlob",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/question.ts",
+      "target": "func::packages/core/src/tools/question.ts::answerQuestion",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/question.ts",
+      "target": "func::packages/core/src/tools/question.ts::getPendingQuestions",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/read-file.ts",
+      "target": "func::packages/core/src/tools/read-file.ts::realPath",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/read-file.ts",
+      "target": "func::packages/core/src/tools/read-file.ts::contains",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/read-file.ts",
+      "target": "func::packages/core/src/tools/read-file.ts::decodeText",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/read-file.ts",
+      "target": "func::packages/core/src/tools/read-file.ts::readTextFile",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/read-file.ts",
+      "target": "func::packages/core/src/tools/read-file.ts::readDirectory",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/read-file.ts",
+      "target": "func::packages/core/src/tools/read-file.ts::statSizeText",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/tool-loader.ts",
+      "target": "func::packages/core/src/tools/tool-loader.ts::getToolInfoList",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/tool-loader.ts",
+      "target": "func::packages/core/src/tools/tool-loader.ts::getToolDescription",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/tool-loader.ts",
+      "target": "func::packages/core/src/tools/tool-loader.ts::searchTools",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/tool-loader.ts",
+      "target": "func::packages/core/src/tools/tool-loader.ts::getRecommendedTools",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/tool-loader.ts",
+      "target": "func::packages/core/src/tools/tool-loader.ts::shouldLoadTool",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/tool-meta.ts",
+      "target": "func::packages/core/src/tools/tool-meta.ts::isToolParallel",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/tool-meta.ts",
+      "target": "func::packages/core/src/tools/tool-meta.ts::getToolsByCategory",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/tool-output-store.ts",
+      "target": "class::packages/core/src/tools/tool-output-store.ts::ToolOutputStore",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/web-browse.ts",
+      "target": "func::packages/core/src/tools/web-browse.ts::getContext",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/web-browse.ts",
+      "target": "func::packages/core/src/tools/web-browse.ts::pageText",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/web-fetch.ts",
+      "target": "func::packages/core/src/tools/web-fetch.ts::extractTextFromHTML",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/web-fetch.ts",
+      "target": "func::packages/core/src/tools/web-fetch.ts::convertHTMLToMarkdown",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/web-fetch.ts",
+      "target": "func::packages/core/src/tools/web-fetch.ts::fetchWithTimeout",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/write-file.ts",
+      "target": "func::packages/core/src/tools/write-file.ts::realPath",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/write-file.ts",
+      "target": "func::packages/core/src/tools/write-file.ts::contains",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/workflow/index.ts",
+      "target": "class::packages/core/src/workflow/index.ts::WorkflowEngine",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::getWorktreesDir",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::isGitRepo",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::createWorktree",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::runInWorktree",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::closeoutWorktree",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::getRecordsPath",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::loadAllWorktrees",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::saveWorktreeInfo",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::getWorktreeInfo",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::listWorktrees",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/worktree-manager.ts",
+      "target": "func::packages/core/src/worktree-manager.ts::cleanupWorktrees",
+      "type": "contains"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/read-file-effect.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/write-file.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/list-files.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/web-search.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/grep.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/glob.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/code-exec.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/bash.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/edit-file.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/data-analysis.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/web-browse.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/cron-tool.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/delegate-task.ts",
+      "target": "file::packages/core/src/tools/task-tool.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/write-file.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/list-files.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/web-search.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/web-fetch.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/code-search.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/question.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/grep.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/glob.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/code-exec.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/bash.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/edit-file.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/git.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/create-docx.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/index.ts",
+      "target": "file::packages/core/src/tools/read-file-effect.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/tool-loader.ts",
+      "target": "file::packages/core/src/tools/tool-meta.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/workflow-tool.ts",
+      "target": "file::packages/core/src/workflow/index.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/tools/worktree-tool.ts",
+      "target": "file::packages/core/src/worktree-manager.ts",
+      "type": "imports"
+    },
+    {
+      "source": "func::packages/core/src/tools/bash.ts::formatOutput",
+      "target": "func::packages/core/src/tools/bash.ts::compactOutput",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/tools/bash.ts::formatOutput",
+      "target": "func::packages/core/src/tools/bash.ts::captureNotice",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/tools/bash.ts::execute",
+      "target": "func::packages/core/src/tools/bash.ts::externalCommandDirs",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/tools/bash.ts::execute",
+      "target": "func::packages/core/src/tools/bash.ts::runCommand",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/tools/bash.ts::execute",
+      "target": "func::packages/core/src/tools/bash.ts::formatOutput",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/tools/glob.ts::globRecursive",
+      "target": "func::packages/core/src/tools/glob.ts::matchGlob",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/tools/edit-file.ts::replace",
+      "target": "func::packages/core/src/tools/edit-file.ts::countOccurrences",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/tools/read-file.ts::readTextFile",
+      "target": "func::packages/core/src/tools/read-file.ts::decodeText",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/tools/web-search.ts::ddg",
+      "target": "func::packages/core/src/tools/web-search.ts::tryFetch",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/tools/tool-loader.ts::searchTools",
+      "target": "func::packages/core/src/tools/tool-loader.ts::getToolInfoList",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/tools/tool-loader.ts::getRecommendedTools",
+      "target": "func::packages/core/src/tools/tool-loader.ts::getToolInfoList",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/worktree-manager.ts::createWorktree",
+      "target": "func::packages/core/src/worktree-manager.ts::saveWorktreeInfo",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/worktree-manager.ts::runInWorktree",
+      "target": "func::packages/core/src/worktree-manager.ts::getWorktreeInfo",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/worktree-manager.ts::runInWorktree",
+      "target": "func::packages/core/src/worktree-manager.ts::saveWorktreeInfo",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/worktree-manager.ts::closeoutWorktree",
+      "target": "func::packages/core/src/worktree-manager.ts::getWorktreeInfo",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/worktree-manager.ts::closeoutWorktree",
+      "target": "func::packages/core/src/worktree-manager.ts::loadAllWorktrees",
+      "type": "calls"
+    },
+    {
+      "source": "func::packages/core/src/worktree-manager.ts::closeoutWorktree",
+      "target": "func::packages/core/src/worktree-manager.ts::getRecordsPath",
+      "type": "calls"
+    }
+  ]
+}

@@ -5,7 +5,6 @@ import {
   createMiraMessage,
   updateMiraMessageContent,
   addToolCallToMessage,
-  updateToolCallInMessage,
 } from "../chat/mira-runtime";
 import type { AgentEvent, ToolResult } from "../services/agent.service";
 import type { ModelOption } from "../chat/ModelSelector";
@@ -44,6 +43,246 @@ interface UseMiraChatReturn {
   handleToolResult: (toolName: string, result: ToolResult) => void;
   loadHistory: () => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<MiraMessage[]>>;
+}
+
+interface StreamEventContext {
+  setMessages: React.Dispatch<React.SetStateAction<MiraMessage[]>>;
+  setIsRunning: React.Dispatch<React.SetStateAction<boolean>>;
+  clearCurrentChannel: () => void;
+  setPermissionReq: React.Dispatch<React.SetStateAction<{
+    tool_name: string;
+    args: Record<string, unknown>;
+    reason: string;
+    request_id: string;
+    channel?: string;
+  } | null>>;
+  setQuestionReq: React.Dispatch<React.SetStateAction<{
+    question: string;
+    options: string[];
+    request_id: string;
+  } | null>>;
+  timingRef: React.MutableRefObject<{
+    streamStartTime: number;
+    firstTokenTime?: number;
+    tokenCount: number;
+    chunkCount: number;
+    toolCallCount: number;
+  } | null>;
+}
+
+/** 基于 requestAnimationFrame 的文本缓冲刷新 */
+function createContentBuffer(
+  assistantId: string,
+  ctx: StreamEventContext
+): { append: (text: string) => void; flush: () => void } {
+  let buffer = "";
+  let rafId: number | null = null;
+
+  function flush() {
+    rafId = null;
+    if (!buffer) return;
+    const text = buffer;
+    buffer = "";
+    const { setMessages } = ctx;
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.id === assistantId) {
+        return [
+          ...prev.slice(0, -1),
+          updateMiraMessageContent(last, last.content + text),
+        ];
+      }
+      return [
+        ...prev,
+        createMiraMessage("assistant", text, assistantId),
+      ];
+    });
+  }
+
+  return {
+    append(text: string) {
+      buffer += text;
+      if (!rafId) rafId = requestAnimationFrame(flush);
+    },
+    flush() {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      flush();
+    },
+  };
+}
+
+/** 每个流对应一个 ContentBuffer */
+const contentBuffers = new Map<string, ReturnType<typeof createContentBuffer>>();
+
+function handleStreamEvent(
+  event: AgentEvent,
+  channel: string,
+  assistantId: string,
+  ctx: StreamEventContext
+): void {
+  const { setMessages, setIsRunning, clearCurrentChannel, setPermissionReq, setQuestionReq, timingRef } = ctx;
+
+  if (event.type === "content") {
+    const t = timingRef.current;
+    if (t) {
+      if (!t.firstTokenTime) t.firstTokenTime = Date.now();
+      t.tokenCount += event.text.split(/\s+/).filter(Boolean).length;
+      t.chunkCount++;
+    }
+    let buf = contentBuffers.get(channel);
+    if (!buf) {
+      buf = createContentBuffer(assistantId, ctx);
+      contentBuffers.set(channel, buf);
+    }
+    buf.append(event.text);
+  } else if (event.type === "tool_start") {
+    contentBuffers.get(channel)?.flush();
+    const t = timingRef.current;
+    if (t) t.toolCallCount++;
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.id === assistantId) {
+        const toolCall = {
+          toolCallId: event.id,
+          name: event.name,
+          args: event.args,
+          status: "running" as const,
+        };
+        return [
+          ...prev.slice(0, -1),
+          addToolCallToMessage(last, toolCall),
+        ];
+      }
+      const newMsg = createMiraMessage("assistant", "", assistantId);
+      const toolCall = {
+        toolCallId: event.id,
+        name: event.name,
+        args: event.args,
+        status: "running" as const,
+      };
+      return [...prev, addToolCallToMessage(newMsg, toolCall)];
+    });
+  } else if (event.type === "thinking") {
+    contentBuffers.get(channel)?.flush();
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.id === assistantId) {
+        return [
+          ...prev.slice(0, -1),
+          {
+            ...last,
+            thinking: (last.thinking || "") + event.text,
+          },
+        ];
+      }
+      return prev;
+    });
+  } else if (event.type === "tool_result") {
+    contentBuffers.get(channel)?.flush();
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.id === assistantId) {
+        return [
+          ...prev.slice(0, -1),
+          {
+            ...last,
+            toolCalls: last.toolCalls?.map((tc) =>
+              tc.toolCallId === event.id
+                ? {
+                    ...tc,
+                    status: event.result.success
+                      ? ("done" as const)
+                      : ("error" as const),
+                    result:
+                      event.result.output ||
+                      event.result.error ||
+                      "",
+                  }
+                : tc
+            ),
+          },
+        ];
+      }
+      return prev;
+    });
+  } else if (event.type === "permission_request") {
+    const s = getSettings();
+    if (s.autoAcceptPermissions) {
+      AgentService.replyPermission(channel, event.id, "allow");
+    } else {
+      setPermissionReq({
+        tool_name: event.action,
+        args: event.toolCall?.input || {},
+        reason: `需要权限执行操作: ${event.action}`,
+        request_id: event.id,
+        channel,
+      });
+    }
+  } else if (event.type === "question") {
+    setQuestionReq({
+      question: event.question,
+      options: event.options || [],
+      request_id: event.id,
+    });
+  } else if (event.type === "error") {
+    const raw = event.message || "";
+    const cleanMsg = raw
+      .replace(/\[TOOL_ERROR\]\s*/g, "")
+      .replace(/\s*\{.*\}/s, "")
+      .trim();
+    const lower = raw.toLowerCase();
+    let hint = "";
+    if (lower.includes("401")) hint = "API Key 无效，请在设置中检查";
+    else if (lower.includes("400") && (lower.includes("api key") || lower.includes("apikey") || lower.includes("token"))) hint = "API Key 格式错误，请在设置中重新配置";
+    else if (lower.includes("400") || lower.includes("bad request")) hint = "请求参数错误，检查模型名/Provider 配置是否正确";
+    else if (lower.includes("429")) hint = "请求过于频繁，请稍后重试";
+    else if (lower.includes("500") || lower.includes("502") || lower.includes("503")) hint = "服务端暂时不可用，请稍后重试";
+    setMessages((prev) => [
+      ...prev,
+      createMiraMessage(
+        "assistant",
+        `⚠️ ${cleanMsg || raw}${hint ? `\n\n💡 ${hint}` : ""}`
+      ),
+    ]);
+  } else if (event.type === "finish") {
+    const t = timingRef.current;
+    if (t) {
+      const now = Date.now();
+      const totalTime = now - t.streamStartTime;
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && last.id === assistantId) {
+          return [
+            ...prev.slice(0, -1),
+            {
+              ...last,
+              timing: {
+                streamStartTime: t.streamStartTime,
+                firstTokenTime: t.firstTokenTime,
+                totalStreamTime: totalTime,
+                tokenCount: t.tokenCount,
+                tokensPerSecond: totalTime > 0
+                  ? Math.round((t.tokenCount / totalTime) * 1000 * 10) / 10
+                  : undefined,
+                totalChunks: t.chunkCount,
+                toolCallCount: t.toolCallCount,
+              },
+            },
+          ];
+        }
+        return prev;
+      });
+      timingRef.current = null;
+    }
+    contentBuffers.get(channel)?.flush();
+    contentBuffers.delete(channel);
+    setIsRunning(false);
+    clearCurrentChannel();
+    AgentService.stopStream(channel);
+  }
 }
 
 export function useMiraChat({
@@ -134,7 +373,6 @@ export function useMiraChat({
     async (content: string) => {
       if (!content || isRunning) return;
 
-      // 如果有 goal 条件，注入到消息中
       const effectiveContent = goalCondition
         ? `[Goal: ${goalCondition}]\n\n${content}`
         : content;
@@ -196,176 +434,16 @@ export function useMiraChat({
           const cleanup = AgentService.onEvent(
             channel,
             (event: AgentEvent) => {
-              if (event.type === "content") {
-                const t = timingRef.current;
-                if (t) {
-                  if (!t.firstTokenTime) t.firstTokenTime = Date.now();
-                  t.tokenCount += event.text.split(/\s+/).filter(Boolean).length;
-                  t.chunkCount++;
-                }
-                setMessages((prev) => {
-                  const last = prev[prev.length - 1];
-                  if (last?.role === "assistant" && last.id === assistantId) {
-                    return [
-                      ...prev.slice(0, -1),
-                      updateMiraMessageContent(last, last.content + event.text),
-                    ];
-                  }
-                  return [
-                    ...prev,
-                    createMiraMessage("assistant", event.text, assistantId),
-                  ];
-                });
-              } else if (event.type === "tool_start") {
-                const t = timingRef.current;
-                if (t) t.toolCallCount++;
-                setMessages((prev) => {
-                  const last = prev[prev.length - 1];
-                  if (last?.role === "assistant" && last.id === assistantId) {
-                    const toolCall = {
-                      toolCallId: event.id,
-                      name: event.name,
-                      args: event.args,
-                      status: "running" as const,
-                    };
-                    return [
-                      ...prev.slice(0, -1),
-                      addToolCallToMessage(last, toolCall),
-                    ];
-                  }
-                  const newMsg = createMiraMessage("assistant", "", assistantId);
-                  const toolCall = {
-                    toolCallId: event.id,
-                    name: event.name,
-                    args: event.args,
-                    status: "running" as const,
-                  };
-                  return [...prev, addToolCallToMessage(newMsg, toolCall)];
-                });
-              } else if (event.type === "thinking") {
-                setMessages((prev) => {
-                  const last = prev[prev.length - 1];
-                  if (last?.role === "assistant" && last.id === assistantId) {
-                    return [
-                      ...prev.slice(0, -1),
-                      {
-                        ...last,
-                        thinking: (last.thinking || "") + event.text,
-                      },
-                    ];
-                  }
-                  return prev;
-                });
-              } else if (event.type === "tool_result") {
-                setMessages((prev) => {
-                  const last = prev[prev.length - 1];
-                  if (last?.role === "assistant" && last.id === assistantId) {
-                    const resultContent = event.result.success
-                      ? `✅ **${event.name}** 执行成功\n\n${event.result.output || ""}`
-                      : `❌ **${event.name}** 执行失败\n\n${event.result.error || "未知错误"}`;
-                    return [
-                      ...prev.slice(0, -1),
-                      {
-                        ...last,
-                        content: last.content
-                          ? last.content + "\n\n" + resultContent
-                          : resultContent,
-                        toolCalls: last.toolCalls?.map((tc) =>
-                          tc.toolCallId === event.id
-                            ? {
-                                ...tc,
-                                status: event.result.success
-                                  ? ("done" as const)
-                                  : ("error" as const),
-                                result:
-                                  event.result.output ||
-                                  event.result.error ||
-                                  "",
-                              }
-                            : tc
-                        ),
-                      },
-                    ];
-                  }
-                  return prev;
-                });
-              } else if (event.type === "permission_request") {
-                const s = getSettings();
-                if (s.autoAcceptPermissions) {
-                  AgentService.replyPermission(
-                    channel,
-                    event.id,
-                    "allow"
-                  );
-                } else {
-                  setPermissionReq({
-                    tool_name: event.action,
-                    args: event.toolCall?.input || {},
-                    reason: `需要权限执行操作: ${event.action}`,
-                    request_id: event.id,
-                    channel,
-                  });
-                }
-              } else if (event.type === "question") {
-                setQuestionReq({
-                  question: event.question,
-                  options: event.options || [],
-                  request_id: event.id,
-                });
-              } else if (event.type === "error") {
-                const raw = event.message || "";
-                const cleanMsg = raw
-                  .replace(/\[TOOL_ERROR\]\s*/g, "")
-                  .replace(/\s*\{.*\}/s, "")
-                  .trim();
-                const lower = raw.toLowerCase();
-                let hint = "";
-                if (lower.includes("401")) hint = "API Key 无效，请在设置中检查";
-                else if (lower.includes("400") && (lower.includes("api key") || lower.includes("apikey") || lower.includes("token"))) hint = "API Key 格式错误，请在设置中重新配置";
-                else if (lower.includes("400") || lower.includes("bad request")) hint = "请求参数错误，检查模型名/Provider 配置是否正确";
-                else if (lower.includes("429")) hint = "请求过于频繁，请稍后重试";
-                else if (lower.includes("500") || lower.includes("502") || lower.includes("503")) hint = "服务端暂时不可用，请稍后重试";
-                setMessages((prev) => [
-                  ...prev,
-                  createMiraMessage(
-                    "assistant",
-                    `⚠️ ${cleanMsg || raw}${hint ? `\n\n💡 ${hint}` : ""}`
-                  ),
-                ]);
-              } else if (event.type === "finish") {
-                const t = timingRef.current;
-                if (t) {
-                  const now = Date.now();
-                  const totalTime = now - t.streamStartTime;
-                  setMessages((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last?.role === "assistant" && last.id === assistantId) {
-                      return [
-                        ...prev.slice(0, -1),
-                        {
-                          ...last,
-                          timing: {
-                            streamStartTime: t.streamStartTime,
-                            firstTokenTime: t.firstTokenTime,
-                            totalStreamTime: totalTime,
-                            tokenCount: t.tokenCount,
-                            tokensPerSecond: totalTime > 0
-                              ? Math.round((t.tokenCount / totalTime) * 1000 * 10) / 10
-                              : undefined,
-                            totalChunks: t.chunkCount,
-                            toolCallCount: t.toolCallCount,
-                          },
-                        },
-                      ];
-                    }
-                    return prev;
-                  });
-                  timingRef.current = null;
-                }
-                setIsRunning(false);
+              handleStreamEvent(event, channel, assistantId, {
+                setMessages,
+                setIsRunning,
+                clearCurrentChannel: () => { currentChannelRef.current = null; },
+                setPermissionReq,
+                setQuestionReq,
+                timingRef,
+              });
+              if (event.type === "finish") {
                 cleanup();
-                currentChannelRef.current = null;
-                AgentService.stopStream(channel);
               }
             }
           );
@@ -472,9 +550,19 @@ export function useMiraChat({
     [permissionReq]
   );
 
-  const handleQuestionAnswer = useCallback((_answer: string) => {
+  const handleQuestionAnswer = useCallback(async (answer: string) => {
+    const req = questionReq;
+    if (!req) return;
+    const id = req.request_id;
     setQuestionReq(null);
-  }, []);
+    if (id) {
+      try {
+        await AgentService.answerQuestion(id, answer);
+      } catch (err) {
+        console.error("Failed to answer question:", err);
+      }
+    }
+  }, [questionReq]);
 
   const handleToolResult = useCallback(
     (toolName: string, result: ToolResult) => {

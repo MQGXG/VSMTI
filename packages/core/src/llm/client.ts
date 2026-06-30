@@ -1,20 +1,12 @@
-/**
- * LLM SDK — 向后兼容的 Vercel AI SDK 封装
- * 
- * 底层实现已迁移到 llm/ 包（分层架构: schema → protocols → providers → route）
- * 此文件保持导出一致性，以便 agent.ts 等消费者无需修改
- */
-
 import { z } from "zod"
-import { createProvider } from "./llm/providers"
-import { LLMError } from "./llm/schema/errors"
-import type { LLMMessage as SchemaMessage } from "./llm/schema/messages"
-import type { LLMRequest as SchemaLLMRequest } from "./llm/schema/options"
-import { zodToJsonSchema } from "./zod-converter"
-
-export type LLMMessage = SchemaMessage
+import { createProvider } from "./providers"
+import { LLMError } from "./schema/errors"
+import type { LLMMessage } from "./schema/messages"
+import type { LLMRequest as LLMRequestSchema } from "./schema/options"
+import { zodToJsonSchema } from "../shared/zod-converter"
 
 export type ProviderType = string
+export type { LLMMessage }
 
 export interface SDKConfig {
   provider: string
@@ -33,23 +25,20 @@ export type LLMStreamEvent =
 
 export type LLMToolSet = Record<string, { description: string; inputSchema: z.ZodType; parameters?: z.ZodType }>
 
-/** 向后兼容的旧 LLMRequest（仅 messages + tools） */
-export interface LLMRequest {
+export interface LLMRequest2 {
   messages: LLMMessage[]
   tools?: LLMToolSet
 }
+
+/** @deprecated 使用 LLMRequest2 */
+export type LLMRequest = LLMRequest2
 
 export interface LLMClient {
   stream(request: LLMRequest2): AsyncGenerator<LLMStreamEvent>
   complete(request: LLMRequest2): Promise<{ content: string; toolCalls: Array<{ id: string; type: "function"; function: { name: string; arguments: string } }> }>
 }
 
-interface LLMRequest2 {
-  messages: LLMMessage[]
-  tools?: LLMToolSet
-}
-
-function convertMessages(messages: LLMMessage[]): SchemaMessage[] {
+function convertMessages(messages: LLMMessage[]): LLMMessage[] {
   return messages.map((m) => ({
     role: m.role,
     content: typeof m.content === "string"
@@ -64,7 +53,7 @@ function convertMessages(messages: LLMMessage[]): SchemaMessage[] {
   }))
 }
 
-function convertTools(tools?: LLMToolSet): SchemaLLMRequest["tools"] {
+function convertTools(tools?: LLMToolSet): any {
   if (!tools || Object.keys(tools).length === 0) return undefined
   return Object.entries(tools).map(([name, tool]) => ({
     name,
@@ -73,10 +62,6 @@ function convertTools(tools?: LLMToolSet): SchemaLLMRequest["tools"] {
   }))
 }
 
-/**
- * 指数退避重试包装器 — 仅重试可恢复的网络错误
- * HTTP 4xx（除 429 限流外）立刻失败，不重试
- */
 function isRetryableError(message: string): boolean {
   const code = parseInt(message.match(/HTTP (\d+)/)?.[1] || "0", 10)
   if (code >= 400 && code < 500) return code === 429
@@ -124,7 +109,7 @@ export function createLLMClient(config: SDKConfig): LLMClient {
 
   async function* innerStream(request: LLMRequest2): AsyncGenerator<LLMStreamEvent> {
     try {
-      const llmRequest: SchemaLLMRequest = {
+      const llmRequest: LLMRequestSchema = {
         model: config.model,
         messages: convertMessages(request.messages),
         tools: convertTools(request.tools),

@@ -1,0 +1,921 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 9,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "docs/plans/2026-06-11-agent-loop-core-design.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 39,
+      "nonEmptyLines": 26,
+      "sections": [
+        {
+          "heading": "Agent 循环核心增强设计",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "目标",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "架构变更",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "1. Hook 系统 (`app/core/hooks.py` 新增)",
+          "level": 3,
+          "line": 9
+        },
+        {
+          "heading": "2. 权限系统 (`app/core/permission.py` 新增)",
+          "level": 3,
+          "line": 20
+        },
+        {
+          "heading": "3. TodoWrite (`app/tools/todo_write.py` 新增)",
+          "level": 3,
+          "line": 28
+        },
+        {
+          "heading": "4. Agent 循环增强 (`app/core/agent.py` 修改)",
+          "level": 3,
+          "line": 34
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 7
+      }
+    },
+    {
+      "path": "docs/plans/2026-06-11-agent-loop-core.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 485,
+      "nonEmptyLines": 362,
+      "sections": [
+        {
+          "heading": "Agent Loop Core 实现计划",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Task 1: Hook 系统 (`app/core/hooks.py`)",
+          "level": 3,
+          "line": 13
+        },
+        {
+          "heading": "Task 2: 权限系统 (`app/core/permission.py`)",
+          "level": 3,
+          "line": 60
+        },
+        {
+          "heading": "Task 3: TodoWrite 工具 (`app/tools/todo_write.py`)",
+          "level": 3,
+          "line": 132
+        },
+        {
+          "heading": "Task 4: 注册 TodoWrite 工具 (`app/tools/__init__.py`)",
+          "level": 3,
+          "line": 234
+        },
+        {
+          "heading": "Task 5: 事件系统增强 (`app/core/events.py`)",
+          "level": 3,
+          "line": 255
+        },
+        {
+          "heading": "Task 6: 增强 Agent 循环 (`app/core/agent.py`)",
+          "level": 3,
+          "line": 294
+        },
+        {
+          "heading": "Task 7: 注册默认钩子",
+          "level": 3,
+          "line": 394
+        },
+        {
+          "heading": "Task 8: 系统提示词更新 (`app/prompts/system.py`)",
+          "level": 3,
+          "line": 458
+        },
+        {
+          "heading": "Task 9: 验证集成",
+          "level": 3,
+          "line": 482
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 10
+      }
+    },
+    {
+      "path": "docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 300,
+      "nonEmptyLines": 215,
+      "sections": [
+        {
+          "heading": "OmniAgent 工具系统修复与重构实施计划",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Task 1: 修复 `.env` 加载链",
+          "level": 3,
+          "line": 14
+        },
+        {
+          "heading": "Task 2: 修复消息规范化（工具链断裂）",
+          "level": 3,
+          "line": 34
+        },
+        {
+          "heading": "Task 3: 修复工具模式限制",
+          "level": 3,
+          "line": 51
+        },
+        {
+          "heading": "Task 4: 修复工具执行缺少上下文",
+          "level": 3,
+          "line": 62
+        },
+        {
+          "heading": "Task 5: 修复异步阻塞调用（GrepTool/GlobTool）",
+          "level": 3,
+          "line": 73
+        },
+        {
+          "heading": "Task 6: 修复 WebSearchTool 同步阻塞",
+          "level": 3,
+          "line": 97
+        },
+        {
+          "heading": "Task 7: 添加工具路径安全检查（基类级别）",
+          "level": 3,
+          "line": 125
+        },
+        {
+          "heading": "Task 8: 为工具添加 Schema 验证（执行前）",
+          "level": 3,
+          "line": 154
+        },
+        {
+          "heading": "Task 9: 添加 LLM 流式错误恢复",
+          "level": 3,
+          "line": 192
+        },
+        {
+          "heading": "Task 10: 添加工具执行超时",
+          "level": 3,
+          "line": 224
+        },
+        {
+          "heading": "Task 11: 添加工具输出截断",
+          "level": 3,
+          "line": 249
+        },
+        {
+          "heading": "Task 12: 完善前端错误显示",
+          "level": 3,
+          "line": 269
+        },
+        {
+          "heading": "实施优先级",
+          "level": 2,
+          "line": 282
+        },
+        {
+          "heading": "验证方法",
+          "level": 2,
+          "line": 292
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 15
+      }
+    },
+    {
+      "path": "docs/plans/2026-06-12-ui-ux-redesign-plan.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 120,
+      "nonEmptyLines": 82,
+      "sections": [
+        {
+          "heading": "OmniAgent UI/UX 全面重写实施计划",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Task 1: Tailwind 配置 + 全局 CSS",
+          "level": 3,
+          "line": 13
+        },
+        {
+          "heading": "Task 2: 共享组件体系",
+          "level": 3,
+          "line": 30
+        },
+        {
+          "heading": "Task 3: TitleBar 重写",
+          "level": 3,
+          "line": 45
+        },
+        {
+          "heading": "Task 4: ProjectBar 重写",
+          "level": 3,
+          "line": 56
+        },
+        {
+          "heading": "Task 5: Sidebar 重写",
+          "level": 3,
+          "line": 68
+        },
+        {
+          "heading": "Task 6: ChatWindow 重写",
+          "level": 3,
+          "line": 80
+        },
+        {
+          "heading": "Task 7: 弹窗体系重写",
+          "level": 3,
+          "line": 97
+        },
+        {
+          "heading": "Task 8: 浅色模式适配 + 收尾",
+          "level": 3,
+          "line": 113
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 9
+      }
+    },
+    {
+      "path": "docs/plans/2026-06-12-ui-ux-redesign.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 90,
+      "nonEmptyLines": 72,
+      "sections": [
+        {
+          "heading": "OmniAgent UI/UX 全面重写设计文档",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "概述",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "配色系统",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "深色模式（主）",
+          "level": 3,
+          "line": 9
+        },
+        {
+          "heading": "浅色模式",
+          "level": 3,
+          "line": 28
+        },
+        {
+          "heading": "组件设计",
+          "level": 2,
+          "line": 39
+        },
+        {
+          "heading": "1. TitleBar",
+          "level": 3,
+          "line": 41
+        },
+        {
+          "heading": "2. ProjectBar",
+          "level": 3,
+          "line": 47
+        },
+        {
+          "heading": "3. Sidebar",
+          "level": 3,
+          "line": 53
+        },
+        {
+          "heading": "4. ChatWindow",
+          "level": 3,
+          "line": 59
+        },
+        {
+          "heading": "5. 弹窗体系",
+          "level": 3,
+          "line": 65
+        },
+        {
+          "heading": "6. 共享组件",
+          "level": 3,
+          "line": 71
+        },
+        {
+          "heading": "动画系统",
+          "level": 2,
+          "line": 74
+        },
+        {
+          "heading": "实施顺序",
+          "level": 2,
+          "line": 81
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 14
+      }
+    },
+    {
+      "path": "docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 629,
+      "nonEmptyLines": 478,
+      "sections": [
+        {
+          "heading": "OmniAgent TypeScript Agent Core 后续阶段实施计划",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "已完成的 Phase 1 状态",
+          "level": 2,
+          "line": 13
+        },
+        {
+          "heading": "Phase 2：权限门控（Permission Gate）",
+          "level": 2,
+          "line": 25
+        },
+        {
+          "heading": "目标",
+          "level": 3,
+          "line": 27
+        },
+        {
+          "heading": "Task 2.1：扩展权限事件与 Agent 循环中断",
+          "level": 3,
+          "line": 30
+        },
+        {
+          "heading": "Task 2.2：前端 PermissionDialog 接入 Agent 事件流",
+          "level": 3,
+          "line": 162
+        },
+        {
+          "heading": "Task 2.3：持久化权限规则",
+          "level": 3,
+          "line": 253
+        },
+        {
+          "heading": "Phase 3：Skill 与指令上下文",
+          "level": 2,
+          "line": 295
+        },
+        {
+          "heading": "目标",
+          "level": 3,
+          "line": 297
+        },
+        {
+          "heading": "Task 3.1：自动加载 AGENTS.md",
+          "level": 3,
+          "line": 300
+        },
+        {
+          "heading": "Task 3.2：Skill 目录结构",
+          "level": 3,
+          "line": 351
+        },
+        {
+          "heading": "Task 3.3：前端 slash 命令补全",
+          "level": 3,
+          "line": 397
+        },
+        {
+          "heading": "Phase 4：记忆与持久化",
+          "level": 2,
+          "line": 411
+        },
+        {
+          "heading": "目标",
+          "level": 3,
+          "line": 413
+        },
+        {
+          "heading": "Task 4.1：Memory Provider 架构",
+          "level": 3,
+          "line": 416
+        },
+        {
+          "heading": "Task 4.2：会话持久化",
+          "level": 3,
+          "line": 486
+        },
+        {
+          "heading": "Task 4.3：把 Memory 接入 Agent 循环",
+          "level": 3,
+          "line": 502
+        },
+        {
+          "heading": "Phase 5：质量与可观测性",
+          "level": 2,
+          "line": 513
+        },
+        {
+          "heading": "Task 5.1：Provider 降级链",
+          "level": 3,
+          "line": 515
+        },
+        {
+          "heading": "Task 5.2：日志与审计",
+          "level": 3,
+          "line": 530
+        },
+        {
+          "heading": "Task 5.3：性能基准",
+          "level": 3,
+          "line": 545
+        },
+        {
+          "heading": "还有哪些值得做的扩展项",
+          "level": 2,
+          "line": 558
+        },
+        {
+          "heading": "Phase 6：Subagent / 多智能体协作",
+          "level": 3,
+          "line": 562
+        },
+        {
+          "heading": "Phase 7：Background Tasks / Cron",
+          "level": 3,
+          "line": 568
+        },
+        {
+          "heading": "Phase 8：上下文摘要压缩（Context Compaction）",
+          "level": 3,
+          "line": 574
+        },
+        {
+          "heading": "Phase 9：MCP 集成",
+          "level": 3,
+          "line": 580
+        },
+        {
+          "heading": "Phase 10：自动标题生成与会话管理",
+          "level": 3,
+          "line": 586
+        },
+        {
+          "heading": "Phase 11：Worktree / Git 隔离",
+          "level": 3,
+          "line": 592
+        },
+        {
+          "heading": "Phase 12：LSP / IDE 集成",
+          "level": 3,
+          "line": 598
+        },
+        {
+          "heading": "推荐执行顺序",
+          "level": 2,
+          "line": 605
+        },
+        {
+          "heading": "验收标准（Phases 2-5）",
+          "level": 2,
+          "line": 619
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 31
+      }
+    },
+    {
+      "path": "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 1030,
+      "nonEmptyLines": 833,
+      "sections": [
+        {
+          "heading": "TypeScript Agent Core ReAct 升级实施计划",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "背景：三个参考项目的核心优势映射",
+          "level": 2,
+          "line": 13
+        },
+        {
+          "heading": "总体路线图",
+          "level": 2,
+          "line": 25
+        },
+        {
+          "heading": "Phase 1：核心循环硬化（立即执行）",
+          "level": 2,
+          "line": 35
+        },
+        {
+          "heading": "Task 1：引入 Vitest 测试框架",
+          "level": 3,
+          "line": 37
+        },
+        {
+          "heading": "Task 2：抽象多 Provider LLM 客户端",
+          "level": 3,
+          "line": 98
+        },
+        {
+          "heading": "Task 3：重构 Agent 循环为流式事件驱动",
+          "level": 3,
+          "line": 416
+        },
+        {
+          "heading": "Task 4：消息序列修复与上下文截断",
+          "level": 3,
+          "line": 623
+        },
+        {
+          "heading": "Task 5：工具错误清洗与参数强制转换",
+          "level": 3,
+          "line": 731
+        },
+        {
+          "heading": "Task 6：前端 ChatWindow 接入流式 TS Core",
+          "level": 3,
+          "line": 839
+        },
+        {
+          "heading": "Task 7：端到端类型检查与全量测试",
+          "level": 3,
+          "line": 918
+        },
+        {
+          "heading": "Phase 2：权限门控（下一迭代）",
+          "level": 2,
+          "line": 943
+        },
+        {
+          "heading": "Epic 2.1：Agent 循环支持 `ask` 中断",
+          "level": 3,
+          "line": 945
+        },
+        {
+          "heading": "Epic 2.2：前端 PermissionDialog 接入",
+          "level": 3,
+          "line": 951
+        },
+        {
+          "heading": "Epic 2.3：保存规则",
+          "level": 3,
+          "line": 957
+        },
+        {
+          "heading": "Phase 3：Skill 与指令上下文",
+          "level": 2,
+          "line": 964
+        },
+        {
+          "heading": "Epic 3.1：自动加载 AGENTS.md",
+          "level": 3,
+          "line": 966
+        },
+        {
+          "heading": "Epic 3.2：Skill 目录与 slash 命令",
+          "level": 3,
+          "line": 972
+        },
+        {
+          "heading": "Phase 4：记忆与持久化",
+          "level": 2,
+          "line": 980
+        },
+        {
+          "heading": "Epic 4.1：Memory Provider 架构",
+          "level": 3,
+          "line": 982
+        },
+        {
+          "heading": "Epic 4.2：会话持久化",
+          "level": 3,
+          "line": 988
+        },
+        {
+          "heading": "Phase 5：质量与可观测性",
+          "level": 2,
+          "line": 995
+        },
+        {
+          "heading": "Epic 5.1：Provider 降级链",
+          "level": 3,
+          "line": 997
+        },
+        {
+          "heading": "Epic 5.2：日志与审计",
+          "level": 3,
+          "line": 1002
+        },
+        {
+          "heading": "Epic 5.3：性能基准",
+          "level": 3,
+          "line": 1007
+        },
+        {
+          "heading": "风险与注意事项",
+          "level": 2,
+          "line": 1013
+        },
+        {
+          "heading": "验收标准",
+          "level": 2,
+          "line": 1023
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 27
+      }
+    },
+    {
+      "path": "docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 672,
+      "nonEmptyLines": 493,
+      "sections": [
+        {
+          "heading": "Mira Agent Core 优化实施计划",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "P0 — 安全性与正确性（立即修复）",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "Task 1: Bash 工具误报修复",
+          "level": 3,
+          "line": 23
+        },
+        {
+          "heading": "Task 2: 子代理权限门控",
+          "level": 3,
+          "line": 53
+        },
+        {
+          "heading": "Task 3: SQL 注入修复",
+          "level": 3,
+          "line": 116
+        },
+        {
+          "heading": "Task 4: ApprovalStore 持久化集成",
+          "level": 3,
+          "line": 152
+        },
+        {
+          "heading": "P1 — 稳定性与体验",
+          "level": 2,
+          "line": 222
+        },
+        {
+          "heading": "Task 5: LLM 流式调用增加重试机制",
+          "level": 3,
+          "line": 224
+        },
+        {
+          "heading": "Task 6: MemoryManager 错误日志",
+          "level": 3,
+          "line": 288
+        },
+        {
+          "heading": "Task 7: 冗余 IPC Handler 清理",
+          "level": 3,
+          "line": 323
+        },
+        {
+          "heading": "P2 — 安全增强",
+          "level": 2,
+          "line": 356
+        },
+        {
+          "heading": "Task 8: 代码执行沙箱",
+          "level": 3,
+          "line": 358
+        },
+        {
+          "heading": "Task 9: 工具元数据补全",
+          "level": 3,
+          "line": 397
+        },
+        {
+          "heading": "P2 — 遗留代码与技术债务",
+          "level": 2,
+          "line": 441
+        },
+        {
+          "heading": "Task 10: console.log 统一迁移",
+          "level": 3,
+          "line": 443
+        },
+        {
+          "heading": "Task 11: 消息截断保护",
+          "level": 3,
+          "line": 482
+        },
+        {
+          "heading": "Task 12: 模式权限规则去重",
+          "level": 3,
+          "line": 539
+        },
+        {
+          "heading": "P3 — 新功能",
+          "level": 2,
+          "line": 570
+        },
+        {
+          "heading": "Task 13: Git 基础工具",
+          "level": 3,
+          "line": 572
+        },
+        {
+          "heading": "Task 14: 前端引用统一",
+          "level": 3,
+          "line": 627
+        },
+        {
+          "heading": "执行路线图",
+          "level": 2,
+          "line": 652
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 21
+      }
+    },
+    {
+      "path": "docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 753,
+      "nonEmptyLines": 607,
+      "sections": [
+        {
+          "heading": "Mira 双模平台（桌面 + 终端编码代理）实施计划",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "总体路线图",
+          "level": 2,
+          "line": 18
+        },
+        {
+          "heading": "Phase 0：优化修复（Week 1）",
+          "level": 2,
+          "line": 29
+        },
+        {
+          "heading": "Phase 1：Monorepo + Core 提取（Week 2）",
+          "level": 2,
+          "line": 43
+        },
+        {
+          "heading": "Task 1：搭建 Monorepo 骨架",
+          "level": 3,
+          "line": 45
+        },
+        {
+          "heading": "Task 2：提取 packages/core（关键任务）",
+          "level": 3,
+          "line": 115
+        },
+        {
+          "heading": "Task 3：改造 packages/desktop 依赖 core",
+          "level": 3,
+          "line": 282
+        },
+        {
+          "heading": "Task 4：Agent IPC 从 core 分离（留在 desktop）",
+          "level": 3,
+          "line": 362
+        },
+        {
+          "heading": "Task 5：core 包端到端验证",
+          "level": 3,
+          "line": 386
+        },
+        {
+          "heading": "Phase 2：CLI/TUI 终端编码代理（Week 3）",
+          "level": 2,
+          "line": 432
+        },
+        {
+          "heading": "Task 6：CLI 入口",
+          "level": 3,
+          "line": 434
+        },
+        {
+          "heading": "Task 7：Ink TUI（终端 UI）",
+          "level": 3,
+          "line": 602
+        },
+        {
+          "heading": "Task 8：CLI 全局安装支持",
+          "level": 3,
+          "line": 645
+        },
+        {
+          "heading": "Phase 3：差异化竞争策略（长期）",
+          "level": 2,
+          "line": 675
+        },
+        {
+          "heading": "Strategy 1：GUI + CLI 双模（已完成）",
+          "level": 3,
+          "line": 677
+        },
+        {
+          "heading": "Strategy 2：Python 后端生态（中期）",
+          "level": 3,
+          "line": 686
+        },
+        {
+          "heading": "Strategy 3：LSP 深度集成（已有雏形）",
+          "level": 3,
+          "line": 702
+        },
+        {
+          "heading": "Strategy 4：多模态（桌面端独占）",
+          "level": 3,
+          "line": 709
+        },
+        {
+          "heading": "Strategy 5：IDE 插件（远期）",
+          "level": 3,
+          "line": 716
+        },
+        {
+          "heading": "执行时间线总览",
+          "level": 2,
+          "line": 725
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 20
+      }
+    }
+  ]
+}

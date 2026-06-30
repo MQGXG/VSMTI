@@ -2,7 +2,7 @@ import { MemoryProvider } from "./types"
 import type { BuiltinMemoryProvider } from "./builtin-provider"
 import type { FileMemoryProvider } from "./file-memory-provider"
 import type { FTSMemoryProvider } from "./fts-memory-provider"
-import { logError } from "../logger"
+import { logError } from "../system/logger"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
   checkpoint: 0,
@@ -163,9 +163,9 @@ export class MemoryManager {
       await this.flushWriter(sessionID)
     }
 
-    // 索引到 FTS 供跨会话搜索
+    // 索引到 FTS 供跨会话搜索（仅用户内容有实质信息时索引，避免噪音）
     const fts = this.getFTSProvider()
-    if (fts && user.trim()) {
+    if (fts && user.trim().length > 20) {
       const preview = `[${sessionID.slice(0, 12)}] 用户: ${user.slice(0, 200)}\n回复: ${assistant.slice(0, 300)}`
       fts.indexCheckpoint(preview, sessionID)
     }
@@ -175,18 +175,18 @@ export class MemoryManager {
   async flushWriter(sessionID: string): Promise<void> {
     if (this.notesBuffer.length === 0) return
 
-    const merged = this.notesBuffer
-      .map((n, i) => `## Turn ${i + 1}\nUser: ${n.user}\nAssistant: ${n.assistant}`)
-      .join("\n\n")
+    const batch = [...this.notesBuffer]
     this.notesBuffer = []
 
-    await Promise.all(
-      this.providers.map(async (p) => {
-        try { await p.syncTurn(merged, "", sessionID) } catch (e) {
-          logError(`[MemoryManager] Provider "${p.name}" flushWriter 失败`, e)
-        }
-      }),
-    )
+    for (const entry of batch) {
+      await Promise.all(
+        this.providers.map(async (p) => {
+          try { await p.syncTurn(entry.user, entry.assistant, sessionID) } catch (e) {
+            logError(`[MemoryManager] Provider "${p.name}" flushWriter 失败`, e)
+          }
+        }),
+      )
+    }
   }
 
   shouldAutoDream(): boolean {

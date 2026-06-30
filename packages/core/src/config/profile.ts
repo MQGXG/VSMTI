@@ -1,8 +1,8 @@
 import { readFileSync, existsSync, readdirSync } from "fs"
 import { join, resolve } from "path"
 import { homedir } from "os"
-import type { PermissionRule } from "./permission"
-import { PermissionSet } from "./permission"
+import type { PermissionRule } from "../system/permission"
+import { PermissionSet } from "../system/permission"
 
 /**
  * Agent 配置 — 可序列化为 JSON 文件

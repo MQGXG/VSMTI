@@ -1,0 +1,528 @@
+{
+  "nodes": [
+    {
+      "id": "file::packages/core/src/__tests__/benchmark.test.ts",
+      "type": "file",
+      "name": "benchmark.test.ts",
+      "filePath": "packages/core/src/__tests__/benchmark.test.ts",
+      "summary": "Agent Core 基准测试文件，验证 ToolRegistry 在大规模工具注册（100个）和 materialize 操作性能（<5ms）下的表现，同时验证 instruction-context 模块在测试环境下的基本可用性。",
+      "tags": ["测试", "基准测试", "性能测试", "ToolRegistry", "vitest"],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/__tests__/setup.ts",
+      "type": "file",
+      "name": "setup.ts",
+      "filePath": "packages/core/src/__tests__/setup.ts",
+      "summary": "测试环境初始化配置文件，设置跨平台路径指向测试数据目录（避免依赖 Electron 的 app.getPath），并在所有测试前初始化内存数据库。",
+      "tags": ["测试", "配置", "环境初始化"],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/database.ts",
+      "type": "file",
+      "name": "database.ts",
+      "filePath": "packages/core/src/database.ts",
+      "summary": "SQLite 数据库管理模块，基于 sql.js WASM 实现。定义了 projects、sessions、messages、permissions、goals 五张表的 Schema，提供数据库初始化、异步访问、防抖持久化（500ms）、跨进程重载（reloadDatabase）和写入操作。是整个应用的数据持久化基础。",
+      "tags": ["数据库", "SQLite", "sql.js", "WASM", "持久化", "防抖写入", "Schema"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/goal-manager.ts",
+      "type": "file",
+      "name": "goal-manager.ts",
+      "filePath": "packages/core/src/goal-manager.ts",
+      "summary": "Goal 管理器的早期实现（已被 GoalJudge 替代并标记为 deprecated）。提供 GoalCondition 的 CRUD 操作，通过独立 LLM 裁判模型评估任务完成度，支持评估历史记录和系统提示生成。包含 JSON 解析和关键词降级检测两种评估结果解析策略。",
+      "tags": ["Goal管理", "已弃用", "LLM评估", "任务完成度", "GoalJudge替代"],
+      "complexity": "high"
+    },
+    {
+      "id": "file::packages/core/src/instruction-context.ts",
+      "type": "file",
+      "name": "instruction-context.ts",
+      "filePath": "packages/core/src/instruction-context.ts",
+      "summary": "指令上下文加载模块，负责自动发现和加载全局级（~/.config/mira/AGENTS.md）和项目级 AGENTS.md 指令文件。通过向上遍历目录查找 .git 标志确定项目根目录，从根目录到 workspace 收集所有指令文件并组合为 system prompt 片段。",
+      "tags": ["指令加载", "AGENTS.md", "系统提示", "项目根目录", "上下文构建"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/layers.ts",
+      "type": "file",
+      "name": "layers.ts",
+      "filePath": "packages/core/src/layers.ts",
+      "summary": "基于 Effect 的服务层定义模块，使用 Context.GenericTag 创建三个服务标识：ToolRegistry、LLM、Database，通过 Layer 组合模式实现依赖注入，最终合并为统一的 AppLayer。",
+      "tags": ["Effect", "服务层", "依赖注入", "Layer", "ToolRegistry", "LLM", "Database"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/logger.ts",
+      "type": "file",
+      "name": "logger.ts",
+      "filePath": "packages/core/src/logger.ts",
+      "summary": "简单日志系统，提供工具调用审计日志（logToolCall）和通用错误日志（logError）。日志以日期为文件名写入 logs 目录，内存中保留最近 1000 条工具调用记录，支持按日期读取日志内容和清空操作。",
+      "tags": ["日志", "审计", "工具调用日志", "错误日志", "文件日志"],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/memory/builtin-provider.ts",
+      "type": "file",
+      "name": "builtin-provider.ts",
+      "filePath": "packages/core/src/memory/builtin-provider.ts",
+      "summary": "内置 Memory Provider，实现 MemoryProvider 接口。使用 JSON 文件存储会话级别的关键上下文信息（最近 50 条交互记录），每回合后从用户/助手消息中提取关键事实（文件操作、用户问题、偏好、决策），支持高频事实统计用于提升到项目级记忆。",
+      "tags": ["记忆", "MemoryProvider", "会话级记忆", "事实提取", "JSON存储"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/memory/checkpoint-provider.ts",
+      "type": "file",
+      "name": "checkpoint-provider.ts",
+      "filePath": "packages/core/src/memory/checkpoint-provider.ts",
+      "summary": "Checkpoint Memory Provider，写作子 Agent 驱动的异步记忆系统。主 Agent 的 syncTurn 只做缓冲，后台 writer 异步生成结构化 checkpoint 摘要（包含决策、关键文件、发现、错误修复、设计决策等），支持 Markdown 格式的序列化/反序列化和 FTS 索引联动。是四层记忆系统中的顶层结构化记忆。",
+      "tags": ["记忆", "MemoryProvider", "Checkpoint", "异步Writer", "结构化摘要", "Markdown解析"],
+      "complexity": "high"
+    },
+    {
+      "id": "file::packages/core/src/memory/file-memory-provider.ts",
+      "type": "file",
+      "name": "file-memory-provider.ts",
+      "filePath": "packages/core/src/memory/file-memory-provider.ts",
+      "summary": "文件级 Memory Provider，在项目的 .memory/MEMORY.md 文件中管理持久化记忆索引。从对话中提取决策、文件路径、配置更改等事实，支持来自 session 级记忆的提升（promoteMemories），内置敏感信息过滤（API Key、密码等）防止记忆泄露。",
+      "tags": ["记忆", "MemoryProvider", "项目级记忆", "MEMORY.md", "敏感信息过滤", "事实提升"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/memory/fts-memory-provider.ts",
+      "type": "file",
+      "name": "fts-memory-provider.ts",
+      "filePath": "packages/core/src/memory/fts-memory-provider.ts",
+      "summary": "FTS5 全文搜索 Memory Provider，使用 SQLite FTS5 虚拟表 + BM25 排序实现高性能全文搜索。支持文件内容索引（自动扫描工作区文件）和会话记忆索引，提供 FTS5 MATCH 查询和 LIKE 降级搜索双模式。定期 reconcile 扫描文件变更，是四层记忆系统的搜索核心。",
+      "tags": ["记忆", "MemoryProvider", "FTS5", "BM25", "全文搜索", "索引", "LIKE降级"],
+      "complexity": "high"
+    },
+    {
+      "id": "file::packages/core/src/memory/manager.ts",
+      "type": "file",
+      "name": "manager.ts",
+      "filePath": "packages/core/src/memory/manager.ts",
+      "summary": "记忆管理器（MemoryManager），协调四层记忆 Provider（checkpoint/builtin/fts-memory/file_memory/vector）的统一接口。提供按优先级排序的 prefetch 预算注入、session 级去重（LRU 语义）、批量 writer 缓冲刷新、记忆提升（session到项目级）和自动 Dream 触发等功能。",
+      "tags": ["记忆", "MemoryManager", "记忆协调", "预算注入", "去重", "记忆提升"],
+      "complexity": "high"
+    },
+    {
+      "id": "file::packages/core/src/memory/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "packages/core/src/memory/types.ts",
+      "summary": "Memory Provider 接口定义文件，定义了所有记忆 Provider 必须实现的统一接口（MemoryProvider），包含 name、initialize、buildSystemPrompt、prefetch、syncTurn、shutdown 五个核心方法。",
+      "tags": ["类型定义", "MemoryProvider接口", "记忆系统"],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/memory/vector-provider.ts",
+      "type": "file",
+      "name": "vector-provider.ts",
+      "filePath": "packages/core/src/memory/vector-provider.ts",
+      "summary": "向量记忆 Provider，使用 Transformers.js 本地 ONNX 推理（all-MiniLM-L6-v2 模型）实现零外部依赖的语义记忆。通过 cosine similarity 进行语义检索，支持文本分块和 MD5 去重，模型懒加载避免阻塞初始化。",
+      "tags": ["记忆", "MemoryProvider", "向量记忆", "Transformers.js", "ONNX", "语义搜索", "cosine similarity"],
+      "complexity": "high"
+    },
+    {
+      "id": "file::packages/core/src/platform-paths.ts",
+      "type": "file",
+      "name": "platform-paths.ts",
+      "filePath": "packages/core/src/platform-paths.ts",
+      "summary": "跨平台路径管理模块，提供 userData（用户数据目录）和 home（用户主目录）的初始化和获取。默认值为 process.cwd() 和 HOME/USERPROFILE 环境变量，通过 initPlatformPaths 在应用启动时注入 Electron 的 app.getPath 路径。",
+      "tags": ["路径", "跨平台", "配置", "userData", "home"],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/server/api.ts",
+      "type": "file",
+      "name": "api.ts",
+      "filePath": "packages/core/src/server/api.ts",
+      "summary": "Sidecar API 路由层，将 Agent 核心操作暴露为 HTTP API。管理 Agent 会话生命周期（创建/中止/权限回复），提供工具列表、Agent 列表、单工具/批量执行、记忆搜索/状态等端点。集成 Skill 命令处理、指令上下文加载、权限构建和任务追踪等核心功能。",
+      "tags": ["API", "Sidecar", "HTTP路由", "Agent会话", "流式执行", "权限管理"],
+      "complexity": "high"
+    },
+    {
+      "id": "file::packages/core/src/server/cli.ts",
+      "type": "file",
+      "name": "cli.ts",
+      "filePath": "packages/core/src/server/cli.ts",
+      "summary": "Sidecar CLI 入口文件，作为独立进程启动 @mira/core HTTP 服务器。支持 --port、--token、--userData 命令行参数，初始化跨平台路径后启动服务器，并输出 JSON 格式的 ready 事件供父进程读取。",
+      "tags": ["CLI", "Sidecar", "进程启动", "命令行参数"],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/server/server.ts",
+      "type": "file",
+      "name": "server.ts",
+      "filePath": "packages/core/src/server/server.ts",
+      "summary": "Sidecar HTTP 服务器实现，使用 Node.js 内置 http 模块。提供 REST API（health/tools/agents/execute/memory）和 SSE 流式端点（agent/stream），支持 CORS、Bearer Token 认证、JSON body 解析。是 Electron 主进程与 @mira/core 之间的通信桥梁。",
+      "tags": ["HTTP服务器", "SSE", "REST API", "CORS", "认证", "Sidecar"],
+      "complexity": "high"
+    },
+    {
+      "id": "file::packages/core/src/session-manager.ts",
+      "type": "file",
+      "name": "session-manager.ts",
+      "filePath": "packages/core/src/session-manager.ts",
+      "summary": "项目和会话管理模块，提供项目 CRUD 和会话 CRUD 操作。支持消息搜索（searchMessages）、会话消息加载，删除会话时自动清理关联的记忆文件（BuiltinMemory/VectorMemory/Checkpoint/FTS索引）。",
+      "tags": ["会话管理", "项目管理", "CRUD", "消息搜索", "级联清理"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/session-store.ts",
+      "type": "file",
+      "name": "session-store.ts",
+      "filePath": "packages/core/src/session-store.ts",
+      "summary": "会话持久化模块，基于 SQLite 数据库的底层会话存储操作。提供消息追加（appendMessage，含首条消息自动命名）、会话加载/创建/保存、会话列表、会话删除和消息计数等基础 CRUD 操作。",
+      "tags": ["会话存储", "SQLite", "消息持久化", "CRUD", "底层存储"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/skill/skill-commands.ts",
+      "type": "file",
+      "name": "skill-commands.ts",
+      "filePath": "packages/core/src/skill/skill-commands.ts",
+      "summary": "Skill slash 命令处理模块，解析用户输入中的 /skill-name 命令格式。扫描所有已安装 skill 生成 /command 到 meta 映射，支持按命令长度降序匹配（优先匹配长命令），并构建 skill invocation 消息注入到用户对话中。",
+      "tags": ["Skill", "Slash命令", "命令解析", "消息注入"],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/skill/skill-loader.ts",
+      "type": "file",
+      "name": "skill-loader.ts",
+      "filePath": "packages/core/src/skill/skill-loader.ts",
+      "summary": "Skill 加载器，扫描 ~/.config/mira/skills/<category>/<skill>/SKILL.md 目录结构。支持 YAML frontmatter 解析（name/description/tags），提供 skill 元数据扫描（scanSkills）、完整内容加载（loadSkill，含关联文件发现）和关联文件查看（loadSkillFile）。",
+      "tags": ["Skill", "加载器", "目录扫描", "YAML frontmatter", "SKILL.md"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/skill/skill-tools.ts",
+      "type": "file",
+      "name": "skill-tools.ts",
+      "filePath": "packages/core/src/skill/skill-tools.ts",
+      "summary": "Skill 工具定义文件，注册 skills_list（列出所有可用 Skill）和 skill_view（查看指定 Skill 完整内容和关联文件）两个工具到默认工具注册表，让 Agent 可以在对话中主动调用。",
+      "tags": ["Skill", "工具定义", "skills_list", "skill_view"],
+      "complexity": "low"
+    },
+    {
+      "id": "file::packages/core/src/task-tracker.ts",
+      "type": "file",
+      "name": "task-tracker.ts",
+      "filePath": "packages/core/src/task-tracker.ts",
+      "summary": "树形任务管理系统（TaskTracker），参考 T1/T1.1/T1.2 任务树模式。支持任务创建（含父子关系）、状态更新（open/in_progress/blocked/done/abandoned）、摘要更新、笔记添加，提供树形文本表示和系统提示生成，通过 JSON 文件持久化。",
+      "tags": ["任务追踪", "TaskTracker", "任务树", "状态管理", "JSON持久化"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/team-bus.ts",
+      "type": "file",
+      "name": "team-bus.ts",
+      "filePath": "packages/core/src/team-bus.ts",
+      "summary": "多 Agent 消息总线，基于文件收件箱的异步通信机制。每个 Agent 拥有独立的 mailbox 目录，通过 JSON 文件传递消息（task/result/question/answer/notification 五种类型），支持协议状态管理（active/shutdown/plan_approval）和计划审批请求。",
+      "tags": ["消息总线", "多Agent", "文件通信", "收件箱", "异步消息"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/memory.ts",
+      "type": "file",
+      "name": "memory.ts",
+      "filePath": "packages/core/src/tools/memory.ts",
+      "summary": "Agent 记忆工具定义文件，注册 memory_search（全文搜索项目文件和会话记忆）和 memory_recall（按主题召回历史信息）两个工具。底层使用 FTSMemoryProvider 的 FTS5 + BM25 全文搜索，支持 files/memory/all 三种搜索范围。",
+      "tags": ["工具定义", "记忆搜索", "memory_search", "memory_recall", "FTS5"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/search-history.ts",
+      "type": "file",
+      "name": "search-history.ts",
+      "filePath": "packages/core/src/tools/search-history.ts",
+      "summary": "历史记录搜索工具定义，提供跨会话的对话历史全文搜索功能。使用 SQLite LIKE 查询匹配消息内容，支持按会话 ID 限定范围，结果按会话分组展示，包含上下文片段。",
+      "tags": ["工具定义", "历史搜索", "search_history", "跨会话搜索", "SQL LIKE"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file::packages/core/src/tools/team-tool.ts",
+      "type": "file",
+      "name": "team-tool.ts",
+      "filePath": "packages/core/src/tools/team-tool.ts",
+      "summary": "团队通信工具定义，封装 team-bus 消息总线为 Agent 可调用的工具。支持 send（发送消息）、read（读取收件箱）、clear（清空收件箱）、status（查看协议状态）、set_protocol（切换协议状态）五种操作。",
+      "tags": ["工具定义", "团队通信", "team_tool", "多Agent协作"],
+      "complexity": "low"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file::packages/core/src/__tests__/setup.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 initPlatformPaths 设置测试路径"
+    },
+    {
+      "source": "file::packages/core/src/__tests__/setup.ts",
+      "target": "file::packages/core/src/database.ts",
+      "type": "imports",
+      "label": "导入 initDatabase 初始化测试数据库"
+    },
+    {
+      "source": "file::packages/core/src/__tests__/benchmark.test.ts",
+      "target": "file::packages/core/src/instruction-context.ts",
+      "type": "imports",
+      "label": "导入 buildInstructionSystemPrompt 用于基准测试"
+    },
+    {
+      "source": "file::packages/core/src/database.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取数据库文件路径"
+    },
+    {
+      "source": "file::packages/core/src/goal-manager.ts",
+      "target": "file::packages/core/src/logger.ts",
+      "type": "imports",
+      "label": "导入 logError 用于评估失败日志"
+    },
+    {
+      "source": "file::packages/core/src/instruction-context.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取全局配置目录"
+    },
+    {
+      "source": "file::packages/core/src/layers.ts",
+      "target": "file::packages/core/src/database.ts",
+      "type": "imports",
+      "label": "导入 initDatabase 用于 DatabaseLayer"
+    },
+    {
+      "source": "file::packages/core/src/logger.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取日志目录"
+    },
+    {
+      "source": "file::packages/core/src/memory/builtin-provider.ts",
+      "target": "file::packages/core/src/memory/types.ts",
+      "type": "imports",
+      "label": "导入 MemoryProvider 接口"
+    },
+    {
+      "source": "file::packages/core/src/memory/builtin-provider.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取 memory 目录"
+    },
+    {
+      "source": "file::packages/core/src/memory/checkpoint-provider.ts",
+      "target": "file::packages/core/src/memory/types.ts",
+      "type": "imports",
+      "label": "导入 MemoryProvider 接口"
+    },
+    {
+      "source": "file::packages/core/src/memory/checkpoint-provider.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取 checkpoints 目录"
+    },
+    {
+      "source": "file::packages/core/src/memory/checkpoint-provider.ts",
+      "target": "file::packages/core/src/logger.ts",
+      "type": "imports",
+      "label": "导入 logError 用于 writer 失败日志"
+    },
+    {
+      "source": "file::packages/core/src/memory/checkpoint-provider.ts",
+      "target": "file::packages/core/src/memory/fts-memory-provider.ts",
+      "type": "calls",
+      "label": "调用 FTSMemoryProvider.indexCheckpoint() 索引 checkpoint 摘要"
+    },
+    {
+      "source": "file::packages/core/src/memory/file-memory-provider.ts",
+      "target": "file::packages/core/src/memory/types.ts",
+      "type": "imports",
+      "label": "导入 MemoryProvider 接口"
+    },
+    {
+      "source": "file::packages/core/src/memory/fts-memory-provider.ts",
+      "target": "file::packages/core/src/memory/types.ts",
+      "type": "imports",
+      "label": "导入 MemoryProvider 接口"
+    },
+    {
+      "source": "file::packages/core/src/memory/fts-memory-provider.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取 fts-memory.db 路径"
+    },
+    {
+      "source": "file::packages/core/src/memory/manager.ts",
+      "target": "file::packages/core/src/memory/types.ts",
+      "type": "imports",
+      "label": "导入 MemoryProvider 接口"
+    },
+    {
+      "source": "file::packages/core/src/memory/manager.ts",
+      "target": "file::packages/core/src/logger.ts",
+      "type": "imports",
+      "label": "导入 logError 用于 Provider 失败日志"
+    },
+    {
+      "source": "file::packages/core/src/memory/manager.ts",
+      "target": "file::packages/core/src/memory/builtin-provider.ts",
+      "type": "calls",
+      "label": "调用 BuiltinMemoryProvider.getFrequentFacts() 进行记忆提升"
+    },
+    {
+      "source": "file::packages/core/src/memory/manager.ts",
+      "target": "file::packages/core/src/memory/file-memory-provider.ts",
+      "type": "calls",
+      "label": "调用 FileMemoryProvider.acceptPromotedFacts() 接收提升的事实"
+    },
+    {
+      "source": "file::packages/core/src/memory/manager.ts",
+      "target": "file::packages/core/src/memory/fts-memory-provider.ts",
+      "type": "calls",
+      "label": "调用 FTSMemoryProvider.indexCheckpoint() 和 prefetchMemory() 进行跨会话搜索"
+    },
+    {
+      "source": "file::packages/core/src/memory/vector-provider.ts",
+      "target": "file::packages/core/src/memory/types.ts",
+      "type": "imports",
+      "label": "导入 MemoryProvider 接口"
+    },
+    {
+      "source": "file::packages/core/src/memory/vector-provider.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取 vector-memory 目录"
+    },
+    {
+      "source": "file::packages/core/src/server/api.ts",
+      "target": "file::packages/core/src/database.ts",
+      "type": "imports",
+      "label": "导入 initDatabase 初始化数据库"
+    },
+    {
+      "source": "file::packages/core/src/server/api.ts",
+      "target": "file::packages/core/src/instruction-context.ts",
+      "type": "imports",
+      "label": "导入 buildInstructionSystemPrompt 构建系统提示"
+    },
+    {
+      "source": "file::packages/core/src/server/api.ts",
+      "target": "file::packages/core/src/logger.ts",
+      "type": "imports",
+      "label": "导入 logError 记录 API 错误"
+    },
+    {
+      "source": "file::packages/core/src/server/api.ts",
+      "target": "file::packages/core/src/task-tracker.ts",
+      "type": "imports",
+      "label": "导入 taskTracker 初始化任务追踪"
+    },
+    {
+      "source": "file::packages/core/src/server/api.ts",
+      "target": "file::packages/core/src/skill/skill-commands.ts",
+      "type": "imports",
+      "label": "导入 matchSkillCommand, buildSkillInvocationMessage 处理 Skill 命令"
+    },
+    {
+      "source": "file::packages/core/src/server/api.ts",
+      "target": "file::packages/core/src/skill/skill-loader.ts",
+      "type": "imports",
+      "label": "导入 loadSkill 加载 Skill 内容"
+    },
+    {
+      "source": "file::packages/core/src/server/api.ts",
+      "target": "file::packages/core/src/tools/memory.ts",
+      "type": "imports",
+      "label": "导入 setFTSProvider 注册 FTS Provider 到模块单例"
+    },
+    {
+      "source": "file::packages/core/src/server/cli.ts",
+      "target": "file::packages/core/src/server/server.ts",
+      "type": "imports",
+      "label": "导入 startServer 启动 HTTP 服务器"
+    },
+    {
+      "source": "file::packages/core/src/server/cli.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 initPlatformPaths 设置路径"
+    },
+    {
+      "source": "file::packages/core/src/server/server.ts",
+      "target": "file::packages/core/src/server/api.ts",
+      "type": "imports",
+      "label": "导入所有 API 处理函数（handleStartStream, handleListTools 等）"
+    },
+    {
+      "source": "file::packages/core/src/session-manager.ts",
+      "target": "file::packages/core/src/database.ts",
+      "type": "imports",
+      "label": "导入 getDbAsync, runWrite, reloadDatabase 进行数据库操作"
+    },
+    {
+      "source": "file::packages/core/src/session-manager.ts",
+      "target": "file::packages/core/src/session-store.ts",
+      "type": "imports",
+      "label": "导入 loadSession, listSessions 读取会话数据"
+    },
+    {
+      "source": "file::packages/core/src/session-manager.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取记忆文件路径进行清理"
+    },
+    {
+      "source": "file::packages/core/src/session-store.ts",
+      "target": "file::packages/core/src/database.ts",
+      "type": "imports",
+      "label": "导入 getDbAsync, runWrite 进行 SQLite 操作"
+    },
+    {
+      "source": "file::packages/core/src/skill/skill-commands.ts",
+      "target": "file::packages/core/src/skill/skill-loader.ts",
+      "type": "imports",
+      "label": "导入 scanSkills 扫描已安装的 Skill"
+    },
+    {
+      "source": "file::packages/core/src/skill/skill-loader.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取 skills 目录"
+    },
+    {
+      "source": "file::packages/core/src/skill/skill-tools.ts",
+      "target": "file::packages/core/src/skill/skill-loader.ts",
+      "type": "imports",
+      "label": "导入 scanSkills, loadSkill, loadSkillFile 实现工具功能"
+    },
+    {
+      "source": "file::packages/core/src/task-tracker.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取 tasks 目录"
+    },
+    {
+      "source": "file::packages/core/src/team-bus.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "imports",
+      "label": "导入 getPlatformPaths 获取 mailboxes 目录"
+    },
+    {
+      "source": "file::packages/core/src/tools/search-history.ts",
+      "target": "file::packages/core/src/database.ts",
+      "type": "imports",
+      "label": "导入 getDbAsync 执行 SQL 查询搜索历史消息"
+    },
+    {
+      "source": "file::packages/core/src/tools/team-tool.ts",
+      "target": "file::packages/core/src/team-bus.ts",
+      "type": "imports",
+      "label": "导入 sendMessage, readInbox, clearInbox, getProtocolState, setProtocolState 实现团队通信"
+    }
+  ]
+}

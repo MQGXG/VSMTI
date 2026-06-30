@@ -1,6 +1,6 @@
-import { PermissionSet, type PermissionRule } from "./permission"
-import type { AgentProfile } from "./agent-profile"
-import { createDefaultRegistry, getGlobalAgentDir, getProjectAgentDir } from "./agent-profile"
+import { PermissionSet, type PermissionRule } from "../system/permission"
+import type { AgentProfile } from "./profile"
+import { createDefaultRegistry, getGlobalAgentDir, getProjectAgentDir } from "./profile"
 
 export type AgentMode = string
 
@@ -60,3 +60,4 @@ export function getModeSystemPromptSuffix(mode: string): string {
   const config = _registry.get(mode)
   return config?.systemPromptSuffix ?? ""
 }
+

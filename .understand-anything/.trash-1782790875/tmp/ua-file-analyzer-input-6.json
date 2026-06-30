@@ -1,0 +1,169 @@
+{
+  "batchImportData": {
+    "packages/core/src/index.ts": [],
+    "packages/electron/src/ipc/compose-ipc.ts": [],
+    "packages/electron/src/ipc/config-ipc.ts": [],
+    "packages/electron/src/ipc/dream-ipc.ts": [],
+    "packages/electron/src/ipc/goal-ipc.ts": [],
+    "packages/electron/src/ipc/handlers.ts": [
+      "packages/electron/src/ipc/index.ts",
+      "packages/electron/src/managers/window-manager.ts"
+    ],
+    "packages/electron/src/ipc/index.ts": [
+      "packages/electron/src/ipc/compose-ipc.ts",
+      "packages/electron/src/ipc/config-ipc.ts",
+      "packages/electron/src/ipc/dream-ipc.ts",
+      "packages/electron/src/ipc/goal-ipc.ts",
+      "packages/electron/src/ipc/memory-ipc.ts",
+      "packages/electron/src/ipc/question-ipc.ts",
+      "packages/electron/src/ipc/session-ipc.ts",
+      "packages/electron/src/ipc/sidecar-bridge.ts",
+      "packages/electron/src/ipc/skill-ipc.ts",
+      "packages/electron/src/ipc/subagent-ipc.ts",
+      "packages/electron/src/ipc/task-ipc.ts"
+    ],
+    "packages/electron/src/ipc/memory-ipc.ts": [
+      "packages/electron/src/ipc/sidecar-bridge.ts"
+    ],
+    "packages/electron/src/ipc/question-ipc.ts": [],
+    "packages/electron/src/ipc/session-ipc.ts": [],
+    "packages/electron/src/ipc/sidecar-bridge.ts": [
+      "packages/core/src/index.ts"
+    ],
+    "packages/electron/src/ipc/skill-ipc.ts": [],
+    "packages/electron/src/ipc/subagent-ipc.ts": [],
+    "packages/electron/src/ipc/task-ipc.ts": [],
+    "packages/electron/src/main/index.ts": [
+      "packages/core/src/index.ts",
+      "packages/electron/src/ipc/handlers.ts",
+      "packages/electron/src/ipc/sidecar-bridge.ts",
+      "packages/electron/src/managers/tray-manager.ts",
+      "packages/electron/src/managers/window-manager.ts",
+      "packages/electron/src/utils/logger.ts",
+      "packages/electron/src/utils/shell-env.ts"
+    ],
+    "packages/electron/src/managers/tray-manager.ts": [
+      "packages/electron/src/managers/window-manager.ts"
+    ],
+    "packages/electron/src/managers/window-manager.ts": [],
+    "packages/electron/src/utils/logger.ts": [],
+    "packages/electron/src/utils/shell-env.ts": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "packages/core/src/index.ts",
+      "language": "typescript",
+      "sizeLines": 98,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/compose-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 64,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/config-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/dream-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/goal-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 34,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/handlers.ts",
+      "language": "typescript",
+      "sizeLines": 65,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/index.ts",
+      "language": "typescript",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/memory-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/question-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/session-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "language": "typescript",
+      "sizeLines": 264,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/skill-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/subagent-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/task-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/main/index.ts",
+      "language": "typescript",
+      "sizeLines": 47,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/managers/tray-manager.ts",
+      "language": "typescript",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/managers/window-manager.ts",
+      "language": "typescript",
+      "sizeLines": 110,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/utils/logger.ts",
+      "language": "typescript",
+      "sizeLines": 71,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/utils/shell-env.ts",
+      "language": "typescript",
+      "sizeLines": 44,
+      "fileCategory": "code"
+    }
+  ]
+}

@@ -7,7 +7,7 @@
  */
 
 import { z } from "zod"
-import { make, RecoverableError } from "../tool"
+import { make, RecoverableError } from "../../shared/tool"
 
 /** 存储待回答的问题 */
 const pendingQuestions = new Map<string, {
@@ -88,3 +88,4 @@ export const questionTool = make({
     }
   },
 })
+

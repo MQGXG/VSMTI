@@ -1,5 +1,5 @@
 import initSqlJs, { type Database as SqliteDb } from "sql.js"
-import { getPlatformPaths } from "./platform-paths"
+import { getPlatformPaths } from "../config/paths"
 import { join } from "path"
 import fs from "fs"
 
@@ -56,7 +56,7 @@ async function createDb(): Promise<SqliteDb> {
       const dir = getPlatformPaths().userData
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
       if (fs.existsSync(dbPath)) buffer = fs.readFileSync(dbPath)
-    } catch {}
+    } catch { /* 首次启动无已有 db 文件 */ }
   }
   const newDb = new _SQL.Database(buffer)
   newDb.run("PRAGMA journal_mode=WAL")
@@ -83,9 +83,20 @@ export function reloadDatabase(): void {
   const dbPath = getDbPath()
   if (!dbPath) return
   try {
-    const buffer = fs.readFileSync(dbPath)
+    // 先强制持久化内存中未写入磁盘的变更，防止后续读取旧数据覆盖内存状态
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    if (db) {
+      const data = db.export()
+      const buffer = Buffer.from(data)
+      fs.writeFileSync(dbPath, buffer)
+    }
+    // 从磁盘重新加载
+    const fresh = fs.readFileSync(dbPath)
     if (db) db.close()
-    db = new _SQL.Database(buffer)
+    db = new _SQL.Database(fresh)
     db.run("PRAGMA journal_mode=WAL")
   } catch { /* 文件不存在或读取失败时保留当前内存数据库 */ }
 }
@@ -139,3 +150,4 @@ async function persist(): Promise<void> {
     persisting = false
   }
 }
+

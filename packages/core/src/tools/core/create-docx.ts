@@ -1,7 +1,7 @@
 import * as fs from "fs/promises"
 import * as path from "path"
 import { z } from "zod"
-import { make, type Content } from "../tool"
+import { make, type Content } from "../../shared/tool"
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, TableRow, TableCell, Table, WidthType, TableOfContents } from "docx"
 
 async function realPath(p: string): Promise<string> {
@@ -254,3 +254,4 @@ export const createDocxTool = make({
     }
   },
 })
+

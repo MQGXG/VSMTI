@@ -1,0 +1,585 @@
+{
+  "nodes": [
+    {
+      "id": "file:.eslintignore",
+      "type": "file",
+      "name": ".eslintignore",
+      "filePath": ".eslintignore",
+      "summary": "ESLint 忽略配置文件，定义了代码检查工具应跳过的目录和文件模式，包括构建产物、编译输出和非模块化 JS 文件。",
+      "tags": ["eslint", "配置", "代码质量", "构建产物"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:.understand-anything/.understandignore",
+      "type": "file",
+      "name": ".understandignore",
+      "filePath": ".understand-anything/.understandignore",
+      "summary": "understand-anything 分析工具的忽略文件配置，使用类似 .gitignore 的语法定义分析排除模式，包括构建目录、测试文件、锁文件等。所有规则当前均为注释状态。",
+      "tags": ["配置", "代码分析", "ignore规则"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:apps/desktop/electron.vite.config.ts",
+      "type": "file",
+      "name": "electron.vite.config.ts",
+      "filePath": "apps/desktop/electron.vite.config.ts",
+      "summary": "Desktop 应用的 electron-vite 构建配置，定义了 main 进程、preload 脚本和 renderer 三个构建目标。main 和 preload 使用 externalizeDepsPlugin，renderer 使用 React 插件，并配置了 @mira/core、@mira/ui、@mira/electron 的路径别名。",
+      "tags": ["electron-vite", "构建配置", "Vite", "路径别名", "渲染进程", "主进程"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:apps/desktop/src/App.tsx",
+      "type": "file",
+      "name": "App.tsx",
+      "filePath": "apps/desktop/src/App.tsx",
+      "summary": "桌面应用的根 React 组件，管理项目列表、活跃项目、活跃会话等全局状态。通过 electronAPI 与 Electron 主进程通信实现项目和会话的 CRUD 操作，支持侧边栏开关、设置面板、新建/编辑/删除项目对话框，以及窗口控制按钮。使用 localStorage 持久化项目颜色和隐藏项目配置。",
+      "tags": ["React", "Electron", "根组件", "状态管理", "IPC通信", "项目管理"],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:App",
+      "type": "function",
+      "name": "App",
+      "filePath": "apps/desktop/src/App.tsx",
+      "summary": "应用根组件，使用 7 个 useState 管理全局 UI 状态（侧边栏、项目列表、活跃项目、活跃会话、新建项目弹窗、编辑项目弹窗、设置弹窗）。通过 useEffect 加载项目列表并定期轮询（15秒间隔），提供 handleProjectChange、handleNewSession、handleOpenProject、handleEditProject、handleDeleteProject 等事件处理函数。渲染侧边栏、顶栏、ChatWindow 以及各种对话框。",
+      "tags": ["React组件", "状态管理", "项目管理", "会话管理", "IPC调用"],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:handleNewSession",
+      "type": "function",
+      "name": "handleNewSession",
+      "filePath": "apps/desktop/src/App.tsx",
+      "summary": "创建新会话的异步处理函数，调用 electronAPI.ts.createSession 创建会话，成功后设置活跃会话 ID。",
+      "tags": ["会话管理", "异步操作", "IPC调用"],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:handleOpenProject",
+      "type": "function",
+      "name": "handleOpenProject",
+      "filePath": "apps/desktop/src/App.tsx",
+      "summary": "打开/创建项目的异步处理函数，调用 electronAPI.ts.createProject，然后刷新项目列表并关闭新建项目弹窗。",
+      "tags": ["项目管理", "异步操作", "IPC调用"],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:handleEditProject",
+      "type": "function",
+      "name": "handleEditProject",
+      "filePath": "apps/desktop/src/App.tsx",
+      "summary": "编辑项目的异步处理函数，调用 electronAPI.ts.updateProject 更新项目名称，并将颜色信息保存到 localStorage 的 project_colors 映射中。",
+      "tags": ["项目管理", "异步操作", "localStorage"],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:handleDeleteProject",
+      "type": "function",
+      "name": "handleDeleteProject",
+      "filePath": "apps/desktop/src/App.tsx",
+      "summary": "删除项目的异步处理函数，调用 electronAPI.ts.deleteProject，刷新列表后如果删除的是当前活跃项目则重置状态。",
+      "tags": ["项目管理", "异步操作", "IPC调用"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:apps/desktop/src/lib",
+      "type": "file",
+      "name": "lib",
+      "filePath": "apps/desktop/src/lib",
+      "summary": "工具函数目录，包含 cn() 辅助函数，使用 clsx 和 tailwind-merge 实现条件类名合并，用于 Tailwind CSS 类名的动态拼接。",
+      "tags": ["工具函数", "Tailwind CSS", "类名合并"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:apps/desktop/src/main.ts",
+      "type": "file",
+      "name": "main.ts",
+      "filePath": "apps/desktop/src/main.ts",
+      "summary": "Electron 桌面应用的主进程入口文件。监听 app.whenReady 事件创建窗口，处理 macOS activate 事件重新创建窗口，以及 window-all-closed 事件退出应用（非 macOS 平台）。调用 @mira/electron 的 createWindow 函数。",
+      "tags": ["Electron", "主进程", "应用入口", "窗口管理"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:apps/desktop/src/main.tsx",
+      "type": "file",
+      "name": "main.tsx",
+      "filePath": "apps/desktop/src/main.tsx",
+      "summary": "React 渲染器入口文件，使用 ReactDOM.createRoot 将 App 组件挂载到 DOM，包裹在 React.StrictMode 和 ThemeProvider 中，导入全局样式。",
+      "tags": ["React", "渲染入口", "ThemeProvider", "入口文件"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:apps/desktop/src/styles/globals.css",
+      "type": "file",
+      "name": "globals.css",
+      "filePath": "apps/desktop/src/styles/globals.css",
+      "summary": "全局 CSS 样式文件，基于 Tailwind CSS 构建。定义了完整的亮色/暗色主题 CSS 变量系统（背景、前景、强调色、边框、阴影、圆角等），以及可复用的组件样式（top-bar、btn-ghost、btn-accent、panel、bubble-user/assistant、sidebar-item、overlay、drawer、chip 等），包含淡入、滑入、消息出现等动画效果，并覆盖了 assistant-ui 的默认样式。",
+      "tags": ["CSS", "Tailwind", "主题系统", "亮色暗色模式", "组件样式", "动画"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file:checkpoints/offline-8e14d950-a741-494d-9ed3-353a7a26efbf/checkpoint.md",
+      "type": "file",
+      "name": "checkpoint.md",
+      "filePath": "checkpoints/offline-8e14d950-a741-494d-9ed3-353a7a26efbf/checkpoint.md",
+      "summary": "离线会话检查点文件（offline-8e14d950），包含会话摘要、意图、当前工作、任务树、最近决策、关键文件、发现、错误修复、设计决策、用户偏好和元数据等 13 个章节。",
+      "tags": ["检查点", "会话状态", "离线会话"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:checkpoints/ses_mqylxdoz_0a181aef/checkpoint.md",
+      "type": "file",
+      "name": "checkpoint.md",
+      "filePath": "checkpoints/ses_mqylxdoz_0a181aef/checkpoint.md",
+      "summary": "会话检查点文件（ses_mqylxdoz_0a181aef），包含会话摘要、意图、当前工作、任务树、最近决策、关键文件、发现、错误修复、设计决策、用户偏好和元数据等 13 个章节，41 行。",
+      "tags": ["检查点", "会话状态"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:checkpoints/ses_mqym26mg_b34e4a3b/checkpoint.md",
+      "type": "file",
+      "name": "checkpoint.md",
+      "filePath": "checkpoints/ses_mqym26mg_b34e4a3b/checkpoint.md",
+      "summary": "会话检查点文件（ses_mqym26mg_b34e4a3b），包含会话摘要、意图、当前工作、任务树、最近决策、关键文件、发现、错误修复、设计决策、用户偏好和元数据等 13 个章节。",
+      "tags": ["检查点", "会话状态"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:checkpoints/ses_mqym31fq_c18a23a5/checkpoint.md",
+      "type": "file",
+      "name": "checkpoint.md",
+      "filePath": "checkpoints/ses_mqym31fq_c18a23a5/checkpoint.md",
+      "summary": "会话检查点文件（ses_mqym31fq_c18a23a5），包含会话摘要、意图、当前工作、任务树、最近决策、关键文件、发现、错误修复、设计决策、用户偏好和元数据等 13 个章节。",
+      "tags": ["检查点", "会话状态"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:checkpoints/test-session/checkpoint.md",
+      "type": "file",
+      "name": "checkpoint.md",
+      "filePath": "checkpoints/test-session/checkpoint.md",
+      "summary": "测试会话的检查点文件，包含标准的 13 个章节结构（摘要、意图、当前工作、任务树、最近决策、关键文件、发现、错误修复、设计决策、用户偏好、元数据）。",
+      "tags": ["检查点", "测试会话", "会话状态"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:electron.vite.config.ts",
+      "type": "file",
+      "name": "electron.vite.config.ts",
+      "filePath": "electron.vite.config.ts",
+      "summary": "项目根目录的 electron-vite 构建配置，定义了 main、preload、renderer 三个构建目标。main 进程配置了 externalizeDepsPlugin（排除 @mira/core 等内置依赖），preload 使用默认外部化，renderer 使用 React 插件并配置了三个包的路径别名。与 apps/desktop 下的配置相比，此配置适用于独立构建模式。",
+      "tags": ["electron-vite", "构建配置", "Vite", "路径别名", "根配置"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:fts-memory.db",
+      "type": "file",
+      "name": "fts-memory.db",
+      "filePath": "fts-memory.db",
+      "summary": "SQLite 数据库文件，用于全文搜索（FTS）记忆系统的持久化存储。支持对记忆内容进行高效的文本检索。",
+      "tags": ["SQLite", "数据库", "全文搜索", "记忆系统"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:mira.db",
+      "type": "file",
+      "name": "mira.db",
+      "filePath": "mira.db",
+      "summary": "Mira 主 SQLite 数据库文件（349行），存储项目（projects）、会话（sessions）、消息（messages）、权限（permissions）和目标（goals）等核心数据，使用 sql.js WASM 实现。",
+      "tags": ["SQLite", "数据库", "核心数据", "sql.js"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "packages/core/package.json",
+      "summary": "@mira/core 包的配置文件，定义了包名为 @mira/core，版本 1.0.0。依赖包括 @huggingface/transformers（向量记忆）、@modelcontextprotocol/sdk（MCP 协议）、docx（文档生成）、effect（函数式编程）、sql.js（SQLite WASM）和 zod（schema 验证）。开发依赖为 TypeScript 和 vitest。",
+      "tags": ["package.json", "npm配置", "依赖管理", "@mira/core"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/__tests__/smoke.test.ts",
+      "type": "file",
+      "name": "smoke.test.ts",
+      "filePath": "packages/core/src/__tests__/smoke.test.ts",
+      "summary": "冒烟测试文件，使用 vitest 框架验证测试环境是否正常工作，仅包含一个简单的 1+1=2 断言。",
+      "tags": ["测试", "vitest", "冒烟测试"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/agent/fork-cache.ts",
+      "type": "file",
+      "name": "fork-cache.ts",
+      "filePath": "packages/core/src/agent/fork-cache.ts",
+      "summary": "Fork Agent 前缀缓存管理器，参考 MiMo-Code 的 fork prefix cache 设计。Checkpoint writer 可以共享父 Agent 的系统提示缓存以降低 token 成本。实现包括带 TTL 过期的 LRU 缓存、缓存 key 生成（基于系统提示和工具列表的哈希）、缓存复用、容量淘汰和统计功能。",
+      "tags": ["缓存", "Fork Agent", "系统提示", "成本优化", "LRU"],
+      "complexity": "medium"
+    },
+    {
+      "id": "class:ForkCacheManager",
+      "type": "class",
+      "name": "ForkCacheManager",
+      "filePath": "packages/core/src/agent/fork-cache.ts",
+      "summary": "Fork Agent 前缀缓存管理器类，使用 Map 存储缓存条目，支持最多 100 条缓存，TTL 为 1 小时。提供 set/get/reuseParentCache/purge/clear 等公共方法，以及 generateKey/evictOldest/simpleHash 私有方法。缓存 key 由系统提示和工具列表的哈希值组合生成。",
+      "tags": ["类", "缓存管理", "LRU", "哈希", "TTL"],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:getForkCacheManager",
+      "type": "function",
+      "name": "getForkCacheManager",
+      "filePath": "packages/core/src/agent/fork-cache.ts",
+      "summary": "获取全局 ForkCacheManager 单例的工厂函数，使用懒初始化模式创建唯一实例。",
+      "tags": ["工厂函数", "单例模式", "全局实例"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/agent/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/core/src/agent/index.ts",
+      "summary": "Agent 子模块的桶导出文件，集中导出 Agent 核心模块的公共 API：状态机（AgentStateMachine）、上下文构建（buildToolContext/buildSystemMessage）、LLM 回合（runLLMTurn）、Max Mode（runMaxMode）、工具管道（runToolPipeline）和 Doom Loop 检测（detectDoomLoop/checkOverflow/detectTextNgramRepeat）。",
+      "tags": ["桶导出", "Agent模块", "公共API"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/agent/system-context.ts",
+      "type": "file",
+      "name": "system-context.ts",
+      "filePath": "packages/core/src/agent/system-context.ts",
+      "summary": "增量 System Context 管理器，参考 OpenCode 的 SystemContext 设计。只更新变化的 context 部分以减少重建开销。支持注册/更新/移除 context 源、增量变更检测（基于哈希比较）、调和（reconcile）差异、快照/恢复、baseline 构建等功能。使用全局单例模式。",
+      "tags": ["增量更新", "System Context", "哈希比较", "快照", "调和"],
+      "complexity": "medium"
+    },
+    {
+      "id": "class:SystemContextManager",
+      "type": "class",
+      "name": "SystemContextManager",
+      "filePath": "packages/core/src/agent/system-context.ts",
+      "summary": "增量系统上下文管理器类，维护 sources Map、baseline 字符串和 lastReconciled 时间戳。提供 updateSource（增量更新检测）、removeSource、getAllContent（合并所有源）、getChangedSources（获取变更源）、reconcile（与快照比较差异）、buildBaseline（构建环境基准）、getSnapshot/restoreFromSnapshot（快照持久化）和 getStats 等方法。",
+      "tags": ["类", "上下文管理", "增量更新", "差异检测", "快照"],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:simpleHash_systemContext",
+      "type": "function",
+      "name": "simpleHash",
+      "filePath": "packages/core/src/agent/system-context.ts",
+      "summary": "简单哈希函数，使用 DJB2 变体算法将字符串转换为 36 进制的哈希值，用于上下文内容的变更检测。",
+      "tags": ["哈希函数", "变更检测"],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:getSystemContextManager",
+      "type": "function",
+      "name": "getSystemContextManager",
+      "filePath": "packages/core/src/agent/system-context.ts",
+      "summary": "获取全局 SystemContextManager 单例的工厂函数，使用懒初始化模式。",
+      "tags": ["工厂函数", "单例模式", "全局实例"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/background.ts",
+      "type": "file",
+      "name": "background.ts",
+      "filePath": "packages/core/src/background.ts",
+      "summary": "后台任务系统，用于异步执行长时间运行的操作（替代 Python background.py）。提供任务注册、状态查询、异步执行、超时等待和过期清理功能。包含慢操作检测（如 npm install、docker build 等），支持 queued/running/done/failed 状态流转。",
+      "tags": ["后台任务", "异步执行", "任务管理", "Python替代"],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:isSlowOperation",
+      "type": "function",
+      "name": "isSlowOperation",
+      "filePath": "packages/core/src/background.ts",
+      "summary": "判断命令是否为慢操作的函数，通过匹配预定义的慢操作模式（install、build、compile、test、deploy、npm install、pip install、git clone、docker build/pull、npx create、yarn install）来识别需要后台执行的命令。",
+      "tags": ["慢操作检测", "命令分析"],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:startBackground",
+      "type": "function",
+      "name": "startBackground",
+      "filePath": "packages/core/src/background.ts",
+      "summary": "注册并启动后台任务的函数，生成唯一 ID（基于时间戳和 UUID），创建任务对象并异步执行 handler。任务状态从 queued 流转到 running，完成后变为 done 或 failed。",
+      "tags": ["后台任务", "异步执行", "任务创建"],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:getTaskStatus",
+      "type": "function",
+      "name": "getTaskStatus",
+      "filePath": "packages/core/src/background.ts",
+      "summary": "获取指定后台任务状态的函数，通过任务 ID 从 Map 中查找并返回任务对象。",
+      "tags": ["状态查询", "后台任务"],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:listBackgroundTasks",
+      "type": "function",
+      "name": "listBackgroundTasks",
+      "filePath": "packages/core/src/background.ts",
+      "summary": "列出所有后台任务的函数，将 tasks Map 的值转换为数组返回。",
+      "tags": ["任务列表", "后台任务"],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:cleanupBackgroundTasks",
+      "type": "function",
+      "name": "cleanupBackgroundTasks",
+      "filePath": "packages/core/src/background.ts",
+      "summary": "清理已完成的后台任务的函数，默认清理 5 分钟（300000ms）前完成的任务。遍历 tasks Map，删除完成时间早于截止时间的条目。",
+      "tags": ["任务清理", "内存管理"],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:waitForTask",
+      "type": "function",
+      "name": "waitForTask",
+      "filePath": "packages/core/src/background.ts",
+      "summary": "等待后台任务完成的异步函数，默认超时 120 秒。使用轮询方式（500ms 间隔）检查任务状态，超时或任务消失时抛出错误。",
+      "tags": ["异步等待", "轮询", "超时控制"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file:packages/core/src/llm/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/core/src/llm/index.ts",
+      "summary": "LLM 模块的桶导出文件，集中导出 schema（消息/事件/错误类型）、protocols（协议适配器）、providers（Provider 实现）、route（路由客户端）、cache-policy（缓存策略）和 tool-runtime（工具运行时）等子模块。",
+      "tags": ["桶导出", "LLM模块", "公共API"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/llm/protocols/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/core/src/llm/protocols/index.ts",
+      "summary": "LLM 协议适配器的桶导出文件，导出五种协议实现：OpenAI Chat Completions（serializeMessages/deserializeChunk/getFinishReason）、Anthropic Messages（serializeMessages/serializeSystem/deserializeStreamEvent）、OpenAI 兼容协议（createCompatibleBody）、Gemini 协议和 OpenAI Responses API。",
+      "tags": ["桶导出", "LLM协议", "多Provider适配"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/llm/route/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/core/src/llm/route/index.ts",
+      "summary": "LLM 路由客户端的桶导出文件，导出路由客户端（client）、类型定义（types）和核心路由函数（makeRoute/executeRoute/RouteInstance）。",
+      "tags": ["桶导出", "LLM路由", "请求路由"],
+      "complexity": "low"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:apps/desktop/src/App.tsx",
+      "target": "fn:App",
+      "type": "defines",
+      "label": "定义 App 组件"
+    },
+    {
+      "source": "file:apps/desktop/src/App.tsx",
+      "target": "fn:handleNewSession",
+      "type": "defines",
+      "label": "定义 handleNewSession"
+    },
+    {
+      "source": "file:apps/desktop/src/App.tsx",
+      "target": "fn:handleOpenProject",
+      "type": "defines",
+      "label": "定义 handleOpenProject"
+    },
+    {
+      "source": "file:apps/desktop/src/App.tsx",
+      "target": "fn:handleEditProject",
+      "type": "defines",
+      "label": "定义 handleEditProject"
+    },
+    {
+      "source": "file:apps/desktop/src/App.tsx",
+      "target": "fn:handleDeleteProject",
+      "type": "defines",
+      "label": "定义 handleDeleteProject"
+    },
+    {
+      "source": "fn:App",
+      "target": "fn:handleNewSession",
+      "type": "calls",
+      "label": "调用 handleNewSession"
+    },
+    {
+      "source": "fn:App",
+      "target": "fn:handleOpenProject",
+      "type": "calls",
+      "label": "调用 handleOpenProject"
+    },
+    {
+      "source": "fn:App",
+      "target": "fn:handleEditProject",
+      "type": "calls",
+      "label": "调用 handleEditProject"
+    },
+    {
+      "source": "fn:App",
+      "target": "fn:handleDeleteProject",
+      "type": "calls",
+      "label": "调用 handleDeleteProject"
+    },
+    {
+      "source": "file:packages/core/src/agent/fork-cache.ts",
+      "target": "class:ForkCacheManager",
+      "type": "defines",
+      "label": "定义 ForkCacheManager 类"
+    },
+    {
+      "source": "file:packages/core/src/agent/fork-cache.ts",
+      "target": "fn:getForkCacheManager",
+      "type": "defines",
+      "label": "定义 getForkCacheManager 函数"
+    },
+    {
+      "source": "class:ForkCacheManager",
+      "target": "fn:getForkCacheManager",
+      "type": "creates",
+      "label": "被工厂函数实例化"
+    },
+    {
+      "source": "file:packages/core/src/agent/system-context.ts",
+      "target": "class:SystemContextManager",
+      "type": "defines",
+      "label": "定义 SystemContextManager 类"
+    },
+    {
+      "source": "file:packages/core/src/agent/system-context.ts",
+      "target": "fn:simpleHash_systemContext",
+      "type": "defines",
+      "label": "定义 simpleHash 辅助函数"
+    },
+    {
+      "source": "file:packages/core/src/agent/system-context.ts",
+      "target": "fn:getSystemContextManager",
+      "type": "defines",
+      "label": "定义 getSystemContextManager 函数"
+    },
+    {
+      "source": "class:SystemContextManager",
+      "target": "fn:simpleHash_systemContext",
+      "type": "calls",
+      "label": "调用 simpleHash 进行哈希计算"
+    },
+    {
+      "source": "class:SystemContextManager",
+      "target": "fn:getSystemContextManager",
+      "type": "creates",
+      "label": "被工厂函数实例化"
+    },
+    {
+      "source": "file:packages/core/src/background.ts",
+      "target": "fn:isSlowOperation",
+      "type": "defines",
+      "label": "定义 isSlowOperation"
+    },
+    {
+      "source": "file:packages/core/src/background.ts",
+      "target": "fn:startBackground",
+      "type": "defines",
+      "label": "定义 startBackground"
+    },
+    {
+      "source": "file:packages/core/src/background.ts",
+      "target": "fn:getTaskStatus",
+      "type": "defines",
+      "label": "定义 getTaskStatus"
+    },
+    {
+      "source": "file:packages/core/src/background.ts",
+      "target": "fn:listBackgroundTasks",
+      "type": "defines",
+      "label": "定义 listBackgroundTasks"
+    },
+    {
+      "source": "file:packages/core/src/background.ts",
+      "target": "fn:cleanupBackgroundTasks",
+      "type": "defines",
+      "label": "定义 cleanupBackgroundTasks"
+    },
+    {
+      "source": "file:packages/core/src/background.ts",
+      "target": "fn:waitForTask",
+      "type": "defines",
+      "label": "定义 waitForTask"
+    },
+    {
+      "source": "file:apps/desktop/src/main.tsx",
+      "target": "file:apps/desktop/src/App.tsx",
+      "type": "imports",
+      "label": "导入 App 组件"
+    },
+    {
+      "source": "file:apps/desktop/src/main.tsx",
+      "target": "file:apps/desktop/src/styles/globals.css",
+      "type": "imports",
+      "label": "导入全局样式"
+    },
+    {
+      "source": "file:packages/core/src/llm/protocols/index.ts",
+      "target": "file:packages/core/src/llm/index.ts",
+      "type": "re-exports",
+      "label": "被 LLM 桶导出文件 re-export"
+    },
+    {
+      "source": "file:packages/core/src/llm/route/index.ts",
+      "target": "file:packages/core/src/llm/index.ts",
+      "type": "re-exports",
+      "label": "被 LLM 桶导出文件 re-export"
+    },
+    {
+      "source": "file:packages/core/src/agent/index.ts",
+      "target": "file:packages/core/src/agent/system-context.ts",
+      "type": "related-to",
+      "label": "同属 agent 子模块但未直接导出"
+    },
+    {
+      "source": "file:apps/desktop/electron.vite.config.ts",
+      "target": "file:apps/desktop/src/App.tsx",
+      "type": "builds",
+      "label": "构建配置包含 App 入口"
+    },
+    {
+      "source": "file:electron.vite.config.ts",
+      "target": "file:packages/core/package.json",
+      "type": "builds",
+      "label": "构建配置引用 @mira/core"
+    },
+    {
+      "source": "file:packages/core/package.json",
+      "target": "file:packages/core/src/agent/index.ts",
+      "type": "contains",
+      "label": "package.json 所属包包含 agent 模块"
+    },
+    {
+      "source": "file:packages/core/package.json",
+      "target": "file:packages/core/src/llm/index.ts",
+      "type": "contains",
+      "label": "package.json 所属包包含 llm 模块"
+    },
+    {
+      "source": "file:packages/core/package.json",
+      "target": "file:packages/core/src/background.ts",
+      "type": "contains",
+      "label": "package.json 所属包包含 background 模块"
+    },
+    {
+      "source": "file:packages/core/package.json",
+      "target": "file:packages/core/src/__tests__/smoke.test.ts",
+      "type": "contains",
+      "label": "package.json 所属包包含测试文件"
+    },
+    {
+      "source": "file:packages/core/src/agent/fork-cache.ts",
+      "target": "file:packages/core/src/agent/system-context.ts",
+      "type": "related-to",
+      "label": "同属 agent 子模块，共享设计模式（全局单例、简单哈希）"
+    }
+  ]
+}

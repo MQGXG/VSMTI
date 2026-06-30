@@ -4,7 +4,7 @@
 
 import { join } from "path"
 import fs from "fs"
-import { getPlatformPaths } from "./platform-paths"
+import { getPlatformPaths } from "../config/paths"
 
 export interface ToolCallLog {
   timestamp: string
@@ -81,3 +81,4 @@ export function logError(context: string, error?: unknown): void {
 export function clearLogs(): void {
   logs = []
 }
+

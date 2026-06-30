@@ -1,0 +1,3265 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 19,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "packages/core/src/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 98,
+      "nonEmptyLines": 88,
+      "exports": [
+        {
+          "name": "Agent",
+          "line": 6,
+          "isDefault": false
+        },
+        {
+          "name": "AgentConfig",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "AgentEvent",
+          "line": 8,
+          "isDefault": false
+        },
+        {
+          "name": "ToolRegistry",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "ModelFilter",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "make",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "withPermission",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "settle",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "PermissionSet",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "defaultPermissions",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "permissionsForMode",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "AgentMode",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "getModeConfig",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "getAllModes",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "modeToPermissionSet",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "loadCustomAgents",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "registerAgent",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "registerAgentFromJson",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "getModeToolAllowlist",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "AgentProfile",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "AgentProfileRegistry",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "getGlobalAgentDir",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "getProjectAgentDir",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "ContextManager",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "ContextConfig",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "ContextStats",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "GoalJudge",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "Goal",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "GoalConfig",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "GoalEvaluation",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "createLLMClient",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "ClientConfig",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "ToolDef",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "ToolContext",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "ToolResult",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "ToolCall",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "Content",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "Settlement",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "AppLayer",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "ToolRegistryTag",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "LLMTag",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "DatabaseTag",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "ToolRegistryLayer",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "LLMLayer",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "DatabaseLayer",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "lspManager",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "readFileToolEffect",
+          "line": 24,
+          "isDefault": false
+        },
+        {
+          "name": "writeFileTool",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "listFilesTool",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "webSearchTool",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "grepTool",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "globTool",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "codeExecTool",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "bashTool",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "editFileTool",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "skillsListTool",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "skillViewTool",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "dataAnalysisTool",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "webBrowseTool",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "cronTool",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "taskTool",
+          "line": 46,
+          "isDefault": false
+        },
+        {
+          "name": "delegateTaskTool",
+          "line": 48,
+          "isDefault": false
+        },
+        {
+          "name": "searchHistoryTool",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "imageGenTool",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "workflowRunTool",
+          "line": 54,
+          "isDefault": false
+        },
+        {
+          "name": "WorkflowEngine",
+          "line": 55,
+          "isDefault": false
+        },
+        {
+          "name": "WorkflowDefinition",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "WorkflowStep",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "WorkflowResult",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "worktreeTool",
+          "line": 58,
+          "isDefault": false
+        },
+        {
+          "name": "teamTool",
+          "line": 60,
+          "isDefault": false
+        },
+        {
+          "name": "lspDefinitionTool",
+          "line": 62,
+          "isDefault": false
+        },
+        {
+          "name": "lspReferencesTool",
+          "line": 62,
+          "isDefault": false
+        },
+        {
+          "name": "lspHoverTool",
+          "line": 62,
+          "isDefault": false
+        },
+        {
+          "name": "cronScheduler",
+          "line": 65,
+          "isDefault": false
+        },
+        {
+          "name": "TaskPlanner",
+          "line": 66,
+          "isDefault": false
+        },
+        {
+          "name": "PluginHooks",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "pluginHooks",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "SubagentManager",
+          "line": 68,
+          "isDefault": false
+        },
+        {
+          "name": "SubagentInfo",
+          "line": 68,
+          "isDefault": false
+        },
+        {
+          "name": "SubagentStatus",
+          "line": 68,
+          "isDefault": false
+        },
+        {
+          "name": "SubagentEvent",
+          "line": 68,
+          "isDefault": false
+        },
+        {
+          "name": "SubagentEventType",
+          "line": 68,
+          "isDefault": false
+        },
+        {
+          "name": "runDelegate",
+          "line": 69,
+          "isDefault": false
+        },
+        {
+          "name": "getDelegationStatus",
+          "line": 69,
+          "isDefault": false
+        },
+        {
+          "name": "setupDefaultHooks",
+          "line": 70,
+          "isDefault": false
+        },
+        {
+          "name": "sendMessage",
+          "line": 71,
+          "isDefault": false
+        },
+        {
+          "name": "readInbox",
+          "line": 71,
+          "isDefault": false
+        },
+        {
+          "name": "createWorktree",
+          "line": 72,
+          "isDefault": false
+        },
+        {
+          "name": "listWorktrees",
+          "line": 72,
+          "isDefault": false
+        },
+        {
+          "name": "createDefaultRegistry",
+          "line": 74,
+          "isDefault": false
+        },
+        {
+          "name": "loadConfig",
+          "line": 77,
+          "isDefault": false
+        },
+        {
+          "name": "saveGlobalConfig",
+          "line": 77,
+          "isDefault": false
+        },
+        {
+          "name": "resolveRuntimeConfig",
+          "line": 77,
+          "isDefault": false
+        },
+        {
+          "name": "getConfigForRenderer",
+          "line": 77,
+          "isDefault": false
+        },
+        {
+          "name": "MiraConfig",
+          "line": 78,
+          "isDefault": false
+        },
+        {
+          "name": "ResolvedConfig",
+          "line": 78,
+          "isDefault": false
+        },
+        {
+          "name": "initPlatformPaths",
+          "line": 81,
+          "isDefault": false
+        },
+        {
+          "name": "getPlatformPaths",
+          "line": 81,
+          "isDefault": false
+        },
+        {
+          "name": "PlatformPaths",
+          "line": 82,
+          "isDefault": false
+        },
+        {
+          "name": "ServerManager",
+          "line": 85,
+          "isDefault": false
+        },
+        {
+          "name": "ServerManagerOptions",
+          "line": 86,
+          "isDefault": false
+        },
+        {
+          "name": "createServer",
+          "line": 87,
+          "isDefault": false
+        },
+        {
+          "name": "startServer",
+          "line": 87,
+          "isDefault": false
+        },
+        {
+          "name": "ServerOptions",
+          "line": 88,
+          "isDefault": false
+        },
+        {
+          "name": "APIContext",
+          "line": 89,
+          "isDefault": false
+        },
+        {
+          "name": "featureFlags",
+          "line": 92,
+          "isDefault": false
+        },
+        {
+          "name": "isFeatureEnabled",
+          "line": 92,
+          "isDefault": false
+        },
+        {
+          "name": "SnapshotManager",
+          "line": 93,
+          "isDefault": false
+        },
+        {
+          "name": "SessionForkManager",
+          "line": 94,
+          "isDefault": false
+        },
+        {
+          "name": "ForkCacheManager",
+          "line": 95,
+          "isDefault": false
+        },
+        {
+          "name": "SystemContextManager",
+          "line": 96,
+          "isDefault": false
+        },
+        {
+          "name": "TextNgramMonitor",
+          "line": 97,
+          "isDefault": false
+        },
+        {
+          "name": "searchTools",
+          "line": 98,
+          "isDefault": false
+        },
+        {
+          "name": "getRecommendedTools",
+          "line": 98,
+          "isDefault": false
+        },
+        {
+          "name": "shouldLoadTool",
+          "line": 98,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 116,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/compose-ipc.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 64,
+      "nonEmptyLines": 62,
+      "functions": [
+        {
+          "name": "registerComposeIPC",
+          "startLine": 6,
+          "endLine": 64,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerComposeIPC",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.start",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 10
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.getState",
+          "lineNumber": 11
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 13
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.getCurrentSkill",
+          "lineNumber": 14
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 16
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.advance",
+          "lineNumber": 17
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 19
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.goTo",
+          "lineNumber": 20
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 22
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.update",
+          "lineNumber": 23
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 26
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.addCodeFile",
+          "lineNumber": 27
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 30
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.addReviewComment",
+          "lineNumber": 31
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 34
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.addTestResult",
+          "lineNumber": 35
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 38
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.addDebugLog",
+          "lineNumber": 39
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 42
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.setVerificationPassed",
+          "lineNumber": 43
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 46
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.complete",
+          "lineNumber": 47
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 49
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.cancel",
+          "lineNumber": 50
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 52
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.getHistory",
+          "lineNumber": 53
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 55
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "composeModeManager.toText",
+          "lineNumber": 56
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 58
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ComposeModeManager.getSkills",
+          "lineNumber": 59
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 61
+        },
+        {
+          "caller": "registerComposeIPC",
+          "callee": "ComposeModeManager.getPhaseOrder",
+          "lineNumber": 62
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/config-ipc.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 11,
+      "nonEmptyLines": 10,
+      "functions": [
+        {
+          "name": "registerConfigIPC",
+          "startLine": 4,
+          "endLine": 11,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerConfigIPC",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerConfigIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerConfigIPC",
+          "callee": "getConfigForRenderer",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerConfigIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerConfigIPC",
+          "callee": "saveGlobalConfig",
+          "lineNumber": 9
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/dream-ipc.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 21,
+      "nonEmptyLines": 19,
+      "functions": [
+        {
+          "name": "registerDreamIPC",
+          "startLine": 6,
+          "endLine": 21,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerDreamIPC",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerDreamIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "dreamDistillManager.initialize",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "process.cwd",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "dreamDistillManager.dream",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 11
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "dreamDistillManager.initialize",
+          "lineNumber": 12
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "process.cwd",
+          "lineNumber": 12
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "dreamDistillManager.distill",
+          "lineNumber": 13
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 15
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "dreamDistillManager.getKnowledge",
+          "lineNumber": 16
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 18
+        },
+        {
+          "caller": "registerDreamIPC",
+          "callee": "dreamDistillManager.toText",
+          "lineNumber": 19
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/goal-ipc.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 34,
+      "nonEmptyLines": 31,
+      "functions": [
+        {
+          "name": "initGoalIPC",
+          "startLine": 8,
+          "endLine": 10,
+          "params": []
+        },
+        {
+          "name": "registerGoalIPC",
+          "startLine": 12,
+          "endLine": 34,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "initGoalIPC",
+          "line": 8,
+          "isDefault": false
+        },
+        {
+          "name": "registerGoalIPC",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "initGoalIPC",
+          "callee": "initDatabase",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 13
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "goalJudge.setGoal",
+          "lineNumber": 14
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 16
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "goalJudge.getActiveGoal",
+          "lineNumber": 17
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 19
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "goalJudge.getAllGoals",
+          "lineNumber": 20
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 22
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "goalJudge.cancelGoal",
+          "lineNumber": 23
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 25
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "goalJudge.toText",
+          "lineNumber": 26
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 28
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "goalJudge.load(sessionID).then",
+          "lineNumber": 29
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "goalJudge.load",
+          "lineNumber": 29
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "goalJudge.getAllGoals",
+          "lineNumber": 29
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 31
+        },
+        {
+          "caller": "registerGoalIPC",
+          "callee": "goalJudge.save",
+          "lineNumber": 32
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/handlers.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 65,
+      "nonEmptyLines": 56,
+      "functions": [
+        {
+          "name": "registerIPCHandlers",
+          "startLine": 5,
+          "endLine": 65,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerIPCHandlers",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "registerAgentIPCHandlers",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "ipcMain.on",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "minimizeWindow",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "ipcMain.on",
+          "lineNumber": 10
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "toggleMaximizeWindow",
+          "lineNumber": 10
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "ipcMain.on",
+          "lineNumber": 11
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "hideWindow",
+          "lineNumber": 11
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 14
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "getMainWindow",
+          "lineNumber": 15
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "dialog.showOpenDialog",
+          "lineNumber": 17
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 23
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "getMainWindow",
+          "lineNumber": 24
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "dialog.showOpenDialog",
+          "lineNumber": 26
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 37
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "getMainWindow",
+          "lineNumber": 38
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "dialog.showSaveDialog",
+          "lineNumber": 40
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 45
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "new Notification({ title, body }).show",
+          "lineNumber": 46
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 50
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "safeStorage.isEncryptionAvailable",
+          "lineNumber": 51
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "safeStorage.encryptString",
+          "lineNumber": 53
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "encrypted.toString",
+          "lineNumber": 54
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 57
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "safeStorage.isEncryptionAvailable",
+          "lineNumber": 58
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "Buffer.from",
+          "lineNumber": 60
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "safeStorage.decryptString",
+          "lineNumber": 61
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 64
+        },
+        {
+          "caller": "registerIPCHandlers",
+          "callee": "safeStorage.isEncryptionAvailable",
+          "lineNumber": 64
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 30,
+      "functions": [
+        {
+          "name": "registerAgentIPCHandlers",
+          "startLine": 15,
+          "endLine": 33,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerAgentIPCHandlers",
+          "line": 15,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "setupDefaultHooks",
+          "lineNumber": 16
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "cronScheduler.start",
+          "lineNumber": 17
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerSidecarIPCHandlers",
+          "lineNumber": 20
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerSessionIPC",
+          "lineNumber": 23
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerConfigIPC",
+          "lineNumber": 24
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerTaskIPC",
+          "lineNumber": 25
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerSubagentIPC",
+          "lineNumber": 26
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerGoalIPC",
+          "lineNumber": 27
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerDreamIPC",
+          "lineNumber": 28
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerComposeIPC",
+          "lineNumber": 29
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerSkillIPC",
+          "lineNumber": 30
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerQuestionIPC",
+          "lineNumber": 31
+        },
+        {
+          "caller": "registerAgentIPCHandlers",
+          "callee": "registerMemoryIPC",
+          "lineNumber": 32
+        }
+      ],
+      "metrics": {
+        "importCount": 11,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/memory-ipc.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 24,
+      "nonEmptyLines": 22,
+      "functions": [
+        {
+          "name": "registerMemoryIPC",
+          "startLine": 4,
+          "endLine": 24,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerMemoryIPC",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerMemoryIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerMemoryIPC",
+          "callee": "getServerManager",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerMemoryIPC",
+          "callee": "sm.request",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerMemoryIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 15
+        },
+        {
+          "caller": "registerMemoryIPC",
+          "callee": "getServerManager",
+          "lineNumber": 16
+        },
+        {
+          "caller": "registerMemoryIPC",
+          "callee": "sm.request",
+          "lineNumber": 19
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/question-ipc.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 12,
+      "nonEmptyLines": 10,
+      "functions": [
+        {
+          "name": "registerQuestionIPC",
+          "startLine": 4,
+          "endLine": 12,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerQuestionIPC",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerQuestionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerQuestionIPC",
+          "callee": "answerQuestion",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerQuestionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerQuestionIPC",
+          "callee": "getPendingQuestions",
+          "lineNumber": 10
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/session-ipc.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 14,
+      "nonEmptyLines": 13,
+      "functions": [
+        {
+          "name": "registerSessionIPC",
+          "startLine": 4,
+          "endLine": 14,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerSessionIPC",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerSessionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "listProjects",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "createProject",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "updateProject",
+          "lineNumber": 7
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "deleteProjectById",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "createSession",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 10
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "listSessions",
+          "lineNumber": 10
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 11
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "getSessionMessages",
+          "lineNumber": 11
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 12
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "deleteSessionById",
+          "lineNumber": 12
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 13
+        },
+        {
+          "caller": "registerSessionIPC",
+          "callee": "searchMessages",
+          "lineNumber": 13
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 264,
+      "nonEmptyLines": 222,
+      "functions": [
+        {
+          "name": "getServerManager",
+          "startLine": 19,
+          "endLine": 21,
+          "params": []
+        },
+        {
+          "name": "startSidecar",
+          "startLine": 30,
+          "endLine": 43,
+          "params": [
+            "port"
+          ]
+        },
+        {
+          "name": "stopSidecar",
+          "startLine": 45,
+          "endLine": 56,
+          "params": []
+        },
+        {
+          "name": "startHealthCheck",
+          "startLine": 60,
+          "endLine": 73,
+          "params": []
+        },
+        {
+          "name": "stopHealthCheck",
+          "startLine": 75,
+          "endLine": 80,
+          "params": []
+        },
+        {
+          "name": "reconnect",
+          "startLine": 82,
+          "endLine": 106,
+          "params": []
+        },
+        {
+          "name": "getSM",
+          "startLine": 108,
+          "endLine": 111,
+          "params": []
+        },
+        {
+          "name": "connectAndGetChannel",
+          "startLine": 128,
+          "endLine": 180,
+          "params": [
+            "sm",
+            "body",
+            "onEvent",
+            "onDone",
+            "onError"
+          ]
+        },
+        {
+          "name": "registerSidecarIPCHandlers",
+          "startLine": 184,
+          "endLine": 264,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "getServerManager",
+          "line": 19,
+          "isDefault": false
+        },
+        {
+          "name": "startSidecar",
+          "line": 30,
+          "isDefault": false
+        },
+        {
+          "name": "stopSidecar",
+          "line": 45,
+          "isDefault": false
+        },
+        {
+          "name": "registerSidecarIPCHandlers",
+          "line": 184,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "startSidecar",
+          "callee": "app.getPath",
+          "lineNumber": 35
+        },
+        {
+          "caller": "startSidecar",
+          "callee": "serverManager.start",
+          "lineNumber": 38
+        },
+        {
+          "caller": "startSidecar",
+          "callee": "console.log",
+          "lineNumber": 39
+        },
+        {
+          "caller": "startSidecar",
+          "callee": "startHealthCheck",
+          "lineNumber": 41
+        },
+        {
+          "caller": "stopSidecar",
+          "callee": "stopHealthCheck",
+          "lineNumber": 46
+        },
+        {
+          "caller": "stopSidecar",
+          "callee": "sseSessions.forEach",
+          "lineNumber": 48
+        },
+        {
+          "caller": "stopSidecar",
+          "callee": "s.destroy",
+          "lineNumber": 48
+        },
+        {
+          "caller": "stopSidecar",
+          "callee": "sseSessions.clear",
+          "lineNumber": 49
+        },
+        {
+          "caller": "stopSidecar",
+          "callee": "serverManager.stop",
+          "lineNumber": 52
+        },
+        {
+          "caller": "stopSidecar",
+          "callee": "console.log",
+          "lineNumber": 55
+        },
+        {
+          "caller": "startHealthCheck",
+          "callee": "stopHealthCheck",
+          "lineNumber": 61
+        },
+        {
+          "caller": "startHealthCheck",
+          "callee": "setInterval",
+          "lineNumber": 62
+        },
+        {
+          "caller": "startHealthCheck",
+          "callee": "sm.request",
+          "lineNumber": 67
+        },
+        {
+          "caller": "startHealthCheck",
+          "callee": "console.warn",
+          "lineNumber": 69
+        },
+        {
+          "caller": "startHealthCheck",
+          "callee": "reconnect",
+          "lineNumber": 70
+        },
+        {
+          "caller": "stopHealthCheck",
+          "callee": "clearInterval",
+          "lineNumber": 77
+        },
+        {
+          "caller": "reconnect",
+          "callee": "setTimeout",
+          "lineNumber": 87
+        },
+        {
+          "caller": "reconnect",
+          "callee": "sm.start",
+          "lineNumber": 92
+        },
+        {
+          "caller": "reconnect",
+          "callee": "sm.request",
+          "lineNumber": 96
+        },
+        {
+          "caller": "reconnect",
+          "callee": "console.log",
+          "lineNumber": 97
+        },
+        {
+          "caller": "reconnect",
+          "callee": "console.error",
+          "lineNumber": 99
+        },
+        {
+          "caller": "reconnect",
+          "callee": "setTimeout",
+          "lineNumber": 101
+        },
+        {
+          "caller": "reconnect",
+          "callee": "reconnect",
+          "lineNumber": 101
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "setTimeout",
+          "lineNumber": 138
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pendingStreams.delete",
+          "lineNumber": 139
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "reject",
+          "lineNumber": 140
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pendingStreams.set",
+          "lineNumber": 143
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "sm.connectSSE",
+          "lineNumber": 145
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pendingStreams.get",
+          "lineNumber": 150
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "clearTimeout",
+          "lineNumber": 152
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pendingStreams.delete",
+          "lineNumber": 153
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pending.resolve",
+          "lineNumber": 154
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "onEvent",
+          "lineNumber": 158
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "onDone",
+          "lineNumber": 161
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pendingStreams.get",
+          "lineNumber": 162
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "clearTimeout",
+          "lineNumber": 164
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pendingStreams.delete",
+          "lineNumber": 165
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pending.reject",
+          "lineNumber": 166
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "onError",
+          "lineNumber": 170
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pendingStreams.get",
+          "lineNumber": 171
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "clearTimeout",
+          "lineNumber": 173
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pendingStreams.delete",
+          "lineNumber": 174
+        },
+        {
+          "caller": "connectAndGetChannel",
+          "callee": "pending.reject",
+          "lineNumber": 175
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "getSM",
+          "lineNumber": 185
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 188
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sm.request",
+          "lineNumber": 189
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 191
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sm.request",
+          "lineNumber": 192
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 194
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sm.request",
+          "lineNumber": 195
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 197
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sm.request",
+          "lineNumber": 198
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 202
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "BrowserWindow.fromWebContents",
+          "lineNumber": 203
+        },
+        {
+          "caller": "destroy",
+          "callee": "sseSessions.delete",
+          "lineNumber": 209
+        },
+        {
+          "caller": "destroy",
+          "callee": "sm.request(\"POST\", \"/api/agent/stop\", { channel: streamChannel }).catch",
+          "lineNumber": 211
+        },
+        {
+          "caller": "destroy",
+          "callee": "sm.request",
+          "lineNumber": 211
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "connectAndGetChannel",
+          "lineNumber": 215
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "window.isDestroyed",
+          "lineNumber": 219
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "window.webContents.send",
+          "lineNumber": 220
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "window.isDestroyed",
+          "lineNumber": 224
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "window.webContents.send",
+          "lineNumber": 225
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sseSessions.delete",
+          "lineNumber": 227
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "console.error",
+          "lineNumber": 230
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "window.isDestroyed",
+          "lineNumber": 231
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "window.webContents.send",
+          "lineNumber": 232
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sseSessions.delete",
+          "lineNumber": 234
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sseSessions.set",
+          "lineNumber": 239
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 245
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sm.request",
+          "lineNumber": 246
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "ipcMain.handle",
+          "lineNumber": 250
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sseSessions.get",
+          "lineNumber": 251
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "session.destroy",
+          "lineNumber": 253
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sseSessions.delete",
+          "lineNumber": 254
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sm.request",
+          "lineNumber": 256
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "app.on",
+          "lineNumber": 260
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sseSessions.forEach",
+          "lineNumber": 261
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "s.destroy",
+          "lineNumber": 261
+        },
+        {
+          "caller": "registerSidecarIPCHandlers",
+          "callee": "sseSessions.clear",
+          "lineNumber": 262
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 9,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/skill-ipc.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 12,
+      "nonEmptyLines": 11,
+      "functions": [
+        {
+          "name": "registerSkillIPC",
+          "startLine": 4,
+          "endLine": 12,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerSkillIPC",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerSkillIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerSkillIPC",
+          "callee": "scanSkills().map",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerSkillIPC",
+          "callee": "scanSkills",
+          "lineNumber": 6
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/subagent-ipc.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 80,
+      "nonEmptyLines": 66,
+      "functions": [
+        {
+          "name": "forwardSubagentEvent",
+          "startLine": 13,
+          "endLine": 22,
+          "params": [
+            "sender",
+            "event"
+          ]
+        },
+        {
+          "name": "registerSubagentIPC",
+          "startLine": 24,
+          "endLine": 80,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerSubagentIPC",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "forwardSubagentEvent",
+          "callee": "sender.isDestroyed",
+          "lineNumber": 14
+        },
+        {
+          "caller": "forwardSubagentEvent",
+          "callee": "sender.send",
+          "lineNumber": 15
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 25
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.onEvent",
+          "lineNumber": 30
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "forwardSubagentEvent",
+          "lineNumber": 30
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.spawn",
+          "lineNumber": 31
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 34
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.wait",
+          "lineNumber": 35
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 38
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.cancel",
+          "lineNumber": 39
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 42
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.getInfo",
+          "lineNumber": 43
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 46
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.getEvents",
+          "lineNumber": 47
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 50
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.list",
+          "lineNumber": 51
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 54
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.listActive",
+          "lineNumber": 55
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 58
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.listByParent",
+          "lineNumber": 59
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 62
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.cancelAllByParent",
+          "lineNumber": 63
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 67
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.cancelAll",
+          "lineNumber": 68
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 72
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.setMaxParallel",
+          "lineNumber": 73
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 77
+        },
+        {
+          "caller": "registerSubagentIPC",
+          "callee": "subagentManager.toText",
+          "lineNumber": 78
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/ipc/task-ipc.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 32,
+      "nonEmptyLines": 31,
+      "functions": [
+        {
+          "name": "registerTaskIPC",
+          "startLine": 4,
+          "endLine": 32,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "registerTaskIPC",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "registerTaskIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 5
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "taskTracker.create",
+          "lineNumber": 6
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 8
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "taskTracker.updateStatus",
+          "lineNumber": 9
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 11
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "taskTracker.updateSummary",
+          "lineNumber": 12
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 14
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "taskTracker.addNote",
+          "lineNumber": 15
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 17
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "taskTracker.getTask",
+          "lineNumber": 18
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 20
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "taskTracker.getAllTasks().filter",
+          "lineNumber": 22
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "taskTracker.getAllTasks",
+          "lineNumber": 22
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "taskTracker.getAllTasks",
+          "lineNumber": 24
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 26
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "taskTracker.getActiveTasks",
+          "lineNumber": 27
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "ipcMain.handle",
+          "lineNumber": 29
+        },
+        {
+          "caller": "registerTaskIPC",
+          "callee": "taskTracker.toText",
+          "lineNumber": 30
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/main/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 47,
+      "nonEmptyLines": 39,
+      "functions": [
+        {
+          "name": "initializeApp",
+          "startLine": 10,
+          "endLine": 40,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "initializeApp",
+          "callee": "initPlatformPaths",
+          "lineNumber": 11
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "app.getPath",
+          "lineNumber": 12
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "app.getPath",
+          "lineNumber": 13
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "injectShellEnv",
+          "lineNumber": 15
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "initLogger",
+          "lineNumber": 16
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "patchConsole",
+          "lineNumber": 17
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "console.log",
+          "lineNumber": 18
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "getLogFilePath",
+          "lineNumber": 18
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "console.log",
+          "lineNumber": 21
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "startSidecar",
+          "lineNumber": 22
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "console.log",
+          "lineNumber": 23
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "registerIPCHandlers",
+          "lineNumber": 25
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "createWindow",
+          "lineNumber": 27
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "createTray",
+          "lineNumber": 28
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "globalShortcut.register",
+          "lineNumber": 30
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "showMainWindow",
+          "lineNumber": 31
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "app.on",
+          "lineNumber": 34
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "require",
+          "lineNumber": 35
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "BrowserWindow.getAllWindows",
+          "lineNumber": 36
+        },
+        {
+          "caller": "initializeApp",
+          "callee": "createWindow",
+          "lineNumber": 37
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/managers/tray-manager.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 32,
+      "nonEmptyLines": 27,
+      "functions": [
+        {
+          "name": "createTray",
+          "startLine": 6,
+          "endLine": 25,
+          "params": []
+        },
+        {
+          "name": "destroyTray",
+          "startLine": 27,
+          "endLine": 32,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "createTray",
+          "line": 6,
+          "isDefault": false
+        },
+        {
+          "name": "destroyTray",
+          "line": 27,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createTray",
+          "callee": "nativeImage.createEmpty",
+          "lineNumber": 7
+        },
+        {
+          "caller": "createTray",
+          "callee": "Menu.buildFromTemplate",
+          "lineNumber": 8
+        },
+        {
+          "caller": "createTray",
+          "callee": "showMainWindow",
+          "lineNumber": 9
+        },
+        {
+          "caller": "createTray",
+          "callee": "app.quit",
+          "lineNumber": 15
+        },
+        {
+          "caller": "createTray",
+          "callee": "tray.setToolTip",
+          "lineNumber": 20
+        },
+        {
+          "caller": "createTray",
+          "callee": "tray.setContextMenu",
+          "lineNumber": 21
+        },
+        {
+          "caller": "createTray",
+          "callee": "tray.on",
+          "lineNumber": 22
+        },
+        {
+          "caller": "createTray",
+          "callee": "showMainWindow",
+          "lineNumber": 22
+        },
+        {
+          "caller": "destroyTray",
+          "callee": "tray.destroy",
+          "lineNumber": 29
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/managers/window-manager.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 110,
+      "nonEmptyLines": 95,
+      "functions": [
+        {
+          "name": "probePort",
+          "startLine": 8,
+          "endLine": 25,
+          "params": [
+            "port"
+          ]
+        },
+        {
+          "name": "sleep",
+          "startLine": 27,
+          "endLine": 29,
+          "params": [
+            "ms"
+          ]
+        },
+        {
+          "name": "findVitePort",
+          "startLine": 31,
+          "endLine": 46,
+          "params": []
+        },
+        {
+          "name": "createWindow",
+          "startLine": 48,
+          "endLine": 83,
+          "params": []
+        },
+        {
+          "name": "getMainWindow",
+          "startLine": 85,
+          "endLine": 87,
+          "params": []
+        },
+        {
+          "name": "showMainWindow",
+          "startLine": 89,
+          "endLine": 92,
+          "params": []
+        },
+        {
+          "name": "minimizeWindow",
+          "startLine": 94,
+          "endLine": 96,
+          "params": []
+        },
+        {
+          "name": "toggleMaximizeWindow",
+          "startLine": 98,
+          "endLine": 102,
+          "params": []
+        },
+        {
+          "name": "hideWindow",
+          "startLine": 104,
+          "endLine": 106,
+          "params": []
+        },
+        {
+          "name": "closeAllWindows",
+          "startLine": 108,
+          "endLine": 110,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "createWindow",
+          "line": 48,
+          "isDefault": false
+        },
+        {
+          "name": "getMainWindow",
+          "line": 85,
+          "isDefault": false
+        },
+        {
+          "name": "showMainWindow",
+          "line": 89,
+          "isDefault": false
+        },
+        {
+          "name": "minimizeWindow",
+          "line": 94,
+          "isDefault": false
+        },
+        {
+          "name": "toggleMaximizeWindow",
+          "line": 98,
+          "isDefault": false
+        },
+        {
+          "name": "hideWindow",
+          "line": 104,
+          "isDefault": false
+        },
+        {
+          "name": "closeAllWindows",
+          "line": 108,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "probePort",
+          "callee": "request",
+          "lineNumber": 10
+        },
+        {
+          "caller": "probePort",
+          "callee": "resolve",
+          "lineNumber": 14
+        },
+        {
+          "caller": "probePort",
+          "callee": "req.destroy",
+          "lineNumber": 15
+        },
+        {
+          "caller": "probePort",
+          "callee": "req.on",
+          "lineNumber": 18
+        },
+        {
+          "caller": "probePort",
+          "callee": "resolve",
+          "lineNumber": 18
+        },
+        {
+          "caller": "probePort",
+          "callee": "req.on",
+          "lineNumber": 19
+        },
+        {
+          "caller": "probePort",
+          "callee": "req.destroy",
+          "lineNumber": 20
+        },
+        {
+          "caller": "probePort",
+          "callee": "resolve",
+          "lineNumber": 21
+        },
+        {
+          "caller": "probePort",
+          "callee": "req.end",
+          "lineNumber": 23
+        },
+        {
+          "caller": "sleep",
+          "callee": "setTimeout",
+          "lineNumber": 28
+        },
+        {
+          "caller": "findVitePort",
+          "callee": "probePort",
+          "lineNumber": 35
+        },
+        {
+          "caller": "findVitePort",
+          "callee": "console.log",
+          "lineNumber": 36
+        },
+        {
+          "caller": "findVitePort",
+          "callee": "sleep",
+          "lineNumber": 41
+        },
+        {
+          "caller": "findVitePort",
+          "callee": "console.log",
+          "lineNumber": 44
+        },
+        {
+          "caller": "createWindow",
+          "callee": "join",
+          "lineNumber": 59
+        },
+        {
+          "caller": "createWindow",
+          "callee": "findVitePort",
+          "lineNumber": 68
+        },
+        {
+          "caller": "createWindow",
+          "callee": "win.loadURL",
+          "lineNumber": 69
+        },
+        {
+          "caller": "createWindow",
+          "callee": "win.webContents.openDevTools",
+          "lineNumber": 70
+        },
+        {
+          "caller": "createWindow",
+          "callee": "win.loadFile",
+          "lineNumber": 72
+        },
+        {
+          "caller": "createWindow",
+          "callee": "join",
+          "lineNumber": 72
+        },
+        {
+          "caller": "createWindow",
+          "callee": "win.on",
+          "lineNumber": 75
+        },
+        {
+          "caller": "createWindow",
+          "callee": "event.preventDefault",
+          "lineNumber": 77
+        },
+        {
+          "caller": "createWindow",
+          "callee": "win.hide",
+          "lineNumber": 78
+        },
+        {
+          "caller": "showMainWindow",
+          "callee": "mainWindow?.show",
+          "lineNumber": 90
+        },
+        {
+          "caller": "showMainWindow",
+          "callee": "mainWindow?.focus",
+          "lineNumber": 91
+        },
+        {
+          "caller": "minimizeWindow",
+          "callee": "mainWindow?.minimize",
+          "lineNumber": 95
+        },
+        {
+          "caller": "toggleMaximizeWindow",
+          "callee": "mainWindow.isMaximized",
+          "lineNumber": 100
+        },
+        {
+          "caller": "toggleMaximizeWindow",
+          "callee": "mainWindow.unmaximize",
+          "lineNumber": 100
+        },
+        {
+          "caller": "toggleMaximizeWindow",
+          "callee": "mainWindow.maximize",
+          "lineNumber": 100
+        },
+        {
+          "caller": "hideWindow",
+          "callee": "mainWindow?.hide",
+          "lineNumber": 105
+        },
+        {
+          "caller": "closeAllWindows",
+          "callee": "BrowserWindow.getAllWindows().forEach",
+          "lineNumber": 109
+        },
+        {
+          "caller": "closeAllWindows",
+          "callee": "BrowserWindow.getAllWindows",
+          "lineNumber": 109
+        },
+        {
+          "caller": "closeAllWindows",
+          "callee": "w.close",
+          "lineNumber": 109
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 7,
+        "functionCount": 10,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/utils/logger.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 71,
+      "nonEmptyLines": 60,
+      "functions": [
+        {
+          "name": "ensureLogDir",
+          "startLine": 7,
+          "endLine": 14,
+          "params": []
+        },
+        {
+          "name": "initLogger",
+          "startLine": 16,
+          "endLine": 20,
+          "params": []
+        },
+        {
+          "name": "getLogFilePath",
+          "startLine": 22,
+          "endLine": 24,
+          "params": []
+        },
+        {
+          "name": "logToFile",
+          "startLine": 26,
+          "endLine": 35,
+          "params": [
+            "level",
+            "message"
+          ]
+        },
+        {
+          "name": "patchConsole",
+          "startLine": 38,
+          "endLine": 60,
+          "params": []
+        },
+        {
+          "name": "createPythonLogStream",
+          "startLine": 62,
+          "endLine": 67,
+          "params": []
+        },
+        {
+          "name": "getLogsDir",
+          "startLine": 69,
+          "endLine": 71,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "initLogger",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "getLogFilePath",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "logToFile",
+          "line": 26,
+          "isDefault": false
+        },
+        {
+          "name": "patchConsole",
+          "line": 38,
+          "isDefault": false
+        },
+        {
+          "name": "createPythonLogStream",
+          "line": 62,
+          "isDefault": false
+        },
+        {
+          "name": "getLogsDir",
+          "line": 69,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ensureLogDir",
+          "callee": "app.getPath",
+          "lineNumber": 8
+        },
+        {
+          "caller": "ensureLogDir",
+          "callee": "join",
+          "lineNumber": 9
+        },
+        {
+          "caller": "ensureLogDir",
+          "callee": "existsSync",
+          "lineNumber": 10
+        },
+        {
+          "caller": "ensureLogDir",
+          "callee": "mkdirSync",
+          "lineNumber": 11
+        },
+        {
+          "caller": "initLogger",
+          "callee": "ensureLogDir",
+          "lineNumber": 17
+        },
+        {
+          "caller": "initLogger",
+          "callee": "new Date().toISOString().split",
+          "lineNumber": 18
+        },
+        {
+          "caller": "initLogger",
+          "callee": "new Date().toISOString",
+          "lineNumber": 18
+        },
+        {
+          "caller": "initLogger",
+          "callee": "join",
+          "lineNumber": 19
+        },
+        {
+          "caller": "logToFile",
+          "callee": "new Date().toISOString",
+          "lineNumber": 28
+        },
+        {
+          "caller": "logToFile",
+          "callee": "appendFileSync",
+          "lineNumber": 31
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "args.map((a) => (typeof a === \"string\" ? a : JSON.stringify(a))).join",
+          "lineNumber": 44
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "args.map",
+          "lineNumber": 44
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "JSON.stringify",
+          "lineNumber": 44
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "logToFile",
+          "lineNumber": 45
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "originalLog",
+          "lineNumber": 46
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "args.map((a) => (typeof a === \"string\" ? a : JSON.stringify(a))).join",
+          "lineNumber": 50
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "args.map",
+          "lineNumber": 50
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "JSON.stringify",
+          "lineNumber": 50
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "logToFile",
+          "lineNumber": 51
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "originalError",
+          "lineNumber": 52
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "args.map((a) => (typeof a === \"string\" ? a : JSON.stringify(a))).join",
+          "lineNumber": 56
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "args.map",
+          "lineNumber": 56
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "JSON.stringify",
+          "lineNumber": 56
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "logToFile",
+          "lineNumber": 57
+        },
+        {
+          "caller": "patchConsole",
+          "callee": "originalWarn",
+          "lineNumber": 58
+        },
+        {
+          "caller": "createPythonLogStream",
+          "callee": "ensureLogDir",
+          "lineNumber": 63
+        },
+        {
+          "caller": "createPythonLogStream",
+          "callee": "new Date().toISOString().split",
+          "lineNumber": 64
+        },
+        {
+          "caller": "createPythonLogStream",
+          "callee": "new Date().toISOString",
+          "lineNumber": 64
+        },
+        {
+          "caller": "createPythonLogStream",
+          "callee": "join",
+          "lineNumber": 65
+        },
+        {
+          "caller": "createPythonLogStream",
+          "callee": "createWriteStream",
+          "lineNumber": 66
+        },
+        {
+          "caller": "getLogsDir",
+          "callee": "ensureLogDir",
+          "lineNumber": 70
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 6,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/electron/src/utils/shell-env.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 44,
+      "nonEmptyLines": 42,
+      "functions": [
+        {
+          "name": "loadShellEnv",
+          "startLine": 3,
+          "endLine": 31,
+          "params": []
+        },
+        {
+          "name": "injectShellEnv",
+          "startLine": 33,
+          "endLine": 44,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "loadShellEnv",
+          "line": 3,
+          "isDefault": false
+        },
+        {
+          "name": "injectShellEnv",
+          "line": 33,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "loadShellEnv",
+          "callee": "execSync(\n        'cmd /c \"echo %PATH%\"',\n        { encoding: \"utf8\", timeout: 3000 }\n      ).trim",
+          "lineNumber": 7
+        },
+        {
+          "caller": "loadShellEnv",
+          "callee": "execSync",
+          "lineNumber": 7
+        },
+        {
+          "caller": "loadShellEnv",
+          "callee": "execSync(\n        `${shell} -l -c 'echo \"PATH=$PATH\"' 2>/dev/null || echo \"PATH=$PATH\"`,\n        { encoding: \"utf8\", timeout: 3000 }\n      ).trim",
+          "lineNumber": 15
+        },
+        {
+          "caller": "loadShellEnv",
+          "callee": "execSync",
+          "lineNumber": 15
+        },
+        {
+          "caller": "loadShellEnv",
+          "callee": "result.split",
+          "lineNumber": 20
+        },
+        {
+          "caller": "loadShellEnv",
+          "callee": "line.indexOf",
+          "lineNumber": 21
+        },
+        {
+          "caller": "loadShellEnv",
+          "callee": "line.slice",
+          "lineNumber": 23
+        },
+        {
+          "caller": "loadShellEnv",
+          "callee": "line.slice",
+          "lineNumber": 23
+        },
+        {
+          "caller": "injectShellEnv",
+          "callee": "loadShellEnv",
+          "lineNumber": 34
+        },
+        {
+          "caller": "injectShellEnv",
+          "callee": "shellEnv.PATH.split(\";\").map((p) => p.trim()).filter",
+          "lineNumber": 37
+        },
+        {
+          "caller": "injectShellEnv",
+          "callee": "shellEnv.PATH.split(\";\").map",
+          "lineNumber": 37
+        },
+        {
+          "caller": "injectShellEnv",
+          "callee": "shellEnv.PATH.split",
+          "lineNumber": 37
+        },
+        {
+          "caller": "injectShellEnv",
+          "callee": "p.trim",
+          "lineNumber": 37
+        },
+        {
+          "caller": "injectShellEnv",
+          "callee": "currentPath.toUpperCase().includes",
+          "lineNumber": 39
+        },
+        {
+          "caller": "injectShellEnv",
+          "callee": "currentPath.toUpperCase",
+          "lineNumber": 39
+        },
+        {
+          "caller": "injectShellEnv",
+          "callee": "p.toUpperCase",
+          "lineNumber": 39
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    }
+  ]
+}

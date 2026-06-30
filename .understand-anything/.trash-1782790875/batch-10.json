@@ -1,0 +1,424 @@
+{
+  "nodes": [
+    {
+      "id": "file:.env.example",
+      "type": "file",
+      "name": ".env.example",
+      "filePath": ".env.example",
+      "summary": "环境变量示例文件，定义了 Mira 项目所需的 API Key 和服务配置项，包括 OpenAI、Anthropic、Ollama 的连接参数以及 JWT 密钥和 API 地址",
+      "tags": ["config", "env", "api-key", "环境变量"],
+      "complexity": "low"
+    },
+    {
+      "id": "var:OPENAI_API_KEY",
+      "type": "variable",
+      "name": "OPENAI_API_KEY",
+      "filePath": ".env.example",
+      "summary": "OpenAI API 密钥配置项，用于访问 GPT 系列模型",
+      "tags": ["env", "openai", "api-key"],
+      "complexity": "low"
+    },
+    {
+      "id": "var:OPENAI_MODEL",
+      "type": "variable",
+      "name": "OPENAI_MODEL",
+      "filePath": ".env.example",
+      "summary": "OpenAI 默认模型配置，默认值为 gpt-4o",
+      "tags": ["env", "openai", "model"],
+      "complexity": "low"
+    },
+    {
+      "id": "var:ANTHROPIC_API_KEY",
+      "type": "variable",
+      "name": "ANTHROPIC_API_KEY",
+      "filePath": ".env.example",
+      "summary": "Anthropic API 密钥配置项，用于访问 Claude 系列模型",
+      "tags": ["env", "anthropic", "api-key"],
+      "complexity": "low"
+    },
+    {
+      "id": "var:ANTHROPIC_MODEL",
+      "type": "variable",
+      "name": "ANTHROPIC_MODEL",
+      "filePath": ".env.example",
+      "summary": "Anthropic 默认模型配置，默认值为 claude-sonnet-4-20250514",
+      "tags": ["env", "anthropic", "model"],
+      "complexity": "low"
+    },
+    {
+      "id": "var:OLLAMA_BASE_URL",
+      "type": "variable",
+      "name": "OLLAMA_BASE_URL",
+      "filePath": ".env.example",
+      "summary": "Ollama 本地服务地址配置，默认为 localhost:11434",
+      "tags": ["env", "ollama", "local-model"],
+      "complexity": "low"
+    },
+    {
+      "id": "var:JWT_SECRET",
+      "type": "variable",
+      "name": "JWT_SECRET",
+      "filePath": ".env.example",
+      "summary": "JWT 认证密钥配置项",
+      "tags": ["env", "jwt", "auth"],
+      "complexity": "low"
+    },
+    {
+      "id": "var:NEXT_PUBLIC_API_URL",
+      "type": "variable",
+      "name": "NEXT_PUBLIC_API_URL",
+      "filePath": ".env.example",
+      "summary": "公开 API 地址配置，默认为 localhost:8000",
+      "tags": ["env", "api-url"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:AGENTS.md",
+      "type": "file",
+      "name": "AGENTS.md",
+      "filePath": "AGENTS.md",
+      "summary": "Mira 项目完整技术文档，涵盖项目概述、技术栈、目录结构、包依赖关系、Agent 模式定义、32 个工具清单、LLM Provider 支持列表、高级特性（Goal Judge/Max Mode/Dream Distill/Dynamic Workflow/Subagent/MCP/LSP）、IPC 通信协议、SQLite 数据库表结构、开发指南和环境要求",
+      "tags": ["docs", "architecture", "agent", "tools", "技术文档"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:CHANGELOG.md",
+      "type": "file",
+      "name": "CHANGELOG.md",
+      "filePath": "CHANGELOG.md",
+      "summary": "项目更新日志，记录三个版本的变更：v1.0.0（TypeScript Agent Core 完整实现、多 Provider 支持、便携打包等）、v0.9.0（Python FastAPI 后端、基础管理功能）、v0.1.0（项目初始化）",
+      "tags": ["docs", "changelog", "版本记录"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:CONTEXT.md",
+      "type": "file",
+      "name": "CONTEXT.md",
+      "filePath": "CONTEXT.md",
+      "summary": "Mira 开发上下文文档，描述当前原型阶段状态、关键架构决策（Electron/TypeScript/SQLite/IPC 等）、包结构、Agent 系统消息流和事件类型、LLM Provider 支持、高级特性说明、日志系统、常见问题排查和下一步优化方向",
+      "tags": ["docs", "context", "开发上下文", "architecture"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:CONTRIBUTING.md",
+      "type": "file",
+      "name": "CONTRIBUTING.md",
+      "filePath": "CONTRIBUTING.md",
+      "summary": "项目贡献指南，定义开发环境要求（Node.js 18+/pnpm 8+）、TypeScript/React 代码规范、工具定义模板（make+Zod）、提交信息格式、分支管理策略（main/feat/fix/docs）、PR 流程和测试命令",
+      "tags": ["docs", "contributing", "代码规范", "开发指南"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Mira 项目主 README，介绍全能 AI 助手桌面应用的定位、技术栈（Electron 31/React 18/TypeScript 5/Tailwind CSS）、快速开始指南、项目结构、桌面特性（无边框窗口/系统托盘/多模型切换/32 工具/5 种 Agent 模式）和环境要求",
+      "tags": ["docs", "readme", "项目介绍"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:SECURITY.md",
+      "type": "file",
+      "name": "SECURITY.md",
+      "filePath": "SECURITY.md",
+      "summary": "安全策略文档，描述 API Key 加密存储（Electron safeStorage）、权限系统（拒绝/允许/始终允许 + 硬拒绝列表）、数据存储安全（SQLite/向量数据/配置文件）、网络安全（LLM 调用经主进程代理）和权限规则语法",
+      "tags": ["docs", "security", "安全策略", "权限"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:components.json",
+      "type": "file",
+      "name": "components.json",
+      "filePath": "components.json",
+      "summary": "shadcn/ui 组件库配置文件，定义 UI 组件风格（default）、Tailwind CSS 集成路径、基础颜色（neutral）和路径别名映射（components/utils/ui/lib/hooks）",
+      "tags": ["config", "shadcn", "ui", "tailwind"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:electron-builder.yml",
+      "type": "file",
+      "name": "electron-builder.yml",
+      "filePath": "electron-builder.yml",
+      "summary": "electron-builder 打包配置文件，定义应用 ID（com.mira.app）、产品名称（Mira）、输出目录（release）、构建资源（resources）、三平台打包配置：Windows 便携版（portable）、macOS DMG（x64+arm64）、Linux AppImage（x64）",
+      "tags": ["config", "electron-builder", "打包", "构建"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:index.html",
+      "type": "file",
+      "name": "index.html",
+      "filePath": "index.html",
+      "summary": "Electron 应用 HTML 入口文件，设置中文语言、CSP 安全策略（限制脚本/样式/网络来源）、挂载 React 根节点并加载 desktop 应用入口脚本",
+      "tags": ["html", "entry", "入口", "csp"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "项目根 package.json，定义 pnpm monorepo 配置、构建脚本（electron-vite dev/build/package）、核心依赖（React 18/Electron 31/sql.js/Zod/MCP SDK/Transformers.js）和开发依赖（TypeScript 5/Vitest/ESLint/Tailwind CSS）",
+      "tags": ["config", "package", "monorepo", "依赖管理"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:pnpm-workspace.yaml",
+      "type": "file",
+      "name": "pnpm-workspace.yaml",
+      "filePath": "pnpm-workspace.yaml",
+      "summary": "pnpm workspace 配置文件，定义包工作区路径（packages/* 和 apps/*）、允许构建的原生模块（electron/esbuild）和节点链接模式（hoisted）",
+      "tags": ["config", "pnpm", "monorepo", "workspace"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:setup.ps1",
+      "type": "file",
+      "name": "setup.ps1",
+      "filePath": "setup.ps1",
+      "summary": "Windows 环境初始化 PowerShell 脚本，检查 Node.js 安装、运行 npm install 安装依赖、输出启动和打包命令提示",
+      "tags": ["script", "powershell", "setup", "初始化"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:start.ps1",
+      "type": "file",
+      "name": "start.ps1",
+      "filePath": "start.ps1",
+      "summary": "Windows 启动 PowerShell 脚本，支持多种模式（dev/package/package:win/mac/linux），修复 Node.js PATH 优先级、配置国内镜像加速、包含 Start-Dev（安装依赖+启动 Electron Vite 热重载）和 Start-Package（安装依赖+打包）两个核心函数",
+      "tags": ["script", "powershell", "启动", "打包"],
+      "complexity": "medium"
+    },
+    {
+      "id": "func:Start-Dev",
+      "type": "function",
+      "name": "Start-Dev",
+      "filePath": "start.ps1",
+      "summary": "开发模式启动函数，执行 npm install 安装依赖后运行 npm run dev 启动 Electron + Vite 热重载",
+      "tags": ["function", "powershell", "dev"],
+      "complexity": "low"
+    },
+    {
+      "id": "func:Start-Package",
+      "type": "function",
+      "name": "Start-Package",
+      "filePath": "start.ps1",
+      "summary": "打包函数，接受目标平台参数（win/mac/linux），执行依赖安装后运行对应打包命令",
+      "tags": ["function", "powershell", "package"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:start.sh",
+      "type": "file",
+      "name": "start.sh",
+      "filePath": "start.sh",
+      "summary": "跨平台 Bash 启动脚本，支持 dev 和 package 两种模式，包含 start_dev（安装依赖+启动）和 start_package（安装依赖+打包）两个函数",
+      "tags": ["script", "shell", "启动", "跨平台"],
+      "complexity": "low"
+    },
+    {
+      "id": "func:start_dev",
+      "type": "function",
+      "name": "start_dev",
+      "filePath": "start.sh",
+      "summary": "开发模式启动函数，执行 npm install 和 npm run dev",
+      "tags": ["function", "shell", "dev"],
+      "complexity": "low"
+    },
+    {
+      "id": "func:start_package",
+      "type": "function",
+      "name": "start_package",
+      "filePath": "start.sh",
+      "summary": "打包函数，执行 npm install 和 npm run package",
+      "tags": ["function", "shell", "package"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:tsconfig.json",
+      "type": "file",
+      "name": "tsconfig.json",
+      "filePath": "tsconfig.json",
+      "summary": "根 TypeScript 配置文件，设置 ES2020 目标、ESNext 模块、bundler 模块解析、React JSX 支持、严格模式、路径别名映射（@mira/core/ui/electron → 对应 packages 目录）",
+      "tags": ["config", "typescript", "编译配置"],
+      "complexity": "low"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:.env.example",
+      "target": "var:OPENAI_API_KEY",
+      "type": "defines"
+    },
+    {
+      "source": "file:.env.example",
+      "target": "var:OPENAI_MODEL",
+      "type": "defines"
+    },
+    {
+      "source": "file:.env.example",
+      "target": "var:ANTHROPIC_API_KEY",
+      "type": "defines"
+    },
+    {
+      "source": "file:.env.example",
+      "target": "var:ANTHROPIC_MODEL",
+      "type": "defines"
+    },
+    {
+      "source": "file:.env.example",
+      "target": "var:OLLAMA_BASE_URL",
+      "type": "defines"
+    },
+    {
+      "source": "file:.env.example",
+      "target": "var:JWT_SECRET",
+      "type": "defines"
+    },
+    {
+      "source": "file:.env.example",
+      "target": "var:NEXT_PUBLIC_API_URL",
+      "type": "defines"
+    },
+    {
+      "source": "file:start.ps1",
+      "target": "func:Start-Dev",
+      "type": "defines"
+    },
+    {
+      "source": "file:start.ps1",
+      "target": "func:Start-Package",
+      "type": "defines"
+    },
+    {
+      "source": "file:start.sh",
+      "target": "func:start_dev",
+      "type": "defines"
+    },
+    {
+      "source": "file:start.sh",
+      "target": "func:start_package",
+      "type": "defines"
+    },
+    {
+      "source": "file:package.json",
+      "target": "file:pnpm-workspace.yaml",
+      "type": "configures",
+      "label": "monorepo workspace"
+    },
+    {
+      "source": "file:package.json",
+      "target": "file:electron-builder.yml",
+      "type": "configures",
+      "label": "打包构建"
+    },
+    {
+      "source": "file:pnpm-workspace.yaml",
+      "target": "file:package.json",
+      "type": "references",
+      "label": "根 package.json"
+    },
+    {
+      "source": "file:index.html",
+      "target": "file:package.json",
+      "type": "belongs_to",
+      "label": "Vite 入口依赖 package.json"
+    },
+    {
+      "source": "file:tsconfig.json",
+      "target": "file:package.json",
+      "type": "configures",
+      "label": "TypeScript 编译配置"
+    },
+    {
+      "source": "file:components.json",
+      "target": "file:package.json",
+      "type": "references",
+      "label": "引用 tailwindcss 依赖"
+    },
+    {
+      "source": "file:electron-builder.yml",
+      "target": "file:package.json",
+      "type": "configures",
+      "label": "electron-builder 打包配置"
+    },
+    {
+      "source": "file:setup.ps1",
+      "target": "file:package.json",
+      "type": "executes",
+      "label": "npm install"
+    },
+    {
+      "source": "file:start.ps1",
+      "target": "file:package.json",
+      "type": "executes",
+      "label": "npm run dev/package"
+    },
+    {
+      "source": "file:start.sh",
+      "target": "file:package.json",
+      "type": "executes",
+      "label": "npm run dev/package"
+    },
+    {
+      "source": "file:AGENTS.md",
+      "target": "file:CONTEXT.md",
+      "type": "supersedes",
+      "label": "AGENTS.md 包含更完整的架构文档"
+    },
+    {
+      "source": "file:AGENTS.md",
+      "target": "file:README.md",
+      "type": "extends",
+      "label": "README 引用详细架构"
+    },
+    {
+      "source": "file:CONTEXT.md",
+      "target": "file:README.md",
+      "type": "references",
+      "label": "开发上下文补充项目介绍"
+    },
+    {
+      "source": "file:CONTRIBUTING.md",
+      "target": "file:AGENTS.md",
+      "type": "references",
+      "label": "贡献指南引用架构文档"
+    },
+    {
+      "source": "file:SECURITY.md",
+      "target": "file:.env.example",
+      "type": "references",
+      "label": "安全策略引用 API Key 配置"
+    },
+    {
+      "source": "file:CHANGELOG.md",
+      "target": "file:README.md",
+      "type": "tracks",
+      "label": "版本变更记录"
+    },
+    {
+      "source": "func:Start-Dev",
+      "target": "file:package.json",
+      "type": "executes",
+      "label": "npm run dev"
+    },
+    {
+      "source": "func:Start-Package",
+      "target": "file:package.json",
+      "type": "executes",
+      "label": "npm run package:target"
+    },
+    {
+      "source": "func:start_dev",
+      "target": "file:package.json",
+      "type": "executes",
+      "label": "npm run dev"
+    },
+    {
+      "source": "func:start_package",
+      "target": "file:package.json",
+      "type": "executes",
+      "label": "npm run package"
+    }
+  ]
+}

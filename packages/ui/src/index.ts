@@ -54,4 +54,4 @@ export { useMiraChat } from "./hooks/useMiraChat"
 export { ThemeProvider, useTheme } from "./contexts/ThemeContext"
 
 // ─── 类型定义 ──────────────────────────────────────────────────
-export type { AgentMode } from "@mira/core/modes"
+export type { AgentMode } from "@mira/core/config/modes"

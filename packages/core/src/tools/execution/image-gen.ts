@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../../shared/tool"
 
 export const imageGenTool = make({
   name: "image_generate",
@@ -65,3 +65,4 @@ export const imageGenTool = make({
     }
   },
 })
+

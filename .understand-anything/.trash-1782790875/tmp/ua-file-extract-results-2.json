@@ -1,0 +1,4977 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 30,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "packages/core/src/tools/bash.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 184,
+      "nonEmptyLines": 159,
+      "functions": [
+        {
+          "name": "runCommand",
+          "startLine": 20,
+          "endLine": 79,
+          "params": [
+            "shell",
+            "args",
+            "timeoutMs",
+            "signal"
+          ]
+        },
+        {
+          "name": "compactOutput",
+          "startLine": 81,
+          "endLine": 85,
+          "params": [
+            "stdout",
+            "stderr"
+          ]
+        },
+        {
+          "name": "captureNotice",
+          "startLine": 87,
+          "endLine": 89,
+          "params": [
+            "truncated",
+            "label"
+          ]
+        },
+        {
+          "name": "formatOutput",
+          "startLine": 91,
+          "endLine": 100,
+          "params": [
+            "result"
+          ]
+        },
+        {
+          "name": "stderrDisplay",
+          "startLine": 102,
+          "endLine": 104,
+          "params": [
+            "result"
+          ]
+        },
+        {
+          "name": "externalCommandDirs",
+          "startLine": 106,
+          "endLine": 117,
+          "params": [
+            "command",
+            "cwd"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "bashTool",
+          "line": 119,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "runCommand",
+          "callee": "spawn",
+          "lineNumber": 22
+        },
+        {
+          "caller": "runCommand",
+          "callee": "setTimeout",
+          "lineNumber": 35
+        },
+        {
+          "caller": "runCommand",
+          "callee": "child.kill",
+          "lineNumber": 37
+        },
+        {
+          "caller": "runCommand",
+          "callee": "setTimeout",
+          "lineNumber": 38
+        },
+        {
+          "caller": "runCommand",
+          "callee": "child.kill",
+          "lineNumber": 38
+        },
+        {
+          "caller": "runCommand",
+          "callee": "child.stdout?.on",
+          "lineNumber": 41
+        },
+        {
+          "caller": "runCommand",
+          "callee": "chunk.slice(0, remaining).toString",
+          "lineNumber": 44
+        },
+        {
+          "caller": "runCommand",
+          "callee": "chunk.slice",
+          "lineNumber": 44
+        },
+        {
+          "caller": "runCommand",
+          "callee": "child.stderr?.on",
+          "lineNumber": 49
+        },
+        {
+          "caller": "runCommand",
+          "callee": "chunk.slice(0, remaining).toString",
+          "lineNumber": 52
+        },
+        {
+          "caller": "runCommand",
+          "callee": "chunk.slice",
+          "lineNumber": 52
+        },
+        {
+          "caller": "onAbort",
+          "callee": "clearTimeout",
+          "lineNumber": 58
+        },
+        {
+          "caller": "onAbort",
+          "callee": "child.kill",
+          "lineNumber": 59
+        },
+        {
+          "caller": "onAbort",
+          "callee": "resolve",
+          "lineNumber": 60
+        },
+        {
+          "caller": "runCommand",
+          "callee": "signal?.addEventListener",
+          "lineNumber": 62
+        },
+        {
+          "caller": "runCommand",
+          "callee": "child.on",
+          "lineNumber": 64
+        },
+        {
+          "caller": "runCommand",
+          "callee": "clearTimeout",
+          "lineNumber": 65
+        },
+        {
+          "caller": "runCommand",
+          "callee": "signal?.removeEventListener",
+          "lineNumber": 66
+        },
+        {
+          "caller": "runCommand",
+          "callee": "resolve",
+          "lineNumber": 70
+        },
+        {
+          "caller": "runCommand",
+          "callee": "child.on",
+          "lineNumber": 73
+        },
+        {
+          "caller": "runCommand",
+          "callee": "clearTimeout",
+          "lineNumber": 74
+        },
+        {
+          "caller": "runCommand",
+          "callee": "signal?.removeEventListener",
+          "lineNumber": 75
+        },
+        {
+          "caller": "runCommand",
+          "callee": "resolve",
+          "lineNumber": 76
+        },
+        {
+          "caller": "formatOutput",
+          "callee": "compactOutput",
+          "lineNumber": 92
+        },
+        {
+          "caller": "formatOutput",
+          "callee": "stderrDisplay",
+          "lineNumber": 92
+        },
+        {
+          "caller": "formatOutput",
+          "callee": "[captureNotice(result.stdoutTruncated, \"stdout\"), captureNotice(result.stderrTruncated, \"stderr\")]\n    .filter",
+          "lineNumber": 93
+        },
+        {
+          "caller": "formatOutput",
+          "callee": "captureNotice",
+          "lineNumber": 93
+        },
+        {
+          "caller": "formatOutput",
+          "callee": "captureNotice",
+          "lineNumber": 93
+        },
+        {
+          "caller": "formatOutput",
+          "callee": "parts.push",
+          "lineNumber": 97
+        },
+        {
+          "caller": "formatOutput",
+          "callee": "parts.join",
+          "lineNumber": 99
+        },
+        {
+          "caller": "externalCommandDirs",
+          "callee": "command.match",
+          "lineNumber": 108
+        },
+        {
+          "caller": "externalCommandDirs",
+          "callee": "token.replace(/^([\"'])(.*)\\1$/, \"$2\").replace",
+          "lineNumber": 110
+        },
+        {
+          "caller": "externalCommandDirs",
+          "callee": "token.replace",
+          "lineNumber": 110
+        },
+        {
+          "caller": "externalCommandDirs",
+          "callee": "path.isAbsolute",
+          "lineNumber": 111
+        },
+        {
+          "caller": "externalCommandDirs",
+          "callee": "path.resolve",
+          "lineNumber": 112
+        },
+        {
+          "caller": "externalCommandDirs",
+          "callee": "resolved.startsWith",
+          "lineNumber": 113
+        },
+        {
+          "caller": "externalCommandDirs",
+          "callee": "dirs.add",
+          "lineNumber": 114
+        },
+        {
+          "caller": "externalCommandDirs",
+          "callee": "path.dirname",
+          "lineNumber": 114
+        },
+        {
+          "caller": "execute",
+          "callee": "checkCommand",
+          "lineNumber": 130
+        },
+        {
+          "caller": "execute",
+          "callee": "process.cwd",
+          "lineNumber": 135
+        },
+        {
+          "caller": "execute",
+          "callee": "externalCommandDirs",
+          "lineNumber": 136
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.min",
+          "lineNumber": 137
+        },
+        {
+          "caller": "execute",
+          "callee": "runCommand",
+          "lineNumber": 156
+        },
+        {
+          "caller": "execute",
+          "callee": "formatOutput",
+          "lineNumber": 170
+        },
+        {
+          "caller": "execute",
+          "callee": "output.slice",
+          "lineNumber": 171
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/code-exec.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 40,
+      "nonEmptyLines": 36,
+      "exports": [
+        {
+          "name": "codeExecTool",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "execute",
+          "callee": "fs.mkdtemp",
+          "lineNumber": 21
+        },
+        {
+          "caller": "execute",
+          "callee": "path.join",
+          "lineNumber": 21
+        },
+        {
+          "caller": "execute",
+          "callee": "os.tmpdir",
+          "lineNumber": 21
+        },
+        {
+          "caller": "execute",
+          "callee": "path.join",
+          "lineNumber": 22
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.writeFile",
+          "lineNumber": 23
+        },
+        {
+          "caller": "execute",
+          "callee": "execFileAsync",
+          "lineNumber": 26
+        },
+        {
+          "caller": "execute",
+          "callee": "(stdout || stderr).slice",
+          "lineNumber": 31
+        },
+        {
+          "caller": "execute",
+          "callee": "msg?.slice",
+          "lineNumber": 35
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.rm",
+          "lineNumber": 37
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/code-search.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 146,
+      "nonEmptyLines": 126,
+      "functions": [
+        {
+          "name": "searchCodeDocs",
+          "startLine": 24,
+          "endLine": 62,
+          "params": [
+            "query",
+            "max"
+          ]
+        },
+        {
+          "name": "fetchSnippet",
+          "startLine": 67,
+          "endLine": 94,
+          "params": [
+            "url",
+            "maxLen"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "codeSearchTool",
+          "line": 96,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "searchCodeDocs",
+          "callee": "encodeURIComponent",
+          "lineNumber": 26
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "fetch",
+          "lineNumber": 29
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 31
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "resp.text",
+          "lineNumber": 35
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "linkRe.exec",
+          "lineNumber": 44
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "decodeURIComponent",
+          "lineNumber": 45
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "m[1].replace(/\\/\\/duckduckgo\\.com\\/l\\/\\?uddg=/, \"\").split",
+          "lineNumber": 45
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "m[1].replace",
+          "lineNumber": 45
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "m[2].replace(/<[^>]+>/g, \"\").trim",
+          "lineNumber": 46
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "m[2].replace",
+          "lineNumber": 46
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "href.startsWith",
+          "lineNumber": 47
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "results.push",
+          "lineNumber": 48
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "snippetRe.exec",
+          "lineNumber": 51
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "snippets.push",
+          "lineNumber": 52
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "m[1].replace(/<[^>]+>/g, \"\").trim",
+          "lineNumber": 52
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "m[1].replace",
+          "lineNumber": 52
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "snippets.forEach",
+          "lineNumber": 54
+        },
+        {
+          "caller": "searchCodeDocs",
+          "callee": "s.slice",
+          "lineNumber": 55
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "fetch",
+          "lineNumber": 69
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 71
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "resp.headers.get",
+          "lineNumber": 76
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "resp.text",
+          "lineNumber": 77
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "contentType.includes",
+          "lineNumber": 80
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "text\n        .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n        .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n        .replace(/<[^>]+>/g, \" \")\n        .replace(/\\s+/g, \" \")\n        .trim()\n        .slice",
+          "lineNumber": 81
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "text\n        .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n        .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n        .replace(/<[^>]+>/g, \" \")\n        .replace(/\\s+/g, \" \")\n        .trim",
+          "lineNumber": 81
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "text\n        .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n        .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n        .replace(/<[^>]+>/g, \" \")\n        .replace",
+          "lineNumber": 81
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "text\n        .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n        .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n        .replace",
+          "lineNumber": 81
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "text\n        .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n        .replace",
+          "lineNumber": 81
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "text\n        .replace",
+          "lineNumber": 81
+        },
+        {
+          "caller": "fetchSnippet",
+          "callee": "text.slice",
+          "lineNumber": 90
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.min",
+          "lineNumber": 108
+        },
+        {
+          "caller": "execute",
+          "callee": "searchCodeDocs",
+          "lineNumber": 110
+        },
+        {
+          "caller": "execute",
+          "callee": "\"─\".repeat",
+          "lineNumber": 121
+        },
+        {
+          "caller": "execute",
+          "callee": "parts.push",
+          "lineNumber": 126
+        },
+        {
+          "caller": "execute",
+          "callee": "parts.push",
+          "lineNumber": 127
+        },
+        {
+          "caller": "execute",
+          "callee": "parts.push",
+          "lineNumber": 129
+        },
+        {
+          "caller": "execute",
+          "callee": "fetchSnippet",
+          "lineNumber": 134
+        },
+        {
+          "caller": "execute",
+          "callee": "parts.push",
+          "lineNumber": 136
+        },
+        {
+          "caller": "execute",
+          "callee": "content.slice(0, 1000).split(\"\\n\").slice(0, 15).join",
+          "lineNumber": 136
+        },
+        {
+          "caller": "execute",
+          "callee": "content.slice(0, 1000).split(\"\\n\").slice",
+          "lineNumber": 136
+        },
+        {
+          "caller": "execute",
+          "callee": "content.slice(0, 1000).split",
+          "lineNumber": 136
+        },
+        {
+          "caller": "execute",
+          "callee": "content.slice",
+          "lineNumber": 136
+        },
+        {
+          "caller": "execute",
+          "callee": "parts.join",
+          "lineNumber": 143
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/create-docx.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 256,
+      "nonEmptyLines": 235,
+      "functions": [
+        {
+          "name": "realPath",
+          "startLine": 7,
+          "endLine": 9,
+          "params": [
+            "p"
+          ]
+        },
+        {
+          "name": "contains",
+          "startLine": 11,
+          "endLine": 14,
+          "params": [
+            "root",
+            "target"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createDocxTool",
+          "line": 26,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "realPath",
+          "callee": "fs.realpath",
+          "lineNumber": 8
+        },
+        {
+          "caller": "contains",
+          "callee": "path.relative",
+          "lineNumber": 12
+        },
+        {
+          "caller": "contains",
+          "callee": "rel.startsWith",
+          "lineNumber": 13
+        },
+        {
+          "caller": "contains",
+          "callee": "path.isAbsolute",
+          "lineNumber": 13
+        },
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 48
+        },
+        {
+          "caller": "execute",
+          "callee": "path.isAbsolute",
+          "lineNumber": 49
+        },
+        {
+          "caller": "execute",
+          "callee": "contains",
+          "lineNumber": 49
+        },
+        {
+          "caller": "execute",
+          "callee": "realPath",
+          "lineNumber": 52
+        },
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 53
+        },
+        {
+          "caller": "execute",
+          "callee": "contains",
+          "lineNumber": 54
+        },
+        {
+          "caller": "execute",
+          "callee": "sections.push",
+          "lineNumber": 64
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.min",
+          "lineNumber": 84
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.max",
+          "lineNumber": 84
+        },
+        {
+          "caller": "execute",
+          "callee": "sections.push",
+          "lineNumber": 94
+        },
+        {
+          "caller": "execute",
+          "callee": "sections.push",
+          "lineNumber": 117
+        },
+        {
+          "caller": "execute",
+          "callee": "item.rows.map",
+          "lineNumber": 135
+        },
+        {
+          "caller": "execute",
+          "callee": "row.map",
+          "lineNumber": 137
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.floor",
+          "lineNumber": 150
+        },
+        {
+          "caller": "execute",
+          "callee": "sections.push",
+          "lineNumber": 158
+        },
+        {
+          "caller": "execute",
+          "callee": "sections.push",
+          "lineNumber": 169
+        },
+        {
+          "caller": "execute",
+          "callee": "sections.push",
+          "lineNumber": 175
+        },
+        {
+          "caller": "execute",
+          "callee": "sections.push",
+          "lineNumber": 190
+        },
+        {
+          "caller": "execute",
+          "callee": "sections.push",
+          "lineNumber": 208
+        },
+        {
+          "caller": "execute",
+          "callee": "Packer.toBuffer",
+          "lineNumber": 237
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.mkdir",
+          "lineNumber": 240
+        },
+        {
+          "caller": "execute",
+          "callee": "path.dirname",
+          "lineNumber": 240
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.writeFile",
+          "lineNumber": 243
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/cron-tool.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 52,
+      "nonEmptyLines": 47,
+      "exports": [
+        {
+          "name": "cronTool",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/data-analysis.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 283,
+      "nonEmptyLines": 261,
+      "functions": [
+        {
+          "name": "parseCSV",
+          "startLine": 11,
+          "endLine": 31,
+          "params": [
+            "text"
+          ]
+        },
+        {
+          "name": "getNumericColumns",
+          "startLine": 34,
+          "endLine": 39,
+          "params": [
+            "headers",
+            "rows"
+          ]
+        },
+        {
+          "name": "generateBarChart",
+          "startLine": 42,
+          "endLine": 72,
+          "params": [
+            "data",
+            "title"
+          ]
+        },
+        {
+          "name": "generateLineChart",
+          "startLine": 75,
+          "endLine": 107,
+          "params": [
+            "data",
+            "title"
+          ]
+        },
+        {
+          "name": "generatePieChart",
+          "startLine": 110,
+          "endLine": 149,
+          "params": [
+            "data",
+            "title"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "dataAnalysisTool",
+          "line": 151,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "parseCSV",
+          "callee": "text.split(\"\\n\").map((l) => l.trim()).filter",
+          "lineNumber": 12
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "text.split(\"\\n\").map",
+          "lineNumber": 12
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "text.split",
+          "lineNumber": 12
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "l.trim",
+          "lineNumber": 12
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "lines[0].split(\",\").map",
+          "lineNumber": 15
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "lines[0].split",
+          "lineNumber": 15
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "h.trim().replace",
+          "lineNumber": 15
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "h.trim",
+          "lineNumber": 15
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "lines.slice(1).map",
+          "lineNumber": 16
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "lines.slice",
+          "lineNumber": 16
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "values.push",
+          "lineNumber": 22
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "current.trim",
+          "lineNumber": 22
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "values.push",
+          "lineNumber": 25
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "current.trim",
+          "lineNumber": 25
+        },
+        {
+          "caller": "parseCSV",
+          "callee": "headers.forEach",
+          "lineNumber": 27
+        },
+        {
+          "caller": "getNumericColumns",
+          "callee": "headers.filter",
+          "lineNumber": 35
+        },
+        {
+          "caller": "getNumericColumns",
+          "callee": "rows.some",
+          "lineNumber": 35
+        },
+        {
+          "caller": "getNumericColumns",
+          "callee": "parseFloat",
+          "lineNumber": 36
+        },
+        {
+          "caller": "getNumericColumns",
+          "callee": "isNaN",
+          "lineNumber": 37
+        },
+        {
+          "caller": "getNumericColumns",
+          "callee": "r[h].trim",
+          "lineNumber": 37
+        },
+        {
+          "caller": "generateBarChart",
+          "callee": "Math.max",
+          "lineNumber": 47
+        },
+        {
+          "caller": "generateBarChart",
+          "callee": "data.map",
+          "lineNumber": 47
+        },
+        {
+          "caller": "generateBarChart",
+          "callee": "Math.max",
+          "lineNumber": 48
+        },
+        {
+          "caller": "generateBarChart",
+          "callee": "data.map((d, i) => {\n    const barH = (d.value / maxVal) * chartH\n    const x = margin.left + i * gap + (gap - barW) / 2\n    const y = margin.top + chartH - barH\n    const color = `hsl(${(i * 30 + 200) % 360}, 60%, 50%)`\n    return `\n      <rect x=\"${x}\" y=\"${y}\" width=\"${barW}\" height=\"${barH}\" fill=\"${color}\" rx=\"2\">\n        <title>${d.label}: ${d.value}</title>\n      </rect>\n      <text x=\"${x + barW / 2}\" y=\"${margin.top + chartH + 15}\" text-anchor=\"middle\" font-size=\"10\" fill=\"#999\" transform=\"rotate(-30,${x + barW / 2},${margin.top + chartH + 15})\">${d.label}</text>\n      <text x=\"${x + barW / 2}\" y=\"${y - 5}\" text-anchor=\"middle\" font-size=\"10\" fill=\"#ccc\">${d.value}</text>\n    `\n  }).join",
+          "lineNumber": 51
+        },
+        {
+          "caller": "generateBarChart",
+          "callee": "data.map",
+          "lineNumber": 51
+        },
+        {
+          "caller": "generateBarChart",
+          "callee": "Buffer.from(\n    `<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"${width}\" height=\"${height}\">\n      <rect width=\"${width}\" height=\"${height}\" fill=\"#1a1a2e\" rx=\"8\"/>\n      <text x=\"${width / 2}\" y=\"25\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"#eee\">${title}</text>\n      ${bars}\n    </svg>`, \"utf-8\"\n  ).toString",
+          "lineNumber": 65
+        },
+        {
+          "caller": "generateBarChart",
+          "callee": "Buffer.from",
+          "lineNumber": 65
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "Math.max",
+          "lineNumber": 80
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "data.map",
+          "lineNumber": 80
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "Math.min",
+          "lineNumber": 81
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "data.map",
+          "lineNumber": 81
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "data.map",
+          "lineNumber": 85
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "points.map((p, i) => `${i === 0 ? \"M\" : \"L\"}${p.x},${p.y}`).join",
+          "lineNumber": 90
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "points.map",
+          "lineNumber": 90
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "points.map((p, i) => `\n    <circle cx=\"${p.x}\" cy=\"${p.y}\" r=\"4\" fill=\"#6366f1\" stroke=\"#fff\" stroke-width=\"1\">\n      <title>${data[i].label}: ${data[i].value}</title>\n    </circle>\n  `).join",
+          "lineNumber": 91
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "points.map",
+          "lineNumber": 91
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "Buffer.from(\n    `<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"${width}\" height=\"${height}\">\n      <rect width=\"${width}\" height=\"${height}\" fill=\"#1a1a2e\" rx=\"8\"/>\n      <text x=\"${width / 2}\" y=\"25\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"#eee\">${title}</text>\n      <path d=\"${linePath}\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"2\"/>\n      ${dots}\n      <text x=\"${margin.left}\" y=\"${margin.top + chartH + 15}\" font-size=\"10\" fill=\"#999\">${data[0]?.label || \"\"}</text>\n      <text x=\"${margin.left + chartW}\" y=\"${margin.top + chartH + 15}\" text-anchor=\"end\" font-size=\"10\" fill=\"#999\">${data[data.length - 1]?.label || \"\"}</text>\n    </svg>`, \"utf-8\"\n  ).toString",
+          "lineNumber": 97
+        },
+        {
+          "caller": "generateLineChart",
+          "callee": "Buffer.from",
+          "lineNumber": 97
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "data.reduce",
+          "lineNumber": 113
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "data.map((d, i) => {\n    const angle = (d.value / total) * 360\n    const startRad = (currentAngle * Math.PI) / 180\n    const endRad = ((currentAngle + angle) * Math.PI) / 180\n    const x1 = cx + r * Math.cos(startRad)\n    const y1 = cy + r * Math.sin(startRad)\n    const x2 = cx + r * Math.cos(endRad)\n    const y2 = cy + r * Math.sin(endRad)\n    const large = angle > 180 ? 1 : 0\n    const color = colors[i % colors.length]\n    const path = `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`\n    const labelAngle = currentAngle + angle / 2\n    const lx = cx + (r * 0.65) * Math.cos((labelAngle * Math.PI) / 180)\n    const ly = cy + (r * 0.65) * Math.sin((labelAngle * Math.PI) / 180)\n    currentAngle += angle\n    return `<path d=\"${path}\" fill=\"${color}\" stroke=\"#1a1a2e\" stroke-width=\"2\"><title>${d.label}: ${d.value}</title></path>\n      <text x=\"${lx}\" y=\"${ly}\" text-anchor=\"middle\" font-size=\"10\" fill=\"#fff\">${Math.round(d.value / total * 100)}%</text>`\n  }).join",
+          "lineNumber": 117
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "data.map",
+          "lineNumber": 117
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "Math.cos",
+          "lineNumber": 121
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "Math.sin",
+          "lineNumber": 122
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "Math.cos",
+          "lineNumber": 123
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "Math.sin",
+          "lineNumber": 124
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "Math.cos",
+          "lineNumber": 129
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "Math.sin",
+          "lineNumber": 130
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "Math.round",
+          "lineNumber": 133
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "data.map((d, i) => `\n    <rect x=\"290\" y=\"${50 + i * 22}\" width=\"12\" height=\"12\" fill=\"${colors[i % colors.length]}\" rx=\"2\"/>\n    <text x=\"308\" y=\"${60 + i * 22}\" font-size=\"11\" fill=\"#ccc\">${d.label}</text>\n  `).join",
+          "lineNumber": 136
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "data.map",
+          "lineNumber": 136
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "Buffer.from(\n    `<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"${width}\" height=\"${height}\">\n      <rect width=\"${width}\" height=\"${height}\" fill=\"#1a1a2e\" rx=\"8\"/>\n      <text x=\"${width / 2}\" y=\"25\" text-anchor=\"middle\" font-size=\"13\" font-weight=\"bold\" fill=\"#eee\">${title}</text>\n      ${slices}\n      ${legend}\n    </svg>`, \"utf-8\"\n  ).toString",
+          "lineNumber": 141
+        },
+        {
+          "caller": "generatePieChart",
+          "callee": "Buffer.from",
+          "lineNumber": 141
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/delegate-task.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 122,
+      "nonEmptyLines": 110,
+      "exports": [
+        {
+          "name": "delegateTaskTool",
+          "line": 43,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 17,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/edit-file.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 385,
+      "nonEmptyLines": 341,
+      "functions": [
+        {
+          "name": "realPath",
+          "startLine": 18,
+          "endLine": 20,
+          "params": [
+            "p"
+          ]
+        },
+        {
+          "name": "contains",
+          "startLine": 22,
+          "endLine": 25,
+          "params": [
+            "root",
+            "target"
+          ]
+        },
+        {
+          "name": "previewLines",
+          "startLine": 27,
+          "endLine": 32,
+          "params": [
+            "value",
+            "prefix"
+          ]
+        },
+        {
+          "name": "stripBom",
+          "startLine": 35,
+          "endLine": 37,
+          "params": [
+            "text"
+          ]
+        },
+        {
+          "name": "joinBom",
+          "startLine": 38,
+          "endLine": 40,
+          "params": [
+            "text",
+            "bom"
+          ]
+        },
+        {
+          "name": "normalizeLineEndings",
+          "startLine": 42,
+          "endLine": 42,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "detectLineEnding",
+          "startLine": 43,
+          "endLine": 43,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "convertToLineEnding",
+          "startLine": 44,
+          "endLine": 45,
+          "params": [
+            "s",
+            "ending"
+          ]
+        },
+        {
+          "name": "countOccurrences",
+          "startLine": 47,
+          "endLine": 52,
+          "params": [
+            "content",
+            "search"
+          ]
+        },
+        {
+          "name": "levenshtein",
+          "startLine": 57,
+          "endLine": 69,
+          "params": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "name": "isDisproportionate",
+          "startLine": 269,
+          "endLine": 274,
+          "params": [
+            "match",
+            "find"
+          ]
+        },
+        {
+          "name": "replace",
+          "startLine": 277,
+          "endLine": 296,
+          "params": [
+            "content",
+            "oldString",
+            "newString",
+            "replaceAll"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "editFileTool",
+          "line": 298,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "realPath",
+          "callee": "fs.realpath",
+          "lineNumber": 19
+        },
+        {
+          "caller": "contains",
+          "callee": "path.relative",
+          "lineNumber": 23
+        },
+        {
+          "caller": "contains",
+          "callee": "rel.startsWith",
+          "lineNumber": 24
+        },
+        {
+          "caller": "contains",
+          "callee": "path.isAbsolute",
+          "lineNumber": 24
+        },
+        {
+          "caller": "previewLines",
+          "callee": "value.split",
+          "lineNumber": 28
+        },
+        {
+          "caller": "previewLines",
+          "callee": "lines.slice(0, 6).map",
+          "lineNumber": 29
+        },
+        {
+          "caller": "previewLines",
+          "callee": "lines.slice",
+          "lineNumber": 29
+        },
+        {
+          "caller": "previewLines",
+          "callee": "line.slice",
+          "lineNumber": 29
+        },
+        {
+          "caller": "previewLines",
+          "callee": "shown.push",
+          "lineNumber": 30
+        },
+        {
+          "caller": "stripBom",
+          "callee": "text.startsWith",
+          "lineNumber": 36
+        },
+        {
+          "caller": "stripBom",
+          "callee": "text.slice",
+          "lineNumber": 36
+        },
+        {
+          "caller": "normalizeLineEndings",
+          "callee": "s.replace",
+          "lineNumber": 42
+        },
+        {
+          "caller": "detectLineEnding",
+          "callee": "s.includes",
+          "lineNumber": 43
+        },
+        {
+          "caller": "convertToLineEnding",
+          "callee": "normalizeLineEndings",
+          "lineNumber": 45
+        },
+        {
+          "caller": "convertToLineEnding",
+          "callee": "normalizeLineEndings(s).split(\"\\n\").join",
+          "lineNumber": 45
+        },
+        {
+          "caller": "convertToLineEnding",
+          "callee": "normalizeLineEndings(s).split",
+          "lineNumber": 45
+        },
+        {
+          "caller": "convertToLineEnding",
+          "callee": "normalizeLineEndings",
+          "lineNumber": 45
+        },
+        {
+          "caller": "countOccurrences",
+          "callee": "content.indexOf",
+          "lineNumber": 50
+        },
+        {
+          "caller": "levenshtein",
+          "callee": "Math.max",
+          "lineNumber": 58
+        },
+        {
+          "caller": "levenshtein",
+          "callee": "Array.from",
+          "lineNumber": 59
+        },
+        {
+          "caller": "levenshtein",
+          "callee": "Array.from",
+          "lineNumber": 60
+        },
+        {
+          "caller": "levenshtein",
+          "callee": "Math.min",
+          "lineNumber": 65
+        },
+        {
+          "caller": "normalize",
+          "callee": "s.replace(/\\s+/g, \" \").trim",
+          "lineNumber": 159
+        },
+        {
+          "caller": "normalize",
+          "callee": "s.replace",
+          "lineNumber": 159
+        },
+        {
+          "caller": "removeIndent",
+          "callee": "text.split",
+          "lineNumber": 181
+        },
+        {
+          "caller": "removeIndent",
+          "callee": "lines.filter",
+          "lineNumber": 182
+        },
+        {
+          "caller": "removeIndent",
+          "callee": "l.trim",
+          "lineNumber": 182
+        },
+        {
+          "caller": "removeIndent",
+          "callee": "Math.min",
+          "lineNumber": 184
+        },
+        {
+          "caller": "removeIndent",
+          "callee": "nonEmpty.map",
+          "lineNumber": 184
+        },
+        {
+          "caller": "removeIndent",
+          "callee": "l.match",
+          "lineNumber": 184
+        },
+        {
+          "caller": "removeIndent",
+          "callee": "lines.map((l) => l.trim().length === 0 ? l : l.slice(min)).join",
+          "lineNumber": 185
+        },
+        {
+          "caller": "removeIndent",
+          "callee": "lines.map",
+          "lineNumber": 185
+        },
+        {
+          "caller": "removeIndent",
+          "callee": "l.trim",
+          "lineNumber": 185
+        },
+        {
+          "caller": "removeIndent",
+          "callee": "l.slice",
+          "lineNumber": 185
+        },
+        {
+          "caller": "unescape",
+          "callee": "s.replace",
+          "lineNumber": 200
+        },
+        {
+          "caller": "isDisproportionate",
+          "callee": "find.split",
+          "lineNumber": 270
+        },
+        {
+          "caller": "isDisproportionate",
+          "callee": "match.split",
+          "lineNumber": 271
+        },
+        {
+          "caller": "isDisproportionate",
+          "callee": "Math.max",
+          "lineNumber": 272
+        },
+        {
+          "caller": "isDisproportionate",
+          "callee": "match.trim",
+          "lineNumber": 273
+        },
+        {
+          "caller": "isDisproportionate",
+          "callee": "Math.max",
+          "lineNumber": 273
+        },
+        {
+          "caller": "isDisproportionate",
+          "callee": "find.trim",
+          "lineNumber": 273
+        },
+        {
+          "caller": "isDisproportionate",
+          "callee": "find.trim",
+          "lineNumber": 273
+        },
+        {
+          "caller": "replace",
+          "callee": "replacer",
+          "lineNumber": 282
+        },
+        {
+          "caller": "replace",
+          "callee": "content.indexOf",
+          "lineNumber": 283
+        },
+        {
+          "caller": "replace",
+          "callee": "isDisproportionate",
+          "lineNumber": 285
+        },
+        {
+          "caller": "replace",
+          "callee": "content.replaceAll",
+          "lineNumber": 288
+        },
+        {
+          "caller": "replace",
+          "callee": "content.lastIndexOf",
+          "lineNumber": 289
+        },
+        {
+          "caller": "replace",
+          "callee": "content.substring",
+          "lineNumber": 291
+        },
+        {
+          "caller": "replace",
+          "callee": "content.substring",
+          "lineNumber": 291
+        },
+        {
+          "caller": "toModelOutput",
+          "callee": "outputStr.match",
+          "lineNumber": 311
+        },
+        {
+          "caller": "toModelOutput",
+          "callee": "[\n      `Edited file successfully. Replacements: ${count}`,\n      \"```diff\",\n      ...previewLines(input.oldString as string, \"-\"),\n      ...previewLines(input.newString as string, \"+\"),\n      \"```\",\n    ].join",
+          "lineNumber": 313
+        },
+        {
+          "caller": "toModelOutput",
+          "callee": "previewLines",
+          "lineNumber": 316
+        },
+        {
+          "caller": "toModelOutput",
+          "callee": "previewLines",
+          "lineNumber": 317
+        },
+        {
+          "caller": "execute",
+          "callee": "path.isAbsolute",
+          "lineNumber": 324
+        },
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 325
+        },
+        {
+          "caller": "execute",
+          "callee": "realPath",
+          "lineNumber": 326
+        },
+        {
+          "caller": "execute",
+          "callee": "realPath",
+          "lineNumber": 327
+        },
+        {
+          "caller": "execute",
+          "callee": "contains",
+          "lineNumber": 328
+        },
+        {
+          "caller": "execute",
+          "callee": "getSnapshotManager",
+          "lineNumber": 340
+        },
+        {
+          "caller": "execute",
+          "callee": "snapshotMgr.capture",
+          "lineNumber": 341
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.readFile",
+          "lineNumber": 345
+        },
+        {
+          "caller": "execute",
+          "callee": "stripBom",
+          "lineNumber": 350
+        },
+        {
+          "caller": "execute",
+          "callee": "originalBytes.toString",
+          "lineNumber": 350
+        },
+        {
+          "caller": "execute",
+          "callee": "detectLineEnding",
+          "lineNumber": 351
+        },
+        {
+          "caller": "execute",
+          "callee": "convertToLineEnding",
+          "lineNumber": 352
+        },
+        {
+          "caller": "execute",
+          "callee": "convertToLineEnding",
+          "lineNumber": 353
+        },
+        {
+          "caller": "execute",
+          "callee": "replace",
+          "lineNumber": 357
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.readFile",
+          "lineNumber": 364
+        },
+        {
+          "caller": "execute",
+          "callee": "currentBytes.equals",
+          "lineNumber": 365
+        },
+        {
+          "caller": "execute",
+          "callee": "joinBom",
+          "lineNumber": 373
+        },
+        {
+          "caller": "execute",
+          "callee": "convertToLineEnding",
+          "lineNumber": 373
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.writeFile",
+          "lineNumber": 374
+        },
+        {
+          "caller": "execute",
+          "callee": "countOccurrences",
+          "lineNumber": 375
+        },
+        {
+          "caller": "execute",
+          "callee": "countOccurrences",
+          "lineNumber": 375
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.max",
+          "lineNumber": 378
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.max",
+          "lineNumber": 379
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 12,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/git.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 88,
+      "nonEmptyLines": 82,
+      "functions": [
+        {
+          "name": "git",
+          "startLine": 8,
+          "endLine": 10,
+          "params": [
+            "args",
+            "cwd"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "gitStatusTool",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "gitDiffTool",
+          "line": 30,
+          "isDefault": false
+        },
+        {
+          "name": "gitLogTool",
+          "line": 51,
+          "isDefault": false
+        },
+        {
+          "name": "gitCommitTool",
+          "line": 70,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "git",
+          "callee": "execAsync(\"git\", args, { cwd, timeout: 15000 }).then",
+          "lineNumber": 9
+        },
+        {
+          "caller": "git",
+          "callee": "execAsync",
+          "lineNumber": 9
+        },
+        {
+          "caller": "execute",
+          "callee": "git",
+          "lineNumber": 22
+        },
+        {
+          "caller": "execute",
+          "callee": "args.push",
+          "lineNumber": 42
+        },
+        {
+          "caller": "execute",
+          "callee": "git",
+          "lineNumber": 43
+        },
+        {
+          "caller": "execute",
+          "callee": "git",
+          "lineNumber": 62
+        },
+        {
+          "caller": "execute",
+          "callee": "git",
+          "lineNumber": 82
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/glob.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 52,
+      "nonEmptyLines": 44,
+      "functions": [
+        {
+          "name": "globRecursive",
+          "startLine": 6,
+          "endLine": 19,
+          "params": [
+            "dir",
+            "pattern"
+          ]
+        },
+        {
+          "name": "matchGlob",
+          "startLine": 21,
+          "endLine": 24,
+          "params": [
+            "name",
+            "pattern"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "globTool",
+          "line": 26,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "globRecursive",
+          "callee": "fs.readdir",
+          "lineNumber": 8
+        },
+        {
+          "caller": "globRecursive",
+          "callee": "path.join",
+          "lineNumber": 11
+        },
+        {
+          "caller": "globRecursive",
+          "callee": "entry.isDirectory",
+          "lineNumber": 12
+        },
+        {
+          "caller": "globRecursive",
+          "callee": "results.push",
+          "lineNumber": 13
+        },
+        {
+          "caller": "globRecursive",
+          "callee": "globRecursive",
+          "lineNumber": 13
+        },
+        {
+          "caller": "globRecursive",
+          "callee": "entry.isFile",
+          "lineNumber": 14
+        },
+        {
+          "caller": "globRecursive",
+          "callee": "matchGlob",
+          "lineNumber": 14
+        },
+        {
+          "caller": "globRecursive",
+          "callee": "results.push",
+          "lineNumber": 15
+        },
+        {
+          "caller": "matchGlob",
+          "callee": "pattern.replace(/\\*/g, \".*\").replace",
+          "lineNumber": 22
+        },
+        {
+          "caller": "matchGlob",
+          "callee": "pattern.replace",
+          "lineNumber": 22
+        },
+        {
+          "caller": "matchGlob",
+          "callee": "regex.test",
+          "lineNumber": 23
+        },
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 37
+        },
+        {
+          "caller": "execute",
+          "callee": "globRecursive",
+          "lineNumber": 38
+        },
+        {
+          "caller": "execute",
+          "callee": "path.basename",
+          "lineNumber": 38
+        },
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 39
+        },
+        {
+          "caller": "execute",
+          "callee": "matches.slice(0, 200).map",
+          "lineNumber": 43
+        },
+        {
+          "caller": "execute",
+          "callee": "matches.slice",
+          "lineNumber": 43
+        },
+        {
+          "caller": "execute",
+          "callee": "path.relative",
+          "lineNumber": 44
+        },
+        {
+          "caller": "execute",
+          "callee": "lines.join",
+          "lineNumber": 48
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/grep.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 48,
+      "nonEmptyLines": 42,
+      "exports": [
+        {
+          "name": "grepTool",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 21
+        },
+        {
+          "caller": "execute",
+          "callee": "args.splice",
+          "lineNumber": 25
+        },
+        {
+          "caller": "execute",
+          "callee": "execFileAsync",
+          "lineNumber": 27
+        },
+        {
+          "caller": "execute",
+          "callee": "stdout.slice",
+          "lineNumber": 29
+        },
+        {
+          "caller": "execute",
+          "callee": "execFileAsync",
+          "lineNumber": 36
+        },
+        {
+          "caller": "execute",
+          "callee": "stdout.slice",
+          "lineNumber": 40
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/image-gen.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 67,
+      "nonEmptyLines": 58,
+      "exports": [
+        {
+          "name": "imageGenTool",
+          "line": 8,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 22,
+      "nonEmptyLines": 21,
+      "exports": [
+        {
+          "name": "writeFileTool",
+          "line": 6,
+          "isDefault": false
+        },
+        {
+          "name": "listFilesTool",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "webSearchTool",
+          "line": 8,
+          "isDefault": false
+        },
+        {
+          "name": "webFetchTool",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "codeSearchTool",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "questionTool",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "grepTool",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "globTool",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "codeExecTool",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "bashTool",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "editFileTool",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "gitStatusTool",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "gitDiffTool",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "gitLogTool",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "gitCommitTool",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "createDocxTool",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "searchHistoryTool",
+          "line": 19,
+          "isDefault": false
+        },
+        {
+          "name": "memorySearchTool",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "memoryRecallTool",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "spawnAgentTool",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "waitAgentsTool",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "listSubagentsTool",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "createMCPTool",
+          "line": 22,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 23,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/list-files.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 42,
+      "nonEmptyLines": 37,
+      "exports": [
+        {
+          "name": "listFilesTool",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 16
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.stat",
+          "lineNumber": 17
+        },
+        {
+          "caller": "execute",
+          "callee": "stat.isDirectory",
+          "lineNumber": 18
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.readdir",
+          "lineNumber": 20
+        },
+        {
+          "caller": "execute",
+          "callee": "entries.sort",
+          "lineNumber": 24
+        },
+        {
+          "caller": "execute",
+          "callee": "a.name.localeCompare",
+          "lineNumber": 24
+        },
+        {
+          "caller": "execute",
+          "callee": "entry.isDirectory",
+          "lineNumber": 25
+        },
+        {
+          "caller": "execute",
+          "callee": "dirs.push",
+          "lineNumber": 25
+        },
+        {
+          "caller": "execute",
+          "callee": "entry.isFile",
+          "lineNumber": 26
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.stat",
+          "lineNumber": 28
+        },
+        {
+          "caller": "execute",
+          "callee": "path.join",
+          "lineNumber": 28
+        },
+        {
+          "caller": "execute",
+          "callee": "files.push",
+          "lineNumber": 29
+        },
+        {
+          "caller": "execute",
+          "callee": "files.push",
+          "lineNumber": 31
+        },
+        {
+          "caller": "execute",
+          "callee": "output.join",
+          "lineNumber": 39
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/lsp-tool.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 89,
+      "nonEmptyLines": 85,
+      "exports": [
+        {
+          "name": "lspDefinitionTool",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "lspReferencesTool",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "lspHoverTool",
+          "line": 70,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "execute",
+          "callee": "lspManager.getDefinition",
+          "lineNumber": 23
+        },
+        {
+          "caller": "execute",
+          "callee": "locations\n          .map((loc) => {\n            const relPath = path.relative(ctx.workspace, loc.uri.replace(/^file:\\/\\//, \"\"))\n            return `${relPath}:${loc.range.start.line + 1}:${loc.range.start.character + 1}`\n          })\n          .join",
+          "lineNumber": 27
+        },
+        {
+          "caller": "execute",
+          "callee": "locations\n          .map",
+          "lineNumber": 27
+        },
+        {
+          "caller": "execute",
+          "callee": "path.relative",
+          "lineNumber": 29
+        },
+        {
+          "caller": "execute",
+          "callee": "loc.uri.replace",
+          "lineNumber": 29
+        },
+        {
+          "caller": "execute",
+          "callee": "String",
+          "lineNumber": 35
+        },
+        {
+          "caller": "execute",
+          "callee": "lspManager.getReferences",
+          "lineNumber": 52
+        },
+        {
+          "caller": "execute",
+          "callee": "refs\n          .slice(0, 50)\n          .map((ref) => {\n            const relPath = path.relative(ctx.workspace, ref.uri.replace(/^file:\\/\\//, \"\"))\n            return `${relPath}:${ref.range.start.line + 1}:${ref.range.start.character + 1}`\n          })\n          .join",
+          "lineNumber": 56
+        },
+        {
+          "caller": "execute",
+          "callee": "refs\n          .slice(0, 50)\n          .map",
+          "lineNumber": 56
+        },
+        {
+          "caller": "execute",
+          "callee": "refs\n          .slice",
+          "lineNumber": 56
+        },
+        {
+          "caller": "execute",
+          "callee": "path.relative",
+          "lineNumber": 59
+        },
+        {
+          "caller": "execute",
+          "callee": "ref.uri.replace",
+          "lineNumber": 59
+        },
+        {
+          "caller": "execute",
+          "callee": "String",
+          "lineNumber": 65
+        },
+        {
+          "caller": "execute",
+          "callee": "lspManager.getHoverInfo",
+          "lineNumber": 82
+        },
+        {
+          "caller": "execute",
+          "callee": "String",
+          "lineNumber": 86
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 3,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/question.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 90,
+      "nonEmptyLines": 80,
+      "functions": [
+        {
+          "name": "answerQuestion",
+          "startLine": 27,
+          "endLine": 33,
+          "params": [
+            "questionId",
+            "answer"
+          ]
+        },
+        {
+          "name": "getPendingQuestions",
+          "startLine": 38,
+          "endLine": 50,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "answerQuestion",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "getPendingQuestions",
+          "line": 38,
+          "isDefault": false
+        },
+        {
+          "name": "questionTool",
+          "line": 52,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "answerQuestion",
+          "callee": "pendingQuestions.get",
+          "lineNumber": 28
+        },
+        {
+          "caller": "answerQuestion",
+          "callee": "pendingQuestions.delete",
+          "lineNumber": 30
+        },
+        {
+          "caller": "answerQuestion",
+          "callee": "pending.resolve",
+          "lineNumber": 31
+        },
+        {
+          "caller": "getPendingQuestions",
+          "callee": "Date.now",
+          "lineNumber": 39
+        },
+        {
+          "caller": "getPendingQuestions",
+          "callee": "q.reject",
+          "lineNumber": 43
+        },
+        {
+          "caller": "getPendingQuestions",
+          "callee": "pendingQuestions.delete",
+          "lineNumber": 44
+        },
+        {
+          "caller": "getPendingQuestions",
+          "callee": "results.push",
+          "lineNumber": 47
+        },
+        {
+          "caller": "execute",
+          "callee": "Date.now().toString",
+          "lineNumber": 63
+        },
+        {
+          "caller": "execute",
+          "callee": "Date.now",
+          "lineNumber": 63
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.random().toString(36).slice",
+          "lineNumber": 63
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.random().toString",
+          "lineNumber": 63
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.random",
+          "lineNumber": 63
+        },
+        {
+          "caller": "execute",
+          "callee": "pendingQuestions.set",
+          "lineNumber": 67
+        },
+        {
+          "caller": "execute",
+          "callee": "Date.now",
+          "lineNumber": 72
+        },
+        {
+          "caller": "execute",
+          "callee": "setTimeout",
+          "lineNumber": 76
+        },
+        {
+          "caller": "execute",
+          "callee": "pendingQuestions.has",
+          "lineNumber": 77
+        },
+        {
+          "caller": "execute",
+          "callee": "pendingQuestions.delete",
+          "lineNumber": 78
+        },
+        {
+          "caller": "execute",
+          "callee": "reject",
+          "lineNumber": 79
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/read-file-effect.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 60,
+      "nonEmptyLines": 57,
+      "exports": [
+        {
+          "name": "readFileTool",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 20
+        },
+        {
+          "caller": "execute",
+          "callee": "resolved.startsWith",
+          "lineNumber": 21
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.stat",
+          "lineNumber": 24
+        },
+        {
+          "caller": "execute",
+          "callee": "stat.isFile",
+          "lineNumber": 25
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.readFile",
+          "lineNumber": 27
+        },
+        {
+          "caller": "execute",
+          "callee": "buffer.includes",
+          "lineNumber": 28
+        },
+        {
+          "caller": "execute",
+          "callee": "path.extname(resolved).toLowerCase",
+          "lineNumber": 30
+        },
+        {
+          "caller": "execute",
+          "callee": "path.extname",
+          "lineNumber": 30
+        },
+        {
+          "caller": "execute",
+          "callee": "\"─\".repeat",
+          "lineNumber": 42
+        },
+        {
+          "caller": "execute",
+          "callee": "buffer.toString",
+          "lineNumber": 45
+        },
+        {
+          "caller": "execute",
+          "callee": "content.split",
+          "lineNumber": 48
+        },
+        {
+          "caller": "execute",
+          "callee": "lines.slice(0, limit).join",
+          "lineNumber": 49
+        },
+        {
+          "caller": "execute",
+          "callee": "lines.slice",
+          "lineNumber": 49
+        },
+        {
+          "caller": "execute",
+          "callee": "content.slice",
+          "lineNumber": 53
+        },
+        {
+          "caller": "execute",
+          "callee": "\"-\".repeat",
+          "lineNumber": 56
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/read-file.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 189,
+      "nonEmptyLines": 161,
+      "functions": [
+        {
+          "name": "realPath",
+          "startLine": 15,
+          "endLine": 17,
+          "params": [
+            "p"
+          ]
+        },
+        {
+          "name": "contains",
+          "startLine": 19,
+          "endLine": 22,
+          "params": [
+            "root",
+            "target"
+          ]
+        },
+        {
+          "name": "decodeText",
+          "startLine": 26,
+          "endLine": 38,
+          "params": [
+            "buffer",
+            "encoding"
+          ]
+        },
+        {
+          "name": "readTextFile",
+          "startLine": 100,
+          "endLine": 154,
+          "params": [
+            "real",
+            "buffer",
+            "input",
+            "requestPath",
+            "workspace"
+          ]
+        },
+        {
+          "name": "readDirectory",
+          "startLine": 156,
+          "endLine": 183,
+          "params": [
+            "real",
+            "input",
+            "root"
+          ]
+        },
+        {
+          "name": "statSizeText",
+          "startLine": 185,
+          "endLine": 189,
+          "params": [
+            "bytes"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "readFileTool",
+          "line": 40,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "realPath",
+          "callee": "fs.realpath",
+          "lineNumber": 16
+        },
+        {
+          "caller": "contains",
+          "callee": "path.relative",
+          "lineNumber": 20
+        },
+        {
+          "caller": "contains",
+          "callee": "rel.startsWith",
+          "lineNumber": 21
+        },
+        {
+          "caller": "contains",
+          "callee": "path.isAbsolute",
+          "lineNumber": 21
+        },
+        {
+          "caller": "decodeText",
+          "callee": "NATIVE_ENCODINGS.has",
+          "lineNumber": 27
+        },
+        {
+          "caller": "decodeText",
+          "callee": "buffer.toString",
+          "lineNumber": 28
+        },
+        {
+          "caller": "decodeText",
+          "callee": "require",
+          "lineNumber": 32
+        },
+        {
+          "caller": "decodeText",
+          "callee": "iconv.encodingExists",
+          "lineNumber": 33
+        },
+        {
+          "caller": "decodeText",
+          "callee": "iconv.decode",
+          "lineNumber": 34
+        },
+        {
+          "caller": "execute",
+          "callee": "path.isAbsolute",
+          "lineNumber": 55
+        },
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 56
+        },
+        {
+          "caller": "execute",
+          "callee": "realPath",
+          "lineNumber": 57
+        },
+        {
+          "caller": "execute",
+          "callee": "realPath",
+          "lineNumber": 58
+        },
+        {
+          "caller": "execute",
+          "callee": "contains",
+          "lineNumber": 61
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.stat(real).catch",
+          "lineNumber": 65
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.stat",
+          "lineNumber": 65
+        },
+        {
+          "caller": "execute",
+          "callee": "stat.isDirectory",
+          "lineNumber": 69
+        },
+        {
+          "caller": "execute",
+          "callee": "readDirectory",
+          "lineNumber": 70
+        },
+        {
+          "caller": "execute",
+          "callee": "path.extname(real).toLowerCase",
+          "lineNumber": 74
+        },
+        {
+          "caller": "execute",
+          "callee": "path.extname",
+          "lineNumber": 74
+        },
+        {
+          "caller": "execute",
+          "callee": "SUPPORTED_IMAGE_EXTS.has",
+          "lineNumber": 75
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.readFile",
+          "lineNumber": 76
+        },
+        {
+          "caller": "execute",
+          "callee": "\"─\".repeat",
+          "lineNumber": 80
+        },
+        {
+          "caller": "execute",
+          "callee": "buffer.toString",
+          "lineNumber": 81
+        },
+        {
+          "caller": "execute",
+          "callee": "path.basename",
+          "lineNumber": 81
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.readFile",
+          "lineNumber": 86
+        },
+        {
+          "caller": "execute",
+          "callee": "buffer.includes",
+          "lineNumber": 87
+        },
+        {
+          "caller": "execute",
+          "callee": "\"─\".repeat",
+          "lineNumber": 93
+        },
+        {
+          "caller": "execute",
+          "callee": "readTextFile",
+          "lineNumber": 96
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "(input.encoding || \"utf-8\").toLowerCase",
+          "lineNumber": 101
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "decodeText",
+          "lineNumber": 106
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "buffer.toString",
+          "lineNumber": 109
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "\"-\".repeat",
+          "lineNumber": 111
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "text.slice",
+          "lineNumber": 111
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "text.includes",
+          "lineNumber": 116
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "\"-\".repeat",
+          "lineNumber": 119
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "text.slice",
+          "lineNumber": 125
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "text.split",
+          "lineNumber": 129
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "lines.slice",
+          "lineNumber": 136
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "selected.join",
+          "lineNumber": 137
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "Math.min",
+          "lineNumber": 138
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "\"-\".repeat",
+          "lineNumber": 140
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "content.slice",
+          "lineNumber": 145
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "lspManager.touchFile(workspace, real).catch",
+          "lineNumber": 150
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "lspManager.touchFile",
+          "lineNumber": 150
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "statSizeText",
+          "lineNumber": 153
+        },
+        {
+          "caller": "readTextFile",
+          "callee": "\"-\".repeat",
+          "lineNumber": 153
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "fs.readdir",
+          "lineNumber": 157
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "allEntries.filter",
+          "lineNumber": 158
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "IGNORE_DIRS.has",
+          "lineNumber": 158
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "e.name.startsWith",
+          "lineNumber": 158
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "filtered.slice",
+          "lineNumber": 163
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "selected.map",
+          "lineNumber": 164
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "e.isDirectory",
+          "lineNumber": 165
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "e.isFile",
+          "lineNumber": 165
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "path.relative",
+          "lineNumber": 169
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "Math.min",
+          "lineNumber": 170
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "\"-\".repeat",
+          "lineNumber": 171
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "lines.join",
+          "lineNumber": 171
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "selected.filter",
+          "lineNumber": 177
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "e.isDirectory",
+          "lineNumber": 177
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "IGNORE_DIRS.has",
+          "lineNumber": 177
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "subdirs.map((e) => e.name).join",
+          "lineNumber": 179
+        },
+        {
+          "caller": "readDirectory",
+          "callee": "subdirs.map",
+          "lineNumber": 179
+        },
+        {
+          "caller": "statSizeText",
+          "callee": "(bytes / 1024).toFixed",
+          "lineNumber": 187
+        },
+        {
+          "caller": "statSizeText",
+          "callee": "(bytes / (1024 * 1024)).toFixed",
+          "lineNumber": 188
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/task-tool.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 101,
+      "nonEmptyLines": 86,
+      "exports": [
+        {
+          "name": "taskTool",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/tool-loader.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 192,
+      "nonEmptyLines": 171,
+      "functions": [
+        {
+          "name": "getToolInfoList",
+          "startLine": 53,
+          "endLine": 64,
+          "params": []
+        },
+        {
+          "name": "getToolDescription",
+          "startLine": 66,
+          "endLine": 101,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "searchTools",
+          "startLine": 107,
+          "endLine": 141,
+          "params": [
+            "query",
+            "maxResults"
+          ]
+        },
+        {
+          "name": "getRecommendedTools",
+          "startLine": 146,
+          "endLine": 160,
+          "params": [
+            "keywords"
+          ]
+        },
+        {
+          "name": "shouldLoadTool",
+          "startLine": 166,
+          "endLine": 192,
+          "params": [
+            "toolName",
+            "context"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "searchTools",
+          "line": 107,
+          "isDefault": false
+        },
+        {
+          "name": "getRecommendedTools",
+          "line": 146,
+          "isDefault": false
+        },
+        {
+          "name": "shouldLoadTool",
+          "line": 166,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getToolInfoList",
+          "callee": "Object.entries(toolMetadata).map",
+          "lineNumber": 56
+        },
+        {
+          "caller": "getToolInfoList",
+          "callee": "Object.entries",
+          "lineNumber": 56
+        },
+        {
+          "caller": "getToolInfoList",
+          "callee": "getToolDescription",
+          "lineNumber": 58
+        },
+        {
+          "caller": "searchTools",
+          "callee": "getToolInfoList",
+          "lineNumber": 108
+        },
+        {
+          "caller": "searchTools",
+          "callee": "query.toLowerCase",
+          "lineNumber": 109
+        },
+        {
+          "caller": "searchTools",
+          "callee": "tools.map",
+          "lineNumber": 112
+        },
+        {
+          "caller": "searchTools",
+          "callee": "lowerQuery.includes",
+          "lineNumber": 117
+        },
+        {
+          "caller": "searchTools",
+          "callee": "keyword.toLowerCase",
+          "lineNumber": 117
+        },
+        {
+          "caller": "searchTools",
+          "callee": "lowerQuery.includes",
+          "lineNumber": 123
+        },
+        {
+          "caller": "searchTools",
+          "callee": "lowerQuery.includes",
+          "lineNumber": 128
+        },
+        {
+          "caller": "searchTools",
+          "callee": "scored\n    .filter(s => s.score > 0)\n    .sort((a, b) => b.score - a.score)\n    .slice(0, maxResults)\n    .map",
+          "lineNumber": 136
+        },
+        {
+          "caller": "searchTools",
+          "callee": "scored\n    .filter(s => s.score > 0)\n    .sort((a, b) => b.score - a.score)\n    .slice",
+          "lineNumber": 136
+        },
+        {
+          "caller": "searchTools",
+          "callee": "scored\n    .filter(s => s.score > 0)\n    .sort",
+          "lineNumber": 136
+        },
+        {
+          "caller": "searchTools",
+          "callee": "scored\n    .filter",
+          "lineNumber": 136
+        },
+        {
+          "caller": "getRecommendedTools",
+          "callee": "getToolInfoList",
+          "lineNumber": 147
+        },
+        {
+          "caller": "getRecommendedTools",
+          "callee": "keyword.toLowerCase",
+          "lineNumber": 151
+        },
+        {
+          "caller": "getRecommendedTools",
+          "callee": "tool.keywords.some",
+          "lineNumber": 153
+        },
+        {
+          "caller": "getRecommendedTools",
+          "callee": "lower.includes",
+          "lineNumber": 153
+        },
+        {
+          "caller": "getRecommendedTools",
+          "callee": "recommendations.add",
+          "lineNumber": 154
+        },
+        {
+          "caller": "getRecommendedTools",
+          "callee": "Array.from",
+          "lineNumber": 159
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/tool-meta.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 64,
+      "nonEmptyLines": 54,
+      "functions": [
+        {
+          "name": "isToolParallel",
+          "startLine": 56,
+          "endLine": 58,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "getToolsByCategory",
+          "startLine": 60,
+          "endLine": 64,
+          "params": [
+            "category"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "toolMetadata",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "isToolParallel",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "getToolsByCategory",
+          "line": 60,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getToolsByCategory",
+          "callee": "Object.entries(toolMetadata)\n    .filter(([, meta]) => meta.category === category)\n    .map",
+          "lineNumber": 61
+        },
+        {
+          "caller": "getToolsByCategory",
+          "callee": "Object.entries(toolMetadata)\n    .filter",
+          "lineNumber": 61
+        },
+        {
+          "caller": "getToolsByCategory",
+          "callee": "Object.entries",
+          "lineNumber": 61
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/tool-output-store.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 56,
+      "nonEmptyLines": 47,
+      "classes": [
+        {
+          "name": "ToolOutputStore",
+          "startLine": 18,
+          "endLine": 56,
+          "methods": [
+            "store",
+            "get",
+            "clear"
+          ],
+          "properties": [
+            "outputs"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ToolOutputStore",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "store",
+          "callee": "output.split",
+          "lineNumber": 23
+        },
+        {
+          "caller": "store",
+          "callee": "Math.floor",
+          "lineNumber": 29
+        },
+        {
+          "caller": "store",
+          "callee": "output.slice",
+          "lineNumber": 30
+        },
+        {
+          "caller": "store",
+          "callee": "output.slice",
+          "lineNumber": 32
+        },
+        {
+          "caller": "store",
+          "callee": "Math.floor",
+          "lineNumber": 37
+        },
+        {
+          "caller": "store",
+          "callee": "lines.slice(0, halfLines).join",
+          "lineNumber": 38
+        },
+        {
+          "caller": "store",
+          "callee": "lines.slice",
+          "lineNumber": 38
+        },
+        {
+          "caller": "store",
+          "callee": "lines.slice(-halfLines).join",
+          "lineNumber": 40
+        },
+        {
+          "caller": "store",
+          "callee": "lines.slice",
+          "lineNumber": 40
+        },
+        {
+          "caller": "store",
+          "callee": "this.outputs.set",
+          "lineNumber": 45
+        },
+        {
+          "caller": "get",
+          "callee": "this.outputs.get",
+          "lineNumber": 50
+        },
+        {
+          "caller": "clear",
+          "callee": "this.outputs.clear",
+          "lineNumber": 54
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "packages/core/src/tools/web-browse.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 134,
+      "nonEmptyLines": 119,
+      "functions": [
+        {
+          "name": "getContext",
+          "startLine": 15,
+          "endLine": 37,
+          "params": []
+        },
+        {
+          "name": "pageText",
+          "startLine": 39,
+          "endLine": 45,
+          "params": [
+            "page",
+            "maxLen"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "webBrowseTool",
+          "line": 47,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getContext",
+          "callee": "import",
+          "lineNumber": 21
+        },
+        {
+          "caller": "getContext",
+          "callee": "chromium.launch",
+          "lineNumber": 22
+        },
+        {
+          "caller": "getContext",
+          "callee": "browser.newContext",
+          "lineNumber": 23
+        },
+        {
+          "caller": "getContext",
+          "callee": "String",
+          "lineNumber": 29
+        },
+        {
+          "caller": "getContext",
+          "callee": "launchError.includes",
+          "lineNumber": 30
+        },
+        {
+          "caller": "getContext",
+          "callee": "launchError.includes",
+          "lineNumber": 30
+        },
+        {
+          "caller": "getContext",
+          "callee": "launchError.includes",
+          "lineNumber": 32
+        },
+        {
+          "caller": "getContext",
+          "callee": "launchError.includes",
+          "lineNumber": 32
+        },
+        {
+          "caller": "pageText",
+          "callee": "(await page.innerText(\"body\")).slice",
+          "lineNumber": 41
+        },
+        {
+          "caller": "pageText",
+          "callee": "page.innerText",
+          "lineNumber": 41
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/web-fetch.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 214,
+      "nonEmptyLines": 189,
+      "functions": [
+        {
+          "name": "extractTextFromHTML",
+          "startLine": 23,
+          "endLine": 35,
+          "params": [
+            "html"
+          ]
+        },
+        {
+          "name": "convertHTMLToMarkdown",
+          "startLine": 37,
+          "endLine": 77,
+          "params": [
+            "html"
+          ]
+        },
+        {
+          "name": "fetchWithTimeout",
+          "startLine": 79,
+          "endLine": 125,
+          "params": [
+            "url",
+            "timeoutMs",
+            "userAgent"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "webFetchTool",
+          "line": 127,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "extractTextFromHTML",
+          "callee": "html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, \"\")\n    .replace(/<meta[\\s\\S]*?>/gi, \"\")\n    .replace(/<link[\\s\\S]*?>/gi, \"\")\n    .replace(/<[^>]+>/g, \" \")\n    .replace(/\\s+/g, \" \")\n    .trim",
+          "lineNumber": 25
+        },
+        {
+          "caller": "extractTextFromHTML",
+          "callee": "html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, \"\")\n    .replace(/<meta[\\s\\S]*?>/gi, \"\")\n    .replace(/<link[\\s\\S]*?>/gi, \"\")\n    .replace(/<[^>]+>/g, \" \")\n    .replace",
+          "lineNumber": 25
+        },
+        {
+          "caller": "extractTextFromHTML",
+          "callee": "html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, \"\")\n    .replace(/<meta[\\s\\S]*?>/gi, \"\")\n    .replace(/<link[\\s\\S]*?>/gi, \"\")\n    .replace",
+          "lineNumber": 25
+        },
+        {
+          "caller": "extractTextFromHTML",
+          "callee": "html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, \"\")\n    .replace(/<meta[\\s\\S]*?>/gi, \"\")\n    .replace",
+          "lineNumber": 25
+        },
+        {
+          "caller": "extractTextFromHTML",
+          "callee": "html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, \"\")\n    .replace",
+          "lineNumber": 25
+        },
+        {
+          "caller": "extractTextFromHTML",
+          "callee": "html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    .replace",
+          "lineNumber": 25
+        },
+        {
+          "caller": "extractTextFromHTML",
+          "callee": "html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace",
+          "lineNumber": 25
+        },
+        {
+          "caller": "extractTextFromHTML",
+          "callee": "html\n    .replace",
+          "lineNumber": 25
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<p[^>]*>([\\s\\S]*?)<\\/p>/gi, \"$1\\n\\n\")\n    // 移除剩余标签\n    .replace(/<[^>]+>/g, \"\")\n    // HTML 实体\n    .replace(/&amp;/g, \"&\")\n    .replace(/&lt;/g, \"<\")\n    .replace(/&gt;/g, \">\")\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/&nbsp;/g, \" \")\n    // 清理多余空行\n    .replace(/\\n{3,}/g, \"\\n\\n\")\n    .trim",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<p[^>]*>([\\s\\S]*?)<\\/p>/gi, \"$1\\n\\n\")\n    // 移除剩余标签\n    .replace(/<[^>]+>/g, \"\")\n    // HTML 实体\n    .replace(/&amp;/g, \"&\")\n    .replace(/&lt;/g, \"<\")\n    .replace(/&gt;/g, \">\")\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/&nbsp;/g, \" \")\n    // 清理多余空行\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<p[^>]*>([\\s\\S]*?)<\\/p>/gi, \"$1\\n\\n\")\n    // 移除剩余标签\n    .replace(/<[^>]+>/g, \"\")\n    // HTML 实体\n    .replace(/&amp;/g, \"&\")\n    .replace(/&lt;/g, \"<\")\n    .replace(/&gt;/g, \">\")\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<p[^>]*>([\\s\\S]*?)<\\/p>/gi, \"$1\\n\\n\")\n    // 移除剩余标签\n    .replace(/<[^>]+>/g, \"\")\n    // HTML 实体\n    .replace(/&amp;/g, \"&\")\n    .replace(/&lt;/g, \"<\")\n    .replace(/&gt;/g, \">\")\n    .replace(/&quot;/g, '\"')\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<p[^>]*>([\\s\\S]*?)<\\/p>/gi, \"$1\\n\\n\")\n    // 移除剩余标签\n    .replace(/<[^>]+>/g, \"\")\n    // HTML 实体\n    .replace(/&amp;/g, \"&\")\n    .replace(/&lt;/g, \"<\")\n    .replace(/&gt;/g, \">\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<p[^>]*>([\\s\\S]*?)<\\/p>/gi, \"$1\\n\\n\")\n    // 移除剩余标签\n    .replace(/<[^>]+>/g, \"\")\n    // HTML 实体\n    .replace(/&amp;/g, \"&\")\n    .replace(/&lt;/g, \"<\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<p[^>]*>([\\s\\S]*?)<\\/p>/gi, \"$1\\n\\n\")\n    // 移除剩余标签\n    .replace(/<[^>]+>/g, \"\")\n    // HTML 实体\n    .replace(/&amp;/g, \"&\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<p[^>]*>([\\s\\S]*?)<\\/p>/gi, \"$1\\n\\n\")\n    // 移除剩余标签\n    .replace(/<[^>]+>/g, \"\")\n    // HTML 实体\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace(/<p[^>]*>([\\s\\S]*?)<\\/p>/gi, \"$1\\n\\n\")\n    // 移除剩余标签\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace(/<br\\s*\\/?>/gi, \"\\n\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace(/<li[^>]*>([\\s\\S]*?)<\\/li>/gi, \"- $1\\n\")\n    // 段落/换行\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace(/<code[^>]*>([\\s\\S]*?)<\\/code>/gi, \"`$1`\")\n    // 列表\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace(/<pre[^>]*><code[^>]*>([\\s\\S]*?)<\\/code><\\/pre>/gi, \"```\\n$1\\n```\\n\\n\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace(/<a[^>]+href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/gi, \"[$2]($1)\")\n    // 代码块\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace(/<i[^>]*>([\\s\\S]*?)<\\/i>/gi, \"*$1*\")\n    // 链接\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace(/<em[^>]*>([\\s\\S]*?)<\\/em>/gi, \"*$1*\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace(/<b[^>]*>([\\s\\S]*?)<\\/b>/gi, \"**$1**\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace(/<strong[^>]*>([\\s\\S]*?)<\\/strong>/gi, \"**$1**\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace(/<h4[^>]*>([\\s\\S]*?)<\\/h4>/gi, \"#### $1\\n\\n\")\n    // 粗体/斜体\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace(/<h3[^>]*>([\\s\\S]*?)<\\/h3>/gi, \"### $1\\n\\n\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace(/<h2[^>]*>([\\s\\S]*?)<\\/h2>/gi, \"## $1\\n\\n\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/gi, \"# $1\\n\\n\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    // 标题\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "convertHTMLToMarkdown",
+          "callee": "html\n    // 移除 script/style\n    .replace",
+          "lineNumber": 39
+        },
+        {
+          "caller": "fetchWithTimeout",
+          "callee": "setTimeout",
+          "lineNumber": 85
+        },
+        {
+          "caller": "fetchWithTimeout",
+          "callee": "controller.abort",
+          "lineNumber": 85
+        },
+        {
+          "caller": "fetchWithTimeout",
+          "callee": "fetch",
+          "lineNumber": 88
+        },
+        {
+          "caller": "fetchWithTimeout",
+          "callee": "clearTimeout",
+          "lineNumber": 98
+        },
+        {
+          "caller": "fetchWithTimeout",
+          "callee": "resp.headers.forEach",
+          "lineNumber": 101
+        },
+        {
+          "caller": "fetchWithTimeout",
+          "callee": "k.toLowerCase",
+          "lineNumber": 101
+        },
+        {
+          "caller": "fetchWithTimeout",
+          "callee": "parseInt",
+          "lineNumber": 104
+        },
+        {
+          "caller": "fetchWithTimeout",
+          "callee": "resp.text",
+          "lineNumber": 108
+        },
+        {
+          "caller": "fetchWithTimeout",
+          "callee": "body.includes",
+          "lineNumber": 115
+        },
+        {
+          "caller": "fetchWithTimeout",
+          "callee": "clearTimeout",
+          "lineNumber": 119
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.min",
+          "lineNumber": 143
+        },
+        {
+          "caller": "execute",
+          "callee": "fetchWithTimeout",
+          "lineNumber": 146
+        },
+        {
+          "caller": "execute",
+          "callee": "fetchWithTimeout",
+          "lineNumber": 150
+        },
+        {
+          "caller": "execute",
+          "callee": "contentType.split(\";\")[0]?.trim().toLowerCase",
+          "lineNumber": 163
+        },
+        {
+          "caller": "execute",
+          "callee": "contentType.split(\";\")[0]?.trim",
+          "lineNumber": 163
+        },
+        {
+          "caller": "execute",
+          "callee": "contentType.split",
+          "lineNumber": 163
+        },
+        {
+          "caller": "execute",
+          "callee": "mime.startsWith",
+          "lineNumber": 166
+        },
+        {
+          "caller": "execute",
+          "callee": "Buffer.from(result.body, \"binary\").toString",
+          "lineNumber": 167
+        },
+        {
+          "caller": "execute",
+          "callee": "Buffer.from",
+          "lineNumber": 167
+        },
+        {
+          "caller": "execute",
+          "callee": "url.split(\"/\").pop",
+          "lineNumber": 174
+        },
+        {
+          "caller": "execute",
+          "callee": "url.split",
+          "lineNumber": 174
+        },
+        {
+          "caller": "execute",
+          "callee": "contentType.includes",
+          "lineNumber": 181
+        },
+        {
+          "caller": "execute",
+          "callee": "contentType.includes",
+          "lineNumber": 181
+        },
+        {
+          "caller": "execute",
+          "callee": "convertHTMLToMarkdown",
+          "lineNumber": 185
+        },
+        {
+          "caller": "execute",
+          "callee": "extractTextFromHTML",
+          "lineNumber": 188
+        },
+        {
+          "caller": "execute",
+          "callee": "convertHTMLToMarkdown",
+          "lineNumber": 194
+        },
+        {
+          "caller": "execute",
+          "callee": "output.slice",
+          "lineNumber": 200
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/web-search.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 130,
+      "nonEmptyLines": 119,
+      "functions": [
+        {
+          "name": "tryFetch",
+          "startLine": 13,
+          "endLine": 22,
+          "params": [
+            "url",
+            "timeoutMs"
+          ]
+        },
+        {
+          "name": "ddg",
+          "startLine": 25,
+          "endLine": 43,
+          "params": [
+            "query",
+            "max"
+          ]
+        },
+        {
+          "name": "searxng",
+          "startLine": 46,
+          "endLine": 68,
+          "params": [
+            "query",
+            "max",
+            "instance"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "webSearchTool",
+          "line": 70,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "tryFetch",
+          "callee": "fetch",
+          "lineNumber": 15
+        },
+        {
+          "caller": "tryFetch",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 17
+        },
+        {
+          "caller": "tryFetch",
+          "callee": "resp.text",
+          "lineNumber": 20
+        },
+        {
+          "caller": "ddg",
+          "callee": "tryFetch",
+          "lineNumber": 26
+        },
+        {
+          "caller": "ddg",
+          "callee": "encodeURIComponent",
+          "lineNumber": 26
+        },
+        {
+          "caller": "ddg",
+          "callee": "linkRe.exec",
+          "lineNumber": 35
+        },
+        {
+          "caller": "ddg",
+          "callee": "decodeURIComponent",
+          "lineNumber": 36
+        },
+        {
+          "caller": "ddg",
+          "callee": "m[1].replace(/\\/\\/duckduckgo\\.com\\/l\\/\\?uddg=/, \"\").split",
+          "lineNumber": 36
+        },
+        {
+          "caller": "ddg",
+          "callee": "m[1].replace",
+          "lineNumber": 36
+        },
+        {
+          "caller": "ddg",
+          "callee": "m[2].replace(/<[^>]+>/g, \"\").trim",
+          "lineNumber": 37
+        },
+        {
+          "caller": "ddg",
+          "callee": "m[2].replace",
+          "lineNumber": 37
+        },
+        {
+          "caller": "ddg",
+          "callee": "href.startsWith",
+          "lineNumber": 38
+        },
+        {
+          "caller": "ddg",
+          "callee": "results.push",
+          "lineNumber": 38
+        },
+        {
+          "caller": "ddg",
+          "callee": "snippetRe.exec",
+          "lineNumber": 40
+        },
+        {
+          "caller": "ddg",
+          "callee": "snippets.push",
+          "lineNumber": 40
+        },
+        {
+          "caller": "ddg",
+          "callee": "m[1].replace(/<[^>]+>/g, \"\").trim",
+          "lineNumber": 40
+        },
+        {
+          "caller": "ddg",
+          "callee": "m[1].replace",
+          "lineNumber": 40
+        },
+        {
+          "caller": "ddg",
+          "callee": "snippets.forEach",
+          "lineNumber": 41
+        },
+        {
+          "caller": "searxng",
+          "callee": "fetch",
+          "lineNumber": 52
+        },
+        {
+          "caller": "searxng",
+          "callee": "encodeURIComponent",
+          "lineNumber": 52
+        },
+        {
+          "caller": "searxng",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 54
+        },
+        {
+          "caller": "searxng",
+          "callee": "resp.json",
+          "lineNumber": 57
+        },
+        {
+          "caller": "searxng",
+          "callee": "(data.results || []).slice(0, max).filter",
+          "lineNumber": 58
+        },
+        {
+          "caller": "searxng",
+          "callee": "(data.results || []).slice",
+          "lineNumber": 58
+        },
+        {
+          "caller": "searxng",
+          "callee": "items.map",
+          "lineNumber": 59
+        },
+        {
+          "caller": "searxng",
+          "callee": "(r.content || \"\").slice",
+          "lineNumber": 62
+        },
+        {
+          "caller": "execute",
+          "callee": "Math.min",
+          "lineNumber": 81
+        },
+        {
+          "caller": "execute",
+          "callee": "ddg",
+          "lineNumber": 84
+        },
+        {
+          "caller": "execute",
+          "callee": "[\n          `来源: DuckDuckGo`,\n          `查询: ${input.query}`,\n          `结果: ${ddgResults.length}`,\n          \"─\".repeat(40),\n          ...ddgResults.map((r, i) =>\n            `${i + 1}. [${r.title}](${r.url})\\n   ${r.content.slice(0, 300)}`),\n        ].join",
+          "lineNumber": 88
+        },
+        {
+          "caller": "execute",
+          "callee": "\"─\".repeat",
+          "lineNumber": 92
+        },
+        {
+          "caller": "execute",
+          "callee": "ddgResults.map",
+          "lineNumber": 93
+        },
+        {
+          "caller": "execute",
+          "callee": "r.content.slice",
+          "lineNumber": 94
+        },
+        {
+          "caller": "execute",
+          "callee": "searxng",
+          "lineNumber": 100
+        },
+        {
+          "caller": "execute",
+          "callee": "[\n          `来源: SEArxNG`,\n          `查询: ${input.query}`,\n          `结果: ${sxResults.length}`,\n          \"─\".repeat(40),\n          ...sxResults.map((r, i) =>\n            `${i + 1}. [${r.title}](${r.url})\\n   ${r.content.slice(0, 300)}`),\n        ].join",
+          "lineNumber": 104
+        },
+        {
+          "caller": "execute",
+          "callee": "\"─\".repeat",
+          "lineNumber": 108
+        },
+        {
+          "caller": "execute",
+          "callee": "sxResults.map",
+          "lineNumber": 109
+        },
+        {
+          "caller": "execute",
+          "callee": "r.content.slice",
+          "lineNumber": 110
+        },
+        {
+          "caller": "execute",
+          "callee": "[\n        \"搜索失败：所有搜索引擎均不可用。\",\n        \"  - DuckDuckGo: 被屏蔽或超时\",\n        \"  - SEArxNG: 所有公共实例无响应\",\n        \"\",\n        \"解决方法:\",\n        \"  1. 稍后重试（搜索引擎可能有临时限制）\",\n        \"  2. 使用 web_browse 直接访问目标网站\",\n        \"  3. 自建 SEArxNG 实例并通过 searxInstance 参数指定\",\n      ].join",
+          "lineNumber": 118
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/workflow-tool.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 48,
+      "nonEmptyLines": 43,
+      "exports": [
+        {
+          "name": "workflowRunTool",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "execute",
+          "callee": "workflowEngine.execute",
+          "lineNumber": 32
+        },
+        {
+          "caller": "execute",
+          "callee": "result.results.map((r) => {\n        const children = r.children\n          ? r.children.map((c) => `    ${c.status === \"success\" ? \"✓\" : \"✗\"} ${c.stepName}: ${c.output.slice(0, 100)}`).join(\"\\n\")\n          : \"\"\n        return `${r.status === \"success\" ? \"✓\" : \"✗\"} ${r.stepName} (${r.elapsedMs}ms)\\n${children ? children + \"\\n\" : \"\"}  ${r.output.slice(0, 300)}`\n      }).join",
+          "lineNumber": 36
+        },
+        {
+          "caller": "execute",
+          "callee": "result.results.map",
+          "lineNumber": 36
+        },
+        {
+          "caller": "execute",
+          "callee": "r.children.map((c) => `    ${c.status === \"success\" ? \"✓\" : \"✗\"} ${c.stepName}: ${c.output.slice(0, 100)}`).join",
+          "lineNumber": 38
+        },
+        {
+          "caller": "execute",
+          "callee": "r.children.map",
+          "lineNumber": 38
+        },
+        {
+          "caller": "execute",
+          "callee": "c.output.slice",
+          "lineNumber": 38
+        },
+        {
+          "caller": "execute",
+          "callee": "r.output.slice",
+          "lineNumber": 40
+        },
+        {
+          "caller": "execute",
+          "callee": "String",
+          "lineNumber": 45
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/worktree-tool.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 61,
+      "nonEmptyLines": 55,
+      "exports": [
+        {
+          "name": "worktreeTool",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/tools/write-file.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 57,
+      "nonEmptyLines": 50,
+      "functions": [
+        {
+          "name": "realPath",
+          "startLine": 7,
+          "endLine": 9,
+          "params": [
+            "p"
+          ]
+        },
+        {
+          "name": "contains",
+          "startLine": 11,
+          "endLine": 14,
+          "params": [
+            "root",
+            "target"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "writeFileTool",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "realPath",
+          "callee": "fs.realpath",
+          "lineNumber": 8
+        },
+        {
+          "caller": "contains",
+          "callee": "path.relative",
+          "lineNumber": 12
+        },
+        {
+          "caller": "contains",
+          "callee": "rel.startsWith",
+          "lineNumber": 13
+        },
+        {
+          "caller": "contains",
+          "callee": "path.isAbsolute",
+          "lineNumber": 13
+        },
+        {
+          "caller": "execute",
+          "callee": "path.isAbsolute",
+          "lineNumber": 29
+        },
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 30
+        },
+        {
+          "caller": "execute",
+          "callee": "realPath",
+          "lineNumber": 31
+        },
+        {
+          "caller": "execute",
+          "callee": "path.resolve",
+          "lineNumber": 32
+        },
+        {
+          "caller": "execute",
+          "callee": "contains",
+          "lineNumber": 33
+        },
+        {
+          "caller": "execute",
+          "callee": "getSnapshotManager",
+          "lineNumber": 38
+        },
+        {
+          "caller": "execute",
+          "callee": "snapshotMgr.capture",
+          "lineNumber": 39
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.mkdir",
+          "lineNumber": 41
+        },
+        {
+          "caller": "execute",
+          "callee": "path.dirname",
+          "lineNumber": 41
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.readFile",
+          "lineNumber": 46
+        },
+        {
+          "caller": "execute",
+          "callee": "existing.startsWith",
+          "lineNumber": 47
+        },
+        {
+          "caller": "execute",
+          "callee": "content.startsWith",
+          "lineNumber": 47
+        },
+        {
+          "caller": "execute",
+          "callee": "fs.writeFile",
+          "lineNumber": 54
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/workflow/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 317,
+      "nonEmptyLines": 280,
+      "classes": [
+        {
+          "name": "WorkflowEngine",
+          "startLine": 63,
+          "endLine": 317,
+          "methods": [
+            "execute",
+            "cancel",
+            "executeSteps",
+            "executeStep",
+            "executeAgentStep",
+            "executeBashStep",
+            "executeParallelStep",
+            "executePipelineStep",
+            "executeTransformStep"
+          ],
+          "properties": [
+            "running"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "WorkflowEngine",
+          "line": 63,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "execute",
+          "callee": "Date.now().toString",
+          "lineNumber": 70
+        },
+        {
+          "caller": "execute",
+          "callee": "Date.now",
+          "lineNumber": 70
+        },
+        {
+          "caller": "execute",
+          "callee": "randomUUID().slice",
+          "lineNumber": 70
+        },
+        {
+          "caller": "execute",
+          "callee": "randomUUID",
+          "lineNumber": 70
+        },
+        {
+          "caller": "execute",
+          "callee": "this.running.set",
+          "lineNumber": 72
+        },
+        {
+          "caller": "execute",
+          "callee": "Date.now",
+          "lineNumber": 75
+        },
+        {
+          "caller": "execute",
+          "callee": "this.executeSteps",
+          "lineNumber": 78
+        },
+        {
+          "caller": "execute",
+          "callee": "Date.now",
+          "lineNumber": 79
+        },
+        {
+          "caller": "execute",
+          "callee": "this.running.delete",
+          "lineNumber": 81
+        },
+        {
+          "caller": "cancel",
+          "callee": "this.running.get",
+          "lineNumber": 86
+        },
+        {
+          "caller": "cancel",
+          "callee": "controller.abort",
+          "lineNumber": 88
+        },
+        {
+          "caller": "executeSteps",
+          "callee": "results.push",
+          "lineNumber": 101
+        },
+        {
+          "caller": "executeSteps",
+          "callee": "this.executeStep",
+          "lineNumber": 108
+        },
+        {
+          "caller": "executeSteps",
+          "callee": "results.push",
+          "lineNumber": 109
+        },
+        {
+          "caller": "executeSteps",
+          "callee": "options.onStepComplete",
+          "lineNumber": 110
+        },
+        {
+          "caller": "executeStep",
+          "callee": "Date.now",
+          "lineNumber": 123
+        },
+        {
+          "caller": "executeStep",
+          "callee": "setTimeout",
+          "lineNumber": 128
+        },
+        {
+          "caller": "executeStep",
+          "callee": "this.executeAgentStep",
+          "lineNumber": 134
+        },
+        {
+          "caller": "executeStep",
+          "callee": "this.executeBashStep",
+          "lineNumber": 136
+        },
+        {
+          "caller": "executeStep",
+          "callee": "this.executeParallelStep",
+          "lineNumber": 138
+        },
+        {
+          "caller": "executeStep",
+          "callee": "this.executePipelineStep",
+          "lineNumber": 140
+        },
+        {
+          "caller": "executeStep",
+          "callee": "this.executeTransformStep",
+          "lineNumber": 142
+        },
+        {
+          "caller": "executeStep",
+          "callee": "Date.now",
+          "lineNumber": 146
+        },
+        {
+          "caller": "executeStep",
+          "callee": "Date.now",
+          "lineNumber": 154
+        },
+        {
+          "caller": "executeStep",
+          "callee": "String",
+          "lineNumber": 155
+        },
+        {
+          "caller": "executeStep",
+          "callee": "Date.now",
+          "lineNumber": 162
+        },
+        {
+          "caller": "executeAgentStep",
+          "callee": "Date.now",
+          "lineNumber": 174
+        },
+        {
+          "caller": "executeAgentStep",
+          "callee": "createLLMClient",
+          "lineNumber": 180
+        },
+        {
+          "caller": "executeAgentStep",
+          "callee": "client.stream",
+          "lineNumber": 190
+        },
+        {
+          "caller": "executeAgentStep",
+          "callee": "Date.now",
+          "lineNumber": 198
+        },
+        {
+          "caller": "executeAgentStep",
+          "callee": "String",
+          "lineNumber": 199
+        },
+        {
+          "caller": "executeAgentStep",
+          "callee": "Date.now",
+          "lineNumber": 205
+        },
+        {
+          "caller": "executeBashStep",
+          "callee": "Date.now",
+          "lineNumber": 216
+        },
+        {
+          "caller": "executeBashStep",
+          "callee": "import",
+          "lineNumber": 220
+        },
+        {
+          "caller": "executeBashStep",
+          "callee": "execSync",
+          "lineNumber": 221
+        },
+        {
+          "caller": "executeBashStep",
+          "callee": "output.trim",
+          "lineNumber": 231
+        },
+        {
+          "caller": "executeBashStep",
+          "callee": "Date.now",
+          "lineNumber": 231
+        },
+        {
+          "caller": "executeBashStep",
+          "callee": "Date.now",
+          "lineNumber": 236
+        },
+        {
+          "caller": "executeBashStep",
+          "callee": "String",
+          "lineNumber": 237
+        },
+        {
+          "caller": "executeParallelStep",
+          "callee": "Date.now",
+          "lineNumber": 249
+        },
+        {
+          "caller": "executeParallelStep",
+          "callee": "Promise.all",
+          "lineNumber": 252
+        },
+        {
+          "caller": "executeParallelStep",
+          "callee": "step.steps.map",
+          "lineNumber": 253
+        },
+        {
+          "caller": "executeParallelStep",
+          "callee": "this.executeStep",
+          "lineNumber": 253
+        },
+        {
+          "caller": "executeParallelStep",
+          "callee": "results.every",
+          "lineNumber": 256
+        },
+        {
+          "caller": "executeParallelStep",
+          "callee": "results.map((r) => `[${r.stepName}] ${r.output.slice(0, 200)}`).join",
+          "lineNumber": 260
+        },
+        {
+          "caller": "executeParallelStep",
+          "callee": "results.map",
+          "lineNumber": 260
+        },
+        {
+          "caller": "executeParallelStep",
+          "callee": "r.output.slice",
+          "lineNumber": 260
+        },
+        {
+          "caller": "executeParallelStep",
+          "callee": "Date.now",
+          "lineNumber": 261
+        },
+        {
+          "caller": "executePipelineStep",
+          "callee": "Date.now",
+          "lineNumber": 273
+        },
+        {
+          "caller": "executePipelineStep",
+          "callee": "this.executeSteps",
+          "lineNumber": 276
+        },
+        {
+          "caller": "executePipelineStep",
+          "callee": "results.every",
+          "lineNumber": 277
+        },
+        {
+          "caller": "executePipelineStep",
+          "callee": "results.map((r) => `[${r.stepName}] ${r.output.slice(0, 200)}`).join",
+          "lineNumber": 282
+        },
+        {
+          "caller": "executePipelineStep",
+          "callee": "results.map",
+          "lineNumber": 282
+        },
+        {
+          "caller": "executePipelineStep",
+          "callee": "r.output.slice",
+          "lineNumber": 282
+        },
+        {
+          "caller": "executePipelineStep",
+          "callee": "Date.now",
+          "lineNumber": 283
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Object.values(input).join(\" \").toUpperCase",
+          "lineNumber": 294
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Object.values(input).join",
+          "lineNumber": 294
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Object.values",
+          "lineNumber": 294
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Object.values(input).join(\" \").toLowerCase",
+          "lineNumber": 295
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Object.values(input).join",
+          "lineNumber": 295
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Object.values",
+          "lineNumber": 295
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Object.values(input).filter(Boolean).join",
+          "lineNumber": 296
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Object.values(input).filter",
+          "lineNumber": 296
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Object.values",
+          "lineNumber": 296
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "JSON.parse",
+          "lineNumber": 299
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Object.values",
+          "lineNumber": 299
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "JSON.stringify",
+          "lineNumber": 300
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Date.now",
+          "lineNumber": 307
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "transformFn",
+          "lineNumber": 311
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Date.now",
+          "lineNumber": 312
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "Date.now",
+          "lineNumber": 314
+        },
+        {
+          "caller": "executeTransformStep",
+          "callee": "String",
+          "lineNumber": 314
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "packages/core/src/worktree-manager.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 153,
+      "nonEmptyLines": 128,
+      "functions": [
+        {
+          "name": "getWorktreesDir",
+          "startLine": 24,
+          "endLine": 30,
+          "params": []
+        },
+        {
+          "name": "isGitRepo",
+          "startLine": 32,
+          "endLine": 37,
+          "params": [
+            "path"
+          ]
+        },
+        {
+          "name": "createWorktree",
+          "startLine": 40,
+          "endLine": 76,
+          "params": [
+            "taskId",
+            "projectPath"
+          ]
+        },
+        {
+          "name": "runInWorktree",
+          "startLine": 79,
+          "endLine": 88,
+          "params": [
+            "worktreeId",
+            "command"
+          ]
+        },
+        {
+          "name": "closeoutWorktree",
+          "startLine": 91,
+          "endLine": 117,
+          "params": [
+            "worktreeId"
+          ]
+        },
+        {
+          "name": "getRecordsPath",
+          "startLine": 119,
+          "endLine": 121,
+          "params": []
+        },
+        {
+          "name": "loadAllWorktrees",
+          "startLine": 123,
+          "endLine": 131,
+          "params": []
+        },
+        {
+          "name": "saveWorktreeInfo",
+          "startLine": 133,
+          "endLine": 137,
+          "params": [
+            "info"
+          ]
+        },
+        {
+          "name": "getWorktreeInfo",
+          "startLine": 139,
+          "endLine": 141,
+          "params": [
+            "worktreeId"
+          ]
+        },
+        {
+          "name": "listWorktrees",
+          "startLine": 143,
+          "endLine": 145,
+          "params": []
+        },
+        {
+          "name": "cleanupWorktrees",
+          "startLine": 147,
+          "endLine": 153,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "createWorktree",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "runInWorktree",
+          "line": 79,
+          "isDefault": false
+        },
+        {
+          "name": "closeoutWorktree",
+          "line": 91,
+          "isDefault": false
+        },
+        {
+          "name": "getWorktreeInfo",
+          "line": 139,
+          "isDefault": false
+        },
+        {
+          "name": "listWorktrees",
+          "line": 143,
+          "isDefault": false
+        },
+        {
+          "name": "cleanupWorktrees",
+          "line": 147,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getWorktreesDir",
+          "callee": "join",
+          "lineNumber": 26
+        },
+        {
+          "caller": "getWorktreesDir",
+          "callee": "getPlatformPaths",
+          "lineNumber": 26
+        },
+        {
+          "caller": "getWorktreesDir",
+          "callee": "fs.existsSync",
+          "lineNumber": 27
+        },
+        {
+          "caller": "getWorktreesDir",
+          "callee": "fs.mkdirSync",
+          "lineNumber": 27
+        },
+        {
+          "caller": "isGitRepo",
+          "callee": "execSync",
+          "lineNumber": 34
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "Date.now().toString",
+          "lineNumber": 41
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "Date.now",
+          "lineNumber": 41
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "taskId.replace",
+          "lineNumber": 42
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "join",
+          "lineNumber": 43
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "getWorktreesDir",
+          "lineNumber": 43
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "fs.mkdirSync",
+          "lineNumber": 45
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "isGitRepo",
+          "lineNumber": 49
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "execSync",
+          "lineNumber": 51
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "execSync",
+          "lineNumber": 63
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "Date.now",
+          "lineNumber": 69
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "Date.now",
+          "lineNumber": 70
+        },
+        {
+          "caller": "createWorktree",
+          "callee": "saveWorktreeInfo",
+          "lineNumber": 74
+        },
+        {
+          "caller": "runInWorktree",
+          "callee": "getWorktreeInfo",
+          "lineNumber": 80
+        },
+        {
+          "caller": "runInWorktree",
+          "callee": "fs.existsSync",
+          "lineNumber": 82
+        },
+        {
+          "caller": "runInWorktree",
+          "callee": "Date.now",
+          "lineNumber": 84
+        },
+        {
+          "caller": "runInWorktree",
+          "callee": "saveWorktreeInfo",
+          "lineNumber": 85
+        },
+        {
+          "caller": "runInWorktree",
+          "callee": "execSync",
+          "lineNumber": 87
+        },
+        {
+          "caller": "closeoutWorktree",
+          "callee": "getWorktreeInfo",
+          "lineNumber": 92
+        },
+        {
+          "caller": "closeoutWorktree",
+          "callee": "execSync",
+          "lineNumber": 98
+        },
+        {
+          "caller": "closeoutWorktree",
+          "callee": "execSync",
+          "lineNumber": 101
+        },
+        {
+          "caller": "closeoutWorktree",
+          "callee": "fs.rmSync",
+          "lineNumber": 111
+        },
+        {
+          "caller": "closeoutWorktree",
+          "callee": "loadAllWorktrees().filter",
+          "lineNumber": 115
+        },
+        {
+          "caller": "closeoutWorktree",
+          "callee": "loadAllWorktrees",
+          "lineNumber": 115
+        },
+        {
+          "caller": "closeoutWorktree",
+          "callee": "fs.writeFileSync",
+          "lineNumber": 116
+        },
+        {
+          "caller": "closeoutWorktree",
+          "callee": "getRecordsPath",
+          "lineNumber": 116
+        },
+        {
+          "caller": "closeoutWorktree",
+          "callee": "JSON.stringify",
+          "lineNumber": 116
+        },
+        {
+          "caller": "getRecordsPath",
+          "callee": "join",
+          "lineNumber": 120
+        },
+        {
+          "caller": "getRecordsPath",
+          "callee": "getWorktreesDir",
+          "lineNumber": 120
+        },
+        {
+          "caller": "loadAllWorktrees",
+          "callee": "getRecordsPath",
+          "lineNumber": 125
+        },
+        {
+          "caller": "loadAllWorktrees",
+          "callee": "fs.existsSync",
+          "lineNumber": 126
+        },
+        {
+          "caller": "loadAllWorktrees",
+          "callee": "JSON.parse",
+          "lineNumber": 127
+        },
+        {
+          "caller": "loadAllWorktrees",
+          "callee": "fs.readFileSync",
+          "lineNumber": 127
+        },
+        {
+          "caller": "saveWorktreeInfo",
+          "callee": "loadAllWorktrees().filter",
+          "lineNumber": 134
+        },
+        {
+          "caller": "saveWorktreeInfo",
+          "callee": "loadAllWorktrees",
+          "lineNumber": 134
+        },
+        {
+          "caller": "saveWorktreeInfo",
+          "callee": "records.push",
+          "lineNumber": 135
+        },
+        {
+          "caller": "saveWorktreeInfo",
+          "callee": "fs.writeFileSync",
+          "lineNumber": 136
+        },
+        {
+          "caller": "saveWorktreeInfo",
+          "callee": "getRecordsPath",
+          "lineNumber": 136
+        },
+        {
+          "caller": "saveWorktreeInfo",
+          "callee": "JSON.stringify",
+          "lineNumber": 136
+        },
+        {
+          "caller": "getWorktreeInfo",
+          "callee": "loadAllWorktrees().find",
+          "lineNumber": 140
+        },
+        {
+          "caller": "getWorktreeInfo",
+          "callee": "loadAllWorktrees",
+          "lineNumber": 140
+        },
+        {
+          "caller": "listWorktrees",
+          "callee": "loadAllWorktrees",
+          "lineNumber": 144
+        },
+        {
+          "caller": "cleanupWorktrees",
+          "callee": "loadAllWorktrees",
+          "lineNumber": 148
+        },
+        {
+          "caller": "cleanupWorktrees",
+          "callee": "fs.existsSync",
+          "lineNumber": 149
+        },
+        {
+          "caller": "cleanupWorktrees",
+          "callee": "closeoutWorktree",
+          "lineNumber": 150
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 6,
+        "functionCount": 11,
+        "classCount": 0
+      }
+    }
+  ]
+}

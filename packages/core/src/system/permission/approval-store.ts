@@ -4,8 +4,8 @@
  * 持久化规则通过 PermissionSet 注入，重启后不丢失
  */
 
-import { saveWorkspacePermission } from "../permission-store"
-import type { PermissionSet } from "../permission"
+import { saveWorkspacePermission } from "./store"
+import type { PermissionSet } from "./index"
 
 export interface ApprovalRecord {
   action: string

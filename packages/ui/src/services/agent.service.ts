@@ -42,6 +42,12 @@ export const AgentService = {
     return window.electronAPI.agent.listSkills()
   },
 
+  // ─── 问题回答 ────────────────────────────────────────────
+
+  async answerQuestion(questionId: string, answer: string): Promise<boolean> {
+    return window.electronAPI.agent.question.answer(questionId, answer)
+  },
+
   // ─── 流式执行 ──────────────────────────────────────────────
 
   async startStream(
@@ -103,7 +109,7 @@ export const AgentService = {
 
   goal: {
     async set(description: string, timeoutMs?: number) {
-      return window.electronAPI.agent.goal.set(description)
+      return window.electronAPI.agent.goal.set(description, timeoutMs)
     },
     async getActive() {
       return window.electronAPI.agent.goal.getActive()

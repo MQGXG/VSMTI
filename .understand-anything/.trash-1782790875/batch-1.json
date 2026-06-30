@@ -1,0 +1,1143 @@
+{
+  "batch": 1,
+  "totalBatches": 17,
+  "nodes": [
+    {
+      "id": "file::packages/core/src/__tests__/agent.test.ts",
+      "type": "file",
+      "name": "agent.test.ts",
+      "filePath": "packages/core/src/__tests__/agent.test.ts",
+      "summary": "Agent 基础单元测试，验证 Agent 类能正确初始化并注册工具。使用 vitest 框架，测试了 echo 工具的注册和 Agent 实例创建。",
+      "tags": [
+        "test",
+        "agent",
+        "vitest",
+        "unit-test"
+      ],
+      "complexity": "low",
+      "package": "@mira/core",
+      "layer": "test"
+    },
+    {
+      "id": "file::packages/core/src/__tests__/permission-loop.test.ts",
+      "type": "file",
+      "name": "permission-loop.test.ts",
+      "filePath": "packages/core/src/__tests__/permission-loop.test.ts",
+      "summary": "权限循环测试，验证 Agent 在权限审批流程中的行为。模拟 LLM 客户端返回工具调用，测试权限审批后工具是否正确执行。",
+      "tags": [
+        "test",
+        "permission",
+        "agent",
+        "vitest",
+        "integration-test"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "test"
+    },
+    {
+      "id": "file::packages/core/src/__tests__/tool.test.ts",
+      "type": "file",
+      "name": "tool.test.ts",
+      "filePath": "packages/core/src/__tests__/tool.test.ts",
+      "summary": "工具函数单元测试，验证 sanitizeToolError 的角色标签清理功能和 coerceToolArgs 的字符串数字自动转换功能。",
+      "tags": [
+        "test",
+        "tool",
+        "vitest",
+        "unit-test"
+      ],
+      "complexity": "low",
+      "package": "@mira/core",
+      "layer": "test"
+    },
+    {
+      "id": "file::packages/core/src/agent/pipeline.ts",
+      "type": "file",
+      "name": "pipeline.ts",
+      "filePath": "packages/core/src/agent/pipeline.ts",
+      "summary": "Agent 执行管线模块，负责工具调用的完整生命周期管理：权限评估、工具执行、结果注入消息列表。协调 ToolRegistry、AgentStateMachine、ApprovalStore 和 ToolOrchestrator。",
+      "tags": [
+        "agent",
+        "pipeline",
+        "tool-execution",
+        "permission",
+        "orchestration"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "agent"
+    },
+    {
+      "id": "file::packages/core/src/agent/state-machine.ts",
+      "type": "file",
+      "name": "state-machine.ts",
+      "filePath": "packages/core/src/agent/state-machine.ts",
+      "summary": "Agent 生命周期状态机，管理状态转换（idle/running/waiting_permission/stopped/done）。提供权限请求创建和回复机制，支持 allow/deny/always 三种回复。",
+      "tags": [
+        "agent",
+        "state-machine",
+        "permission",
+        "lifecycle"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "agent"
+    },
+    {
+      "id": "file::packages/core/src/agent/text-ngram.ts",
+      "type": "file",
+      "name": "text-ngram.ts",
+      "filePath": "packages/core/src/agent/text-ngram.ts",
+      "summary": "文本 N-gram 重复检测模块，参考 MiMo-Code 的 text-ngram-detection。检测流式输出中的重复模式，自动停止循环。",
+      "tags": [
+        "agent",
+        "ngram",
+        "repetition-detection",
+        "streaming",
+        "safety"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "agent"
+    },
+    {
+      "id": "file::packages/core/src/agent/turn-processor.ts",
+      "type": "file",
+      "name": "turn-processor.ts",
+      "filePath": "packages/core/src/agent/turn-processor.ts",
+      "summary": "单回合工具调用编排处理器，负责 LLM 流式调用、工具调用解析、权限检查、并行/串行执行的完整回合流程。实现并发控制信号量和快速权限检查。",
+      "tags": [
+        "agent",
+        "turn",
+        "tool-execution",
+        "permission",
+        "concurrency",
+        "streaming"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "agent"
+    },
+    {
+      "id": "file::packages/core/src/config.ts",
+      "type": "file",
+      "name": "config.ts",
+      "filePath": "packages/core/src/config.ts",
+      "summary": "多层配置合并系统，支持全局配置、项目配置和环境变量的三层合并。提供 MCP 和插件配置的 CRUD 操作。支持配置值中的文件引用自动解析。",
+      "tags": [
+        "config",
+        "configuration",
+        "mcp",
+        "plugin",
+        "environment"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "infrastructure"
+    },
+    {
+      "id": "file::packages/core/src/cron-scheduler.ts",
+      "type": "file",
+      "name": "cron-scheduler.ts",
+      "filePath": "packages/core/src/cron-scheduler.ts",
+      "summary": "Cron 定时调度器，零外部依赖，纯 TypeScript 实现 cron 表达式解析和定时任务执行。支持分/时/日/月/周五字段。",
+      "tags": [
+        "cron",
+        "scheduler",
+        "timer",
+        "scheduling",
+        "infrastructure"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "infrastructure"
+    },
+    {
+      "id": "file::packages/core/src/execution/orchestrator.ts",
+      "type": "file",
+      "name": "orchestrator.ts",
+      "filePath": "packages/core/src/execution/orchestrator.ts",
+      "summary": "工具编排器，参考 Codex orchestrator.rs。实现工具声明式并行 + Promise.allSettled 并发执行。支持工具分组和两种执行模式。",
+      "tags": [
+        "orchestration",
+        "tool-execution",
+        "parallel",
+        "concurrency"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "execution"
+    },
+    {
+      "id": "file::packages/core/src/feature-flags.ts",
+      "type": "file",
+      "name": "feature-flags.ts",
+      "filePath": "packages/core/src/feature-flags.ts",
+      "summary": "Feature Flag 系统，参考 Claude Code 的 feature flag 机制。控制功能启停，支持运行时切换和 localStorage 持久化，提供事件监听器。",
+      "tags": [
+        "feature-flags",
+        "configuration",
+        "runtime",
+        "toggles"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "infrastructure"
+    },
+    {
+      "id": "file::packages/core/src/hooks-setup.ts",
+      "type": "file",
+      "name": "hooks-setup.ts",
+      "filePath": "packages/core/src/hooks-setup.ts",
+      "summary": "默认钩子注册模块，为 PluginHooks 注册审计日志等基础行为。定义了 pre_tool_use、post_tool_use、stop 三个事件的默认处理器。",
+      "tags": [
+        "hooks",
+        "plugin",
+        "audit",
+        "logging",
+        "lifecycle"
+      ],
+      "complexity": "low",
+      "package": "@mira/core",
+      "layer": "plugin"
+    },
+    {
+      "id": "file::packages/core/src/llm/tool-runtime.ts",
+      "type": "file",
+      "name": "tool-runtime.ts",
+      "filePath": "packages/core/src/llm/tool-runtime.ts",
+      "summary": "LLM 工具运行时，将 ToolDef 数组转换为 LLM 可用格式并提供执行能力。包含 Zod Schema 到 JSON Schema 的转换。",
+      "tags": [
+        "llm",
+        "tool-runtime",
+        "schema-conversion",
+        "zod"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "llm"
+    },
+    {
+      "id": "file::packages/core/src/lsp/client.ts",
+      "type": "file",
+      "name": "client.ts",
+      "filePath": "packages/core/src/lsp/client.ts",
+      "summary": "LSP JSON-RPC 客户端，通过 stdio 与语言服务器通信。实现 LSP 协议的请求/响应/通知机制，支持 initialize、goToDefinition、findReferences、hover。",
+      "tags": [
+        "lsp",
+        "json-rpc",
+        "language-server",
+        "code-intelligence"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "lsp"
+    },
+    {
+      "id": "file::packages/core/src/lsp/manager.ts",
+      "type": "file",
+      "name": "manager.ts",
+      "filePath": "packages/core/src/lsp/manager.ts",
+      "summary": "LSP 语言服务器管理器，自动检测项目类型并启动对应 LSP 服务器。支持 TypeScript 和 Go，提供高级代码智能接口。",
+      "tags": [
+        "lsp",
+        "language-server",
+        "typescript",
+        "go",
+        "code-intelligence"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "lsp"
+    },
+    {
+      "id": "file::packages/core/src/mcp/index.ts",
+      "type": "file",
+      "name": "mcp/index.ts",
+      "filePath": "packages/core/src/mcp/index.ts",
+      "summary": "MCP (Model Context Protocol) 客户端管理器，支持本地和远程 MCP 服务器连接。提供服务器连接/断开、工具列表获取、工具调用等完整生命周期管理。",
+      "tags": [
+        "mcp",
+        "model-context-protocol",
+        "client",
+        "server",
+        "tools"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "mcp"
+    },
+    {
+      "id": "file::packages/core/src/permission-gate.ts",
+      "type": "file",
+      "name": "permission-gate.ts",
+      "filePath": "packages/core/src/permission-gate.ts",
+      "summary": "权限评估网关，负责评估工具调用是否需要权限审批。提供资源提取、动作识别和权限规则匹配功能。",
+      "tags": [
+        "permission",
+        "gate",
+        "evaluation",
+        "tool-call",
+        "security"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "permission"
+    },
+    {
+      "id": "file::packages/core/src/permission-store.ts",
+      "type": "file",
+      "name": "permission-store.ts",
+      "filePath": "packages/core/src/permission-store.ts",
+      "summary": "工作区权限持久化存储，通过 SQLite 数据库读写权限规则。提供 load/save/remove/clear 四个操作。",
+      "tags": [
+        "permission",
+        "store",
+        "database",
+        "sqlite",
+        "persistence"
+      ],
+      "complexity": "low",
+      "package": "@mira/core",
+      "layer": "permission"
+    },
+    {
+      "id": "file::packages/core/src/permission.ts",
+      "type": "file",
+      "name": "permission.ts",
+      "filePath": "packages/core/src/permission.ts",
+      "summary": "权限系统核心模块，实现声明式权限规则引擎。支持通配符匹配（单星号和双星号）、硬拒绝检查、权限集合并。提供 PermissionSet 类。",
+      "tags": [
+        "permission",
+        "wildcard",
+        "matching",
+        "rules",
+        "security"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "permission"
+    },
+    {
+      "id": "file::packages/core/src/permission/approval-store.ts",
+      "type": "file",
+      "name": "approval-store.ts",
+      "filePath": "packages/core/src/permission/approval-store.ts",
+      "summary": "审批缓存存储，参考 Codex 的 ApprovalStore 和 opencode 的通配符规则。缓存用户审批决策，支持通配符资源匹配和 TTL 过期清理。",
+      "tags": [
+        "permission",
+        "approval",
+        "cache",
+        "wildcard",
+        "security"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "permission"
+    },
+    {
+      "id": "file::packages/core/src/plugin-hooks.ts",
+      "type": "file",
+      "name": "plugin-hooks.ts",
+      "filePath": "packages/core/src/plugin-hooks.ts",
+      "summary": "插件钩子系统，参考 webpack Tapable 实现 EventEmitter 风格事件机制。支持同步/异步/串行触发、瀑布流传递、条件阻断等模式。",
+      "tags": [
+        "plugin",
+        "hooks",
+        "event-emitter",
+        "lifecycle",
+        "extension"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "plugin"
+    },
+    {
+      "id": "file::packages/core/src/plugin/index.ts",
+      "type": "file",
+      "name": "plugin/index.ts",
+      "filePath": "packages/core/src/plugin/index.ts",
+      "summary": "插件系统核心模块，支持用户自定义工具和功能扩展。提供 PluginManager 管理插件的加载/初始化/销毁生命周期。",
+      "tags": [
+        "plugin",
+        "extension",
+        "lifecycle",
+        "configuration",
+        "tools"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "plugin"
+    },
+    {
+      "id": "file::packages/core/src/registry-init.ts",
+      "type": "file",
+      "name": "registry-init.ts",
+      "filePath": "packages/core/src/registry-init.ts",
+      "summary": "注册表初始化模块，从 index.ts 拆分以打破循环依赖。创建默认 ToolRegistry 并注册 30+ 个内置工具，初始化 MCP 和插件系统。",
+      "tags": [
+        "registry",
+        "initialization",
+        "tools",
+        "mcp",
+        "plugin"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "infrastructure"
+    },
+    {
+      "id": "file::packages/core/src/registry.ts",
+      "type": "file",
+      "name": "registry.ts",
+      "filePath": "packages/core/src/registry.ts",
+      "summary": "工具注册表，管理所有工具的注册、查询、过滤和执行。支持传统 ToolDef 和 Effect 工具两种注册方式，提供工具物化为 AI SDK 格式。",
+      "tags": [
+        "registry",
+        "tool-management",
+        "mcp",
+        "plugin",
+        "materialization"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "infrastructure"
+    },
+    {
+      "id": "file::packages/core/src/snapshot.ts",
+      "type": "file",
+      "name": "snapshot.ts",
+      "filePath": "packages/core/src/snapshot.ts",
+      "summary": "文件快照系统，参考 OpenCode/Codex 的 snapshot 机制。在工具执行前捕获文件状态，支持按步骤回滚，最多保留 50 个快照。",
+      "tags": [
+        "snapshot",
+        "rollback",
+        "file-management",
+        "backup",
+        "versioning"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "infrastructure"
+    },
+    {
+      "id": "file::packages/core/src/task-planner.ts",
+      "type": "file",
+      "name": "task-planner.ts",
+      "filePath": "packages/core/src/task-planner.ts",
+      "summary": "DAG 图任务规划器，允许 Agent 将复杂工作分解为多步计划，按依赖顺序执行。支持循环检测、并行执行、失败状态管理。",
+      "tags": [
+        "task",
+        "planner",
+        "dag",
+        "scheduling",
+        "execution"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "orchestration"
+    },
+    {
+      "id": "file::packages/core/src/tool-effect.ts",
+      "type": "file",
+      "name": "tool-effect.ts",
+      "filePath": "packages/core/src/tool-effect.ts",
+      "summary": "Effect 工具定义系统，基于 Effect 库实现声明式工具定义。支持 JSON Schema 转换和参数类型自动转换。包含 InvalidArgumentsError 错误类型。",
+      "tags": [
+        "tool",
+        "effect",
+        "declarative",
+        "schema",
+        "type-coercion"
+      ],
+      "complexity": "medium",
+      "package": "@mira/core",
+      "layer": "tool"
+    },
+    {
+      "id": "file::packages/core/src/tool-executor.ts",
+      "type": "file",
+      "name": "tool-executor.ts",
+      "filePath": "packages/core/src/tool-executor.ts",
+      "summary": "工具执行器，将已批准的工具调用列表并行执行。通过 Promise.all 并发执行，记录执行耗时和日志。",
+      "tags": [
+        "tool",
+        "executor",
+        "parallel",
+        "logging",
+        "execution"
+      ],
+      "complexity": "low",
+      "package": "@mira/core",
+      "layer": "tool"
+    },
+    {
+      "id": "file::packages/core/src/tool.ts",
+      "type": "file",
+      "name": "tool.ts",
+      "filePath": "packages/core/src/tool.ts",
+      "summary": "工具定义工厂，参考 OpenCode Tool.define 和 MAF FunctionTool。提供 make 创建函数、Zod到JSON Schema 转换、settle 执行结算和参数类型自动转换。",
+      "tags": [
+        "tool",
+        "factory",
+        "schema",
+        "validation",
+        "type-coercion",
+        "core-types"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "tool"
+    },
+    {
+      "id": "file::packages/core/src/tools/bash-security.ts",
+      "type": "file",
+      "name": "bash-security.ts",
+      "filePath": "packages/core/src/tools/bash-security.ts",
+      "summary": "Bash 命令安全检查模块，提供命令危险级别评估（safe/requires_approval/blocked）。支持命令规范化、子命令拆分、只读命令识别、路径安全检查。",
+      "tags": [
+        "bash",
+        "security",
+        "command-analysis",
+        "safety",
+        "validation"
+      ],
+      "complexity": "high",
+      "package": "@mira/core",
+      "layer": "tools"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge::agent.test.ts::imports::agent",
+      "source": "file::packages/core/src/__tests__/agent.test.ts",
+      "target": "file::packages/core/src/agent",
+      "type": "imports",
+      "label": "导入 Agent 类"
+    },
+    {
+      "id": "edge::agent.test.ts::imports::registry",
+      "source": "file::packages/core/src/__tests__/agent.test.ts",
+      "target": "file::packages/core/src/registry.ts",
+      "type": "imports",
+      "label": "导入 ToolRegistry"
+    },
+    {
+      "id": "edge::agent.test.ts::imports::tool",
+      "source": "file::packages/core/src/__tests__/agent.test.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "imports",
+      "label": "导入 make 函数"
+    },
+    {
+      "id": "edge::permission-loop.test.ts::imports::agent",
+      "source": "file::packages/core/src/__tests__/permission-loop.test.ts",
+      "target": "file::packages/core/src/agent",
+      "type": "imports",
+      "label": "导入 Agent 类"
+    },
+    {
+      "id": "edge::permission-loop.test.ts::imports::registry",
+      "source": "file::packages/core/src/__tests__/permission-loop.test.ts",
+      "target": "file::packages/core/src/registry.ts",
+      "type": "imports",
+      "label": "导入 ToolRegistry"
+    },
+    {
+      "id": "edge::permission-loop.test.ts::imports::permission",
+      "source": "file::packages/core/src/__tests__/permission-loop.test.ts",
+      "target": "file::packages/core/src/permission.ts",
+      "type": "imports",
+      "label": "导入 PermissionSet"
+    },
+    {
+      "id": "edge::tool.test.ts::imports::tool",
+      "source": "file::packages/core/src/__tests__/tool.test.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "imports",
+      "label": "导入 sanitizeToolError, coerceToolArgs"
+    },
+    {
+      "id": "edge::pipeline.ts::imports::permission-gate",
+      "source": "file::packages/core/src/agent/pipeline.ts",
+      "target": "file::packages/core/src/permission-gate.ts",
+      "type": "imports",
+      "label": "导入 evaluateToolCalls, extractResources"
+    },
+    {
+      "id": "edge::pipeline.ts::imports::plugin-hooks",
+      "source": "file::packages/core/src/agent/pipeline.ts",
+      "target": "file::packages/core/src/plugin-hooks.ts",
+      "type": "imports",
+      "label": "导入 pluginHooks"
+    },
+    {
+      "id": "edge::pipeline.ts::imports::permission",
+      "source": "file::packages/core/src/agent/pipeline.ts",
+      "target": "file::packages/core/src/permission.ts",
+      "type": "imports",
+      "label": "导入 PermissionSet, PermissionRule"
+    },
+    {
+      "id": "edge::pipeline.ts::imports::registry",
+      "source": "file::packages/core/src/agent/pipeline.ts",
+      "target": "file::packages/core/src/registry.ts",
+      "type": "imports",
+      "label": "导入 ToolRegistry"
+    },
+    {
+      "id": "edge::pipeline.ts::imports::orchestrator",
+      "source": "file::packages/core/src/agent/pipeline.ts",
+      "target": "file::packages/core/src/execution/orchestrator.ts",
+      "type": "imports",
+      "label": "导入 ToolOrchestrator"
+    },
+    {
+      "id": "edge::pipeline.ts::imports::approval-store",
+      "source": "file::packages/core/src/agent/pipeline.ts",
+      "target": "file::packages/core/src/permission/approval-store.ts",
+      "type": "imports",
+      "label": "导入 ApprovalStore"
+    },
+    {
+      "id": "edge::turn-processor.ts::imports::llm-sdk",
+      "source": "file::packages/core/src/agent/turn-processor.ts",
+      "target": "file::packages/core/src/llm/tool-runtime.ts",
+      "type": "imports",
+      "label": "导入 LLM SDK 类型"
+    },
+    {
+      "id": "edge::turn-processor.ts::imports::permission-gate",
+      "source": "file::packages/core/src/agent/turn-processor.ts",
+      "target": "file::packages/core/src/permission-gate.ts",
+      "type": "imports",
+      "label": "导入 evaluateToolCalls, extractResources"
+    },
+    {
+      "id": "edge::turn-processor.ts::imports::permission",
+      "source": "file::packages/core/src/agent/turn-processor.ts",
+      "target": "file::packages/core/src/permission.ts",
+      "type": "imports",
+      "label": "导入 PermissionSet, PermissionRule"
+    },
+    {
+      "id": "edge::turn-processor.ts::imports::text-ngram",
+      "source": "file::packages/core/src/agent/turn-processor.ts",
+      "target": "file::packages/core/src/agent/text-ngram.ts",
+      "type": "imports",
+      "label": "导入 TextNgramMonitor"
+    },
+    {
+      "id": "edge::turn-processor.ts::imports::feature-flags",
+      "source": "file::packages/core/src/agent/turn-processor.ts",
+      "target": "file::packages/core/src/feature-flags.ts",
+      "type": "imports",
+      "label": "导入 isFeatureEnabled"
+    },
+    {
+      "id": "edge::turn-processor.ts::imports::plugin-hooks",
+      "source": "file::packages/core/src/agent/turn-processor.ts",
+      "target": "file::packages/core/src/plugin-hooks.ts",
+      "type": "imports",
+      "label": "导入 pluginHooks"
+    },
+    {
+      "id": "edge::turn-processor.ts::imports::orchestrator",
+      "source": "file::packages/core/src/agent/turn-processor.ts",
+      "target": "file::packages/core/src/execution/orchestrator.ts",
+      "type": "imports",
+      "label": "导入 ToolOrchestrator"
+    },
+    {
+      "id": "edge::config.ts::imports::mcp",
+      "source": "file::packages/core/src/config.ts",
+      "target": "file::packages/core/src/mcp/index.ts",
+      "type": "imports",
+      "label": "导入 MCPServerConfig 类型"
+    },
+    {
+      "id": "edge::config.ts::imports::plugin",
+      "source": "file::packages/core/src/config.ts",
+      "target": "file::packages/core/src/plugin/index.ts",
+      "type": "imports",
+      "label": "导入 PluginConfigMap 类型"
+    },
+    {
+      "id": "edge::orchestrator.ts::imports::registry",
+      "source": "file::packages/core/src/execution/orchestrator.ts",
+      "target": "file::packages/core/src/registry.ts",
+      "type": "imports",
+      "label": "导入 ToolRegistry"
+    },
+    {
+      "id": "edge::orchestrator.ts::imports::tool-executor",
+      "source": "file::packages/core/src/execution/orchestrator.ts",
+      "target": "file::packages/core/src/tool-executor.ts",
+      "type": "imports",
+      "label": "导入 executeToolCalls"
+    },
+    {
+      "id": "edge::orchestrator.ts::imports::tool",
+      "source": "file::packages/core/src/execution/orchestrator.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "imports",
+      "label": "导入 ToolContext, ToolResult"
+    },
+    {
+      "id": "edge::hooks-setup.ts::imports::plugin-hooks",
+      "source": "file::packages/core/src/hooks-setup.ts",
+      "target": "file::packages/core/src/plugin-hooks.ts",
+      "type": "imports",
+      "label": "导入 pluginHooks"
+    },
+    {
+      "id": "edge::tool-runtime.ts::imports::tool",
+      "source": "file::packages/core/src/llm/tool-runtime.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "imports",
+      "label": "导入 ToolDef, ToolCall"
+    },
+    {
+      "id": "edge::lsp/manager.ts::imports::lsp/client",
+      "source": "file::packages/core/src/lsp/manager.ts",
+      "target": "file::packages/core/src/lsp/client.ts",
+      "type": "imports",
+      "label": "导入 LSPClient"
+    },
+    {
+      "id": "edge::mcp/index.ts::imports::tool",
+      "source": "file::packages/core/src/mcp/index.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "imports",
+      "label": "导入 make, ToolDef, ToolContext, ToolResult"
+    },
+    {
+      "id": "edge::permission-gate.ts::imports::permission",
+      "source": "file::packages/core/src/permission-gate.ts",
+      "target": "file::packages/core/src/permission.ts",
+      "type": "imports",
+      "label": "导入 PermissionSet, checkHardDeny"
+    },
+    {
+      "id": "edge::permission-gate.ts::imports::registry",
+      "source": "file::packages/core/src/permission-gate.ts",
+      "target": "file::packages/core/src/registry.ts",
+      "type": "imports",
+      "label": "导入 ToolRegistry"
+    },
+    {
+      "id": "edge::permission-gate.ts::imports::tool",
+      "source": "file::packages/core/src/permission-gate.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "imports",
+      "label": "导入 ToolCall"
+    },
+    {
+      "id": "edge::permission-store.ts::imports::permission",
+      "source": "file::packages/core/src/permission-store.ts",
+      "target": "file::packages/core/src/permission.ts",
+      "type": "imports",
+      "label": "导入 PermissionSet, PermissionRule"
+    },
+    {
+      "id": "edge::permission/approval-store.ts::imports::permission-store",
+      "source": "file::packages/core/src/permission/approval-store.ts",
+      "target": "file::packages/core/src/permission-store.ts",
+      "type": "imports",
+      "label": "导入 saveWorkspacePermission"
+    },
+    {
+      "id": "edge::permission/approval-store.ts::imports::permission",
+      "source": "file::packages/core/src/permission/approval-store.ts",
+      "target": "file::packages/core/src/permission.ts",
+      "type": "imports",
+      "label": "导入 PermissionSet"
+    },
+    {
+      "id": "edge::plugin/index.ts::imports::tool",
+      "source": "file::packages/core/src/plugin/index.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "imports",
+      "label": "导入 make, ToolDef, ToolContext, ToolResult"
+    },
+    {
+      "id": "edge::registry-init.ts::imports::registry",
+      "source": "file::packages/core/src/registry-init.ts",
+      "target": "file::packages/core/src/registry.ts",
+      "type": "imports",
+      "label": "导入 ToolRegistry"
+    },
+    {
+      "id": "edge::registry-init.ts::imports::mcp",
+      "source": "file::packages/core/src/registry-init.ts",
+      "target": "file::packages/core/src/mcp/index.ts",
+      "type": "imports",
+      "label": "导入 MCPServerConfig"
+    },
+    {
+      "id": "edge::registry.ts::imports::tool",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "imports",
+      "label": "导入 ToolDef, settle, getJsonSchema"
+    },
+    {
+      "id": "edge::registry.ts::imports::permission",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/permission.ts",
+      "type": "imports",
+      "label": "导入 PermissionSet"
+    },
+    {
+      "id": "edge::registry.ts::imports::tool-effect",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/tool-effect.ts",
+      "type": "imports",
+      "label": "导入 ToolEffect"
+    },
+    {
+      "id": "edge::registry.ts::imports::mcp",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/mcp/index.ts",
+      "type": "imports",
+      "label": "导入 MCPManager, createMCPTool"
+    },
+    {
+      "id": "edge::registry.ts::imports::plugin",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/plugin/index.ts",
+      "type": "imports",
+      "label": "导入 PluginManager"
+    },
+    {
+      "id": "edge::tool-executor.ts::imports::tool",
+      "source": "file::packages/core/src/tool-executor.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "imports",
+      "label": "导入 ToolContext, ToolResult"
+    },
+    {
+      "id": "edge::tool-executor.ts::imports::registry",
+      "source": "file::packages/core/src/tool-executor.ts",
+      "target": "file::packages/core/src/registry.ts",
+      "type": "imports",
+      "label": "导入 ToolRegistry"
+    },
+    {
+      "id": "edge::registry.ts::calls::mcp::initMCP",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/mcp/index.ts",
+      "type": "calls",
+      "label": "调用 MCPManager.setConfig/connectAll/getTools"
+    },
+    {
+      "id": "edge::registry.ts::calls::plugin::loadPlugins",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/plugin/index.ts",
+      "type": "calls",
+      "label": "调用 PluginManager.loadPlugins/initializePlugins"
+    },
+    {
+      "id": "edge::permission-gate.ts::calls::permission::checkHardDeny",
+      "source": "file::packages/core/src/permission-gate.ts",
+      "target": "file::packages/core/src/permission.ts",
+      "type": "calls",
+      "label": "调用 checkHardDeny"
+    },
+    {
+      "id": "edge::permission-gate.ts::calls::registry::get",
+      "source": "file::packages/core/src/permission-gate.ts",
+      "target": "file::packages/core/src/registry.ts",
+      "type": "calls",
+      "label": "调用 registry.get 获取工具定义"
+    },
+    {
+      "id": "edge::permission/approval-store.ts::calls::permission-store::save",
+      "source": "file::packages/core/src/permission/approval-store.ts",
+      "target": "file::packages/core/src/permission-store.ts",
+      "type": "calls",
+      "label": "调用 saveWorkspacePermission 持久化规则"
+    },
+    {
+      "id": "edge::orchestrator.ts::calls::tool-executor::executeToolCalls",
+      "source": "file::packages/core/src/execution/orchestrator.ts",
+      "target": "file::packages/core/src/tool-executor.ts",
+      "type": "calls",
+      "label": "调用 executeToolCalls 执行工具"
+    },
+    {
+      "id": "edge::lsp/manager.ts::calls::lsp/client::methods",
+      "source": "file::packages/core/src/lsp/manager.ts",
+      "target": "file::packages/core/src/lsp/client.ts",
+      "type": "calls",
+      "label": "调用 LSPClient.start/initialize/goToDefinition/findReferences/hover"
+    },
+    {
+      "id": "edge::hooks-setup.ts::calls::plugin-hooks::on",
+      "source": "file::packages/core/src/hooks-setup.ts",
+      "target": "file::packages/core/src/plugin-hooks.ts",
+      "type": "calls",
+      "label": "调用 pluginHooks.on 注册钩子"
+    },
+    {
+      "id": "edge::config.ts::calls::mcp::config",
+      "source": "file::packages/core/src/config.ts",
+      "target": "file::packages/core/src/mcp/index.ts",
+      "type": "calls",
+      "label": "读取/写入 MCP 服务器配置"
+    },
+    {
+      "id": "edge::config.ts::calls::plugin::config",
+      "source": "file::packages/core/src/config.ts",
+      "target": "file::packages/core/src/plugin/index.ts",
+      "type": "calls",
+      "label": "读取/写入插件配置"
+    },
+    {
+      "id": "edge::plugin/index.ts::calls::tool::make",
+      "source": "file::packages/core/src/plugin/index.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "calls",
+      "label": "调用 make 创建插件工具"
+    },
+    {
+      "id": "edge::mcp/index.ts::calls::tool::make",
+      "source": "file::packages/core/src/mcp/index.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "calls",
+      "label": "调用 make 创建 MCP 工具"
+    },
+    {
+      "id": "edge::tool-runtime.ts::calls::tool::execute",
+      "source": "file::packages/core/src/llm/tool-runtime.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "calls",
+      "label": "调用 tool.execute 执行工具"
+    },
+    {
+      "id": "edge::registry.ts::calls::tool::settle",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "calls",
+      "label": "调用 settle 执行工具并处理结果"
+    },
+    {
+      "id": "edge::registry.ts::calls::tool::getJsonSchema",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "calls",
+      "label": "调用 getJsonSchema 获取工具 schema"
+    },
+    {
+      "id": "edge::registry.ts::calls::tool-effect::toLegacyToolDef",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/tool-effect.ts",
+      "type": "calls",
+      "label": "调用 ToolEffect.toLegacyToolDef 转换工具定义"
+    },
+    {
+      "id": "edge::registry.ts::calls::tool-effect::coerceArgs",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/tool-effect.ts",
+      "type": "calls",
+      "label": "调用 ToolEffect.coerceArgs 转换参数类型"
+    },
+    {
+      "id": "edge::registry.ts::calls::mcp::createMCPTool",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/mcp/index.ts",
+      "type": "calls",
+      "label": "调用 createMCPTool 将 MCP 工具转为 ToolDef"
+    },
+    {
+      "id": "edge::config.ts::calls::platform-paths",
+      "source": "file::packages/core/src/config.ts",
+      "target": "file::packages/core/src/platform-paths.ts",
+      "type": "calls",
+      "label": "调用 getPlatformPaths 获取跨平台路径"
+    },
+    {
+      "id": "edge::permission/approval-store.ts::calls::permission::evaluate",
+      "source": "file::packages/core/src/permission/approval-store.ts",
+      "target": "file::packages/core/src/permission.ts",
+      "type": "calls",
+      "label": "调用 PermissionSet.evaluate 进行权限评估"
+    },
+    {
+      "id": "edge::packages/core/src/agent/pipeline.ts::contains::injectToolResult",
+      "source": "file::packages/core/src/agent/pipeline.ts",
+      "target": "file::packages/core/src/agent/pipeline.ts",
+      "type": "contains",
+      "label": "包含函数 injectToolResult"
+    },
+    {
+      "id": "edge::packages/core/src/agent/state-machine.ts::contains::AgentStateMachine",
+      "source": "file::packages/core/src/agent/state-machine.ts",
+      "target": "file::packages/core/src/agent/state-machine.ts",
+      "type": "contains",
+      "label": "包含类 AgentStateMachine"
+    },
+    {
+      "id": "edge::packages/core/src/agent/text-ngram.ts::contains::TextNgramMonitor",
+      "source": "file::packages/core/src/agent/text-ngram.ts",
+      "target": "file::packages/core/src/agent/text-ngram.ts",
+      "type": "contains",
+      "label": "包含类 TextNgramMonitor 和 hasRepeatedContent"
+    },
+    {
+      "id": "edge::packages/core/src/agent/turn-processor.ts::contains::executeTool,",
+      "source": "file::packages/core/src/agent/turn-processor.ts",
+      "target": "file::packages/core/src/agent/turn-processor.ts",
+      "type": "contains",
+      "label": "包含 executeTool, startToolExecution, quickPermissionCheck"
+    },
+    {
+      "id": "edge::packages/core/src/config.ts::contains::22",
+      "source": "file::packages/core/src/config.ts",
+      "target": "file::packages/core/src/config.ts",
+      "type": "contains",
+      "label": "包含 22 个导出函数（loadConfig, saveGlobalConfig 等）"
+    },
+    {
+      "id": "edge::packages/core/src/cron-scheduler.ts::contains::CronScheduler",
+      "source": "file::packages/core/src/cron-scheduler.ts",
+      "target": "file::packages/core/src/cron-scheduler.ts",
+      "type": "contains",
+      "label": "包含类 CronScheduler 和 parseCron, nextCronTime"
+    },
+    {
+      "id": "edge::packages/core/src/execution/orchestrator.ts::contains::ToolOrchestrator",
+      "source": "file::packages/core/src/execution/orchestrator.ts",
+      "target": "file::packages/core/src/execution/orchestrator.ts",
+      "type": "contains",
+      "label": "包含类 ToolOrchestrator"
+    },
+    {
+      "id": "edge::packages/core/src/feature-flags.ts::contains::FeatureFlagManager",
+      "source": "file::packages/core/src/feature-flags.ts",
+      "target": "file::packages/core/src/feature-flags.ts",
+      "type": "contains",
+      "label": "包含类 FeatureFlagManager 和 isFeatureEnabled"
+    },
+    {
+      "id": "edge::packages/core/src/llm/tool-runtime.ts::contains::ToolRuntime",
+      "source": "file::packages/core/src/llm/tool-runtime.ts",
+      "target": "file::packages/core/src/llm/tool-runtime.ts",
+      "type": "contains",
+      "label": "包含类 ToolRuntime 和 extractJsonSchema, zodToJsonSchema"
+    },
+    {
+      "id": "edge::packages/core/src/lsp/client.ts::contains::LSPClient（14",
+      "source": "file::packages/core/src/lsp/client.ts",
+      "target": "file::packages/core/src/lsp/client.ts",
+      "type": "contains",
+      "label": "包含类 LSPClient（14 个方法）"
+    },
+    {
+      "id": "edge::packages/core/src/lsp/manager.ts::contains::LSPServerManager（9",
+      "source": "file::packages/core/src/lsp/manager.ts",
+      "target": "file::packages/core/src/lsp/manager.ts",
+      "type": "contains",
+      "label": "包含类 LSPServerManager（9 个方法）"
+    },
+    {
+      "id": "edge::packages/core/src/mcp/index.ts::contains::MCPManager",
+      "source": "file::packages/core/src/mcp/index.ts",
+      "target": "file::packages/core/src/mcp/index.ts",
+      "type": "contains",
+      "label": "包含类 MCPManager 和函数 createMCPTool, jsonSchemaToZod, initMCP"
+    },
+    {
+      "id": "edge::packages/core/src/permission.ts::contains::PermissionSet",
+      "source": "file::packages/core/src/permission.ts",
+      "target": "file::packages/core/src/permission.ts",
+      "type": "contains",
+      "label": "包含类 PermissionSet 和通配符匹配函数"
+    },
+    {
+      "id": "edge::packages/core/src/permission-gate.ts::contains::evaluateToolCalls,",
+      "source": "file::packages/core/src/permission-gate.ts",
+      "target": "file::packages/core/src/permission-gate.ts",
+      "type": "contains",
+      "label": "包含函数 evaluateToolCalls, extractResources"
+    },
+    {
+      "id": "edge::packages/core/src/permission-store.ts::contains::5",
+      "source": "file::packages/core/src/permission-store.ts",
+      "target": "file::packages/core/src/permission-store.ts",
+      "type": "contains",
+      "label": "包含 5 个权限存储函数"
+    },
+    {
+      "id": "edge::packages/core/src/permission/approval-store.ts::contains::ApprovalStore",
+      "source": "file::packages/core/src/permission/approval-store.ts",
+      "target": "file::packages/core/src/permission/approval-store.ts",
+      "type": "contains",
+      "label": "包含类 ApprovalStore 和通配符匹配函数"
+    },
+    {
+      "id": "edge::packages/core/src/plugin-hooks.ts::contains::PluginHooks（sync/async/serial/waterfall",
+      "source": "file::packages/core/src/plugin-hooks.ts",
+      "target": "file::packages/core/src/plugin-hooks.ts",
+      "type": "contains",
+      "label": "包含类 PluginHooks（sync/async/serial/waterfall 模式）"
+    },
+    {
+      "id": "edge::packages/core/src/plugin/index.ts::contains::PluginManager",
+      "source": "file::packages/core/src/plugin/index.ts",
+      "target": "file::packages/core/src/plugin/index.ts",
+      "type": "contains",
+      "label": "包含类 PluginManager 和 createPluginTool, loadPluginConfig"
+    },
+    {
+      "id": "edge::packages/core/src/registry.ts::contains::ToolRegistry（20",
+      "source": "file::packages/core/src/registry.ts",
+      "target": "file::packages/core/src/registry.ts",
+      "type": "contains",
+      "label": "包含类 ToolRegistry（20 个方法，管理工具注册/查询/执行）"
+    },
+    {
+      "id": "edge::packages/core/src/snapshot.ts::contains::SnapshotManager（capture/restore/diff）",
+      "source": "file::packages/core/src/snapshot.ts",
+      "target": "file::packages/core/src/snapshot.ts",
+      "type": "contains",
+      "label": "包含类 SnapshotManager（capture/restore/diff）"
+    },
+    {
+      "id": "edge::packages/core/src/task-planner.ts::contains::TaskPlanner（DAG",
+      "source": "file::packages/core/src/task-planner.ts",
+      "target": "file::packages/core/src/task-planner.ts",
+      "type": "contains",
+      "label": "包含类 TaskPlanner（DAG 图任务执行器）"
+    },
+    {
+      "id": "edge::packages/core/src/tool.ts::contains::make,",
+      "source": "file::packages/core/src/tool.ts",
+      "target": "file::packages/core/src/tool.ts",
+      "type": "contains",
+      "label": "包含 make, settle, withPermission 等 10 个函数和 2 个错误类"
+    },
+    {
+      "id": "edge::packages/core/src/tool-executor.ts::contains::executeToolCalls",
+      "source": "file::packages/core/src/tool-executor.ts",
+      "target": "file::packages/core/src/tool-executor.ts",
+      "type": "contains",
+      "label": "包含函数 executeToolCalls"
+    },
+    {
+      "id": "edge::packages/core/src/tools/bash-security.ts::contains::9",
+      "source": "file::packages/core/src/tools/bash-security.ts",
+      "target": "file::packages/core/src/tools/bash-security.ts",
+      "type": "contains",
+      "label": "包含 9 个安全检查函数"
+    },
+    {
+      "id": "edge::packages/core/src/tool-effect.ts::contains::InvalidArgumentsError",
+      "source": "file::packages/core/src/tool-effect.ts",
+      "target": "file::packages/core/src/tool-effect.ts",
+      "type": "contains",
+      "label": "包含 InvalidArgumentsError 和 7 个函数"
+    }
+  ]
+}

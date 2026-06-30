@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto"
-import { createLLMClient, type LLMMessage, type LLMToolSet } from "../llm-sdk"
-import { logError } from "../logger"
+import { createLLMClient, type LLMMessage, type LLMToolSet } from "../llm/client"
+import { logError } from "../system/logger"
 
 export type WorkflowStepType = "agent" | "bash" | "parallel" | "pipeline" | "transform"
 
@@ -315,3 +315,4 @@ export class WorkflowEngine {
     }
   }
 }
+

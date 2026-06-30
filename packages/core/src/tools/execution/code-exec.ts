@@ -4,7 +4,7 @@ import * as fs from "fs/promises"
 import * as path from "path"
 import * as os from "os"
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../../shared/tool"
 
 const execFileAsync = promisify(execFile)
 
@@ -38,3 +38,4 @@ export const codeExecTool = make({
     }
   },
 })
+

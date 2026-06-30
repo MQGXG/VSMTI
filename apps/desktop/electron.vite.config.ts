@@ -33,9 +33,7 @@ export default defineConfig({
     resolve: {
       alias: {
         "@mira/core": resolve(__dirname, "../../packages/core/src"),
-        "@mira/tools": resolve(__dirname, "../../packages/tools/src"),
         "@mira/ui": resolve(__dirname, "../../packages/ui/src"),
-        "@mira/electron": resolve(__dirname, "../../packages/electron/src"),
       },
     },
   },

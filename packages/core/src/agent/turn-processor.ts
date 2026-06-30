@@ -1,16 +1,18 @@
-import { createLLMClient, type LLMToolSet, type LLMMessage } from "../llm-sdk"
+import { createLLMClient, type LLMToolSet, type LLMMessage } from "../llm/client"
 import type { AgentEvent } from "../types"
-import type { ToolResult, ToolContext } from "../tool"
-import type { ToolRegistry } from "../registry"
+import type { ToolResult, ToolContext } from "../shared/tool"
+import type { ToolRegistry } from "../system/registry"
 import type { AgentStateMachine } from "./state-machine"
-import type { ApprovalStore } from "../permission/approval-store"
-import type { ToolOrchestrator, OrchestratedToolCall } from "../execution/orchestrator"
-import { evaluateToolCalls, extractResources } from "../permission-gate"
-import type { PermissionSet, PermissionRule } from "../permission"
-import { pluginHooks } from "../plugin-hooks"
-import { appendMessage } from "../session-store"
-import { isToolParallel } from "../tools/tool-meta"
-import type { ApprovalResult } from "../permission-gate"
+import type { ApprovalStore } from "../system/permission/approval-store"
+import type { ToolOrchestrator, OrchestratedToolCall } from "../orchestrate/execution"
+import { evaluateToolCalls, extractResources } from "../system/permission/gate"
+import type { PermissionSet, PermissionRule } from "../system/permission"
+import { pluginHooks } from "../shared/plugin-hooks"
+import { appendMessage } from "../session/store"
+import { isToolParallel } from "../tools/shared/tool-meta"
+import type { ApprovalResult } from "../system/permission/gate"
+import { TextNgramMonitor } from "./text-ngram"
+import { isFeatureEnabled } from "../config/flags"
 
 export type TurnSignal = "continue" | "stop" | "compact"
 
@@ -251,6 +253,7 @@ export async function* processTurn(
 
   const stream = client.stream({ messages, tools })
   const toolDoneQueue: Array<{ id: string; result: ToolResult }> = []
+  const ngramMonitor = new TextNgramMonitor()
   const pendingTools = new Map<string, Promise<ToolResult>>()
   const MAX_CONCURRENT = 10
 
@@ -315,6 +318,11 @@ export async function* processTurn(
 
     if (event.type === "delta") {
       text += event.delta
+      // 检测重复输出（可通过 feature flag 控制）
+      if (isFeatureEnabled("text-ngram-detection") && ngramMonitor.check(event.delta)) {
+        yield { type: "error" as const, message: "检测到重复输出，自动停止" }
+        break
+      }
       yield { type: "content" as const, text: event.delta }
     } else if (event.type === "tool_call" && event.toolCall) {
       toolCallList.push(event.toolCall)
@@ -412,3 +420,5 @@ export async function* processTurn(
 
   return { text, toolCalls: toolCallList, signal: "continue" as TurnSignal, messages, toolResults }
 }
+
+

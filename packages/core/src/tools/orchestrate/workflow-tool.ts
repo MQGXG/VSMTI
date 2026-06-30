@@ -1,6 +1,6 @@
 import { z } from "zod"
-import { make } from "../tool"
-import { WorkflowEngine, type WorkflowDefinition } from "../workflow/index"
+import { make } from "../../shared/tool"
+import { WorkflowEngine, type WorkflowDefinition } from "../../workflow/index"
 
 const workflowEngine = new WorkflowEngine()
 
@@ -46,3 +46,4 @@ export const workflowRunTool = make({
     }
   },
 })
+

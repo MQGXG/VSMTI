@@ -1,5 +1,5 @@
-import { estimateTokens } from "../message-utils"
-import type { LLMMessage } from "../llm-sdk"
+import { estimateTokens } from "../shared/message-utils"
+import type { LLMMessage } from "../llm/client"
 
 const DOOM_LOOP_THRESHOLD = 3
 const DOOM_LOOP_SAME_TOOL_THRESHOLD = 4
@@ -81,3 +81,4 @@ export function checkOverflow(
 ): boolean {
   return estimateTokens(messages) > maxTokens * threshold
 }
+

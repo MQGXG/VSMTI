@@ -3,12 +3,12 @@
  * 子 Agent 继承父 Agent 的注册表与权限子集，拥有独立会话和预算
  */
 
-import { AgentConfig } from "./agent"
-import { ToolRegistry } from "./registry"
-import { PermissionSet, PermissionRule } from "./permission"
-import { createLLMClient, LLMMessage } from "./llm-sdk"
-import { IterationBudget } from "./iteration-budget"
-import { evaluateToolCalls } from "./permission-gate"
+import { AgentConfig } from "../agent/agent"
+import { ToolRegistry } from "../system/registry"
+import { PermissionSet, PermissionRule } from "../system/permission"
+import { createLLMClient, LLMMessage } from "../llm/client"
+import { IterationBudget } from "../task/budget"
+import { evaluateToolCalls } from "../system/permission/gate"
 
 export interface DelegateTask {
   id: string
@@ -224,3 +224,5 @@ export function cleanupDelegations(olderThanMs = 300000): void {
     }
   }
 }
+
+

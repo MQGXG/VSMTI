@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ToolRegistry } from '../registry'
-import { buildInstructionSystemPrompt } from '../instruction-context'
+import { ToolRegistry } from '../system/registry'
+import { buildInstructionSystemPrompt } from '../system/instruction'
 
 describe('Agent Core benchmarks', () => {
   it('registry handles 100 tools', () => {

@@ -1,0 +1,42 @@
+{
+  "batchImportData": {
+    "memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json": [],
+    "memory/ses_mqylxdoz_0a181aef.json": [],
+    "memory/ses_mqym26mg_b34e4a3b.json": [],
+    "memory/ses_mqym31fq_c18a23a5.json": [],
+    "memory/test-session.json": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json",
+      "language": "json",
+      "sizeLines": 15,
+      "fileCategory": "config"
+    },
+    {
+      "path": "memory/ses_mqylxdoz_0a181aef.json",
+      "language": "json",
+      "sizeLines": 57,
+      "fileCategory": "config"
+    },
+    {
+      "path": "memory/ses_mqym26mg_b34e4a3b.json",
+      "language": "json",
+      "sizeLines": 39,
+      "fileCategory": "config"
+    },
+    {
+      "path": "memory/ses_mqym31fq_c18a23a5.json",
+      "language": "json",
+      "sizeLines": 21,
+      "fileCategory": "config"
+    },
+    {
+      "path": "memory/test-session.json",
+      "language": "json",
+      "sizeLines": 303,
+      "fileCategory": "config"
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+{
+  "batchImportData": {
+    ".eslintignore": [],
+    ".understand-anything/.understandignore": [],
+    "apps/desktop/electron.vite.config.ts": [],
+    "apps/desktop/src/App.tsx": [],
+    "apps/desktop/src/lib": [],
+    "apps/desktop/src/main.ts": [
+      "packages/electron/src/index.ts"
+    ],
+    "apps/desktop/src/main.tsx": [
+      "apps/desktop/src/App.tsx",
+      "apps/desktop/src/styles/globals.css"
+    ],
+    "apps/desktop/src/styles/globals.css": [],
+    "checkpoints/offline-8e14d950-a741-494d-9ed3-353a7a26efbf/checkpoint.md": [],
+    "checkpoints/ses_mqylxdoz_0a181aef/checkpoint.md": [],
+    "checkpoints/ses_mqym26mg_b34e4a3b/checkpoint.md": [],
+    "checkpoints/ses_mqym31fq_c18a23a5/checkpoint.md": [],
+    "checkpoints/test-session/checkpoint.md": [],
+    "electron.vite.config.ts": [],
+    "fts-memory.db": [],
+    "mira.db": [],
+    "packages/core/package.json": [],
+    "packages/core/src/__tests__/smoke.test.ts": [],
+    "packages/core/src/agent/fork-cache.ts": [],
+    "packages/core/src/agent/index.ts": [],
+    "packages/core/src/agent/system-context.ts": [],
+    "packages/core/src/background.ts": [],
+    "packages/core/src/llm/index.ts": [],
+    "packages/core/src/llm/protocols/index.ts": [],
+    "packages/core/src/llm/route/index.ts": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": ".eslintignore",
+      "language": "unknown",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": ".understand-anything/.understandignore",
+      "language": "unknown",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "apps/desktop/electron.vite.config.ts",
+      "language": "typescript",
+      "sizeLines": 41,
+      "fileCategory": "code"
+    },
+    {
+      "path": "apps/desktop/src/App.tsx",
+      "language": "typescript",
+      "sizeLines": 187,
+      "fileCategory": "code"
+    },
+    {
+      "path": "apps/desktop/src/lib",
+      "language": "unknown",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "apps/desktop/src/main.ts",
+      "language": "typescript",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "apps/desktop/src/main.tsx",
+      "language": "typescript",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "apps/desktop/src/styles/globals.css",
+      "language": "css",
+      "sizeLines": 260,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "checkpoints/offline-8e14d950-a741-494d-9ed3-353a7a26efbf/checkpoint.md",
+      "language": "markdown",
+      "sizeLines": 37,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "checkpoints/ses_mqylxdoz_0a181aef/checkpoint.md",
+      "language": "markdown",
+      "sizeLines": 40,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "checkpoints/ses_mqym26mg_b34e4a3b/checkpoint.md",
+      "language": "markdown",
+      "sizeLines": 37,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "checkpoints/ses_mqym31fq_c18a23a5/checkpoint.md",
+      "language": "markdown",
+      "sizeLines": 37,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "checkpoints/test-session/checkpoint.md",
+      "language": "markdown",
+      "sizeLines": 37,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "electron.vite.config.ts",
+      "language": "typescript",
+      "sizeLines": 49,
+      "fileCategory": "code"
+    },
+    {
+      "path": "fts-memory.db",
+      "language": "db",
+      "sizeLines": 4,
+      "fileCategory": "code"
+    },
+    {
+      "path": "mira.db",
+      "language": "db",
+      "sizeLines": 348,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/package.json",
+      "language": "json",
+      "sizeLines": 34,
+      "fileCategory": "config"
+    },
+    {
+      "path": "packages/core/src/__tests__/smoke.test.ts",
+      "language": "typescript",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/fork-cache.ts",
+      "language": "typescript",
+      "sizeLines": 188,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/index.ts",
+      "language": "typescript",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/system-context.ts",
+      "language": "typescript",
+      "sizeLines": 207,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/background.ts",
+      "language": "typescript",
+      "sizeLines": 100,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/index.ts",
+      "language": "typescript",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/protocols/index.ts",
+      "language": "typescript",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/route/index.ts",
+      "language": "typescript",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    }
+  ]
+}

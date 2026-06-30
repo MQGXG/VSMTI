@@ -113,7 +113,7 @@ export class LSPClient {
   /** 停止 */
   stop(): void {
     if (!this.process) return
-    try { this.notify("shutdown", null); this.notify("exit", null) } catch {}
+    try { this.notify("shutdown", null); this.notify("exit", null) } catch { /* process already dead */ }
     this.process.kill()
     this.process = null
     this._capabilities = null

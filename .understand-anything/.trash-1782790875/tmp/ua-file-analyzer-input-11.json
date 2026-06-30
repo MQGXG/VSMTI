@@ -1,0 +1,35 @@
+{
+  "batchImportData": {
+    "apps/desktop/electron-builder.yml": [],
+    "apps/desktop/index.html": [],
+    "apps/desktop/package.json": [],
+    "apps/desktop/tsconfig.json": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "apps/desktop/electron-builder.yml",
+      "language": "yaml",
+      "sizeLines": 35,
+      "fileCategory": "config"
+    },
+    {
+      "path": "apps/desktop/index.html",
+      "language": "html",
+      "sizeLines": 13,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "language": "json",
+      "sizeLines": 38,
+      "fileCategory": "config"
+    },
+    {
+      "path": "apps/desktop/tsconfig.json",
+      "language": "json",
+      "sizeLines": 26,
+      "fileCategory": "config"
+    }
+  ]
+}

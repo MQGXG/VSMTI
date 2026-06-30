@@ -6,7 +6,7 @@
 import { join } from "path"
 import fs from "fs"
 import { randomUUID } from "crypto"
-import { getPlatformPaths } from "./platform-paths"
+import { getPlatformPaths } from "../config/paths"
 
 export interface Message {
   id: string
@@ -86,3 +86,5 @@ export function getProtocolState(): ProtocolState {
 export function requestPlanApproval(agentId: string, plan: string): Message {
   return sendMessage(agentId, "user", "question", `需要批准计划:\n\n${plan}`)
 }
+
+

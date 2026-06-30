@@ -1,4 +1,4 @@
-import { createLLMClient, type LLMToolSet, type LLMMessage } from "../llm-sdk"
+import { createLLMClient, type LLMToolSet, type LLMMessage } from "../llm/client"
 import type { AgentEvent } from "../types"
 import { runLLMTurn, type LLMTurnConfig } from "./turn"
 import { detectTextNgramRepeat } from "./utils"
@@ -191,3 +191,4 @@ function getLastUserMessage(messages: LLMMessage[]): string {
   }
   return ""
 }
+

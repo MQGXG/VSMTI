@@ -6,7 +6,7 @@
 import { join } from "path"
 import fs from "fs"
 import { MemoryProvider } from "./types"
-import { getPlatformPaths } from "../platform-paths"
+import { getPlatformPaths } from "../config/paths"
 
 interface MemoryEntry {
   timestamp: string
@@ -146,3 +146,4 @@ export class BuiltinMemoryProvider implements MemoryProvider {
     return facts
   }
 }
+

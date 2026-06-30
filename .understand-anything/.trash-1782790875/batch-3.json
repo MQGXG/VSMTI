@@ -1,0 +1,1670 @@
+{
+  "nodes": [
+    {
+      "id": "file:packages/core/src/__tests__/llm-sdk.test.ts",
+      "type": "file",
+      "name": "llm-sdk.test.ts",
+      "filePath": "packages/core/src/__tests__/llm-sdk.test.ts",
+      "summary": "createLLMClient 工厂函数的单元测试，验证 OpenAI、Anthropic 和自定义 Provider 的客户端创建，确保返回对象包含 stream 和 complete 方法",
+      "tags": [
+        "test",
+        "vitest",
+        "llm",
+        "unit-test"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/__tests__/message-utils.test.ts",
+      "type": "file",
+      "name": "message-utils.test.ts",
+      "filePath": "packages/core/src/__tests__/message-utils.test.ts",
+      "summary": "message-utils 工具函数的单元测试，覆盖 repairMessageSequence（修复 tool→user 序列）和 truncateToBudget（按 token 预算截断旧消息）两个功能",
+      "tags": [
+        "test",
+        "vitest",
+        "message-utils",
+        "unit-test"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/agent-profile.ts",
+      "type": "file",
+      "name": "agent-profile.ts",
+      "filePath": "packages/core/src/agent-profile.ts",
+      "summary": "Agent 配置文件注册表，支持从 JSON 文件和目录加载 Agent Profile，管理 Agent 的 id、label、描述、最大迭代次数、系统提示后缀、权限规则和工具白名单，提供内置 Agent 注册、全局/项目目录加载、权限集转换等功能",
+      "tags": [
+        "agent",
+        "profile",
+        "registry",
+        "config",
+        "permission"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "class:AgentProfileRegistry",
+      "type": "class",
+      "name": "AgentProfileRegistry",
+      "filePath": "packages/core/src/agent-profile.ts",
+      "summary": "Agent 配置注册表类，使用 Map 存储 Profile，支持内置注册、文件加载、目录批量加载、权限集转换和工具白名单查询",
+      "tags": [
+        "agent",
+        "profile",
+        "registry"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:createDefaultRegistry",
+      "type": "function",
+      "name": "createDefaultRegistry",
+      "filePath": "packages/core/src/agent-profile.ts",
+      "summary": "创建默认 AgentProfileRegistry 并注册 5 个内置 Agent：assistant（日常助手，禁 bash/code_exec）、expert（深度研究，禁 bash）、action（全工具执行）、safe（只读探索）、plan（代码分析+LSP）",
+      "tags": [
+        "agent",
+        "registry",
+        "builtin"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:getGlobalAgentDir",
+      "type": "function",
+      "name": "getGlobalAgentDir",
+      "filePath": "packages/core/src/agent-profile.ts",
+      "summary": "获取全局 Agent 配置目录路径：~/.config/mira/agents/",
+      "tags": [
+        "agent",
+        "config",
+        "path"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:getProjectAgentDir",
+      "type": "function",
+      "name": "getProjectAgentDir",
+      "filePath": "packages/core/src/agent-profile.ts",
+      "summary": "获取项目级 Agent 配置目录路径：{workspace}/.mira/agents/",
+      "tags": [
+        "agent",
+        "config",
+        "path"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/agent.ts",
+      "type": "file",
+      "name": "agent.ts",
+      "filePath": "packages/core/src/agent.ts",
+      "summary": "Agent 核心循环实现，618 行。包含 Agent 类（状态机驱动的 LLM→工具调用→权限→记忆主循环），导出 AgentConfig 接口、DEFAULT_SYSTEM 系统提示、PermissionReply 类型。集成 ContextManager、GoalJudge、DreamDistillManager、ApprovalStore、ToolOrchestrator 等子系统，支持 Max Mode 并行采样、Doom Loop 检测、迭代预算控制和会话恢复",
+      "tags": [
+        "agent",
+        "core",
+        "loop",
+        "llm",
+        "tool-call",
+        "permission",
+        "state-machine"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class:Agent",
+      "type": "class",
+      "name": "Agent",
+      "filePath": "packages/core/src/agent.ts",
+      "summary": "Agent 核心类，管理 LLM 对话主循环。属性包括 stateMachine、memoryManager、approvalStore、orchestrator、checkpointProvider、dreamDistillManager、contextManager、goalJudge。主要方法 run() 实现完整的 LLM 流式调用→工具执行→权限审批→Goal 验证→记忆提升流程",
+      "tags": [
+        "agent",
+        "core",
+        "class"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "fn:hasToolCalls:agent",
+      "type": "function",
+      "name": "hasToolCalls",
+      "filePath": "packages/core/src/agent.ts",
+      "summary": "检测消息 content 是否包含工具调用（本地辅助函数，与 message-utils 版本功能相同）",
+      "tags": [
+        "agent",
+        "utility"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:tryParseAssistantPayload",
+      "type": "function",
+      "name": "tryParseAssistantPayload",
+      "filePath": "packages/core/src/agent.ts",
+      "summary": "尝试解析 assistant 消息中的 JSON payload（含 tool_calls 数组），用于会话恢复时还原工具调用历史",
+      "tags": [
+        "agent",
+        "session-recovery"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/agent/context.ts",
+      "type": "file",
+      "name": "context.ts",
+      "filePath": "packages/core/src/agent/context.ts",
+      "summary": "Agent 上下文构建模块，提供 buildToolContext（构建工具执行上下文）和 buildSystemMessage（组装系统提示：基础提示 + 记忆提示 + LSP 代码上下文），以及 getCodeContextSuffix（通过 CodeContext 注入项目语言和文件符号信息）",
+      "tags": [
+        "agent",
+        "context",
+        "system-prompt",
+        "lsp"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:buildToolContext",
+      "type": "function",
+      "name": "buildToolContext",
+      "filePath": "packages/core/src/agent/context.ts",
+      "summary": "根据 AgentRunConfig 构建 ToolContext 对象，包含 sessionID、workspace、mode、agent 名称等字段",
+      "tags": [
+        "agent",
+        "context",
+        "tool"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:buildSystemMessage",
+      "type": "function",
+      "name": "buildSystemMessage",
+      "filePath": "packages/core/src/agent/context.ts",
+      "summary": "异步组装完整系统提示，将基础提示、记忆提示和 LSP 代码上下文后缀拼接在一起，带缓存优化",
+      "tags": [
+        "agent",
+        "context",
+        "system-prompt"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:getCodeContextSuffix",
+      "type": "function",
+      "name": "getCodeContextSuffix",
+      "filePath": "packages/core/src/agent/context.ts",
+      "summary": "通过 CodeContext 实例获取代码上下文后缀，静默处理错误",
+      "tags": [
+        "agent",
+        "context",
+        "lsp"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/agent/max-mode.ts",
+      "type": "file",
+      "name": "max-mode.ts",
+      "filePath": "packages/core/src/agent/max-mode.ts",
+      "summary": "Max Mode 并行采样选优模块，193 行。实现 runCandidate（带重试的独立候选生成）和 judgeCandidates（由 judge 模型从 N 个候选中选出最优方案），支持指数退避重试、N-gram 重复检测和超时控制，用于提升 Agent 回答质量（准确率提升 10-20%，代价 4-5x token）",
+      "tags": [
+        "agent",
+        "max-mode",
+        "parallel",
+        "judge",
+        "quality"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "fn:runCandidate",
+      "type": "function",
+      "name": "runCandidate",
+      "filePath": "packages/core/src/agent/max-mode.ts",
+      "summary": "运行单个候选方案：创建 LLM 客户端，流式生成响应，检测 N-gram 重复，支持指数退避重试",
+      "tags": [
+        "agent",
+        "max-mode",
+        "candidate"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:judgeCandidates",
+      "type": "function",
+      "name": "judgeCandidates",
+      "filePath": "packages/core/src/agent/max-mode.ts",
+      "summary": "将所有候选方案格式化后交给 judge 模型评分，返回最优候选的索引号",
+      "tags": [
+        "agent",
+        "max-mode",
+        "judge"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:getLastUserMessage",
+      "type": "function",
+      "name": "getLastUserMessage",
+      "filePath": "packages/core/src/agent/max-mode.ts",
+      "summary": "从消息列表中提取最后一条用户消息",
+      "tags": [
+        "agent",
+        "max-mode",
+        "utility"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/agent/registry.ts",
+      "type": "file",
+      "name": "registry.ts",
+      "filePath": "packages/core/src/agent/registry.ts",
+      "summary": "Agent 实现注册表，参考 Codex/OpenCode 设计。定义 AgentInfo（名称/描述/图标/最大迭代/拒绝动作）和 AgentImplementation（info + run 方法）接口，提供按名称路由的 Agent 注册/查询/列表功能",
+      "tags": [
+        "agent",
+        "registry",
+        "interface"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "class:AgentRegistry",
+      "type": "class",
+      "name": "AgentRegistry",
+      "filePath": "packages/core/src/agent/registry.ts",
+      "summary": "Agent 实现注册表类，使用 Map 存储，支持 register（注册）、get（按名称查询）、list（列出所有 AgentInfo）操作",
+      "tags": [
+        "agent",
+        "registry"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/agent/turn.ts",
+      "type": "file",
+      "name": "turn.ts",
+      "filePath": "packages/core/src/agent/turn.ts",
+      "summary": "LLM 单回合执行模块，定义 LLMTurnConfig（Provider/Model/API 配置）、LLMTurnInput（消息/工具/配置）和 LLMTurnOutput（文本/工具调用/是否压缩）接口，实现 runLLMTurn 异步生成器（带重试和 ContextManager 集成）",
+      "tags": [
+        "agent",
+        "turn",
+        "llm",
+        "async-generator"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file:packages/core/src/agent/utils.ts",
+      "type": "file",
+      "name": "utils.ts",
+      "filePath": "packages/core/src/agent/utils.ts",
+      "summary": "Agent 工具函数模块，83 行。包含三种 Doom Loop 检测模式：精确重复（相同工具+参数连续 N 次）、同工具风暴（同一工具连续 4+ 次）、读写空转循环（read→write 交替超 2 次）。还提供 detectTextNgramRepeat（文本 N-gram 重复检测）和 checkOverflow（token 溢出检查）",
+      "tags": [
+        "agent",
+        "utils",
+        "doom-loop",
+        "detection"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:detectDoomLoop",
+      "type": "function",
+      "name": "detectDoomLoop",
+      "filePath": "packages/core/src/agent/utils.ts",
+      "summary": "Doom Loop 检测主函数，综合三种模式判断工具调用是否陷入死循环",
+      "tags": [
+        "agent",
+        "doom-loop",
+        "detection"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:detectTextNgramRepeat",
+      "type": "function",
+      "name": "detectTextNgramRepeat",
+      "filePath": "packages/core/src/agent/utils.ts",
+      "summary": "文本 N-gram 重复检测，当 windowSize 大小的 ngram 重复超过 5 次时返回 true",
+      "tags": [
+        "agent",
+        "text-analysis",
+        "repetition"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:checkOverflow",
+      "type": "function",
+      "name": "checkOverflow",
+      "filePath": "packages/core/src/agent/utils.ts",
+      "summary": "检查消息总 token 是否超过阈值（默认 80%），用于触发上下文压缩",
+      "tags": [
+        "agent",
+        "overflow",
+        "token-budget"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/compaction.ts",
+      "type": "file",
+      "name": "compaction.ts",
+      "filePath": "packages/core/src/compaction.ts",
+      "summary": "多层上下文压缩模块，303 行，参考 learn-claude-code 的 4 层压缩策略。L1 snipCompact 裁剪中间消息、L2 microCompact 替换旧工具结果、L3 toolResultBudget 大结果持久化到磁盘、L4 compactHistory LLM 摘要压缩。导出 compactMessages（同步）和 compactMessagesAsync（异步，带 LLM 摘要）",
+      "tags": [
+        "compaction",
+        "context",
+        "compression",
+        "token"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "fn:compactMessages",
+      "type": "function",
+      "name": "compactMessages",
+      "filePath": "packages/core/src/compaction.ts",
+      "summary": "同步多层压缩入口：依次执行 snipCompact→microCompact→toolResultBudget，根据 token 预算自动选择压缩级别",
+      "tags": [
+        "compaction",
+        "synchronous"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:compactMessagesAsync",
+      "type": "function",
+      "name": "compactMessagesAsync",
+      "filePath": "packages/core/src/compaction.ts",
+      "summary": "异步压缩入口：在同步压缩基础上增加 LLM 摘要压缩（compactHistory），当 token 仍超标时调用 LLM 生成对话摘要",
+      "tags": [
+        "compaction",
+        "async",
+        "llm-summary"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "fn:snipCompact",
+      "type": "function",
+      "name": "snipCompact",
+      "filePath": "packages/core/src/compaction.ts",
+      "summary": "L1 层裁剪压缩：保留最近 N 条消息和 system 消息，裁剪中间历史，提取关键点",
+      "tags": [
+        "compaction",
+        "l1",
+        "snip"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:microCompact",
+      "type": "function",
+      "name": "microCompact",
+      "filePath": "packages/core/src/compaction.ts",
+      "summary": "L2 层微压缩：将旧的工具结果替换为截断摘要，保留最近消息不变",
+      "tags": [
+        "compaction",
+        "l2",
+        "micro"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:toolResultBudget:compaction",
+      "type": "function",
+      "name": "toolResultBudget",
+      "filePath": "packages/core/src/compaction.ts",
+      "summary": "L3 层工具结果预算控制：将超大工具结果截断并标记 [persisted]，支持持久化到磁盘",
+      "tags": [
+        "compaction",
+        "l3",
+        "tool-result"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:compactHistory",
+      "type": "function",
+      "name": "compactHistory",
+      "filePath": "packages/core/src/compaction.ts",
+      "summary": "L4 层历史压缩：调用 LLM 对对话历史生成摘要，保留 system 消息和最近消息",
+      "tags": [
+        "compaction",
+        "l4",
+        "llm-summary"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "file:packages/core/src/compose-mode.ts",
+      "type": "file",
+      "name": "compose-mode.ts",
+      "filePath": "packages/core/src/compose-mode.ts",
+      "summary": "组合模式管理器，477 行。实现软件开发全流程编排：plan→execute→review→test→debug→verify→merge 七个阶段，每阶段有专属 Skill（系统提示+工具白名单）。支持规范解析、子 Agent 委派执行、阶段间 checkpoint 同步、状态管理和系统提示生成",
+      "tags": [
+        "compose-mode",
+        "orchestration",
+        "workflow",
+        "phase"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class:ComposeModeManager",
+      "type": "class",
+      "name": "ComposeModeManager",
+      "filePath": "packages/core/src/compose-mode.ts",
+      "summary": "组合模式核心管理器，管理 7 阶段开发流程。属性：state（当前阶段/规范/计划/代码文件/审查评论/测试结果）、history（阶段历史）、checkpointProvider、subagentManager。方法：run（执行全流程）、executePhase（委派子 Agent 执行单阶段）、parseSpec（解析需求规范）、advance/goTo（阶段切换）等 25+ 方法",
+      "tags": [
+        "compose-mode",
+        "class",
+        "orchestration"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "file:packages/core/src/context-manager.ts",
+      "type": "file",
+      "name": "context-manager.ts",
+      "filePath": "packages/core/src/context-manager.ts",
+      "summary": "上下文窗口管理器，528 行。实现完整的上下文生命周期：初始化、系统提示构建、回合同步、记忆注入、token 预算计算、多层压缩管线（budgetedCompress→toolResultBudget→microCompact）、主动/被动重建、checkpoint 恢复、历史摘要和自动 Dream 触发",
+      "tags": [
+        "context",
+        "manager",
+        "compression",
+        "checkpoint",
+        "memory"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class:ContextManager",
+      "type": "class",
+      "name": "ContextManager",
+      "filePath": "packages/core/src/context-manager.ts",
+      "summary": "上下文窗口管理器类，协调 CheckpointProvider 和 MemoryManager。核心方法 compactPipeline（多层压缩管线）、checkAndRebuild（触发重建）、proactiveRebuild（主动从 checkpoint 重建上下文）、reactiveCompact（被动压缩）、summarizeHistory（LLM 摘要）",
+      "tags": [
+        "context",
+        "manager",
+        "class"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "file:packages/core/src/delegate-runner.ts",
+      "type": "file",
+      "name": "delegate-runner.ts",
+      "filePath": "packages/core/src/delegate-runner.ts",
+      "summary": "子代理委派执行器，226 行。实现 runDelegate（创建独立 Agent 实例执行委派任务，继承父注册表+子集权限+独立预算）、childPermissions（生成子权限，默认只读+搜索）、getDelegationStatus/listActiveDelegations/cleanupDelegations 状态管理",
+      "tags": [
+        "delegate",
+        "subagent",
+        "permission",
+        "isolation"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "fn:runDelegate",
+      "type": "function",
+      "name": "runDelegate",
+      "filePath": "packages/core/src/delegate-runner.ts",
+      "summary": "子代理执行主函数：创建子 Agent 配置→初始化 Agent→流式 LLM 调用→工具执行循环→结果收集，支持独立迭代预算和权限控制",
+      "tags": [
+        "delegate",
+        "subagent",
+        "execution"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "fn:childPermissions",
+      "type": "function",
+      "name": "childPermissions",
+      "filePath": "packages/core/src/delegate-runner.ts",
+      "summary": "从父权限生成子权限集：过滤掉写操作权限（write_file/edit_file/bash/run_code），默认只保留只读和搜索权限",
+      "tags": [
+        "delegate",
+        "permission"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file:packages/core/src/dream-distill.ts",
+      "type": "file",
+      "name": "dream-distill.ts",
+      "filePath": "packages/core/src/dream-distill.ts",
+      "summary": "Dream/Distill 知识进化管理器，448 行。Dream 扫描近期会话轨迹提取持久知识到项目记忆（.mira/knowledge/），Distill 发现重复工作流打包为可复用 skill/subagent/command。支持自动触发（每 N 回合）、LLM 流式调用、知识去重和过期清理",
+      "tags": [
+        "dream",
+        "distill",
+        "knowledge",
+        "memory",
+        "skill"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class:DreamDistillManager",
+      "type": "class",
+      "name": "DreamDistillManager",
+      "filePath": "packages/core/src/dream-distill.ts",
+      "summary": "Dream/Distill 核心管理器类。方法：dream（知识提取，LLM 流式调用+JSON 解析+去重+持久化）、distill（工作流发现，生成 skill 文件）、autoDream（自动触发）、recordTurn（记录对话轮次）、writeMemoryMd（生成 MEMORY.md）、generateSkillFile（生成 skill 文件）",
+      "tags": [
+        "dream",
+        "distill",
+        "class"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "file:packages/core/src/failover.ts",
+      "type": "file",
+      "name": "failover.ts",
+      "filePath": "packages/core/src/failover.ts",
+      "summary": "LLM Provider 降级链实现，106 行。FallbackClient 类在主 Provider 失败时自动尝试备用 Provider，支持多种可降级错误类型检测（rate_limit/auth/timeout/server_error/capacity/provider_error/overloaded），实现指数退避重试",
+      "tags": [
+        "failover",
+        "fallback",
+        "resilience",
+        "llm"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "class:FallbackClient",
+      "type": "class",
+      "name": "FallbackClient",
+      "filePath": "packages/core/src/failover.ts",
+      "summary": "Provider 降级客户端类，属性 primary/fallbacks/currentProviderIndex/lastError/fallbackUsed。stream 方法实现主→备链式重试，shouldFallback 根据错误消息关键字判断是否可降级",
+      "tags": [
+        "failover",
+        "fallback",
+        "class"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file:packages/core/src/goal-judge.ts",
+      "type": "file",
+      "name": "goal-judge.ts",
+      "filePath": "packages/core/src/goal-judge.ts",
+      "summary": "Goal 完成度验证模块，438 行。GoalJudge 类管理 Goal 生命周期（active/satisfied/failed/cancelled/timed_out），通过独立 LLM judge 模型评估任务是否真正完成。支持 quickCheck（快速关键词检测）和 evaluate（完整 LLM 评估），含超时控制、连续失败检测和 SQLite 持久化",
+      "tags": [
+        "goal",
+        "judge",
+        "evaluation",
+        "llm",
+        "database"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class:GoalJudge",
+      "type": "class",
+      "name": "GoalJudge",
+      "filePath": "packages/core/src/goal-judge.ts",
+      "summary": "Goal 验证器类。方法：setGoal（创建新 Goal）、evaluate（LLM 完整评估）、quickCheck（关键词快速检测）、shouldContinue（判断是否继续执行）、toSystemPrompt（注入系统提示）、load/save（SQLite 持久化）。限制最多 12 次评估，连续失败 3 次自动终止",
+      "tags": [
+        "goal",
+        "judge",
+        "class"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "file:packages/core/src/iteration-budget.ts",
+      "type": "file",
+      "name": "iteration-budget.ts",
+      "filePath": "packages/core/src/iteration-budget.ts",
+      "summary": "迭代预算控制类，22 行。IterationBudget 管理 Agent 的 LLM 调用次数上限，提供 consume（消耗）、refund（退还）、remaining（剩余）、resetRemaining（重置）方法",
+      "tags": [
+        "budget",
+        "iteration",
+        "control"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "class:IterationBudget",
+      "type": "class",
+      "name": "IterationBudget",
+      "filePath": "packages/core/src/iteration-budget.ts",
+      "summary": "迭代预算控制器类，使用 used/maxTotal 计数器管理 Agent 的 LLM 调用次数限制",
+      "tags": [
+        "budget",
+        "iteration",
+        "class"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/llm-sdk.ts",
+      "type": "file",
+      "name": "llm-sdk.ts",
+      "filePath": "packages/core/src/llm-sdk.ts",
+      "summary": "LLM SDK 向后兼容封装层，202 行。底层实现已迁移到 llm/ 分层架构（schema→protocols→providers→route），此文件保持导出一致性。定义 SDKConfig、LLMStreamEvent、LLMToolSet、LLMClient 等接口，实现 createLLMClient 工厂函数（根据 provider 分发到对应协议适配器），含重试逻辑和消息/工具格式转换",
+      "tags": [
+        "llm",
+        "sdk",
+        "compatibility",
+        "factory"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:createLLMClient",
+      "type": "function",
+      "name": "createLLMClient",
+      "filePath": "packages/core/src/llm-sdk.ts",
+      "summary": "LLM 客户端工厂函数，根据 provider 类型创建对应的流式客户端，封装消息转换（convertMessages）和工具转换（convertTools），返回带 stream/complete 方法的 LLMClient",
+      "tags": [
+        "llm",
+        "factory",
+        "client"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:convertMessages",
+      "type": "function",
+      "name": "convertMessages",
+      "filePath": "packages/core/src/llm-sdk.ts",
+      "summary": "将旧格式 LLMMessage 转换为 schema 格式的 SchemaMessage",
+      "tags": [
+        "llm",
+        "conversion"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:convertTools",
+      "type": "function",
+      "name": "convertTools",
+      "filePath": "packages/core/src/llm-sdk.ts",
+      "summary": "将 LLMToolSet（Zod schema）转换为协议适配器格式（JSON Schema），使用 zodToJsonSchema",
+      "tags": [
+        "llm",
+        "conversion",
+        "schema"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:isRetryableError",
+      "type": "function",
+      "name": "isRetryableError",
+      "filePath": "packages/core/src/llm-sdk.ts",
+      "summary": "根据错误消息中的 HTTP 状态码判断是否可重试（429/500/502/503/504）",
+      "tags": [
+        "llm",
+        "error",
+        "retry"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/llm/cache-policy.ts",
+      "type": "file",
+      "name": "cache-policy.ts",
+      "filePath": "packages/core/src/llm/cache-policy.ts",
+      "summary": "LLM 缓存策略解析模块，30 行。resolveCacheMarkers 根据策略和 Provider 返回对应缓存标记（Anthropic 使用 cache_control ephemeral，OpenAI 服务端自动缓存），shouldCache 判断 Provider 是否支持缓存",
+      "tags": [
+        "llm",
+        "cache",
+        "policy"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:resolveCacheMarkers",
+      "type": "function",
+      "name": "resolveCacheMarkers",
+      "filePath": "packages/core/src/llm/cache-policy.ts",
+      "summary": "根据 CachePolicy 和 Provider 类型解析缓存标记，支持 auto/none/自定义 TTL 配置",
+      "tags": [
+        "llm",
+        "cache",
+        "marker"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:shouldCache",
+      "type": "function",
+      "name": "shouldCache",
+      "filePath": "packages/core/src/llm/cache-policy.ts",
+      "summary": "判断 Provider 是否支持缓存（目前仅 anthropic 和 openai）",
+      "tags": [
+        "llm",
+        "cache"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/llm/schema/errors.ts",
+      "type": "file",
+      "name": "errors.ts",
+      "filePath": "packages/core/src/llm/schema/errors.ts",
+      "summary": "LLM 错误类型定义，33 行。LLMError 类扩展 Error，携带 code/statusCode/provider 信息，提供静态工厂方法：provider（通用 Provider 错误）、auth（认证失败 401）、rateLimit（限流 429）、timeout（超时）、invalidRequest（无效请求）",
+      "tags": [
+        "llm",
+        "error",
+        "schema"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "class:LLMError",
+      "type": "class",
+      "name": "LLMError",
+      "filePath": "packages/core/src/llm/schema/errors.ts",
+      "summary": "LLM 错误类，继承 Error，包含 code、statusCode、provider 属性和 5 个静态工厂方法",
+      "tags": [
+        "llm",
+        "error",
+        "class"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/llm/schema/messages.ts",
+      "type": "file",
+      "name": "messages.ts",
+      "filePath": "packages/core/src/llm/schema/messages.ts",
+      "summary": "LLM 消息 Schema 定义，53 行。使用 Zod 定义 TextPart、ToolCallPart、ToolResultPart 三种内容类型，组合为 ContentPart 联合类型。定义 LLMMessage 接口（role + string|ContentPart[]），提供类型守卫函数 isTextPart/isToolCallPart/isToolResultPart 和输出提取函数 getToolResultOutput",
+      "tags": [
+        "llm",
+        "schema",
+        "message",
+        "zod"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file:packages/core/src/llm/schema/options.ts",
+      "type": "file",
+      "name": "options.ts",
+      "filePath": "packages/core/src/llm/schema/options.ts",
+      "summary": "LLM 请求选项定义，31 行。定义 GenerationOptions（maxTokens/temperature/topP 等）、CachePolicy（auto/none/自定义）和 LLMRequest（model/system/messages/tools/generation/cache/maxSteps）接口",
+      "tags": [
+        "llm",
+        "schema",
+        "options"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/lsp/code-context.ts",
+      "type": "file",
+      "name": "code-context.ts",
+      "filePath": "packages/core/src/lsp/code-context.ts",
+      "summary": "LSP 代码上下文注入模块，78 行。CodeContext 类自动检测项目语言（支持 TypeScript/JavaScript/Python/Rust/Go/Java），获取文件符号信息，生成系统提示后缀注入到 Agent 上下文中，无需 LLM 主动调用 LSP 工具",
+      "tags": [
+        "lsp",
+        "code-context",
+        "language-detection"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "class:CodeContext",
+      "type": "class",
+      "name": "CodeContext",
+      "filePath": "packages/core/src/lsp/code-context.ts",
+      "summary": "LSP 代码上下文类，方法：getContextForFile（获取文件符号）、buildSystemPromptSuffix（生成系统提示后缀）、detectLanguages（检测项目语言）、getSymbols（获取符号，待完善）",
+      "tags": [
+        "lsp",
+        "code-context",
+        "class"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file:packages/core/src/message-utils.ts",
+      "type": "file",
+      "name": "message-utils.ts",
+      "filePath": "packages/core/src/message-utils.ts",
+      "summary": "消息工具函数集合，147 行。导出 6 个函数：hasToolCalls（检测工具调用）、repairMessageSequence（修复 tool→user 等非法消息序列）、estimateTokens（token 估算）、truncateToBudget（按预算截断）、rebuildContextFromCheckpoint（从 checkpoint 重建上下文）、needsContextRebuild（判断是否需要重建）",
+      "tags": [
+        "message",
+        "utility",
+        "repair",
+        "token",
+        "checkpoint"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:estimateTokens",
+      "type": "function",
+      "name": "estimateTokens",
+      "filePath": "packages/core/src/message-utils.ts",
+      "summary": "基于消息内容长度粗略估算 token 数（文本长度 / 4），支持字符串和 ContentPart 数组",
+      "tags": [
+        "message",
+        "token",
+        "estimation"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:truncateToBudget",
+      "type": "function",
+      "name": "truncateToBudget",
+      "filePath": "packages/core/src/message-utils.ts",
+      "summary": "按 token 预算截断消息列表：保留 system 消息和最近消息，从旧到新删除直到预算内，最后修复消息序列",
+      "tags": [
+        "message",
+        "truncation",
+        "budget"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:rebuildContextFromCheckpoint",
+      "type": "function",
+      "name": "rebuildContextFromCheckpoint",
+      "filePath": "packages/core/src/message-utils.ts",
+      "summary": "从 CheckpointData 重建上下文：将 checkpoint 摘要（任务进度/决策/关键文件/设计决策/任务树/偏好/错误修复）格式化为用户消息，与近期消息组合，按 token 预算截断",
+      "tags": [
+        "message",
+        "checkpoint",
+        "rebuild"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "fn:repairMessageSequence",
+      "type": "function",
+      "name": "repairMessageSequence",
+      "filePath": "packages/core/src/message-utils.ts",
+      "summary": "修复非法消息序列：在 tool 消息后插入空 assistant 消息，合并连续的 user/assistant 消息",
+      "tags": [
+        "message",
+        "repair",
+        "sequence"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "file:packages/core/src/modes.ts",
+      "type": "file",
+      "name": "modes.ts",
+      "filePath": "packages/core/src/modes.ts",
+      "summary": "Agent 模式管理模块，62 行。导出 10 个函数：loadCustomAgents（从全局/项目目录加载自定义 Agent）、registerAgent/registerAgentFromJson（动态注册）、getModeConfig/getAllModes（查询）、modeSystemPrompt（系统提示拼接）、modeToPermissionSet（权限转换）、getModeToolAllowlist（工具白名单）、getModeMaxIterations（最大迭代数）、getModeSystemPromptSuffix（提示后缀）",
+      "tags": [
+        "modes",
+        "agent",
+        "config",
+        "permission"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:loadCustomAgents",
+      "type": "function",
+      "name": "loadCustomAgents",
+      "filePath": "packages/core/src/modes.ts",
+      "summary": "从全局 ~/.config/mira/agents/ 和项目 .mira/agents/ 目录加载自定义 Agent JSON 配置",
+      "tags": [
+        "modes",
+        "agent",
+        "config"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:getModeMaxIterations",
+      "type": "function",
+      "name": "getModeMaxIterations",
+      "filePath": "packages/core/src/modes.ts",
+      "summary": "根据 Agent 模式获取最大迭代次数，默认 10",
+      "tags": [
+        "modes",
+        "agent",
+        "iteration"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "fn:getModeSystemPromptSuffix",
+      "type": "function",
+      "name": "getModeSystemPromptSuffix",
+      "filePath": "packages/core/src/modes.ts",
+      "summary": "根据 Agent 模式获取系统提示后缀",
+      "tags": [
+        "modes",
+        "agent",
+        "system-prompt"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/subagent-manager.ts",
+      "type": "file",
+      "name": "subagent-manager.ts",
+      "filePath": "packages/core/src/subagent-manager.ts",
+      "summary": "子 Agent 生命周期管理器，406 行。SubagentManager 类管理子 Agent 的完整生命周期（pending→running→completing→completed/failed/cancelled），支持最大并行数限制（默认 5）、等待队列、spawn/wait/cancel 操作、spawnMany/waitAll/waitAny 批量操作、父子层级追踪、事件回调和 team-bus 通信",
+      "tags": [
+        "subagent",
+        "manager",
+        "lifecycle",
+        "parallel"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "class:SubagentManager",
+      "type": "class",
+      "name": "SubagentManager",
+      "filePath": "packages/core/src/subagent-manager.ts",
+      "summary": "子 Agent 管理器类。属性：sessions（Map）、registry、onEventCallback、maxParallel、pendingQueue。核心方法：spawn（创建子 Agent，异步执行）、wait（等待完成，带超时）、cancel（取消，级联取消子代）、runSubagent（实际运行子 Agent 实例）、toText/toSystemPrompt（状态文本化）",
+      "tags": [
+        "subagent",
+        "manager",
+        "class"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "file:packages/core/src/tools/agent-tools.ts",
+      "type": "file",
+      "name": "agent-tools.ts",
+      "filePath": "packages/core/src/tools/agent-tools.ts",
+      "summary": "Agent 子代理工具集，198 行。提供三个工具：spawn_agent（启动一个或多个子 Agent 执行并行任务）、wait_agents（等待子 Agent 完成，支持 all/any 模式）、list_subagents（查看所有活跃子 Agent 状态）。工具通过模块级单例访问 SubagentManager",
+      "tags": [
+        "tools",
+        "subagent",
+        "spawn",
+        "parallel"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:spawnAgentTool",
+      "type": "function",
+      "name": "spawnAgentTool",
+      "filePath": "packages/core/src/tools/agent-tools.ts",
+      "summary": "spawn_agent 工具定义，接受 tasks 数组（每个含 description 和可选 model），创建子 Agent 并返回状态列表",
+      "tags": [
+        "tools",
+        "subagent",
+        "spawn"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:waitAgentsTool",
+      "type": "function",
+      "name": "waitAgentsTool",
+      "filePath": "packages/core/src/tools/agent-tools.ts",
+      "summary": "wait_agents 工具定义，支持 mode=all（等待全部）和 mode=any（等待任一），返回详细结果报告",
+      "tags": [
+        "tools",
+        "subagent",
+        "wait"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:listSubagentsTool",
+      "type": "function",
+      "name": "listSubagentsTool",
+      "filePath": "packages/core/src/tools/agent-tools.ts",
+      "summary": "list_subagents 工具定义，列出所有子 Agent 状态，支持按 status 过滤",
+      "tags": [
+        "tools",
+        "subagent",
+        "list"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "packages/core/src/types.ts",
+      "summary": "AgentEvent 联合类型定义，14 行。定义 Agent 系统中的 11 种事件类型：content（文本输出）、tool_start/tool_result（工具执行）、permission_request（权限请求）、question（用户交互）、error（错误）、finish（完成）、thinking（思考）、goal_status（Goal 状态）、context_rebuild（上下文重建）、subagent_status（子 Agent 状态）",
+      "tags": [
+        "types",
+        "events",
+        "agent"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "file:packages/core/src/zod-converter.ts",
+      "type": "file",
+      "name": "zod-converter.ts",
+      "filePath": "packages/core/src/zod-converter.ts",
+      "summary": "Zod → JSON Schema 转换器，115 行。zodToJsonSchema 主函数优先使用 Zod 原生 toJSONSchema，失败时回退到 manualZodToJson 手动转换。支持 string/number/array/object/enum/union/record 6 种类型的递归转换，cleanSchema 清理生成的 JSON Schema（过滤非标准字段）",
+      "tags": [
+        "zod",
+        "json-schema",
+        "conversion"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:zodToJsonSchema",
+      "type": "function",
+      "name": "zodToJsonSchema",
+      "filePath": "packages/core/src/zod-converter.ts",
+      "summary": "Zod schema 转 JSON Schema 主函数，优先使用原生 toJSONSchema，失败时回退手动转换",
+      "tags": [
+        "zod",
+        "json-schema",
+        "converter"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "fn:manualZodToJson",
+      "type": "function",
+      "name": "manualZodToJson",
+      "filePath": "packages/core/src/zod-converter.ts",
+      "summary": "手动 Zod → JSON Schema 转换，根据 Zod 类型（string/number/array/object/enum/union/record）生成对应的 JSON Schema",
+      "tags": [
+        "zod",
+        "json-schema",
+        "manual"
+      ],
+      "complexity": "medium"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:packages/core/src/__tests__/llm-sdk.test.ts",
+      "target": "fn:createLLMClient",
+      "type": "tests",
+      "label": "测试 createLLMClient"
+    },
+    {
+      "source": "file:packages/core/src/__tests__/message-utils.test.ts",
+      "target": "fn:repairMessageSequence",
+      "type": "tests",
+      "label": "测试 repairMessageSequence"
+    },
+    {
+      "source": "file:packages/core/src/__tests__/message-utils.test.ts",
+      "target": "fn:truncateToBudget",
+      "type": "tests",
+      "label": "测试 truncateToBudget"
+    },
+    {
+      "source": "file:packages/core/src/agent-profile.ts",
+      "target": "class:AgentProfileRegistry",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "file:packages/core/src/agent-profile.ts",
+      "target": "fn:createDefaultRegistry",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/agent-profile.ts",
+      "target": "fn:getGlobalAgentDir",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/agent-profile.ts",
+      "target": "fn:getProjectAgentDir",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "fn:createDefaultRegistry",
+      "target": "class:AgentProfileRegistry",
+      "type": "creates",
+      "label": "创建实例"
+    },
+    {
+      "source": "file:packages/core/src/agent.ts",
+      "target": "class:Agent",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "file:packages/core/src/agent.ts",
+      "target": "fn:hasToolCalls:agent",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/agent.ts",
+      "target": "fn:tryParseAssistantPayload",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "class:Agent",
+      "target": "class:ContextManager",
+      "type": "uses",
+      "label": "上下文管理"
+    },
+    {
+      "source": "class:Agent",
+      "target": "class:GoalJudge",
+      "type": "uses",
+      "label": "Goal 验证"
+    },
+    {
+      "source": "class:Agent",
+      "target": "class:DreamDistillManager",
+      "type": "uses",
+      "label": "知识进化"
+    },
+    {
+      "source": "class:Agent",
+      "target": "class:SubagentManager",
+      "type": "uses",
+      "label": "子 Agent 管理"
+    },
+    {
+      "source": "class:Agent",
+      "target": "class:IterationBudget",
+      "type": "uses",
+      "label": "迭代预算"
+    },
+    {
+      "source": "class:Agent",
+      "target": "fn:detectDoomLoop",
+      "type": "calls",
+      "label": "Doom Loop 检测"
+    },
+    {
+      "source": "class:Agent",
+      "target": "fn:buildToolContext",
+      "type": "calls",
+      "label": "构建工具上下文"
+    },
+    {
+      "source": "class:Agent",
+      "target": "fn:buildSystemMessage",
+      "type": "calls",
+      "label": "构建系统提示"
+    },
+    {
+      "source": "class:Agent",
+      "target": "fn:createLLMClient",
+      "type": "calls",
+      "label": "创建 LLM 客户端"
+    },
+    {
+      "source": "file:packages/core/src/agent/context.ts",
+      "target": "fn:buildToolContext",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/agent/context.ts",
+      "target": "fn:buildSystemMessage",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/agent/context.ts",
+      "target": "fn:getCodeContextSuffix",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "fn:buildSystemMessage",
+      "target": "fn:getCodeContextSuffix",
+      "type": "calls",
+      "label": "获取代码上下文"
+    },
+    {
+      "source": "fn:getCodeContextSuffix",
+      "target": "class:CodeContext",
+      "type": "uses",
+      "label": "LSP 代码上下文"
+    },
+    {
+      "source": "file:packages/core/src/agent/max-mode.ts",
+      "target": "fn:runCandidate",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/agent/max-mode.ts",
+      "target": "fn:judgeCandidates",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/agent/max-mode.ts",
+      "target": "fn:getLastUserMessage",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "fn:runCandidate",
+      "target": "fn:createLLMClient",
+      "type": "calls",
+      "label": "创建候选 LLM 客户端"
+    },
+    {
+      "source": "fn:judgeCandidates",
+      "target": "fn:createLLMClient",
+      "type": "calls",
+      "label": "创建 judge LLM 客户端"
+    },
+    {
+      "source": "fn:runCandidate",
+      "target": "fn:detectTextNgramRepeat",
+      "type": "calls",
+      "label": "检测 N-gram 重复"
+    },
+    {
+      "source": "file:packages/core/src/agent/registry.ts",
+      "target": "class:AgentRegistry",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "file:packages/core/src/agent/turn.ts",
+      "target": "fn:createLLMClient",
+      "type": "calls",
+      "label": "创建 LLM 客户端"
+    },
+    {
+      "source": "file:packages/core/src/agent/utils.ts",
+      "target": "fn:detectDoomLoop",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/agent/utils.ts",
+      "target": "fn:detectTextNgramRepeat",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/agent/utils.ts",
+      "target": "fn:checkOverflow",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "fn:checkOverflow",
+      "target": "fn:estimateTokens",
+      "type": "calls",
+      "label": "token 估算"
+    },
+    {
+      "source": "file:packages/core/src/compaction.ts",
+      "target": "fn:compactMessages",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/compaction.ts",
+      "target": "fn:compactMessagesAsync",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "fn:compactMessages",
+      "target": "fn:snipCompact",
+      "type": "calls",
+      "label": "L1 裁剪压缩"
+    },
+    {
+      "source": "fn:compactMessages",
+      "target": "fn:microCompact",
+      "type": "calls",
+      "label": "L2 微压缩"
+    },
+    {
+      "source": "fn:compactMessages",
+      "target": "fn:toolResultBudget:compaction",
+      "type": "calls",
+      "label": "L3 结果预算"
+    },
+    {
+      "source": "fn:compactMessagesAsync",
+      "target": "fn:compactHistory",
+      "type": "calls",
+      "label": "L4 LLM 摘要"
+    },
+    {
+      "source": "fn:compactHistory",
+      "target": "fn:createLLMClient",
+      "type": "calls",
+      "label": "创建摘要 LLM 客户端"
+    },
+    {
+      "source": "file:packages/core/src/compose-mode.ts",
+      "target": "class:ComposeModeManager",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "class:ComposeModeManager",
+      "target": "class:SubagentManager",
+      "type": "uses",
+      "label": "委派子 Agent 执行"
+    },
+    {
+      "source": "file:packages/core/src/context-manager.ts",
+      "target": "class:ContextManager",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "class:ContextManager",
+      "target": "fn:compactMessages",
+      "type": "calls",
+      "label": "同步压缩"
+    },
+    {
+      "source": "class:ContextManager",
+      "target": "fn:estimateTokens",
+      "type": "calls",
+      "label": "token 估算"
+    },
+    {
+      "source": "class:ContextManager",
+      "target": "fn:truncateToBudget",
+      "type": "calls",
+      "label": "预算截断"
+    },
+    {
+      "source": "class:ContextManager",
+      "target": "fn:rebuildContextFromCheckpoint",
+      "type": "calls",
+      "label": "从 checkpoint 重建"
+    },
+    {
+      "source": "class:ContextManager",
+      "target": "fn:createLLMClient",
+      "type": "calls",
+      "label": "摘要 LLM 调用"
+    },
+    {
+      "source": "file:packages/core/src/delegate-runner.ts",
+      "target": "fn:runDelegate",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/delegate-runner.ts",
+      "target": "fn:childPermissions",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "fn:runDelegate",
+      "target": "fn:createLLMClient",
+      "type": "calls",
+      "label": "创建子 Agent LLM 客户端"
+    },
+    {
+      "source": "fn:runDelegate",
+      "target": "fn:childPermissions",
+      "type": "calls",
+      "label": "生成子权限"
+    },
+    {
+      "source": "file:packages/core/src/dream-distill.ts",
+      "target": "class:DreamDistillManager",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "class:DreamDistillManager",
+      "target": "fn:createLLMClient",
+      "type": "calls",
+      "label": "LLM 流式调用"
+    },
+    {
+      "source": "file:packages/core/src/failover.ts",
+      "target": "class:FallbackClient",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "class:FallbackClient",
+      "target": "fn:createLLMClient",
+      "type": "calls",
+      "label": "创建主/备 LLM 客户端"
+    },
+    {
+      "source": "file:packages/core/src/goal-judge.ts",
+      "target": "class:GoalJudge",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "class:GoalJudge",
+      "target": "fn:createLLMClient",
+      "type": "calls",
+      "label": "Judge LLM 调用"
+    },
+    {
+      "source": "file:packages/core/src/iteration-budget.ts",
+      "target": "class:IterationBudget",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "file:packages/core/src/llm-sdk.ts",
+      "target": "fn:createLLMClient",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/llm-sdk.ts",
+      "target": "fn:convertMessages",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/llm-sdk.ts",
+      "target": "fn:convertTools",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/llm-sdk.ts",
+      "target": "fn:isRetryableError",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "fn:createLLMClient",
+      "target": "fn:convertMessages",
+      "type": "calls",
+      "label": "消息格式转换"
+    },
+    {
+      "source": "fn:createLLMClient",
+      "target": "fn:convertTools",
+      "type": "calls",
+      "label": "工具格式转换"
+    },
+    {
+      "source": "fn:convertTools",
+      "target": "fn:zodToJsonSchema",
+      "type": "calls",
+      "label": "Zod 转 JSON Schema"
+    },
+    {
+      "source": "file:packages/core/src/llm/cache-policy.ts",
+      "target": "fn:resolveCacheMarkers",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/llm/cache-policy.ts",
+      "target": "fn:shouldCache",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/llm/schema/errors.ts",
+      "target": "class:LLMError",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "file:packages/core/src/lsp/code-context.ts",
+      "target": "class:CodeContext",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "file:packages/core/src/message-utils.ts",
+      "target": "fn:estimateTokens",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/message-utils.ts",
+      "target": "fn:truncateToBudget",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/message-utils.ts",
+      "target": "fn:rebuildContextFromCheckpoint",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/message-utils.ts",
+      "target": "fn:repairMessageSequence",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "fn:truncateToBudget",
+      "target": "fn:estimateTokens",
+      "type": "calls",
+      "label": "token 估算"
+    },
+    {
+      "source": "fn:truncateToBudget",
+      "target": "fn:repairMessageSequence",
+      "type": "calls",
+      "label": "修复序列"
+    },
+    {
+      "source": "fn:rebuildContextFromCheckpoint",
+      "target": "fn:estimateTokens",
+      "type": "calls",
+      "label": "token 估算"
+    },
+    {
+      "source": "fn:rebuildContextFromCheckpoint",
+      "target": "fn:repairMessageSequence",
+      "type": "calls",
+      "label": "修复序列"
+    },
+    {
+      "source": "file:packages/core/src/modes.ts",
+      "target": "fn:loadCustomAgents",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/modes.ts",
+      "target": "fn:getModeMaxIterations",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/modes.ts",
+      "target": "fn:getModeSystemPromptSuffix",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "fn:loadCustomAgents",
+      "target": "fn:getGlobalAgentDir",
+      "type": "calls",
+      "label": "获取全局目录"
+    },
+    {
+      "source": "fn:loadCustomAgents",
+      "target": "fn:getProjectAgentDir",
+      "type": "calls",
+      "label": "获取项目目录"
+    },
+    {
+      "source": "file:packages/core/src/subagent-manager.ts",
+      "target": "class:SubagentManager",
+      "type": "contains",
+      "label": "包含类定义"
+    },
+    {
+      "source": "class:SubagentManager",
+      "target": "class:Agent",
+      "type": "creates",
+      "label": "创建子 Agent 实例"
+    },
+    {
+      "source": "file:packages/core/src/tools/agent-tools.ts",
+      "target": "fn:spawnAgentTool",
+      "type": "contains",
+      "label": "包含工具定义"
+    },
+    {
+      "source": "file:packages/core/src/tools/agent-tools.ts",
+      "target": "fn:waitAgentsTool",
+      "type": "contains",
+      "label": "包含工具定义"
+    },
+    {
+      "source": "file:packages/core/src/tools/agent-tools.ts",
+      "target": "fn:listSubagentsTool",
+      "type": "contains",
+      "label": "包含工具定义"
+    },
+    {
+      "source": "fn:spawnAgentTool",
+      "target": "class:SubagentManager",
+      "type": "calls",
+      "label": "spawn/SpawnMany"
+    },
+    {
+      "source": "fn:waitAgentsTool",
+      "target": "class:SubagentManager",
+      "type": "calls",
+      "label": "waitAll/waitAny"
+    },
+    {
+      "source": "fn:listSubagentsTool",
+      "target": "class:SubagentManager",
+      "type": "calls",
+      "label": "list"
+    },
+    {
+      "source": "file:packages/core/src/zod-converter.ts",
+      "target": "fn:zodToJsonSchema",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "file:packages/core/src/zod-converter.ts",
+      "target": "fn:manualZodToJson",
+      "type": "contains",
+      "label": "包含函数定义"
+    },
+    {
+      "source": "fn:zodToJsonSchema",
+      "target": "fn:manualZodToJson",
+      "type": "calls",
+      "label": "回退手动转换"
+    }
+  ]
+}

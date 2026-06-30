@@ -1,7 +1,7 @@
 import * as fs from "fs/promises"
 import * as path from "path"
 import { Effect } from "effect"
-import * as ToolEffect from "../tool-effect"
+import * as ToolEffect from "../../shared/tool-effect"
 
 export const readFileTool = ToolEffect.define(
   "read_file",
@@ -58,3 +58,4 @@ export const readFileTool = ToolEffect.define(
     },
   }),
 )
+

@@ -6,7 +6,7 @@
 import { join } from "path"
 import fs from "fs"
 import { randomUUID } from "crypto"
-import { getPlatformPaths } from "./platform-paths"
+import { getPlatformPaths } from "../config/paths"
 
 export type TaskStatus = "open" | "in_progress" | "blocked" | "done" | "abandoned"
 
@@ -189,3 +189,4 @@ export class TaskTracker {
 
 /** 全局 TaskTracker 实例 */
 export const taskTracker = new TaskTracker()
+

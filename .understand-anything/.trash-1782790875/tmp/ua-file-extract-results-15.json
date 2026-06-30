@@ -1,0 +1,1779 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 25,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": ".eslintignore",
+      "language": "unknown",
+      "fileCategory": "code",
+      "totalLines": 8,
+      "nonEmptyLines": 8,
+      "metrics": {}
+    },
+    {
+      "path": ".understand-anything/.understandignore",
+      "language": "unknown",
+      "fileCategory": "code",
+      "totalLines": 48,
+      "nonEmptyLines": 42,
+      "metrics": {}
+    },
+    {
+      "path": "apps/desktop/electron.vite.config.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 41,
+      "nonEmptyLines": 40,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "apps/desktop/src/App.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 187,
+      "nonEmptyLines": 167,
+      "functions": [
+        {
+          "name": "App",
+          "startLine": 17,
+          "endLine": 187,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "App",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "App",
+          "callee": "useState",
+          "lineNumber": 18
+        },
+        {
+          "caller": "App",
+          "callee": "useState",
+          "lineNumber": 19
+        },
+        {
+          "caller": "App",
+          "callee": "useState",
+          "lineNumber": 20
+        },
+        {
+          "caller": "App",
+          "callee": "useState",
+          "lineNumber": 21
+        },
+        {
+          "caller": "App",
+          "callee": "useState",
+          "lineNumber": 22
+        },
+        {
+          "caller": "App",
+          "callee": "useState",
+          "lineNumber": 23
+        },
+        {
+          "caller": "App",
+          "callee": "useState",
+          "lineNumber": 24
+        },
+        {
+          "caller": "App",
+          "callee": "useCallback",
+          "lineNumber": 26
+        },
+        {
+          "caller": "App",
+          "callee": "window.electronAPI.ts.listProjects",
+          "lineNumber": 28
+        },
+        {
+          "caller": "App",
+          "callee": "JSON.parse",
+          "lineNumber": 30
+        },
+        {
+          "caller": "App",
+          "callee": "localStorage.getItem",
+          "lineNumber": 30
+        },
+        {
+          "caller": "App",
+          "callee": "JSON.parse",
+          "lineNumber": 31
+        },
+        {
+          "caller": "App",
+          "callee": "localStorage.getItem",
+          "lineNumber": 31
+        },
+        {
+          "caller": "App",
+          "callee": "tsProjects\n          .filter((p: any) => !hidden.includes(p.project_id))\n          .map",
+          "lineNumber": 32
+        },
+        {
+          "caller": "App",
+          "callee": "tsProjects\n          .filter",
+          "lineNumber": 32
+        },
+        {
+          "caller": "App",
+          "callee": "hidden.includes",
+          "lineNumber": 33
+        },
+        {
+          "caller": "App",
+          "callee": "setProjects",
+          "lineNumber": 40
+        },
+        {
+          "caller": "App",
+          "callee": "setActiveProject",
+          "lineNumber": 41
+        },
+        {
+          "caller": "App",
+          "callee": "window.electronAPI.ts.createProject",
+          "lineNumber": 52
+        },
+        {
+          "caller": "App",
+          "callee": "setProjects",
+          "lineNumber": 55
+        },
+        {
+          "caller": "App",
+          "callee": "setActiveProject",
+          "lineNumber": 56
+        },
+        {
+          "caller": "App",
+          "callee": "useEffect",
+          "lineNumber": 59
+        },
+        {
+          "caller": "App",
+          "callee": "loadProjects",
+          "lineNumber": 59
+        },
+        {
+          "caller": "App",
+          "callee": "setInterval",
+          "lineNumber": 59
+        },
+        {
+          "caller": "App",
+          "callee": "clearInterval",
+          "lineNumber": 59
+        },
+        {
+          "caller": "App",
+          "callee": "useEffect",
+          "lineNumber": 60
+        },
+        {
+          "caller": "App",
+          "callee": "setActiveProject",
+          "lineNumber": 60
+        },
+        {
+          "caller": "App",
+          "callee": "useEffect",
+          "lineNumber": 63
+        },
+        {
+          "caller": "App",
+          "callee": "localStorage.getItem",
+          "lineNumber": 65
+        },
+        {
+          "caller": "App",
+          "callee": "setActiveSession",
+          "lineNumber": 66
+        },
+        {
+          "caller": "App",
+          "callee": "useEffect",
+          "lineNumber": 69
+        },
+        {
+          "caller": "App",
+          "callee": "localStorage.setItem",
+          "lineNumber": 70
+        },
+        {
+          "caller": "App",
+          "callee": "useCallback",
+          "lineNumber": 73
+        },
+        {
+          "caller": "App",
+          "callee": "setActiveProject",
+          "lineNumber": 74
+        },
+        {
+          "caller": "App",
+          "callee": "setActiveSession",
+          "lineNumber": 75
+        },
+        {
+          "caller": "handleNewSession",
+          "callee": "window.electronAPI.ts.createSession",
+          "lineNumber": 81
+        },
+        {
+          "caller": "handleNewSession",
+          "callee": "setActiveSession",
+          "lineNumber": 82
+        },
+        {
+          "caller": "handleOpenProject",
+          "callee": "window.electronAPI.ts.createProject",
+          "lineNumber": 88
+        },
+        {
+          "caller": "handleOpenProject",
+          "callee": "loadProjects",
+          "lineNumber": 89
+        },
+        {
+          "caller": "handleOpenProject",
+          "callee": "setNewProjectOpen",
+          "lineNumber": 90
+        },
+        {
+          "caller": "handleEditProject",
+          "callee": "window.electronAPI.ts.updateProject",
+          "lineNumber": 96
+        },
+        {
+          "caller": "handleEditProject",
+          "callee": "JSON.parse",
+          "lineNumber": 97
+        },
+        {
+          "caller": "handleEditProject",
+          "callee": "localStorage.getItem",
+          "lineNumber": 97
+        },
+        {
+          "caller": "handleEditProject",
+          "callee": "localStorage.setItem",
+          "lineNumber": 99
+        },
+        {
+          "caller": "handleEditProject",
+          "callee": "JSON.stringify",
+          "lineNumber": 99
+        },
+        {
+          "caller": "handleEditProject",
+          "callee": "loadProjects",
+          "lineNumber": 100
+        },
+        {
+          "caller": "handleDeleteProject",
+          "callee": "window.electronAPI.ts.deleteProject",
+          "lineNumber": 105
+        },
+        {
+          "caller": "handleDeleteProject",
+          "callee": "loadProjects",
+          "lineNumber": 106
+        },
+        {
+          "caller": "handleDeleteProject",
+          "callee": "setActiveProject",
+          "lineNumber": 107
+        },
+        {
+          "caller": "handleDeleteProject",
+          "callee": "setActiveSession",
+          "lineNumber": 107
+        },
+        {
+          "caller": "App",
+          "callee": "setSidebarOpen",
+          "lineNumber": 115
+        },
+        {
+          "caller": "App",
+          "callee": "setNewProjectOpen",
+          "lineNumber": 122
+        },
+        {
+          "caller": "App",
+          "callee": "setSidebarOpen",
+          "lineNumber": 128
+        },
+        {
+          "caller": "App",
+          "callee": "projects.slice(0, 4).map",
+          "lineNumber": 134
+        },
+        {
+          "caller": "App",
+          "callee": "projects.slice",
+          "lineNumber": 134
+        },
+        {
+          "caller": "App",
+          "callee": "handleProjectChange",
+          "lineNumber": 135
+        },
+        {
+          "caller": "App",
+          "callee": "setSidebarOpen",
+          "lineNumber": 146
+        },
+        {
+          "caller": "App",
+          "callee": "setSettingsOpen",
+          "lineNumber": 161
+        },
+        {
+          "caller": "App",
+          "callee": "window.electronAPI.minimizeWindow",
+          "lineNumber": 166
+        },
+        {
+          "caller": "App",
+          "callee": "window.electronAPI.maximizeWindow",
+          "lineNumber": 169
+        },
+        {
+          "caller": "App",
+          "callee": "window.electronAPI.closeWindow",
+          "lineNumber": 172
+        },
+        {
+          "caller": "App",
+          "callee": "createPortal",
+          "lineNumber": 182
+        },
+        {
+          "caller": "App",
+          "callee": "setSettingsOpen",
+          "lineNumber": 182
+        },
+        {
+          "caller": "App",
+          "callee": "setNewProjectOpen",
+          "lineNumber": 183
+        },
+        {
+          "caller": "App",
+          "callee": "setEditingProject",
+          "lineNumber": 184
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "apps/desktop/src/lib",
+      "language": "unknown",
+      "fileCategory": "code",
+      "totalLines": 6,
+      "nonEmptyLines": 5,
+      "metrics": {}
+    },
+    {
+      "path": "apps/desktop/src/main.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 25,
+      "nonEmptyLines": 21,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "apps/desktop/src/main.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 13,
+      "nonEmptyLines": 12,
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "apps/desktop/src/styles/globals.css",
+      "language": "css",
+      "fileCategory": "markup",
+      "totalLines": 260,
+      "nonEmptyLines": 225,
+      "metrics": {}
+    },
+    {
+      "path": "checkpoints/offline-8e14d950-a741-494d-9ed3-353a7a26efbf/checkpoint.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 38,
+      "nonEmptyLines": 26,
+      "sections": [
+        {
+          "heading": "Session Checkpoint",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Summary",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "Intent",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "Active Task",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "Current Work",
+          "level": 2,
+          "line": 12
+        },
+        {
+          "heading": "Task Tree",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "Recent Decisions",
+          "level": 2,
+          "line": 18
+        },
+        {
+          "heading": "Key Files",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "Findings",
+          "level": 2,
+          "line": 24
+        },
+        {
+          "heading": "Error Fixes",
+          "level": 2,
+          "line": 27
+        },
+        {
+          "heading": "Design Decisions",
+          "level": 2,
+          "line": 30
+        },
+        {
+          "heading": "User Preferences",
+          "level": 2,
+          "line": 33
+        },
+        {
+          "heading": "Metadata",
+          "level": 2,
+          "line": 36
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 13
+      }
+    },
+    {
+      "path": "checkpoints/ses_mqylxdoz_0a181aef/checkpoint.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 41,
+      "nonEmptyLines": 29,
+      "sections": [
+        {
+          "heading": "Session Checkpoint",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Summary",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "Intent",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "Active Task",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "Current Work",
+          "level": 2,
+          "line": 12
+        },
+        {
+          "heading": "Task Tree",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "Recent Decisions",
+          "level": 2,
+          "line": 20
+        },
+        {
+          "heading": "Key Files",
+          "level": 2,
+          "line": 23
+        },
+        {
+          "heading": "Findings",
+          "level": 2,
+          "line": 26
+        },
+        {
+          "heading": "Error Fixes",
+          "level": 2,
+          "line": 30
+        },
+        {
+          "heading": "Design Decisions",
+          "level": 2,
+          "line": 33
+        },
+        {
+          "heading": "User Preferences",
+          "level": 2,
+          "line": 36
+        },
+        {
+          "heading": "Metadata",
+          "level": 2,
+          "line": 39
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 13
+      }
+    },
+    {
+      "path": "checkpoints/ses_mqym26mg_b34e4a3b/checkpoint.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 38,
+      "nonEmptyLines": 26,
+      "sections": [
+        {
+          "heading": "Session Checkpoint",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Summary",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "Intent",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "Active Task",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "Current Work",
+          "level": 2,
+          "line": 12
+        },
+        {
+          "heading": "Task Tree",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "Recent Decisions",
+          "level": 2,
+          "line": 18
+        },
+        {
+          "heading": "Key Files",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "Findings",
+          "level": 2,
+          "line": 24
+        },
+        {
+          "heading": "Error Fixes",
+          "level": 2,
+          "line": 27
+        },
+        {
+          "heading": "Design Decisions",
+          "level": 2,
+          "line": 30
+        },
+        {
+          "heading": "User Preferences",
+          "level": 2,
+          "line": 33
+        },
+        {
+          "heading": "Metadata",
+          "level": 2,
+          "line": 36
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 13
+      }
+    },
+    {
+      "path": "checkpoints/ses_mqym31fq_c18a23a5/checkpoint.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 38,
+      "nonEmptyLines": 26,
+      "sections": [
+        {
+          "heading": "Session Checkpoint",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Summary",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "Intent",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "Active Task",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "Current Work",
+          "level": 2,
+          "line": 12
+        },
+        {
+          "heading": "Task Tree",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "Recent Decisions",
+          "level": 2,
+          "line": 18
+        },
+        {
+          "heading": "Key Files",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "Findings",
+          "level": 2,
+          "line": 24
+        },
+        {
+          "heading": "Error Fixes",
+          "level": 2,
+          "line": 27
+        },
+        {
+          "heading": "Design Decisions",
+          "level": 2,
+          "line": 30
+        },
+        {
+          "heading": "User Preferences",
+          "level": 2,
+          "line": 33
+        },
+        {
+          "heading": "Metadata",
+          "level": 2,
+          "line": 36
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 13
+      }
+    },
+    {
+      "path": "checkpoints/test-session/checkpoint.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 38,
+      "nonEmptyLines": 26,
+      "sections": [
+        {
+          "heading": "Session Checkpoint",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Summary",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "Intent",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "Active Task",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "Current Work",
+          "level": 2,
+          "line": 12
+        },
+        {
+          "heading": "Task Tree",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "Recent Decisions",
+          "level": 2,
+          "line": 18
+        },
+        {
+          "heading": "Key Files",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "Findings",
+          "level": 2,
+          "line": 24
+        },
+        {
+          "heading": "Error Fixes",
+          "level": 2,
+          "line": 27
+        },
+        {
+          "heading": "Design Decisions",
+          "level": 2,
+          "line": 30
+        },
+        {
+          "heading": "User Preferences",
+          "level": 2,
+          "line": 33
+        },
+        {
+          "heading": "Metadata",
+          "level": 2,
+          "line": 36
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 13
+      }
+    },
+    {
+      "path": "electron.vite.config.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 49,
+      "nonEmptyLines": 48,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "fts-memory.db",
+      "language": "db",
+      "fileCategory": "code",
+      "totalLines": 5,
+      "nonEmptyLines": 5,
+      "metrics": {}
+    },
+    {
+      "path": "mira.db",
+      "language": "db",
+      "fileCategory": "code",
+      "totalLines": 349,
+      "nonEmptyLines": 250,
+      "metrics": {}
+    },
+    {
+      "path": "packages/core/package.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 34,
+      "nonEmptyLines": 34,
+      "sections": [
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "description",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "main",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "types",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "source",
+          "level": 1,
+          "line": 7
+        },
+        {
+          "heading": "files",
+          "level": 1,
+          "line": 8
+        },
+        {
+          "heading": "scripts",
+          "level": 1,
+          "line": 12
+        },
+        {
+          "heading": "dependencies",
+          "level": 1,
+          "line": 21
+        },
+        {
+          "heading": "devDependencies",
+          "level": 1,
+          "line": 29
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 10
+      }
+    },
+    {
+      "path": "packages/core/src/__tests__/smoke.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 5,
+      "nonEmptyLines": 4,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/agent/fork-cache.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 188,
+      "nonEmptyLines": 160,
+      "functions": [
+        {
+          "name": "getForkCacheManager",
+          "startLine": 183,
+          "endLine": 188,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "ForkCacheManager",
+          "startLine": 20,
+          "endLine": 178,
+          "methods": [
+            "set",
+            "get",
+            "reuseParentCache",
+            "purge",
+            "getStats",
+            "generateKey",
+            "evictOldest",
+            "simpleHash",
+            "clear"
+          ],
+          "properties": [
+            "cache",
+            "maxEntries",
+            "ttlMs"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ForkCacheManager",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "getForkCacheManager",
+          "line": 183,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "set",
+          "callee": "this.generateKey",
+          "lineNumber": 29
+        },
+        {
+          "caller": "set",
+          "callee": "this.cache.get",
+          "lineNumber": 30
+        },
+        {
+          "caller": "set",
+          "callee": "Date.now",
+          "lineNumber": 34
+        },
+        {
+          "caller": "set",
+          "callee": "this.evictOldest",
+          "lineNumber": 40
+        },
+        {
+          "caller": "set",
+          "callee": "Date.now",
+          "lineNumber": 47
+        },
+        {
+          "caller": "set",
+          "callee": "this.cache.set",
+          "lineNumber": 51
+        },
+        {
+          "caller": "get",
+          "callee": "this.cache.get",
+          "lineNumber": 59
+        },
+        {
+          "caller": "get",
+          "callee": "Date.now",
+          "lineNumber": 63
+        },
+        {
+          "caller": "get",
+          "callee": "this.cache.delete",
+          "lineNumber": 64
+        },
+        {
+          "caller": "reuseParentCache",
+          "callee": "this.generateKey",
+          "lineNumber": 80
+        },
+        {
+          "caller": "reuseParentCache",
+          "callee": "this.cache.get",
+          "lineNumber": 81
+        },
+        {
+          "caller": "reuseParentCache",
+          "callee": "Date.now",
+          "lineNumber": 83
+        },
+        {
+          "caller": "purge",
+          "callee": "Date.now",
+          "lineNumber": 95
+        },
+        {
+          "caller": "purge",
+          "callee": "this.cache.delete",
+          "lineNumber": 100
+        },
+        {
+          "caller": "getStats",
+          "callee": "this.cache.values",
+          "lineNumber": 115
+        },
+        {
+          "caller": "generateKey",
+          "callee": "tools.sort().join",
+          "lineNumber": 134
+        },
+        {
+          "caller": "generateKey",
+          "callee": "tools.sort",
+          "lineNumber": 134
+        },
+        {
+          "caller": "generateKey",
+          "callee": "this.simpleHash",
+          "lineNumber": 135
+        },
+        {
+          "caller": "generateKey",
+          "callee": "this.simpleHash",
+          "lineNumber": 136
+        },
+        {
+          "caller": "evictOldest",
+          "callee": "this.cache.delete",
+          "lineNumber": 155
+        },
+        {
+          "caller": "simpleHash",
+          "callee": "Math.min",
+          "lineNumber": 164
+        },
+        {
+          "caller": "simpleHash",
+          "callee": "str.charCodeAt",
+          "lineNumber": 165
+        },
+        {
+          "caller": "simpleHash",
+          "callee": "hash.toString",
+          "lineNumber": 169
+        },
+        {
+          "caller": "clear",
+          "callee": "this.cache.clear",
+          "lineNumber": 176
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "packages/core/src/agent/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 10,
+      "nonEmptyLines": 10,
+      "exports": [
+        {
+          "name": "AgentStateMachine",
+          "line": 1,
+          "isDefault": false
+        },
+        {
+          "name": "AgentState",
+          "line": 1,
+          "isDefault": false
+        },
+        {
+          "name": "buildToolContext",
+          "line": 2,
+          "isDefault": false
+        },
+        {
+          "name": "buildSystemMessage",
+          "line": 2,
+          "isDefault": false
+        },
+        {
+          "name": "AgentRunConfig",
+          "line": 3,
+          "isDefault": false
+        },
+        {
+          "name": "runLLMTurn",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "LLMTurnConfig",
+          "line": 5,
+          "isDefault": false
+        },
+        {
+          "name": "LLMTurnInput",
+          "line": 5,
+          "isDefault": false
+        },
+        {
+          "name": "LLMTurnOutput",
+          "line": 5,
+          "isDefault": false
+        },
+        {
+          "name": "runMaxMode",
+          "line": 6,
+          "isDefault": false
+        },
+        {
+          "name": "MaxModeConfig",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "MaxModeInput",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "MaxModeOutput",
+          "line": 7,
+          "isDefault": false
+        },
+        {
+          "name": "runToolPipeline",
+          "line": 8,
+          "isDefault": false
+        },
+        {
+          "name": "PipelineInput",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "detectDoomLoop",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "checkOverflow",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "detectTextNgramRepeat",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 18,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/agent/system-context.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 207,
+      "nonEmptyLines": 180,
+      "functions": [
+        {
+          "name": "simpleHash",
+          "startLine": 27,
+          "endLine": 35,
+          "params": [
+            "str"
+          ]
+        },
+        {
+          "name": "getSystemContextManager",
+          "startLine": 202,
+          "endLine": 207,
+          "params": [
+            "workspace"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "SystemContextManager",
+          "startLine": 37,
+          "endLine": 197,
+          "methods": [
+            "constructor",
+            "updateSource",
+            "removeSource",
+            "getAllContent",
+            "getChangedSources",
+            "reconcile",
+            "buildBaseline",
+            "getSnapshot",
+            "restoreFromSnapshot",
+            "getStats"
+          ],
+          "properties": [
+            "sources",
+            "baseline",
+            "lastReconciled",
+            "workspace"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SystemContextManager",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "getSystemContextManager",
+          "line": 202,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "simpleHash",
+          "callee": "str.charCodeAt",
+          "lineNumber": 30
+        },
+        {
+          "caller": "simpleHash",
+          "callee": "hash.toString",
+          "lineNumber": 34
+        },
+        {
+          "caller": "updateSource",
+          "callee": "simpleHash",
+          "lineNumber": 51
+        },
+        {
+          "caller": "updateSource",
+          "callee": "this.sources.get",
+          "lineNumber": 52
+        },
+        {
+          "caller": "updateSource",
+          "callee": "this.sources.set",
+          "lineNumber": 58
+        },
+        {
+          "caller": "updateSource",
+          "callee": "Date.now",
+          "lineNumber": 62
+        },
+        {
+          "caller": "removeSource",
+          "callee": "this.sources.delete",
+          "lineNumber": 72
+        },
+        {
+          "caller": "getAllContent",
+          "callee": "this.sources.values",
+          "lineNumber": 80
+        },
+        {
+          "caller": "getAllContent",
+          "callee": "parts.push",
+          "lineNumber": 81
+        },
+        {
+          "caller": "getAllContent",
+          "callee": "parts.join",
+          "lineNumber": 83
+        },
+        {
+          "caller": "getChangedSources",
+          "callee": "this.sources.values",
+          "lineNumber": 91
+        },
+        {
+          "caller": "getChangedSources",
+          "callee": "changed.push",
+          "lineNumber": 93
+        },
+        {
+          "caller": "reconcile",
+          "callee": "previousSnapshot.sources.get",
+          "lineNumber": 115
+        },
+        {
+          "caller": "reconcile",
+          "callee": "added.push",
+          "lineNumber": 117
+        },
+        {
+          "caller": "reconcile",
+          "callee": "updated.push",
+          "lineNumber": 119
+        },
+        {
+          "caller": "reconcile",
+          "callee": "previousSnapshot.sources.keys",
+          "lineNumber": 124
+        },
+        {
+          "caller": "reconcile",
+          "callee": "this.sources.has",
+          "lineNumber": 125
+        },
+        {
+          "caller": "reconcile",
+          "callee": "removed.push",
+          "lineNumber": 126
+        },
+        {
+          "caller": "reconcile",
+          "callee": "this.sources.keys",
+          "lineNumber": 131
+        },
+        {
+          "caller": "reconcile",
+          "callee": "added.push",
+          "lineNumber": 132
+        },
+        {
+          "caller": "reconcile",
+          "callee": "this.buildBaseline",
+          "lineNumber": 137
+        },
+        {
+          "caller": "reconcile",
+          "callee": "Date.now",
+          "lineNumber": 140
+        },
+        {
+          "caller": "buildBaseline",
+          "callee": "parts.push",
+          "lineNumber": 152
+        },
+        {
+          "caller": "buildBaseline",
+          "callee": "parts.push",
+          "lineNumber": 153
+        },
+        {
+          "caller": "buildBaseline",
+          "callee": "new Date().toISOString",
+          "lineNumber": 153
+        },
+        {
+          "caller": "buildBaseline",
+          "callee": "parts.join",
+          "lineNumber": 155
+        },
+        {
+          "caller": "getStats",
+          "callee": "this.sources.values",
+          "lineNumber": 187
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "packages/core/src/background.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 100,
+      "nonEmptyLines": 87,
+      "functions": [
+        {
+          "name": "isSlowOperation",
+          "startLine": 25,
+          "endLine": 34,
+          "params": [
+            "command"
+          ]
+        },
+        {
+          "name": "startBackground",
+          "startLine": 37,
+          "endLine": 64,
+          "params": [
+            "name",
+            "handler"
+          ]
+        },
+        {
+          "name": "getTaskStatus",
+          "startLine": 67,
+          "endLine": 69,
+          "params": [
+            "id"
+          ]
+        },
+        {
+          "name": "listBackgroundTasks",
+          "startLine": 72,
+          "endLine": 74,
+          "params": []
+        },
+        {
+          "name": "cleanupBackgroundTasks",
+          "startLine": 77,
+          "endLine": 84,
+          "params": [
+            "olderThanMs"
+          ]
+        },
+        {
+          "name": "waitForTask",
+          "startLine": 87,
+          "endLine": 100,
+          "params": [
+            "id",
+            "timeoutMs"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "isSlowOperation",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "startBackground",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "getTaskStatus",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "listBackgroundTasks",
+          "line": 72,
+          "isDefault": false
+        },
+        {
+          "name": "cleanupBackgroundTasks",
+          "line": 77,
+          "isDefault": false
+        },
+        {
+          "name": "waitForTask",
+          "line": 87,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "isSlowOperation",
+          "callee": "command.toLowerCase",
+          "lineNumber": 32
+        },
+        {
+          "caller": "isSlowOperation",
+          "callee": "slowPatterns.some",
+          "lineNumber": 33
+        },
+        {
+          "caller": "isSlowOperation",
+          "callee": "lower.includes",
+          "lineNumber": 33
+        },
+        {
+          "caller": "startBackground",
+          "callee": "Date.now().toString",
+          "lineNumber": 38
+        },
+        {
+          "caller": "startBackground",
+          "callee": "Date.now",
+          "lineNumber": 38
+        },
+        {
+          "caller": "startBackground",
+          "callee": "randomUUID().slice",
+          "lineNumber": 38
+        },
+        {
+          "caller": "startBackground",
+          "callee": "randomUUID",
+          "lineNumber": 38
+        },
+        {
+          "caller": "startBackground",
+          "callee": "tasks.set",
+          "lineNumber": 44
+        },
+        {
+          "caller": "startBackground",
+          "callee": "handlers.set",
+          "lineNumber": 45
+        },
+        {
+          "caller": "startBackground",
+          "callee": "Promise.resolve().then",
+          "lineNumber": 48
+        },
+        {
+          "caller": "startBackground",
+          "callee": "Promise.resolve",
+          "lineNumber": 48
+        },
+        {
+          "caller": "startBackground",
+          "callee": "Date.now",
+          "lineNumber": 50
+        },
+        {
+          "caller": "startBackground",
+          "callee": "handler",
+          "lineNumber": 52
+        },
+        {
+          "caller": "startBackground",
+          "callee": "String",
+          "lineNumber": 56
+        },
+        {
+          "caller": "startBackground",
+          "callee": "Date.now",
+          "lineNumber": 59
+        },
+        {
+          "caller": "startBackground",
+          "callee": "handlers.delete",
+          "lineNumber": 60
+        },
+        {
+          "caller": "getTaskStatus",
+          "callee": "tasks.get",
+          "lineNumber": 68
+        },
+        {
+          "caller": "listBackgroundTasks",
+          "callee": "Array.from",
+          "lineNumber": 73
+        },
+        {
+          "caller": "listBackgroundTasks",
+          "callee": "tasks.values",
+          "lineNumber": 73
+        },
+        {
+          "caller": "cleanupBackgroundTasks",
+          "callee": "Date.now",
+          "lineNumber": 78
+        },
+        {
+          "caller": "cleanupBackgroundTasks",
+          "callee": "tasks.delete",
+          "lineNumber": 81
+        },
+        {
+          "caller": "waitForTask",
+          "callee": "tasks.get",
+          "lineNumber": 88
+        },
+        {
+          "caller": "waitForTask",
+          "callee": "Date.now",
+          "lineNumber": 92
+        },
+        {
+          "caller": "waitForTask",
+          "callee": "Date.now",
+          "lineNumber": 93
+        },
+        {
+          "caller": "waitForTask",
+          "callee": "tasks.get",
+          "lineNumber": 94
+        },
+        {
+          "caller": "waitForTask",
+          "callee": "setTimeout",
+          "lineNumber": 97
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 6,
+      "nonEmptyLines": 6,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/protocols/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 5,
+      "nonEmptyLines": 5,
+      "exports": [
+        {
+          "name": "serializeMessages",
+          "line": 1,
+          "isDefault": false
+        },
+        {
+          "name": "deserializeChunk",
+          "line": 1,
+          "isDefault": false
+        },
+        {
+          "name": "getFinishReason",
+          "line": 1,
+          "isDefault": false
+        },
+        {
+          "name": "OpenAIChatProtocol",
+          "line": 1,
+          "isDefault": false
+        },
+        {
+          "name": "serializeAnthropicMessages",
+          "line": 2,
+          "isDefault": false
+        },
+        {
+          "name": "serializeSystem",
+          "line": 2,
+          "isDefault": false
+        },
+        {
+          "name": "deserializeStreamEvent",
+          "line": 2,
+          "isDefault": false
+        },
+        {
+          "name": "AnthropicMessagesProtocol",
+          "line": 2,
+          "isDefault": false
+        },
+        {
+          "name": "createCompatibleBody",
+          "line": 3,
+          "isDefault": false
+        },
+        {
+          "name": "OpenAICompatibleChatProtocol",
+          "line": 3,
+          "isDefault": false
+        },
+        {
+          "name": "GeminiProtocol",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "OpenAIResponsesProtocol",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 12,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/route/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 3,
+      "nonEmptyLines": 3,
+      "exports": [
+        {
+          "name": "makeRoute",
+          "line": 3,
+          "isDefault": false
+        },
+        {
+          "name": "executeRoute",
+          "line": 3,
+          "isDefault": false
+        },
+        {
+          "name": "RouteInstance",
+          "line": 3,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

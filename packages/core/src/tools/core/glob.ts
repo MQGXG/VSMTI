@@ -1,7 +1,7 @@
 import * as fs from "fs/promises"
 import * as path from "path"
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../../shared/tool"
 
 async function globRecursive(dir: string, pattern: string): Promise<string[]> {
   const results: string[] = []
@@ -50,3 +50,4 @@ export const globTool = make({
     return { success: true, output }
   },
 })
+

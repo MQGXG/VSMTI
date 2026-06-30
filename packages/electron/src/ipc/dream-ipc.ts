@@ -1,5 +1,5 @@
 import { ipcMain } from "electron"
-import { DreamDistillManager } from "@mira/core/dream-distill"
+import { DreamDistillManager } from "@mira/core/orchestrate/dream"
 
 const dreamDistillManager = new DreamDistillManager()
 
@@ -19,3 +19,4 @@ export function registerDreamIPC(): void {
     return dreamDistillManager.toText()
   })
 }
+

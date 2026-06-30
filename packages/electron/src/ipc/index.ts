@@ -9,8 +9,8 @@ import { registerComposeIPC } from "./compose-ipc"
 import { registerSkillIPC } from "./skill-ipc"
 import { registerQuestionIPC } from "./question-ipc"
 import { registerMemoryIPC } from "./memory-ipc"
-import { setupDefaultHooks } from "@mira/core/hooks-setup"
-import { cronScheduler } from "@mira/core/cron-scheduler"
+import { setupDefaultHooks } from "@mira/core/shared/hooks-setup"
+import { cronScheduler } from "@mira/core/background/cron"
 
 export function registerAgentIPCHandlers(): void {
   setupDefaultHooks()
@@ -31,3 +31,4 @@ export function registerAgentIPCHandlers(): void {
   registerQuestionIPC()
   registerMemoryIPC()
 }
+

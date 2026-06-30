@@ -1,8 +1,8 @@
 import * as fs from "fs/promises"
 import * as path from "path"
 import { z } from "zod"
-import { make, type Content } from "../tool"
-import { lspManager } from "../lsp/manager"
+import { make, type Content } from "../../shared/tool"
+import { lspManager } from "../../lsp/manager"
 
 const SUPPORTED_IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"])
 const SUPPORTED_IMAGE_MIMES: Record<string, string> = {
@@ -187,3 +187,4 @@ function statSizeText(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
+

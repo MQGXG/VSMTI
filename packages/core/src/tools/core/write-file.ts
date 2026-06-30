@@ -1,7 +1,8 @@
 import * as fs from "fs/promises"
 import * as path from "path"
 import { z } from "zod"
-import { make, type Content } from "../tool"
+import { make, type Content } from "../../shared/tool"
+import { getSnapshotManager } from "../../session/snapshot"
 
 async function realPath(p: string): Promise<string> {
   try { return await fs.realpath(p) } catch { return p }
@@ -33,6 +34,10 @@ export const writeFileTool = make({
       return { success: false, error: `相对路径逃逸工作区: ${input.path}` }
     }
 
+    // 快照：写入前捕获文件状态
+    const snapshotMgr = getSnapshotManager(ctx.workspace)
+    await snapshotMgr.capture([resolved], `write_file: ${input.path}`)
+
     await fs.mkdir(path.dirname(resolved), { recursive: true })
 
     // BOM 检测：如果原文件有 BOM，保留；否则按内容决定
@@ -50,3 +55,5 @@ export const writeFileTool = make({
     return { success: true, output: `Wrote ${content.length} bytes to ${resolved}` }
   },
 })
+
+

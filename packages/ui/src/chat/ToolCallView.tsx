@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Loader2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Terminal, FileText, Globe, Wrench } from "lucide-react";
+import { Loader2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Terminal, FileText, Globe, Wrench, Search, Code, GitBranch, Image, Database } from "lucide-react";
 import type { ToolCallInfo } from "./types";
+import { getFoldConfig } from "./tool-views/tool-fold";
 
 interface Props {
   info: ToolCallInfo;
@@ -15,8 +16,17 @@ const TOOL_ICONS: Record<string, typeof Wrench> = {
   code_exec: Terminal,
   web_search: Globe,
   web_browse: Globe,
-  grep: Wrench,
-  glob: Wrench,
+  grep: Search,
+  glob: Search,
+  git_status: GitBranch,
+  git_diff: GitBranch,
+  git_log: GitBranch,
+  git_commit: GitBranch,
+  data_analysis: Database,
+  image_gen: Image,
+  lsp_definition: Code,
+  lsp_references: Code,
+  lsp_hover: Code,
 };
 
 export function ToolCallView({ info }: Props) {
@@ -34,9 +44,7 @@ export function ToolCallView({ info }: Props) {
     );
   }
 
-  if (!info.result) {
-    return null;
-  }
+  if (!info.result) return null;
 
   const isSuccess = info.status === "done";
 

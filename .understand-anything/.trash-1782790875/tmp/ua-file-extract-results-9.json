@@ -1,0 +1,1391 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 8,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "packages/ui/src/chat/CodeBlock.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 53,
+      "nonEmptyLines": 49,
+      "functions": [
+        {
+          "name": "CodeBlock",
+          "startLine": 9,
+          "endLine": 53,
+          "params": [
+            "{ code, language }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "CodeBlock",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "CodeBlock",
+          "callee": "useState",
+          "lineNumber": 10
+        },
+        {
+          "caller": "handleCopy",
+          "callee": "navigator.clipboard.writeText",
+          "lineNumber": 14
+        },
+        {
+          "caller": "handleCopy",
+          "callee": "setCopied",
+          "lineNumber": 15
+        },
+        {
+          "caller": "handleCopy",
+          "callee": "setTimeout",
+          "lineNumber": 16
+        },
+        {
+          "caller": "handleCopy",
+          "callee": "setCopied",
+          "lineNumber": 16
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/ui/src/chat/MarkdownRenderer.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 290,
+      "nonEmptyLines": 262,
+      "functions": [
+        {
+          "name": "MarkdownRenderer",
+          "startLine": 8,
+          "endLine": 274,
+          "params": [
+            "{ content }"
+          ]
+        },
+        {
+          "name": "parseTableRow",
+          "startLine": 276,
+          "endLine": 281,
+          "params": [
+            "row"
+          ]
+        },
+        {
+          "name": "renderText",
+          "startLine": 283,
+          "endLine": 290,
+          "params": [
+            "text",
+            "key"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "MarkdownRenderer",
+          "line": 8,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.match",
+          "lineNumber": 15
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 17
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 18
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "renderText",
+          "lineNumber": 18
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "codeBlockMatch[2].replace",
+          "lineNumber": 20
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 22
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 24
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 26
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.split",
+          "lineNumber": 31
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "lines[i].trim",
+          "lineNumber": 35
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "trimmed.startsWith",
+          "lineNumber": 36
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "trimmed.endsWith",
+          "lineNumber": 36
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "lines.slice(0, tableStartIndex).join",
+          "lineNumber": 46
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "lines.slice",
+          "lineNumber": 46
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "beforeText.trim",
+          "lineNumber": 47
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 48
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "renderText",
+          "lineNumber": 48
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "lines[lineIndex].trim",
+          "lineNumber": 57
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "trimmed.startsWith",
+          "lineNumber": 58
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "trimmed.endsWith",
+          "lineNumber": 58
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "tableLines.push",
+          "lineNumber": 59
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parseTableRow",
+          "lineNumber": 72
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parseTableRow",
+          "lineNumber": 77
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "cells.every",
+          "lineNumber": 78
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "/^[-:]+$/.test",
+          "lineNumber": 78
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parseTableRow",
+          "lineNumber": 84
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "tableLines.slice(separatorIndex + 1).map",
+          "lineNumber": 85
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "tableLines.slice",
+          "lineNumber": 85
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parseTableRow",
+          "lineNumber": 85
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "separators.map",
+          "lineNumber": 88
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "sep.startsWith",
+          "lineNumber": 89
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "sep.endsWith",
+          "lineNumber": 89
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "sep.endsWith",
+          "lineNumber": 90
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "sep.startsWith",
+          "lineNumber": 91
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 95
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "headers.map",
+          "lineNumber": 100
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "bodyRows.map",
+          "lineNumber": 113
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "row.map",
+          "lineNumber": 115
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "lines.slice(lineIndex).join(\"\\n\").trimStart",
+          "lineNumber": 131
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "lines.slice(lineIndex).join",
+          "lineNumber": 131
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "lines.slice",
+          "lineNumber": 131
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.match",
+          "lineNumber": 138
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 140
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 141
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "renderText",
+          "lineNumber": 141
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 142
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 148
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.match",
+          "lineNumber": 153
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 155
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 156
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "renderText",
+          "lineNumber": 156
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 157
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 159
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.match",
+          "lineNumber": 164
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 166
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 167
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "renderText",
+          "lineNumber": 167
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 168
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 169
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.match",
+          "lineNumber": 174
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 176
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 177
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "renderText",
+          "lineNumber": 177
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 178
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 179
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.match",
+          "lineNumber": 184
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 186
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice(hrMatch[0].length).trimStart",
+          "lineNumber": 187
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 187
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.startsWith",
+          "lineNumber": 192
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.split",
+          "lineNumber": 193
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "line.startsWith",
+          "lineNumber": 197
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "quoteLines.push",
+          "lineNumber": 197
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "line.slice",
+          "lineNumber": 197
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "quoteLines.push",
+          "lineNumber": 198
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 201
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "quoteLines.map",
+          "lineNumber": 206
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "lines.slice(i).join(\"\\n\").trimStart",
+          "lineNumber": 209
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "lines.slice(i).join",
+          "lineNumber": 209
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "lines.slice",
+          "lineNumber": 209
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.match",
+          "lineNumber": 214
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "ulMatch[0].split(\"\\n\").filter(l => l.trim()).map",
+          "lineNumber": 216
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "ulMatch[0].split(\"\\n\").filter",
+          "lineNumber": 216
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "ulMatch[0].split",
+          "lineNumber": 216
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "l.trim",
+          "lineNumber": 216
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "l.replace",
+          "lineNumber": 216
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 217
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "items.map",
+          "lineNumber": 219
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice(ulMatch[0].length).trimStart",
+          "lineNumber": 222
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 222
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.match",
+          "lineNumber": 227
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "olMatch[0].split(\"\\n\").filter(l => l.trim()).map",
+          "lineNumber": 229
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "olMatch[0].split(\"\\n\").filter",
+          "lineNumber": 229
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "olMatch[0].split",
+          "lineNumber": 229
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "l.trim",
+          "lineNumber": 229
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "l.replace",
+          "lineNumber": 229
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 230
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "items.map",
+          "lineNumber": 232
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice(olMatch[0].length).trimStart",
+          "lineNumber": 235
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 235
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.match",
+          "lineNumber": 240
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 245
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice(headingMatch[0].length).trimStart",
+          "lineNumber": 250
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 250
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.search",
+          "lineNumber": 255
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 257
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 258
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "renderText",
+          "lineNumber": 258
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 259
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 263
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "renderText",
+          "lineNumber": 263
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "remaining.slice",
+          "lineNumber": 264
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "parts.push",
+          "lineNumber": 269
+        },
+        {
+          "caller": "MarkdownRenderer",
+          "callee": "renderText",
+          "lineNumber": 269
+        },
+        {
+          "caller": "parseTableRow",
+          "callee": "row.trim",
+          "lineNumber": 278
+        },
+        {
+          "caller": "parseTableRow",
+          "callee": "trimmed.slice",
+          "lineNumber": 279
+        },
+        {
+          "caller": "parseTableRow",
+          "callee": "content.split(\"|\").map",
+          "lineNumber": 280
+        },
+        {
+          "caller": "parseTableRow",
+          "callee": "content.split",
+          "lineNumber": 280
+        },
+        {
+          "caller": "parseTableRow",
+          "callee": "c.trim",
+          "lineNumber": 280
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/ui/src/chat/MermaidBlock.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 95,
+      "nonEmptyLines": 86,
+      "functions": [
+        {
+          "name": "getMermaidTheme",
+          "startLine": 4,
+          "endLine": 30,
+          "params": []
+        },
+        {
+          "name": "MermaidBlock",
+          "startLine": 44,
+          "endLine": 95,
+          "params": [
+            "{ code }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "MermaidBlock",
+          "line": 44,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getMermaidTheme",
+          "callee": "document.documentElement.classList.contains",
+          "lineNumber": 5
+        },
+        {
+          "caller": "MermaidBlock",
+          "callee": "useRef",
+          "lineNumber": 45
+        },
+        {
+          "caller": "MermaidBlock",
+          "callee": "useState",
+          "lineNumber": 46
+        },
+        {
+          "caller": "MermaidBlock",
+          "callee": "useState",
+          "lineNumber": 47
+        },
+        {
+          "caller": "MermaidBlock",
+          "callee": "useEffect",
+          "lineNumber": 49
+        },
+        {
+          "caller": "MermaidBlock",
+          "callee": "crypto.randomUUID().slice",
+          "lineNumber": 51
+        },
+        {
+          "caller": "MermaidBlock",
+          "callee": "crypto.randomUUID",
+          "lineNumber": 51
+        },
+        {
+          "caller": "render",
+          "callee": "setLoading",
+          "lineNumber": 55
+        },
+        {
+          "caller": "render",
+          "callee": "setError",
+          "lineNumber": 56
+        },
+        {
+          "caller": "render",
+          "callee": "mermaid.render",
+          "lineNumber": 57
+        },
+        {
+          "caller": "render",
+          "callee": "setError",
+          "lineNumber": 63
+        },
+        {
+          "caller": "render",
+          "callee": "setLoading",
+          "lineNumber": 66
+        },
+        {
+          "caller": "MermaidBlock",
+          "callee": "render",
+          "lineNumber": 70
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/ui/src/chat/tool-views/ToolDiffView.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 105,
+      "nonEmptyLines": 94,
+      "functions": [
+        {
+          "name": "ToolDiffView",
+          "startLine": 11,
+          "endLine": 77,
+          "params": [
+            "{ result, args, name }"
+          ]
+        },
+        {
+          "name": "buildUnifiedDiff",
+          "startLine": 86,
+          "endLine": 105,
+          "params": [
+            "filename",
+            "oldLines",
+            "newLines"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ToolDiffView",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ToolDiffView",
+          "callee": "getFoldConfig",
+          "lineNumber": 12
+        },
+        {
+          "caller": "ToolDiffView",
+          "callee": "useState",
+          "lineNumber": 13
+        },
+        {
+          "caller": "ToolDiffView",
+          "callee": "filePath.split(\".\").pop",
+          "lineNumber": 19
+        },
+        {
+          "caller": "ToolDiffView",
+          "callee": "filePath.split",
+          "lineNumber": 19
+        },
+        {
+          "caller": "ToolDiffView",
+          "callee": "String",
+          "lineNumber": 26
+        },
+        {
+          "caller": "ToolDiffView",
+          "callee": "result.split",
+          "lineNumber": 34
+        },
+        {
+          "caller": "ToolDiffView",
+          "callee": "oldStr.split",
+          "lineNumber": 38
+        },
+        {
+          "caller": "ToolDiffView",
+          "callee": "newStr.split",
+          "lineNumber": 39
+        },
+        {
+          "caller": "ToolDiffView",
+          "callee": "buildUnifiedDiff",
+          "lineNumber": 40
+        },
+        {
+          "caller": "ToolDiffView",
+          "callee": "setExpanded",
+          "lineNumber": 45
+        },
+        {
+          "caller": "ToolDiffView",
+          "callee": "diffContent.map",
+          "lineNumber": 55
+        },
+        {
+          "caller": "buildUnifiedDiff",
+          "callee": "result.push",
+          "lineNumber": 93
+        },
+        {
+          "caller": "buildUnifiedDiff",
+          "callee": "String",
+          "lineNumber": 93
+        },
+        {
+          "caller": "buildUnifiedDiff",
+          "callee": "String",
+          "lineNumber": 93
+        },
+        {
+          "caller": "buildUnifiedDiff",
+          "callee": "result.push",
+          "lineNumber": 96
+        },
+        {
+          "caller": "buildUnifiedDiff",
+          "callee": "String",
+          "lineNumber": 96
+        },
+        {
+          "caller": "buildUnifiedDiff",
+          "callee": "result.push",
+          "lineNumber": 99
+        },
+        {
+          "caller": "buildUnifiedDiff",
+          "callee": "String",
+          "lineNumber": 99
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/ui/src/chat/tool-views/ToolReadView.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 87,
+      "nonEmptyLines": 78,
+      "functions": [
+        {
+          "name": "ToolReadView",
+          "startLine": 10,
+          "endLine": 62,
+          "params": [
+            "{ result, args }"
+          ]
+        },
+        {
+          "name": "DirectoryView",
+          "startLine": 64,
+          "endLine": 87,
+          "params": [
+            "{ result }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ToolReadView",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ToolReadView",
+          "callee": "getFoldConfig",
+          "lineNumber": 12
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "useState",
+          "lineNumber": 13
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "expandToolOutput",
+          "lineNumber": 14
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "result.startsWith",
+          "lineNumber": 17
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "result.split",
+          "lineNumber": 24
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "lines.findIndex",
+          "lineNumber": 25
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "l.startsWith",
+          "lineNumber": 25
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "l.startsWith",
+          "lineNumber": 25
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "lines.slice(contentStart + 1).join",
+          "lineNumber": 26
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "lines.slice",
+          "lineNumber": 26
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "lines.slice(0, contentStart).join",
+          "lineNumber": 27
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "lines.slice",
+          "lineNumber": 27
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "filePath.split(\".\").pop",
+          "lineNumber": 29
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "filePath.split",
+          "lineNumber": 29
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "setExpanded",
+          "lineNumber": 41
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "header.replace(filePath, \"\").trim",
+          "lineNumber": 45
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "header.replace",
+          "lineNumber": 45
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "e.stopPropagation",
+          "lineNumber": 52
+        },
+        {
+          "caller": "ToolReadView",
+          "callee": "setExpanded",
+          "lineNumber": 52
+        },
+        {
+          "caller": "DirectoryView",
+          "callee": "result.split",
+          "lineNumber": 65
+        },
+        {
+          "caller": "DirectoryView",
+          "callee": "lines.slice(2).filter",
+          "lineNumber": 67
+        },
+        {
+          "caller": "DirectoryView",
+          "callee": "lines.slice",
+          "lineNumber": 67
+        },
+        {
+          "caller": "DirectoryView",
+          "callee": "l.startsWith",
+          "lineNumber": 67
+        },
+        {
+          "caller": "DirectoryView",
+          "callee": "l.startsWith",
+          "lineNumber": 67
+        },
+        {
+          "caller": "DirectoryView",
+          "callee": "lines.filter",
+          "lineNumber": 68
+        },
+        {
+          "caller": "DirectoryView",
+          "callee": "l.startsWith",
+          "lineNumber": 68
+        },
+        {
+          "caller": "DirectoryView",
+          "callee": "l.startsWith",
+          "lineNumber": 68
+        },
+        {
+          "caller": "DirectoryView",
+          "callee": "contentLines.map",
+          "lineNumber": 76
+        },
+        {
+          "caller": "DirectoryView",
+          "callee": "footer.map",
+          "lineNumber": 82
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/ui/src/chat/tool-views/ToolSearchView.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 66,
+      "nonEmptyLines": 61,
+      "functions": [
+        {
+          "name": "ToolSearchView",
+          "startLine": 10,
+          "endLine": 66,
+          "params": [
+            "{ result, args }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ToolSearchView",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ToolSearchView",
+          "callee": "getFoldConfig",
+          "lineNumber": 12
+        },
+        {
+          "caller": "ToolSearchView",
+          "callee": "useState",
+          "lineNumber": 13
+        },
+        {
+          "caller": "ToolSearchView",
+          "callee": "result.split(\"\\n\\n\").filter(Boolean).map",
+          "lineNumber": 16
+        },
+        {
+          "caller": "ToolSearchView",
+          "callee": "result.split(\"\\n\\n\").filter",
+          "lineNumber": 16
+        },
+        {
+          "caller": "ToolSearchView",
+          "callee": "result.split",
+          "lineNumber": 16
+        },
+        {
+          "caller": "ToolSearchView",
+          "callee": "block.match",
+          "lineNumber": 17
+        },
+        {
+          "caller": "ToolSearchView",
+          "callee": "block.replace(/^\\[([^\\]]+)\\]\\(([^)]+)\\)\\n?/, \"\").replace",
+          "lineNumber": 22
+        },
+        {
+          "caller": "ToolSearchView",
+          "callee": "block.replace",
+          "lineNumber": 22
+        },
+        {
+          "caller": "ToolSearchView",
+          "callee": "setExpanded",
+          "lineNumber": 31
+        },
+        {
+          "caller": "ToolSearchView",
+          "callee": "entries.map",
+          "lineNumber": 42
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/ui/src/chat/tool-views/ToolShellView.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 50,
+      "nonEmptyLines": 45,
+      "functions": [
+        {
+          "name": "ToolShellView",
+          "startLine": 10,
+          "endLine": 50,
+          "params": [
+            "{ result, args }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ToolShellView",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ToolShellView",
+          "callee": "getFoldConfig",
+          "lineNumber": 12
+        },
+        {
+          "caller": "ToolShellView",
+          "callee": "useState",
+          "lineNumber": 13
+        },
+        {
+          "caller": "ToolShellView",
+          "callee": "expandToolOutput",
+          "lineNumber": 14
+        },
+        {
+          "caller": "ToolShellView",
+          "callee": "setExpanded",
+          "lineNumber": 19
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/ui/src/chat/tool-views/tool-fold.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 65,
+      "nonEmptyLines": 57,
+      "functions": [
+        {
+          "name": "loadOverrides",
+          "startLine": 28,
+          "endLine": 34,
+          "params": []
+        },
+        {
+          "name": "saveOverrides",
+          "startLine": 36,
+          "endLine": 38,
+          "params": [
+            "overrides"
+          ]
+        },
+        {
+          "name": "getFoldConfig",
+          "startLine": 40,
+          "endLine": 46,
+          "params": [
+            "toolName"
+          ]
+        },
+        {
+          "name": "setFoldConfig",
+          "startLine": 48,
+          "endLine": 52,
+          "params": [
+            "toolName",
+            "config"
+          ]
+        },
+        {
+          "name": "expandToolOutput",
+          "startLine": 54,
+          "endLine": 65,
+          "params": [
+            "result",
+            "toolName"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getFoldConfig",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "setFoldConfig",
+          "line": 48,
+          "isDefault": false
+        },
+        {
+          "name": "expandToolOutput",
+          "line": 54,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "loadOverrides",
+          "callee": "JSON.parse",
+          "lineNumber": 30
+        },
+        {
+          "caller": "loadOverrides",
+          "callee": "localStorage.getItem",
+          "lineNumber": 30
+        },
+        {
+          "caller": "saveOverrides",
+          "callee": "localStorage.setItem",
+          "lineNumber": 37
+        },
+        {
+          "caller": "saveOverrides",
+          "callee": "JSON.stringify",
+          "lineNumber": 37
+        },
+        {
+          "caller": "getFoldConfig",
+          "callee": "loadOverrides",
+          "lineNumber": 42
+        },
+        {
+          "caller": "setFoldConfig",
+          "callee": "loadOverrides",
+          "lineNumber": 49
+        },
+        {
+          "caller": "setFoldConfig",
+          "callee": "saveOverrides",
+          "lineNumber": 51
+        },
+        {
+          "caller": "expandToolOutput",
+          "callee": "result.split",
+          "lineNumber": 55
+        },
+        {
+          "caller": "expandToolOutput",
+          "callee": "getFoldConfig",
+          "lineNumber": 56
+        },
+        {
+          "caller": "expandToolOutput",
+          "callee": "lines.slice(0, config.maxPreviewLines).join",
+          "lineNumber": 61
+        },
+        {
+          "caller": "expandToolOutput",
+          "callee": "lines.slice",
+          "lineNumber": 61
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    }
+  ]
+}

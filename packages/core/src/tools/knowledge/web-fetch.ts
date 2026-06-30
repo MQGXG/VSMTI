@@ -11,7 +11,7 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../../shared/tool"
 
 const MAX_RESPONSE_SIZE = 5 * 1024 * 1024 // 5MB
 const DEFAULT_TIMEOUT = 30 * 1000 // 30 seconds
@@ -212,3 +212,4 @@ export const webFetchTool = make({
     }
   },
 })
+

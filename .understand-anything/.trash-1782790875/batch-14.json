@@ -1,0 +1,189 @@
+{
+  "nodes": [
+    {
+      "id": "file:memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json",
+      "type": "file",
+      "name": "offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json",
+      "filePath": "memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json",
+      "summary": "离线会话记忆文件，包含 2 条用户交互记录（2026-06-29），用户询问上次见面时间，助手无回复，无 keyFacts 提取。属于离线模式下的会话快照。",
+      "tags": ["memory", "session", "offline", "离线会话", "json"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:memory/ses_mqylxdoz_0a181aef.json",
+      "type": "file",
+      "name": "ses_mqylxdoz_0a181aef.json",
+      "filePath": "memory/ses_mqylxdoz_0a181aef.json",
+      "summary": "会话记忆文件（session ID: ses_mqylxdoz），包含 9 条交互记录（2026-06-29 02:38），用户多次尝试读取桌面文本文档，助手处理编码问题（文件存在但读取失败），尝试不同编码读取。",
+      "tags": ["memory", "session", "file-read", "encoding", "会话记录"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:memory/ses_mqym26mg_b34e4a3b.json",
+      "type": "file",
+      "name": "ses_mqym26mg_b34e4a3b.json",
+      "filePath": "memory/ses_mqym26mg_b34e4a3b.json",
+      "summary": "会话记忆文件（session ID: ses_mqym26mg），包含 6 条交互记录（2026-06-29 02:40），用户尝试读取桌面文本文档，助手检测到路径访问受限并检查工作目录。",
+      "tags": ["memory", "session", "file-read", "path-access", "会话记录"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:memory/ses_mqym31fq_c18a23a5.json",
+      "type": "file",
+      "name": "ses_mqym31fq_c18a23a5.json",
+      "filePath": "memory/ses_mqym31fq_c18a23a5.json",
+      "summary": "会话记忆文件（session ID: ses_mqym31fq），包含 3 条交互记录（2026-06-29 02:41），用户多次尝试读取桌面文本文档，助手无有效回复。",
+      "tags": ["memory", "session", "file-read", "会话记录"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:memory/test-session.json",
+      "type": "file",
+      "name": "test-session.json",
+      "filePath": "memory/test-session.json",
+      "summary": "测试会话记忆文件，包含 43 条交互记录（2026-06-26），用户反复执行 'write a file' 操作，助手无有效回复，无 keyFacts 提取。用于验证会话持久化功能。",
+      "tags": ["memory", "session", "test", "write-file", "测试会话"],
+      "complexity": "low"
+    },
+    {
+      "id": "schema:memory-entry",
+      "type": "schema",
+      "name": "MemoryEntry",
+      "filePath": "memory/",
+      "summary": "记忆条目数据结构，包含 timestamp（ISO 时间戳）、user（用户输入+助手回复）、assistant（助手响应）、keyFacts（提取的关键事实数组）四个字段，所有 JSON 文件均使用此结构。",
+      "tags": ["schema", "data-structure", "memory", "会话条目"],
+      "complexity": "low"
+    },
+    {
+      "id": "data:offline-entries-8e14d950",
+      "type": "data",
+      "name": "离线会话条目组",
+      "filePath": "memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json",
+      "summary": "包含 2 条重复的离线会话记录，用户询问上次见面时间，时间戳集中在 2026-06-29 01:36，无有效助手响应。",
+      "tags": ["data", "entries", "offline", "重复记录"],
+      "complexity": "low"
+    },
+    {
+      "id": "data:session-entries-mqylxdoz",
+      "type": "data",
+      "name": "会话条目组",
+      "filePath": "memory/ses_mqylxdoz_0a181aef.json",
+      "summary": "包含 9 条会话记录，时间跨度 02:38:16-02:38:47（约 31 秒），涉及文件读取操作、编码问题诊断（文件 782 字节但读取异常），记录了助手的错误处理流程。",
+      "tags": ["data", "entries", "session", "file-read", "encoding-diagnosis"],
+      "complexity": "low"
+    },
+    {
+      "id": "data:session-entries-mqym26mg",
+      "type": "data",
+      "name": "会话条目组",
+      "filePath": "memory/ses_mqym26mg_b34e4a3b.json",
+      "summary": "包含 6 条会话记录，时间跨度 02:40:58-02:41:05（约 7 秒），助手检测到桌面路径访问受限并检查当前工作目录。",
+      "tags": ["data", "entries", "session", "path-access", "工作目录"],
+      "complexity": "low"
+    },
+    {
+      "id": "data:session-entries-mqym31fq",
+      "type": "data",
+      "name": "会话条目组",
+      "filePath": "memory/ses_mqym31fq_c18a23a5.json",
+      "summary": "包含 3 条会话记录，时间跨度 02:41:39-02:41:41（约 2 秒），用户连续尝试读取文件，助手无有效响应。",
+      "tags": ["data", "entries", "session", "file-read"],
+      "complexity": "low"
+    },
+    {
+      "id": "data:test-entries",
+      "type": "data",
+      "name": "测试会话条目组",
+      "filePath": "memory/test-session.json",
+      "summary": "包含 43 条测试记录，分为两个批次：06-26 13:36（26 条）和 06-26 14:15（17 条），全部为 'write a file' 操作测试，时间戳间隔极短（15-35ms），用于验证高频写入场景。",
+      "tags": ["data", "entries", "test", "write-file", "性能测试"],
+      "complexity": "low"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json",
+      "target": "schema:memory-entry",
+      "type": "implements",
+      "label": "使用 MemoryEntry 数据结构"
+    },
+    {
+      "source": "file:memory/ses_mqylxdoz_0a181aef.json",
+      "target": "schema:memory-entry",
+      "type": "implements",
+      "label": "使用 MemoryEntry 数据结构"
+    },
+    {
+      "source": "file:memory/ses_mqym26mg_b34e4a3b.json",
+      "target": "schema:memory-entry",
+      "type": "implements",
+      "label": "使用 MemoryEntry 数据结构"
+    },
+    {
+      "source": "file:memory/ses_mqym31fq_c18a23a5.json",
+      "target": "schema:memory-entry",
+      "type": "implements",
+      "label": "使用 MemoryEntry 数据结构"
+    },
+    {
+      "source": "file:memory/test-session.json",
+      "target": "schema:memory-entry",
+      "type": "implements",
+      "label": "使用 MemoryEntry 数据结构"
+    },
+    {
+      "source": "file:memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json",
+      "target": "data:offline-entries-8e14d950",
+      "type": "contains",
+      "label": "包含离线会话条目"
+    },
+    {
+      "source": "file:memory/ses_mqylxdoz_0a181aef.json",
+      "target": "data:session-entries-mqylxdoz",
+      "type": "contains",
+      "label": "包含会话条目"
+    },
+    {
+      "source": "file:memory/ses_mqym26mg_b34e4a3b.json",
+      "target": "data:session-entries-mqym26mg",
+      "type": "contains",
+      "label": "包含会话条目"
+    },
+    {
+      "source": "file:memory/ses_mqym31fq_c18a23a5.json",
+      "target": "data:session-entries-mqym31fq",
+      "type": "contains",
+      "label": "包含会话条目"
+    },
+    {
+      "source": "file:memory/test-session.json",
+      "target": "data:test-entries",
+      "type": "contains",
+      "label": "包含测试条目"
+    },
+    {
+      "source": "file:memory/ses_mqylxdoz_0a181aef.json",
+      "target": "file:memory/ses_mqym26mg_b34e4a3b.json",
+      "type": "sequential",
+      "label": "同一用户连续测试文件读取（时间间隔约 2 分钟）"
+    },
+    {
+      "source": "file:memory/ses_mqym26mg_b34e4a3b.json",
+      "target": "file:memory/ses_mqym31fq_c18a23a5.json",
+      "type": "sequential",
+      "label": "同一用户连续测试文件读取（时间间隔约 30 秒）"
+    },
+    {
+      "source": "file:memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json",
+      "target": "file:memory/ses_mqylxdoz_0a181aef.json",
+      "type": "temporal",
+      "label": "同一用户操作（时间从 01:36 到 02:38）"
+    },
+    {
+      "source": "file:memory/test-session.json",
+      "target": "file:memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json",
+      "type": "temporal",
+      "label": "测试会话早于正式会话（06-26 vs 06-29）"
+    }
+  ]
+}

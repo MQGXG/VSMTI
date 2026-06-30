@@ -204,6 +204,7 @@ export function registerSidecarIPCHandlers(): void {
     if (!window) throw new Error("Cannot get sender window")
 
     let streamChannel = ""
+    let channel = ""
 
     const destroy = () => {
       sseSessions.delete(streamChannel)
@@ -212,7 +213,7 @@ export function registerSidecarIPCHandlers(): void {
       }
     }
 
-    const channel = await connectAndGetChannel(
+    channel = await connectAndGetChannel(
       sm,
       { sessionId, message, config },
       (data) => {

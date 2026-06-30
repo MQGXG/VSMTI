@@ -1,0 +1,140 @@
+{
+  "batchImportData": {
+    "packages/core/src/llm/protocols/anthropic-messages.ts": [
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/protocols/gemini.ts": [
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/protocols/openai-chat.ts": [
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/protocols/openai-compatible-chat.ts": [
+      "packages/core/src/llm/protocols/openai-chat.ts",
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/protocols/openai-responses.ts": [
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/providers/anthropic.ts": [
+      "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "packages/core/src/llm/route/client.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/providers/index.ts": [
+      "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "packages/core/src/llm/protocols/gemini.ts",
+      "packages/core/src/llm/protocols/openai-chat.ts",
+      "packages/core/src/llm/protocols/openai-compatible-chat.ts",
+      "packages/core/src/llm/protocols/openai-responses.ts",
+      "packages/core/src/llm/route/route.ts",
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/providers/openai-compatible.ts": [
+      "packages/core/src/llm/protocols/openai-compatible-chat.ts",
+      "packages/core/src/llm/route/client.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/providers/openai.ts": [
+      "packages/core/src/llm/protocols/openai-chat.ts",
+      "packages/core/src/llm/route/client.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/route/client.ts": [],
+    "packages/core/src/llm/route/route.ts": [
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/route/types.ts": [
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/schema/index.ts": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "language": "typescript",
+      "sizeLines": 144,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/protocols/gemini.ts",
+      "language": "typescript",
+      "sizeLines": 173,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/protocols/openai-chat.ts",
+      "language": "typescript",
+      "sizeLines": 128,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/protocols/openai-compatible-chat.ts",
+      "language": "typescript",
+      "sizeLines": 66,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/protocols/openai-responses.ts",
+      "language": "typescript",
+      "sizeLines": 153,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/providers/anthropic.ts",
+      "language": "typescript",
+      "sizeLines": 61,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/providers/index.ts",
+      "language": "typescript",
+      "sizeLines": 182,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/providers/openai-compatible.ts",
+      "language": "typescript",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/providers/openai.ts",
+      "language": "typescript",
+      "sizeLines": 56,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/route/client.ts",
+      "language": "typescript",
+      "sizeLines": 87,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/route/route.ts",
+      "language": "typescript",
+      "sizeLines": 182,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/route/types.ts",
+      "language": "typescript",
+      "sizeLines": 68,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/schema/index.ts",
+      "language": "typescript",
+      "sizeLines": 4,
+      "fileCategory": "code"
+    }
+  ]
+}

@@ -1,13 +1,13 @@
 import { describe, expect, test, vi } from 'vitest'
-import { Agent } from '../agent'
-import { ToolRegistry } from '../registry'
-import { make } from '../tool'
-import { PermissionSet } from '../permission'
+import { Agent } from '../agent/agent'
+import { ToolRegistry } from '../system/registry'
+import { make } from '../shared/tool'
+import { PermissionSet } from '../system/permission'
 import { z } from 'zod'
 import type { AgentEvent } from '../types'
 
-vi.mock('../llm-sdk', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../llm-sdk')>()
+vi.mock('../llm/client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../llm/client')>()
   return {
     ...actual,
     createLLMClient: vi.fn().mockImplementation(() => {
@@ -147,3 +147,4 @@ describe('Agent permission loop', () => {
     expect(toolResult.result.error).toContain('Permission denied')
   })
 })
+

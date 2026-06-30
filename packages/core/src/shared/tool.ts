@@ -165,7 +165,7 @@ export function getJsonSchema(def: ToolDef): Record<string, unknown> {
       if (raw.required) cleaned.required = raw.required
       if (raw.items) cleaned.items = raw.items
       return cleaned
-    } catch {}
+    } catch { /* JSON Schema 直接传递不转换 */ }
   }
   if ("parameters" in def) {
     const p = (def as any).parameters as Record<string, unknown>

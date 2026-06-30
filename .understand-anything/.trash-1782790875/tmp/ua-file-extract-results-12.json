@@ -1,0 +1,975 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 8,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "docs/api.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 161,
+      "nonEmptyLines": 125,
+      "sections": [
+        {
+          "heading": "Mira API 文档",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "概述",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "IPC 通道",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "Agent 相关",
+          "level": 3,
+          "line": 9
+        },
+        {
+          "heading": "会话管理",
+          "level": 3,
+          "line": 19
+        },
+        {
+          "heading": "项目管理",
+          "level": 3,
+          "line": 29
+        },
+        {
+          "heading": "配置",
+          "level": 3,
+          "line": 38
+        },
+        {
+          "heading": "记忆",
+          "level": 3,
+          "line": 48
+        },
+        {
+          "heading": "Goal",
+          "level": 3,
+          "line": 57
+        },
+        {
+          "heading": "Dream/Distill",
+          "level": 3,
+          "line": 66
+        },
+        {
+          "heading": "Skill",
+          "level": 3,
+          "line": 73
+        },
+        {
+          "heading": "子 Agent",
+          "level": 3,
+          "line": 80
+        },
+        {
+          "heading": "任务管理",
+          "level": 3,
+          "line": 88
+        },
+        {
+          "heading": "Sidecar",
+          "level": 3,
+          "line": 98
+        },
+        {
+          "heading": "安全存储",
+          "level": 3,
+          "line": 106
+        },
+        {
+          "heading": "文件对话框",
+          "level": 3,
+          "line": 113
+        },
+        {
+          "heading": "窗口控制",
+          "level": 3,
+          "line": 121
+        },
+        {
+          "heading": "使用示例",
+          "level": 2,
+          "line": 129
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 18
+      }
+    },
+    {
+      "path": "docs/architecture.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 426,
+      "nonEmptyLines": 353,
+      "sections": [
+        {
+          "heading": "Mira 架构文档",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "一、整体架构",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "二、包架构",
+          "level": 2,
+          "line": 49
+        },
+        {
+          "heading": "包依赖关系",
+          "level": 3,
+          "line": 63
+        },
+        {
+          "heading": "三、数据流",
+          "level": 2,
+          "line": 80
+        },
+        {
+          "heading": "3.1 AI 对话流",
+          "level": 3,
+          "line": 82
+        },
+        {
+          "heading": "3.2 工具执行流",
+          "level": 3,
+          "line": 94
+        },
+        {
+          "heading": "3.3 记忆注入流",
+          "level": 3,
+          "line": 104
+        },
+        {
+          "heading": "3.4 子 Agent 流",
+          "level": 3,
+          "line": 113
+        },
+        {
+          "heading": "四、Agent Core 核心模块",
+          "level": 2,
+          "line": 122
+        },
+        {
+          "heading": "4.1 Agent 主循环 (`agent.ts`)",
+          "level": 3,
+          "line": 124
+        },
+        {
+          "heading": "4.2 LLM 分层架构",
+          "level": 3,
+          "line": 139
+        },
+        {
+          "heading": "4.3 工具系统",
+          "level": 3,
+          "line": 159
+        },
+        {
+          "heading": "4.4 权限系统",
+          "level": 3,
+          "line": 186
+        },
+        {
+          "heading": "4.5 记忆系统",
+          "level": 3,
+          "line": 203
+        },
+        {
+          "heading": "4.6 上下文管理",
+          "level": 3,
+          "line": 215
+        },
+        {
+          "heading": "五、高级特性",
+          "level": 2,
+          "line": 227
+        },
+        {
+          "heading": "5.1 Goal Judge",
+          "level": 3,
+          "line": 229
+        },
+        {
+          "heading": "5.2 Max Mode",
+          "level": 3,
+          "line": 241
+        },
+        {
+          "heading": "5.3 Dynamic Workflow",
+          "level": 3,
+          "line": 252
+        },
+        {
+          "heading": "5.4 Dream/Distill",
+          "level": 3,
+          "line": 271
+        },
+        {
+          "heading": "5.5 Subagent 管理",
+          "level": 3,
+          "line": 276
+        },
+        {
+          "heading": "六、IPC 通信层",
+          "level": 2,
+          "line": 287
+        },
+        {
+          "heading": "6.1 模块划分",
+          "level": 3,
+          "line": 289
+        },
+        {
+          "heading": "6.2 Preload 桥接",
+          "level": 3,
+          "line": 306
+        },
+        {
+          "heading": "七、数据库",
+          "level": 2,
+          "line": 321
+        },
+        {
+          "heading": "八、配置系统",
+          "level": 2,
+          "line": 373
+        },
+        {
+          "heading": "九、开发工作流",
+          "level": 2,
+          "line": 391
+        },
+        {
+          "heading": "十、关键设计决策",
+          "level": 2,
+          "line": 414
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 29
+      }
+    },
+    {
+      "path": "docs/deployment.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 144,
+      "nonEmptyLines": 103,
+      "sections": [
+        {
+          "heading": "Mira 部署文档",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "开发环境",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "前置要求",
+          "level": 3,
+          "line": 5
+        },
+        {
+          "heading": "启动开发",
+          "level": 3,
+          "line": 12
+        },
+        {
+          "heading": "环境变量",
+          "level": 3,
+          "line": 22
+        },
+        {
+          "heading": "打包部署",
+          "level": 2,
+          "line": 32
+        },
+        {
+          "heading": "Windows",
+          "level": 3,
+          "line": 34
+        },
+        {
+          "heading": "macOS",
+          "level": 3,
+          "line": 42
+        },
+        {
+          "heading": "Linux",
+          "level": 3,
+          "line": 49
+        },
+        {
+          "heading": "分发",
+          "level": 2,
+          "line": 56
+        },
+        {
+          "heading": "便携模式（推荐）",
+          "level": 3,
+          "line": 58
+        },
+        {
+          "heading": "数据目录",
+          "level": 3,
+          "line": 65
+        },
+        {
+          "heading": "配置",
+          "level": 2,
+          "line": 78
+        },
+        {
+          "heading": "全局配置",
+          "level": 3,
+          "line": 80
+        },
+        {
+          "heading": "项目配置",
+          "level": 3,
+          "line": 94
+        },
+        {
+          "heading": "环境变量引用",
+          "level": 3,
+          "line": 106
+        },
+        {
+          "heading": "故障排除",
+          "level": 2,
+          "line": 116
+        },
+        {
+          "heading": "日志位置",
+          "level": 3,
+          "line": 118
+        },
+        {
+          "heading": "常见问题",
+          "level": 3,
+          "line": 124
+        },
+        {
+          "heading": "更新",
+          "level": 2,
+          "line": 140
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 20
+      }
+    },
+    {
+      "path": "docs/learn-claude-code-essentials.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 504,
+      "nonEmptyLines": 415,
+      "sections": [
+        {
+          "heading": "learn-claude-code 精华参考",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "一、核心模式（贯穿始终）",
+          "level": 2,
+          "line": 10
+        },
+        {
+          "heading": "二、20 章机制速查",
+          "level": 2,
+          "line": 40
+        },
+        {
+          "heading": "三、Hook 系统（s04 核心）",
+          "level": 2,
+          "line": 67
+        },
+        {
+          "heading": "四、权限系统（s03 核心）",
+          "level": 2,
+          "line": 99
+        },
+        {
+          "heading": "五、上下文压缩管线（s08 核心）",
+          "level": 2,
+          "line": 148
+        },
+        {
+          "heading": "六、子智能体（s06 核心）",
+          "level": 2,
+          "line": 229
+        },
+        {
+          "heading": "七、多 Agent 协作（s15-s17 核心）",
+          "level": 2,
+          "line": 258
+        },
+        {
+          "heading": "7.1 MessageBus（s15）",
+          "level": 3,
+          "line": 260
+        },
+        {
+          "heading": "7.2 队友生命周期（s17）",
+          "level": 3,
+          "line": 280
+        },
+        {
+          "heading": "7.3 协议状态机（s16）",
+          "level": 3,
+          "line": 297
+        },
+        {
+          "heading": "7.4 自治认领（s17）",
+          "level": 3,
+          "line": 316
+        },
+        {
+          "heading": "八、系统提示词组装（s10 核心）",
+          "level": 2,
+          "line": 333
+        },
+        {
+          "heading": "九、错误恢复（s11 核心）",
+          "level": 2,
+          "line": 364
+        },
+        {
+          "heading": "十、任务系统（s12 核心）",
+          "level": 2,
+          "line": 403
+        },
+        {
+          "heading": "十一、MCP 插件（s19 核心）",
+          "level": 2,
+          "line": 445
+        },
+        {
+          "heading": "十二、设计原则总结",
+          "level": 2,
+          "line": 474
+        },
+        {
+          "heading": "十三、CLI Agent vs GUI Agent 架构差异",
+          "level": 2,
+          "line": 489
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 18
+      }
+    },
+    {
+      "path": "docs/learn-claude-code-vs-omniagent.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 60,
+      "nonEmptyLines": 47,
+      "sections": [
+        {
+          "heading": "learn-claude-code 课程与 Mira 实现对照",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "对照表",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "额外实现",
+          "level": 2,
+          "line": 28
+        },
+        {
+          "heading": "实现深度评估",
+          "level": 2,
+          "line": 39
+        },
+        {
+          "heading": "完整实现 (✅) — 20 项",
+          "level": 3,
+          "line": 41
+        },
+        {
+          "heading": "额外实现 — 6 项",
+          "level": 3,
+          "line": 45
+        },
+        {
+          "heading": "未实现 (❌) — 0 项",
+          "level": 2,
+          "line": 49
+        },
+        {
+          "heading": "架构变化",
+          "level": 2,
+          "line": 53
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 8
+      }
+    },
+    {
+      "path": "docs/monorepo-design.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 206,
+      "nonEmptyLines": 165,
+      "sections": [
+        {
+          "heading": "Mira Monorepo 架构设计",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "概述",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "目录结构",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "包描述",
+          "level": 2,
+          "line": 73
+        },
+        {
+          "heading": "@mira/core",
+          "level": 3,
+          "line": 75
+        },
+        {
+          "heading": "@mira/electron",
+          "level": 3,
+          "line": 93
+        },
+        {
+          "heading": "@mira/ui",
+          "level": 3,
+          "line": 104
+        },
+        {
+          "heading": "@mira/desktop",
+          "level": 3,
+          "line": 121
+        },
+        {
+          "heading": "依赖关系",
+          "level": 2,
+          "line": 132
+        },
+        {
+          "heading": "开发命令",
+          "level": 2,
+          "line": 150
+        },
+        {
+          "heading": "添加新模块",
+          "level": 2,
+          "line": 174
+        },
+        {
+          "heading": "添加新工具",
+          "level": 3,
+          "line": 176
+        },
+        {
+          "heading": "添加新 Provider",
+          "level": 3,
+          "line": 183
+        },
+        {
+          "heading": "添加新模式",
+          "level": 3,
+          "line": 189
+        },
+        {
+          "heading": "添加新 IPC 模块",
+          "level": 3,
+          "line": 194
+        },
+        {
+          "heading": "优势",
+          "level": 2,
+          "line": 200
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 16
+      }
+    },
+    {
+      "path": "docs/ref-agent-patterns.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 885,
+      "nonEmptyLines": 705,
+      "sections": [
+        {
+          "heading": "Mira 开发参考：Agent 模式源码手册",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "一、Agent 核心循环（所有 Agent 的基础）",
+          "level": 2,
+          "line": 18
+        },
+        {
+          "heading": "1.1 最简循环模式",
+          "level": 3,
+          "line": 20
+        },
+        {
+          "heading": "1.2 工具分发映射模式",
+          "level": 3,
+          "line": 57
+        },
+        {
+          "heading": "二、三级权限管线",
+          "level": 2,
+          "line": 81
+        },
+        {
+          "heading": "2.1 权限管线架构",
+          "level": 3,
+          "line": 85
+        },
+        {
+          "heading": "2.2 规则引擎",
+          "level": 3,
+          "line": 120
+        },
+        {
+          "heading": "2.3 用户审批",
+          "level": 3,
+          "line": 134
+        },
+        {
+          "heading": "三、Hook 扩展系统",
+          "level": 2,
+          "line": 149
+        },
+        {
+          "heading": "3.1 事件点定义",
+          "level": 3,
+          "line": 153
+        },
+        {
+          "heading": "3.2 Hook 注册示例",
+          "level": 3,
+          "line": 176
+        },
+        {
+          "heading": "3.3 在循环中的插入点",
+          "level": 3,
+          "line": 204
+        },
+        {
+          "heading": "四、SubAgent 模式",
+          "level": 2,
+          "line": 227
+        },
+        {
+          "heading": "4.1 核心模式",
+          "level": 3,
+          "line": 231
+        },
+        {
+          "heading": "4.2 关键设计要点",
+          "level": 3,
+          "line": 275
+        },
+        {
+          "heading": "4.3 MiMo 的 Single-Writer 增强",
+          "level": 3,
+          "line": 292
+        },
+        {
+          "heading": "五、上下文压缩管线",
+          "level": 2,
+          "line": 314
+        },
+        {
+          "heading": "5.1 四层压缩管线",
+          "level": 3,
+          "line": 318
+        },
+        {
+          "heading": "5.2 L1: 消息裁剪",
+          "level": 3,
+          "line": 336
+        },
+        {
+          "heading": "5.3 L2: 旧结果占位",
+          "level": 3,
+          "line": 367
+        },
+        {
+          "heading": "5.4 L3: 大结果持久化",
+          "level": 3,
+          "line": 382
+        },
+        {
+          "heading": "5.5 L4: LLM 摘要 + 应急",
+          "level": 3,
+          "line": 422
+        },
+        {
+          "heading": "5.6 循环中的整合",
+          "level": 3,
+          "line": 440
+        },
+        {
+          "heading": "5.7 MiMo 的 Cycle 机制增强",
+          "level": 3,
+          "line": 468
+        },
+        {
+          "heading": "六、记忆系统",
+          "level": 2,
+          "line": 495
+        },
+        {
+          "heading": "6.1 记忆文件结构",
+          "level": 3,
+          "line": 499
+        },
+        {
+          "heading": "6.2 记忆选择和注入",
+          "level": 3,
+          "line": 532
+        },
+        {
+          "heading": "6.3 记忆提取（每轮运行）",
+          "level": 3,
+          "line": 573
+        },
+        {
+          "heading": "6.4 记忆合并（Consolidation / Dream）",
+          "level": 3,
+          "line": 602
+        },
+        {
+          "heading": "6.5 MiMo 的四层记忆架构",
+          "level": 3,
+          "line": 634
+        },
+        {
+          "heading": "七、权限模型（OpenCode 参考）",
+          "level": 2,
+          "line": 672
+        },
+        {
+          "heading": "7.1 三级控制",
+          "level": 3,
+          "line": 676
+        },
+        {
+          "heading": "7.2 OpenCode 的通配符模式",
+          "level": 3,
+          "line": 693
+        },
+        {
+          "heading": "八、工程化规范（Codex CLI 参考）",
+          "level": 2,
+          "line": 707
+        },
+        {
+          "heading": "8.1 上下文管理硬规则",
+          "level": 3,
+          "line": 711
+        },
+        {
+          "heading": "8.2 代码质量红线",
+          "level": 3,
+          "line": 720
+        },
+        {
+          "heading": "九、多 Agent 协作模式",
+          "level": 2,
+          "line": 734
+        },
+        {
+          "heading": "9.1 工作流引擎（CCB Ultracode）",
+          "level": 3,
+          "line": 736
+        },
+        {
+          "heading": "9.2 Agent 团队模式",
+          "level": 3,
+          "line": 768
+        },
+        {
+          "heading": "十、设计原则速查表",
+          "level": 2,
+          "line": 795
+        },
+        {
+          "heading": "十一、Mira 当前架构对照索引",
+          "level": 2,
+          "line": 812
+        },
+        {
+          "heading": "附录：仓库版本与源文件路径",
+          "level": 2,
+          "line": 831
+        },
+        {
+          "heading": "各章节对应的源码参考链接",
+          "level": 3,
+          "line": 842
+        },
+        {
+          "heading": "获取源码的方式",
+          "level": 3,
+          "line": 857
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 44
+      }
+    },
+    {
+      "path": "docs/testing.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 188,
+      "nonEmptyLines": 146,
+      "sections": [
+        {
+          "heading": "测试指南",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "测试框架",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "运行测试",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "测试文件结构",
+          "level": 2,
+          "line": 20
+        },
+        {
+          "heading": "编写测试",
+          "level": 2,
+          "line": 36
+        },
+        {
+          "heading": "单元测试",
+          "level": 3,
+          "line": 38
+        },
+        {
+          "heading": "Mock",
+          "level": 3,
+          "line": 58
+        },
+        {
+          "heading": "集成测试",
+          "level": 3,
+          "line": 75
+        },
+        {
+          "heading": "测试类型",
+          "level": 2,
+          "line": 98
+        },
+        {
+          "heading": "冒烟测试",
+          "level": 3,
+          "line": 100
+        },
+        {
+          "heading": "单元测试",
+          "level": 3,
+          "line": 116
+        },
+        {
+          "heading": "集成测试",
+          "level": 3,
+          "line": 131
+        },
+        {
+          "heading": "覆盖率",
+          "level": 2,
+          "line": 147
+        },
+        {
+          "heading": "性能测试",
+          "level": 2,
+          "line": 157
+        },
+        {
+          "heading": "CI/CD",
+          "level": 2,
+          "line": 170
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 15
+      }
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "batchImportData": {
+    "packages/core/src/llm/schema/events.ts": [],
+    "packages/core/src/recovery.ts": [],
+    "packages/core/src/server-manager.ts": [],
+    "packages/core/src/server/index.ts": [],
+    "packages/core/src/session-fork.ts": [],
+    "packages/core/tsconfig.json": [],
+    "packages/core/tsconfig.tsbuildinfo": [],
+    "packages/electron/package.json": [],
+    "packages/electron/src/index.ts": [],
+    "packages/electron/src/ipc/agent-ipc.ts": [],
+    "packages/electron/src/preload/index.ts": [],
+    "packages/electron/tsconfig.json": [],
+    "packages/ui/package.json": [],
+    "packages/ui/src/chat/__tests__/zod-schema.test.ts": [],
+    "packages/ui/src/chat/MessageTimingDisplay.tsx": [],
+    "packages/ui/src/chat/tool-router.test.ts": [
+      "packages/ui/src/chat/tool-router.ts"
+    ],
+    "packages/ui/src/chat/tool-router.ts": [],
+    "packages/ui/src/index.ts": [],
+    "packages/ui/src/services/index.ts": [],
+    "packages/ui/src/services/memory.service.ts": [],
+    "packages/ui/src/sidebar/ProjectBar.tsx": [],
+    "packages/ui/src/types/electron.d.ts": [],
+    "packages/ui/src/ui/ResizablePanel.tsx": [],
+    "packages/ui/tsconfig.json": [],
+    "postcss.config.js": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "packages/core/src/llm/schema/events.ts",
+      "language": "typescript",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/recovery.ts",
+      "language": "typescript",
+      "sizeLines": 75,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/server-manager.ts",
+      "language": "typescript",
+      "sizeLines": 271,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/server/index.ts",
+      "language": "typescript",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/session-fork.ts",
+      "language": "typescript",
+      "sizeLines": 167,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/tsconfig.json",
+      "language": "json",
+      "sizeLines": 22,
+      "fileCategory": "config"
+    },
+    {
+      "path": "packages/core/tsconfig.tsbuildinfo",
+      "language": "tsbuildinfo",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/package.json",
+      "language": "json",
+      "sizeLines": 30,
+      "fileCategory": "config"
+    },
+    {
+      "path": "packages/electron/src/index.ts",
+      "language": "typescript",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/ipc/agent-ipc.ts",
+      "language": "typescript",
+      "sizeLines": 280,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/src/preload/index.ts",
+      "language": "typescript",
+      "sizeLines": 162,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/electron/tsconfig.json",
+      "language": "json",
+      "sizeLines": 22,
+      "fileCategory": "config"
+    },
+    {
+      "path": "packages/ui/package.json",
+      "language": "json",
+      "sizeLines": 43,
+      "fileCategory": "config"
+    },
+    {
+      "path": "packages/ui/src/chat/__tests__/zod-schema.test.ts",
+      "language": "typescript",
+      "sizeLines": 58,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/chat/MessageTimingDisplay.tsx",
+      "language": "typescript",
+      "sizeLines": 35,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/chat/tool-router.test.ts",
+      "language": "typescript",
+      "sizeLines": 65,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/chat/tool-router.ts",
+      "language": "typescript",
+      "sizeLines": 65,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/index.ts",
+      "language": "typescript",
+      "sizeLines": 57,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/services/index.ts",
+      "language": "typescript",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/services/memory.service.ts",
+      "language": "typescript",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/sidebar/ProjectBar.tsx",
+      "language": "typescript",
+      "sizeLines": 150,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/types/electron.d.ts",
+      "language": "typescript",
+      "sizeLines": 146,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/ui/ResizablePanel.tsx",
+      "language": "typescript",
+      "sizeLines": 100,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/tsconfig.json",
+      "language": "json",
+      "sizeLines": 23,
+      "fileCategory": "config"
+    },
+    {
+      "path": "postcss.config.js",
+      "language": "javascript",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    }
+  ]
+}

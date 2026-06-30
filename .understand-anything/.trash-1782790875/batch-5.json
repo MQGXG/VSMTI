@@ -1,0 +1,726 @@
+{
+  "nodes": [
+    {
+      "id": "file:packages/ui/src/chat/ChatWindow.tsx",
+      "type": "file",
+      "name": "ChatWindow.tsx",
+      "filePath": "packages/ui/src/chat/ChatWindow.tsx",
+      "summary": "主聊天界面组件，包含欢迎屏幕、消息操作栏、聊天内核和聊天内容容器。负责组装 MiraRuntimeProvider、ModelSelector、PermissionDialog、QuestionDialog、MarkdownRenderer、ThinkingBlock、VoiceInput 等子组件，提供完整的聊天交互体验。",
+      "tags": ["react", "tsx", "聊天界面", "组件入口", "assistant-ui"],
+      "complexity": "high",
+      "lineCount": 290
+    },
+    {
+      "id": "func:ChatWindow.tsx:WelcomeScreen",
+      "type": "function",
+      "name": "WelcomeScreen",
+      "filePath": "packages/ui/src/chat/ChatWindow.tsx",
+      "summary": "欢迎屏幕组件，显示 Mira logo 和四个快捷建议按钮（写作、编程、分析数据、搜索信息），用户点击后触发 onSuggest 回调。",
+      "tags": ["react", "欢迎页", "快捷建议"],
+      "complexity": "low",
+      "lineCount": 20
+    },
+    {
+      "id": "func:ChatWindow.tsx:MessageActions",
+      "type": "function",
+      "name": "MessageActions",
+      "filePath": "packages/ui/src/chat/ChatWindow.tsx",
+      "summary": "消息操作栏组件，提供消息重试功能，从上下文中获取 retryMessage 方法。",
+      "tags": ["react", "消息操作", "重试"],
+      "complexity": "low",
+      "lineCount": 23
+    },
+    {
+      "id": "func:ChatWindow.tsx:ChatInner",
+      "type": "function",
+      "name": "ChatInner",
+      "filePath": "packages/ui/src/chat/ChatWindow.tsx",
+      "summary": "聊天内核组件，集成 assistant-ui 的 ThreadPrimitive/ComposerPrimitive 等原语，管理 Skill 列表、文件拖拽、Skill 过滤、权限/问题对话框展示，以及 Goal 条件设置。",
+      "tags": ["react", "核心聊天", "assistant-ui", "skill", "拖拽", "权限"],
+      "complexity": "high",
+      "lineCount": 186
+    },
+    {
+      "id": "func:ChatWindow.tsx:ChatContent",
+      "type": "function",
+      "name": "ChatContent",
+      "filePath": "packages/ui/src/chat/ChatWindow.tsx",
+      "summary": "聊天内容容器组件，管理会话和模型状态，处理键盘快捷键切换 Agent 模式（Ctrl+1~5），并渲染 ChatInner。",
+      "tags": ["react", "会话管理", "快捷键", "模式切换"],
+      "complexity": "medium",
+      "lineCount": 32
+    },
+    {
+      "id": "func:ChatWindow.tsx:ChatWindow",
+      "type": "function",
+      "name": "ChatWindow",
+      "filePath": "packages/ui/src/chat/ChatWindow.tsx",
+      "summary": "ChatWindow 导出组件，ChatContent 的轻量包装器。",
+      "tags": ["react", "导出组件"],
+      "complexity": "low",
+      "lineCount": 3
+    },
+    {
+      "id": "file:packages/ui/src/chat/MiraRuntimeProvider.tsx",
+      "type": "file",
+      "name": "MiraRuntimeProvider.tsx",
+      "filePath": "packages/ui/src/chat/MiraRuntimeProvider.tsx",
+      "summary": "Mira 运行时上下文提供者，将 useMiraChat hook 的状态与 assistant-ui 的 useExternalStoreRuntime 桥接，提供消息发送、取消、权限处理、工具结果处理等上下文给子组件。",
+      "tags": ["react", "runtime", "provider", "assistant-ui", "上下文桥接"],
+      "complexity": "medium",
+      "lineCount": 125
+    },
+    {
+      "id": "func:MiraRuntimeProvider.tsx:MiraRuntimeProvider",
+      "type": "function",
+      "name": "MiraRuntimeProvider",
+      "filePath": "packages/ui/src/chat/MiraRuntimeProvider.tsx",
+      "summary": "核心运行时 Provider 组件，调用 useMiraChat 获取聊天状态，通过 useExternalStoreRuntime 创建 assistant-ui 运行时，将 MiraRuntimeContext 传递给子组件（支持 render props 模式）。",
+      "tags": ["react", "provider", "runtime", "render-props"],
+      "complexity": "medium",
+      "lineCount": 81
+    },
+    {
+      "id": "file:packages/ui/src/chat/ModelSelector.tsx",
+      "type": "file",
+      "name": "ModelSelector.tsx",
+      "filePath": "packages/ui/src/chat/ModelSelector.tsx",
+      "summary": "模型和模式选择器组件，从 localStorage 读取 Provider 配置，提供模型下拉选择和 Agent 模式切换（助手/规划/专家/执行/安全），支持持久化选择。",
+      "tags": ["react", "模型选择", "模式切换", "localStorage", "配置管理"],
+      "complexity": "medium",
+      "lineCount": 100
+    },
+    {
+      "id": "func:ModelSelector.tsx:loadProviders",
+      "type": "function",
+      "name": "loadProviders",
+      "filePath": "packages/ui/src/chat/ModelSelector.tsx",
+      "summary": "从 localStorage 读取已启用的 Provider 列表（支持 v2 和旧版格式），解析模型配置。",
+      "tags": ["数据加载", "localStorage", "兼容性"],
+      "complexity": "low",
+      "lineCount": 10
+    },
+    {
+      "id": "func:ModelSelector.tsx:getEnabledModels",
+      "type": "function",
+      "name": "getEnabledModels",
+      "filePath": "packages/ui/src/chat/ModelSelector.tsx",
+      "summary": "过滤并合并所有已启用 Provider 的模型为 ModelOption 数组，若无可用模型则返回默认的 GPT-4o。",
+      "tags": ["数据过滤", "模型列表"],
+      "complexity": "low",
+      "lineCount": 6
+    },
+    {
+      "id": "func:ModelSelector.tsx:ModelSelector",
+      "type": "function",
+      "name": "ModelSelector",
+      "filePath": "packages/ui/src/chat/ModelSelector.tsx",
+      "summary": "模型选择器 UI 组件，渲染模型下拉列表和模式切换芯片组，支持点击外部关闭。",
+      "tags": ["react", "下拉选择", "芯片组"],
+      "complexity": "medium",
+      "lineCount": 52
+    },
+    {
+      "id": "file:packages/ui/src/chat/PermissionDialog.tsx",
+      "type": "file",
+      "name": "PermissionDialog.tsx",
+      "filePath": "packages/ui/src/chat/PermissionDialog.tsx",
+      "summary": "权限审批对话框组件，展示工具名称、参数和拒绝原因，提供允许/拒绝/始终允许三个操作按钮，使用 Modal 组件。",
+      "tags": ["react", "权限", "对话框", "安全"],
+      "complexity": "low",
+      "lineCount": 79
+    },
+    {
+      "id": "file:packages/ui/src/chat/QuestionDialog.tsx",
+      "type": "file",
+      "name": "QuestionDialog.tsx",
+      "filePath": "packages/ui/src/chat/QuestionDialog.tsx",
+      "summary": "用户交互问答对话框组件，展示 Agent 提出的问题和预设选项，支持自定义回答输入，使用 Modal 组件。",
+      "tags": ["react", "问答", "对话框", "用户交互"],
+      "complexity": "low",
+      "lineCount": 81
+    },
+    {
+      "id": "file:packages/ui/src/chat/ThinkingBlock.tsx",
+      "type": "file",
+      "name": "ThinkingBlock.tsx",
+      "filePath": "packages/ui/src/chat/ThinkingBlock.tsx",
+      "summary": "思考过程展示组件，可折叠显示 Agent 的思考文本，统计 token 数量。",
+      "tags": ["react", "思考过程", "可折叠", "token统计"],
+      "complexity": "low",
+      "lineCount": 34
+    },
+    {
+      "id": "file:packages/ui/src/chat/ToolCallView.tsx",
+      "type": "file",
+      "name": "ToolCallView.tsx",
+      "filePath": "packages/ui/src/chat/ToolCallView.tsx",
+      "summary": "工具调用展示组件，根据工具类型显示对应图标（文件/终端/网络/通用），支持展开/折叠查看结果，区分运行中/成功/失败状态。",
+      "tags": ["react", "工具调用", "状态展示", "图标映射"],
+      "complexity": "medium",
+      "lineCount": 74
+    },
+    {
+      "id": "file:packages/ui/src/chat/ToolPalette.tsx",
+      "type": "file",
+      "name": "ToolPalette.tsx",
+      "filePath": "packages/ui/src/chat/ToolPalette.tsx",
+      "summary": "工具面板组件，允许用户直接执行工具（不经过 LLM），支持根据输入提示智能推荐工具、动态表单生成、工具执行和结果反馈。",
+      "tags": ["react", "工具面板", "直接执行", "智能推荐", "动态表单"],
+      "complexity": "high",
+      "lineCount": 219
+    },
+    {
+      "id": "file:packages/ui/src/chat/VoiceInput.tsx",
+      "type": "file",
+      "name": "VoiceInput.tsx",
+      "filePath": "packages/ui/src/chat/VoiceInput.tsx",
+      "summary": "语音输入组件，基于 Web Speech API 实现语音识别，支持中文，提供录音状态指示和错误提示。",
+      "tags": ["react", "语音输入", "Web Speech API", "语音识别"],
+      "complexity": "medium",
+      "lineCount": 128
+    },
+    {
+      "id": "file:packages/ui/src/chat/mira-runtime.ts",
+      "type": "file",
+      "name": "mira-runtime.ts",
+      "filePath": "packages/ui/src/chat/mira-runtime.ts",
+      "summary": "Mira 运行时消息类型和工具函数，定义 MiraMessage/ToolCallPart/ToolResultPart 等类型，提供消息转换（convertMessage）、创建（createMiraMessage）、更新内容和工具调用等操作。",
+      "tags": ["typescript", "消息模型", "工具函数", "类型定义", "运行时"],
+      "complexity": "medium",
+      "lineCount": 119
+    },
+    {
+      "id": "func:mira-runtime.ts:convertMessage",
+      "type": "function",
+      "name": "convertMessage",
+      "filePath": "packages/ui/src/chat/mira-runtime.ts",
+      "summary": "将 MiraMessage 转换为 assistant-ui 的 ThreadMessageLike 格式，处理文本内容和工具调用部分。",
+      "tags": ["消息转换", "格式适配"],
+      "complexity": "medium",
+      "lineCount": 33
+    },
+    {
+      "id": "func:mira-runtime.ts:createMiraMessage",
+      "type": "function",
+      "name": "createMiraMessage",
+      "filePath": "packages/ui/src/chat/mira-runtime.ts",
+      "summary": "创建新的 MiraMessage 对象，自动生成 UUID 和时间戳。",
+      "tags": ["消息创建", "工厂函数"],
+      "complexity": "low",
+      "lineCount": 12
+    },
+    {
+      "id": "func:mira-runtime.ts:updateMiraMessageContent",
+      "type": "function",
+      "name": "updateMiraMessageContent",
+      "filePath": "packages/ui/src/chat/mira-runtime.ts",
+      "summary": "不可变更新 MiraMessage 的文本内容。",
+      "tags": ["消息更新", "不可变操作"],
+      "complexity": "low",
+      "lineCount": 9
+    },
+    {
+      "id": "func:mira-runtime.ts:addToolCallToMessage",
+      "type": "function",
+      "name": "addToolCallToMessage",
+      "filePath": "packages/ui/src/chat/mira-runtime.ts",
+      "summary": "向 MiraMessage 追加一个工具调用信息。",
+      "tags": ["工具调用", "消息更新"],
+      "complexity": "low",
+      "lineCount": 9
+    },
+    {
+      "id": "func:mira-runtime.ts:updateToolCallInMessage",
+      "type": "function",
+      "name": "updateToolCallInMessage",
+      "filePath": "packages/ui/src/chat/mira-runtime.ts",
+      "summary": "根据 toolCallId 更新 MiraMessage 中指定工具调用的状态或结果。",
+      "tags": ["工具调用", "消息更新", "状态同步"],
+      "complexity": "low",
+      "lineCount": 13
+    },
+    {
+      "id": "file:packages/ui/src/chat/tool-views/ToolGenericView.tsx",
+      "type": "file",
+      "name": "ToolGenericView.tsx",
+      "filePath": "packages/ui/src/chat/tool-views/ToolGenericView.tsx",
+      "summary": "通用工具结果视图组件，可折叠展示工具调用结果，区分运行中/成功/失败状态。",
+      "tags": ["react", "工具结果", "通用视图"],
+      "complexity": "low",
+      "lineCount": 38
+    },
+    {
+      "id": "file:packages/ui/src/chat/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "packages/ui/src/chat/types.ts",
+      "summary": "聊天模块核心类型定义，定义 ToolCallInfo（工具调用信息）、Message（消息结构）和 AgentMode（代理模式联合类型）。",
+      "tags": ["typescript", "类型定义", "消息模型", "工具调用"],
+      "complexity": "low",
+      "lineCount": 19
+    },
+    {
+      "id": "file:packages/ui/src/hooks/useAgent.ts",
+      "type": "file",
+      "name": "useAgent.ts",
+      "filePath": "packages/ui/src/hooks/useAgent.ts",
+      "summary": "Agent 工具与执行 Hook，提供 useTools（加载工具列表）和 useSkills（加载 Skill 列表）两个自定义 Hook。",
+      "tags": ["react", "hook", "agent", "工具加载", "skill"],
+      "complexity": "low",
+      "lineCount": 54
+    },
+    {
+      "id": "func:useAgent.ts:useTools",
+      "type": "function",
+      "name": "useTools",
+      "filePath": "packages/ui/src/hooks/useAgent.ts",
+      "summary": "自定义 Hook，通过 AgentService.listTools 加载可用工具列表，返回 tools/loading/refresh。",
+      "tags": ["hook", "工具加载", "异步"],
+      "complexity": "low",
+      "lineCount": 22
+    },
+    {
+      "id": "func:useAgent.ts:useSkills",
+      "type": "function",
+      "name": "useSkills",
+      "filePath": "packages/ui/src/hooks/useAgent.ts",
+      "summary": "自定义 Hook，通过 AgentService.listSkills 加载可用 Skill 列表，返回 skills/loading。",
+      "tags": ["hook", "skill加载", "异步"],
+      "complexity": "low",
+      "lineCount": 13
+    },
+    {
+      "id": "file:packages/ui/src/hooks/useMiraChat.ts",
+      "type": "file",
+      "name": "useMiraChat.ts",
+      "filePath": "packages/ui/src/hooks/useMiraChat.ts",
+      "summary": "Mira 聊天核心 Hook（505行），管理完整聊天生命周期：消息状态、流式执行、工具调用事件处理、权限/问题请求、消息历史加载、Goal 完成检测、错误恢复和 Agent 事件监听。",
+      "tags": ["react", "hook", "聊天核心", "流式执行", "事件处理", "状态管理"],
+      "complexity": "high",
+      "lineCount": 505
+    },
+    {
+      "id": "func:useMiraChat.ts:useMiraChat",
+      "type": "function",
+      "name": "useMiraChat",
+      "filePath": "packages/ui/src/hooks/useMiraChat.ts",
+      "summary": "聊天核心 Hook，管理消息列表、运行状态、权限请求、问题请求，提供 sendMessage/retryMessage/stopStream/handlePermission/handleQuestionAnswer/handleToolResult 等方法。",
+      "tags": ["hook", "聊天状态", "事件驱动", "流式处理"],
+      "complexity": "high",
+      "lineCount": 457
+    },
+    {
+      "id": "file:packages/ui/src/lib/utils.ts",
+      "type": "file",
+      "name": "utils.ts",
+      "filePath": "packages/ui/src/lib/utils.ts",
+      "summary": "工具函数模块，导出 cn() 函数，使用 clsx + tailwind-merge 合并 Tailwind CSS 类名。",
+      "tags": ["typescript", "工具函数", "tailwind", "类名合并"],
+      "complexity": "low",
+      "lineCount": 6
+    },
+    {
+      "id": "file:packages/ui/src/services/agent.service.ts",
+      "type": "file",
+      "name": "agent.service.ts",
+      "filePath": "packages/ui/src/services/agent.service.ts",
+      "summary": "Agent 服务层，封装前端与 Electron 主进程的 IPC 通信，提供工具管理、Skill 管理、流式执行、权限回复、任务管理、子 Agent 管理和 Goal 管理等 API。",
+      "tags": ["typescript", "service", "IPC", "Agent API", "工具管理"],
+      "complexity": "medium",
+      "lineCount": 118
+    },
+    {
+      "id": "file:packages/ui/src/services/dialog.service.ts",
+      "type": "file",
+      "name": "dialog.service.ts",
+      "filePath": "packages/ui/src/services/dialog.service.ts",
+      "summary": "对话框服务层，封装 Electron 原生文件/目录选择对话框 API（openDirectory/openFile/saveFile）。",
+      "tags": ["typescript", "service", "Electron", "文件对话框"],
+      "complexity": "low",
+      "lineCount": 17
+    },
+    {
+      "id": "file:packages/ui/src/sidebar/EditProjectDialog.tsx",
+      "type": "file",
+      "name": "EditProjectDialog.tsx",
+      "filePath": "packages/ui/src/sidebar/EditProjectDialog.tsx",
+      "summary": "编辑项目对话框组件，支持修改项目名称、颜色、图标（上传图片转 base64 存 localStorage）和启动脚本，支持删除项目确认。",
+      "tags": ["react", "项目编辑", "对话框", "图标上传", "启动脚本"],
+      "complexity": "medium",
+      "lineCount": 204
+    },
+    {
+      "id": "file:packages/ui/src/sidebar/NewProjectDialog.tsx",
+      "type": "file",
+      "name": "NewProjectDialog.tsx",
+      "filePath": "packages/ui/src/sidebar/NewProjectDialog.tsx",
+      "summary": "新建项目对话框组件，通过 Electron 目录选择器选择工作空间，自动提取文件夹名作为项目名，使用 Modal 组件。",
+      "tags": ["react", "新建项目", "对话框", "目录选择"],
+      "complexity": "low",
+      "lineCount": 102
+    },
+    {
+      "id": "file:packages/ui/src/ui/Modal.tsx",
+      "type": "file",
+      "name": "Modal.tsx",
+      "filePath": "packages/ui/src/ui/Modal.tsx",
+      "summary": "通用模态框组件，基于 Dialog 组件封装，支持标题和自定义最大宽度。",
+      "tags": ["react", "模态框", "通用组件", "Dialog封装"],
+      "complexity": "low",
+      "lineCount": 25
+    },
+    {
+      "id": "file:packages/ui/src/ui/dialog.tsx",
+      "type": "file",
+      "name": "dialog.tsx",
+      "filePath": "packages/ui/src/ui/dialog.tsx",
+      "summary": "基于 Radix UI Dialog 原语封装的对话框组件集，导出 Dialog/DialogPortal/DialogOverlay/DialogClose/DialogTrigger/DialogContent/DialogHeader/DialogFooter/DialogTitle/DialogDescription。",
+      "tags": ["react", "dialog", "Radix UI", "UI原语"],
+      "complexity": "medium",
+      "lineCount": 120
+    },
+    {
+      "id": "file:packages/ui/src/ui/select.tsx",
+      "type": "file",
+      "name": "select.tsx",
+      "filePath": "packages/ui/src/ui/select.tsx",
+      "summary": "基于 Radix UI Select 原语封装的下拉选择组件集，导出 Select/SelectGroup/SelectValue/SelectTrigger/SelectContent/SelectLabel/SelectItem/SelectSeparator 等。",
+      "tags": ["react", "select", "Radix UI", "UI原语"],
+      "complexity": "medium",
+      "lineCount": 158
+    },
+    {
+      "id": "file:packages/ui/src/ui/switch.tsx",
+      "type": "file",
+      "name": "switch.tsx",
+      "filePath": "packages/ui/src/ui/switch.tsx",
+      "summary": "基于 Radix UI Switch 原语封装的开关组件。",
+      "tags": ["react", "switch", "Radix UI", "UI原语"],
+      "complexity": "low",
+      "lineCount": 29
+    },
+    {
+      "id": "file:packages/ui/src/ui/tabs.tsx",
+      "type": "file",
+      "name": "tabs.tsx",
+      "filePath": "packages/ui/src/ui/tabs.tsx",
+      "summary": "基于 Radix UI Tabs 原语封装的标签页组件集，导出 Tabs/TabsList/TabsTrigger/TabsContent。",
+      "tags": ["react", "tabs", "Radix UI", "UI原语"],
+      "complexity": "low",
+      "lineCount": 55
+    },
+    {
+      "id": "file:packages/ui/src/ui/tooltip.tsx",
+      "type": "file",
+      "name": "tooltip.tsx",
+      "filePath": "packages/ui/src/ui/tooltip.tsx",
+      "summary": "基于 Radix UI Tooltip 原语封装的工具提示组件集，导出 Tooltip/TooltipTrigger/TooltipContent/TooltipProvider。",
+      "tags": ["react", "tooltip", "Radix UI", "UI原语"],
+      "complexity": "low",
+      "lineCount": 28
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:packages/ui/src/chat/ChatWindow.tsx",
+      "target": "file:packages/ui/src/chat/MiraRuntimeProvider.tsx",
+      "type": "imports",
+      "label": "导入 MiraRuntimeProvider"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ChatWindow.tsx",
+      "target": "file:packages/ui/src/chat/ModelSelector.tsx",
+      "type": "imports",
+      "label": "导入 ModelSelector, loadModelChoice, loadModeChoice"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ChatWindow.tsx",
+      "target": "file:packages/ui/src/chat/types.ts",
+      "type": "imports",
+      "label": "导入 AgentMode 类型"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ChatWindow.tsx",
+      "target": "file:packages/ui/src/chat/mira-runtime.ts",
+      "type": "imports",
+      "label": "导入 MiraMessage 类型"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ChatWindow.tsx",
+      "target": "file:packages/ui/src/chat/PermissionDialog.tsx",
+      "type": "imports",
+      "label": "导入 PermissionDialog"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ChatWindow.tsx",
+      "target": "file:packages/ui/src/chat/QuestionDialog.tsx",
+      "type": "imports",
+      "label": "导入 QuestionDialog"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ChatWindow.tsx",
+      "target": "file:packages/ui/src/chat/ThinkingBlock.tsx",
+      "type": "imports",
+      "label": "导入 ThinkingBlock"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ChatWindow.tsx",
+      "target": "file:packages/ui/src/chat/VoiceInput.tsx",
+      "type": "imports",
+      "label": "导入 VoiceInput"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ChatWindow.tsx",
+      "target": "file:packages/ui/src/services/agent.service.ts",
+      "type": "imports",
+      "label": "导入 AgentService"
+    },
+    {
+      "source": "func:ChatWindow.tsx:ChatInner",
+      "target": "func:ChatWindow.tsx:WelcomeScreen",
+      "type": "calls",
+      "label": "渲染 WelcomeScreen"
+    },
+    {
+      "source": "func:ChatWindow.tsx:ChatInner",
+      "target": "func:ChatWindow.tsx:MessageActions",
+      "type": "calls",
+      "label": "渲染 MessageActions"
+    },
+    {
+      "source": "func:ChatWindow.tsx:ChatContent",
+      "target": "func:ChatWindow.tsx:ChatInner",
+      "type": "calls",
+      "label": "渲染 ChatInner"
+    },
+    {
+      "source": "file:packages/ui/src/chat/MiraRuntimeProvider.tsx",
+      "target": "file:packages/ui/src/hooks/useMiraChat.ts",
+      "type": "imports",
+      "label": "导入 useMiraChat"
+    },
+    {
+      "source": "file:packages/ui/src/chat/MiraRuntimeProvider.tsx",
+      "target": "file:packages/ui/src/chat/mira-runtime.ts",
+      "type": "imports",
+      "label": "导入 convertMessage, MiraMessage"
+    },
+    {
+      "source": "file:packages/ui/src/chat/MiraRuntimeProvider.tsx",
+      "target": "file:packages/ui/src/chat/ModelSelector.tsx",
+      "type": "imports",
+      "label": "导入 ModelOption 类型"
+    },
+    {
+      "source": "file:packages/ui/src/chat/MiraRuntimeProvider.tsx",
+      "target": "file:packages/ui/src/chat/types.ts",
+      "type": "imports",
+      "label": "导入 AgentMode 类型"
+    },
+    {
+      "source": "func:MiraRuntimeProvider.tsx:MiraRuntimeProvider",
+      "target": "func:useMiraChat.ts:useMiraChat",
+      "type": "calls",
+      "label": "调用 useMiraChat hook"
+    },
+    {
+      "source": "func:MiraRuntimeProvider.tsx:MiraRuntimeProvider",
+      "target": "func:mira-runtime.ts:convertMessage",
+      "type": "calls",
+      "label": "调用 convertMessage 转换消息"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ModelSelector.tsx",
+      "target": "file:packages/ui/src/chat/types.ts",
+      "type": "imports",
+      "label": "导入 AgentMode 类型"
+    },
+    {
+      "source": "func:ModelSelector.tsx:getEnabledModels",
+      "target": "func:ModelSelector.tsx:loadProviders",
+      "type": "calls",
+      "label": "调用 loadProviders 加载配置"
+    },
+    {
+      "source": "func:ModelSelector.tsx:ModelSelector",
+      "target": "func:ModelSelector.tsx:getEnabledModels",
+      "type": "calls",
+      "label": "获取可用模型列表"
+    },
+    {
+      "source": "file:packages/ui/src/chat/PermissionDialog.tsx",
+      "target": "file:packages/ui/src/ui/Modal.tsx",
+      "type": "imports",
+      "label": "导入 Modal"
+    },
+    {
+      "source": "file:packages/ui/src/chat/QuestionDialog.tsx",
+      "target": "file:packages/ui/src/ui/Modal.tsx",
+      "type": "imports",
+      "label": "导入 Modal"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ToolCallView.tsx",
+      "target": "file:packages/ui/src/chat/types.ts",
+      "type": "imports",
+      "label": "导入 ToolCallInfo 类型"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ToolPalette.tsx",
+      "target": "file:packages/ui/src/services/agent.service.ts",
+      "type": "imports",
+      "label": "导入 AgentService, ToolInfo, ToolResult"
+    },
+    {
+      "source": "file:packages/ui/src/chat/tool-views/ToolGenericView.tsx",
+      "target": "file:packages/ui/src/chat/types.ts",
+      "type": "imports",
+      "label": "导入 ToolCallInfo 类型"
+    },
+    {
+      "source": "file:packages/ui/src/chat/mira-runtime.ts",
+      "target": "file:packages/ui/src/chat/types.ts",
+      "type": "imports",
+      "label": "导入 Message, ToolCallInfo 类型"
+    },
+    {
+      "source": "file:packages/ui/src/hooks/useAgent.ts",
+      "target": "file:packages/ui/src/services/agent.service.ts",
+      "type": "imports",
+      "label": "导入 AgentService, ToolInfo, SkillInfo"
+    },
+    {
+      "source": "func:useAgent.ts:useTools",
+      "target": "func:ChatWindow.tsx:ChatWindow",
+      "type": "provides",
+      "label": "为 ChatWindow 提供工具列表"
+    },
+    {
+      "source": "file:packages/ui/src/hooks/useMiraChat.ts",
+      "target": "file:packages/ui/src/chat/mira-runtime.ts",
+      "type": "imports",
+      "label": "导入 MiraMessage 及工具函数"
+    },
+    {
+      "source": "file:packages/ui/src/hooks/useMiraChat.ts",
+      "target": "file:packages/ui/src/chat/types.ts",
+      "type": "imports",
+      "label": "导入 AgentMode 类型"
+    },
+    {
+      "source": "file:packages/ui/src/hooks/useMiraChat.ts",
+      "target": "file:packages/ui/src/chat/ModelSelector.tsx",
+      "type": "imports",
+      "label": "导入 ModelOption 类型"
+    },
+    {
+      "source": "file:packages/ui/src/hooks/useMiraChat.ts",
+      "target": "file:packages/ui/src/services/agent.service.ts",
+      "type": "imports",
+      "label": "导入 AgentService, AgentEvent, ToolResult"
+    },
+    {
+      "source": "file:packages/ui/src/hooks/useMiraChat.ts",
+      "target": "file:packages/ui/src/sidebar/SettingsDialog.tsx",
+      "type": "imports",
+      "label": "导入 getProviderById, getSettings"
+    },
+    {
+      "source": "file:packages/ui/src/hooks/useMiraChat.ts",
+      "target": "file:packages/ui/src/services/agent.service.ts",
+      "type": "calls",
+      "label": "调用 AgentService.startStream/stopStream/onEvent/replyPermission"
+    },
+    {
+      "source": "func:useMiraChat.ts:useMiraChat",
+      "target": "func:mira-runtime.ts:createMiraMessage",
+      "type": "calls",
+      "label": "创建消息实例"
+    },
+    {
+      "source": "func:useMiraChat.ts:useMiraChat",
+      "target": "func:mira-runtime.ts:updateMiraMessageContent",
+      "type": "calls",
+      "label": "更新消息内容"
+    },
+    {
+      "source": "func:useMiraChat.ts:useMiraChat",
+      "target": "func:mira-runtime.ts:addToolCallToMessage",
+      "type": "calls",
+      "label": "添加工具调用到消息"
+    },
+    {
+      "source": "func:useMiraChat.ts:useMiraChat",
+      "target": "func:mira-runtime.ts:updateToolCallInMessage",
+      "type": "calls",
+      "label": "更新工具调用状态"
+    },
+    {
+      "source": "file:packages/ui/src/lib/utils.ts",
+      "target": "file:packages/ui/src/ui/dialog.tsx",
+      "type": "provides",
+      "label": "cn() 供 dialog.tsx 使用"
+    },
+    {
+      "source": "file:packages/ui/src/ui/Modal.tsx",
+      "target": "file:packages/ui/src/ui/dialog.tsx",
+      "type": "imports",
+      "label": "导入 Dialog/DialogContent/DialogHeader/DialogTitle"
+    },
+    {
+      "source": "file:packages/ui/src/ui/dialog.tsx",
+      "target": "file:packages/ui/src/lib/utils.ts",
+      "type": "imports",
+      "label": "导入 cn 工具函数"
+    },
+    {
+      "source": "file:packages/ui/src/sidebar/EditProjectDialog.tsx",
+      "target": "file:packages/ui/src/ui/Modal.tsx",
+      "type": "imports",
+      "label": "导入 Modal"
+    },
+    {
+      "source": "file:packages/ui/src/sidebar/NewProjectDialog.tsx",
+      "target": "file:packages/ui/src/ui/Modal.tsx",
+      "type": "imports",
+      "label": "导入 Modal"
+    },
+    {
+      "source": "file:packages/ui/src/sidebar/NewProjectDialog.tsx",
+      "target": "file:packages/ui/src/services/dialog.service.ts",
+      "type": "imports",
+      "label": "导入 DialogService"
+    },
+    {
+      "source": "func:ModelSelector.tsx:ModelSelector",
+      "target": "func:ChatWindow.tsx:ChatInner",
+      "type": "provides",
+      "label": "为 ChatInner 提供模型/模式选择"
+    },
+    {
+      "source": "func:ChatWindow.tsx:ChatInner",
+      "target": "func:ChatWindow.tsx:PermissionDialog",
+      "type": "contains",
+      "label": "包含权限对话框渲染"
+    },
+    {
+      "source": "func:ChatWindow.tsx:ChatInner",
+      "target": "func:ChatWindow.tsx:QuestionDialog",
+      "type": "contains",
+      "label": "包含问题对话框渲染"
+    },
+    {
+      "source": "file:packages/ui/src/chat/ToolPalette.tsx",
+      "target": "file:packages/ui/src/hooks/useAgent.ts",
+      "type": "related",
+      "label": "功能相关：都加载工具列表"
+    },
+    {
+      "source": "file:packages/ui/src/chat/PermissionDialog.tsx",
+      "target": "file:packages/ui/src/chat/QuestionDialog.tsx",
+      "type": "related",
+      "label": "功能相关：用户交互对话框对"
+    }
+  ]
+}

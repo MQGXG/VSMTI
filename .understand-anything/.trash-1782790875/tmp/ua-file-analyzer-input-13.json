@@ -1,0 +1,70 @@
+{
+  "batchImportData": {
+    "docs/plans/2026-06-11-agent-loop-core-design.md": [],
+    "docs/plans/2026-06-11-agent-loop-core.md": [],
+    "docs/plans/2026-06-12-fix-tools-execution-plan.md": [],
+    "docs/plans/2026-06-12-ui-ux-redesign-plan.md": [],
+    "docs/plans/2026-06-12-ui-ux-redesign.md": [],
+    "docs/plans/2026-06-14-phases-2-5-plus-extensions.md": [],
+    "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md": [],
+    "docs/plans/2026-06-16-mira-agent-core-optimization.md": [],
+    "docs/plans/2026-06-16-mira-dual-mode-platform.md": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "docs/plans/2026-06-11-agent-loop-core-design.md",
+      "language": "markdown",
+      "sizeLines": 39,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plans/2026-06-11-agent-loop-core.md",
+      "language": "markdown",
+      "sizeLines": 485,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plans/2026-06-12-fix-tools-execution-plan.md",
+      "language": "markdown",
+      "sizeLines": 300,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plans/2026-06-12-ui-ux-redesign-plan.md",
+      "language": "markdown",
+      "sizeLines": 120,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plans/2026-06-12-ui-ux-redesign.md",
+      "language": "markdown",
+      "sizeLines": 90,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plans/2026-06-14-phases-2-5-plus-extensions.md",
+      "language": "markdown",
+      "sizeLines": 629,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md",
+      "language": "markdown",
+      "sizeLines": 1030,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plans/2026-06-16-mira-agent-core-optimization.md",
+      "language": "markdown",
+      "sizeLines": 672,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/plans/2026-06-16-mira-dual-mode-platform.md",
+      "language": "markdown",
+      "sizeLines": 753,
+      "fileCategory": "docs"
+    }
+  ]
+}

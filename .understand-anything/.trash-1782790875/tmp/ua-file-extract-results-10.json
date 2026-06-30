@@ -1,0 +1,824 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 16,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": ".env.example",
+      "language": "config",
+      "fileCategory": "config",
+      "totalLines": 7,
+      "nonEmptyLines": 7,
+      "definitions": [
+        {
+          "name": "OPENAI_API_KEY",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 1,
+          "endLine": 1
+        },
+        {
+          "name": "OPENAI_MODEL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 2,
+          "endLine": 2
+        },
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 3,
+          "endLine": 3
+        },
+        {
+          "name": "ANTHROPIC_MODEL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 4,
+          "endLine": 4
+        },
+        {
+          "name": "OLLAMA_BASE_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 5,
+          "endLine": 5
+        },
+        {
+          "name": "JWT_SECRET",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 6,
+          "endLine": 6
+        },
+        {
+          "name": "NEXT_PUBLIC_API_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 7,
+          "endLine": 7
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 7
+      }
+    },
+    {
+      "path": "AGENTS.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 381,
+      "nonEmptyLines": 340,
+      "sections": [
+        {
+          "heading": "Mira 项目文档",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "项目概述",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "技术栈",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "目录结构",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "包依赖关系",
+          "level": 2,
+          "line": 209
+        },
+        {
+          "heading": "Agent 模式",
+          "level": 2,
+          "line": 227
+        },
+        {
+          "heading": "工具清单（32 个）",
+          "level": 2,
+          "line": 239
+        },
+        {
+          "heading": "LLM Provider 支持",
+          "level": 2,
+          "line": 275
+        },
+        {
+          "heading": "高级特性",
+          "level": 2,
+          "line": 291
+        },
+        {
+          "heading": "Goal Judge（任务完成度验证）",
+          "level": 3,
+          "line": 293
+        },
+        {
+          "heading": "Max Mode（并行采样选优）",
+          "level": 3,
+          "line": 297
+        },
+        {
+          "heading": "Dream/Distill（记忆进化）",
+          "level": 3,
+          "line": 301
+        },
+        {
+          "heading": "Dynamic Workflow",
+          "level": 3,
+          "line": 305
+        },
+        {
+          "heading": "Subagent 管理",
+          "level": 3,
+          "line": 308
+        },
+        {
+          "heading": "MCP（Model Context Protocol）",
+          "level": 3,
+          "line": 311
+        },
+        {
+          "heading": "LSP（Language Server Protocol）",
+          "level": 3,
+          "line": 314
+        },
+        {
+          "heading": "IPC 通信",
+          "level": 2,
+          "line": 317
+        },
+        {
+          "heading": "数据库",
+          "level": 2,
+          "line": 337
+        },
+        {
+          "heading": "开发指南",
+          "level": 2,
+          "line": 349
+        },
+        {
+          "heading": "环境要求",
+          "level": 2,
+          "line": 376
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 20
+      }
+    },
+    {
+      "path": "CHANGELOG.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 56,
+      "nonEmptyLines": 47,
+      "sections": [
+        {
+          "heading": "更新日志",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "[1.0.0] - 2026-06-15",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "新增",
+          "level": 3,
+          "line": 5
+        },
+        {
+          "heading": "优化",
+          "level": 3,
+          "line": 19
+        },
+        {
+          "heading": "修复",
+          "level": 3,
+          "line": 29
+        },
+        {
+          "heading": "清理",
+          "level": 3,
+          "line": 32
+        },
+        {
+          "heading": "[0.9.0] - 2026-06-11",
+          "level": 2,
+          "line": 40
+        },
+        {
+          "heading": "新增",
+          "level": 3,
+          "line": 42
+        },
+        {
+          "heading": "[0.1.0] - 2026-06-01",
+          "level": 2,
+          "line": 50
+        },
+        {
+          "heading": "新增",
+          "level": 3,
+          "line": 52
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 10
+      }
+    },
+    {
+      "path": "CONTEXT.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 122,
+      "nonEmptyLines": 92,
+      "sections": [
+        {
+          "heading": "Mira 开发上下文",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "当前阶段",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "关键架构决策",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "包结构",
+          "level": 2,
+          "line": 20
+        },
+        {
+          "heading": "Agent 系统",
+          "level": 2,
+          "line": 30
+        },
+        {
+          "heading": "消息流",
+          "level": 3,
+          "line": 32
+        },
+        {
+          "heading": "事件类型",
+          "level": 3,
+          "line": 42
+        },
+        {
+          "heading": "LLM Provider 支持",
+          "level": 2,
+          "line": 57
+        },
+        {
+          "heading": "高级特性",
+          "level": 2,
+          "line": 69
+        },
+        {
+          "heading": "Goal Judge",
+          "level": 3,
+          "line": 71
+        },
+        {
+          "heading": "Max Mode",
+          "level": 3,
+          "line": 74
+        },
+        {
+          "heading": "Dynamic Workflow",
+          "level": 3,
+          "line": 77
+        },
+        {
+          "heading": "Dream/Distill",
+          "level": 3,
+          "line": 80
+        },
+        {
+          "heading": "Subagent",
+          "level": 3,
+          "line": 84
+        },
+        {
+          "heading": "MCP",
+          "level": 3,
+          "line": 87
+        },
+        {
+          "heading": "LSP",
+          "level": 3,
+          "line": 90
+        },
+        {
+          "heading": "日志系统",
+          "level": 2,
+          "line": 93
+        },
+        {
+          "heading": "常见问题",
+          "level": 2,
+          "line": 98
+        },
+        {
+          "heading": "API Key 未配置",
+          "level": 3,
+          "line": 100
+        },
+        {
+          "heading": "Playwright 未安装",
+          "level": 3,
+          "line": 108
+        },
+        {
+          "heading": "下一步优化方向",
+          "level": 2,
+          "line": 115
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 21
+      }
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 102,
+      "nonEmptyLines": 77,
+      "sections": [
+        {
+          "heading": "贡献指南",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "开发环境",
+          "level": 2,
+          "line": 5
+        },
+        {
+          "heading": "代码规范",
+          "level": 2,
+          "line": 20
+        },
+        {
+          "heading": "TypeScript / React",
+          "level": 3,
+          "line": 22
+        },
+        {
+          "heading": "工具定义",
+          "level": 3,
+          "line": 30
+        },
+        {
+          "heading": "提交信息",
+          "level": 3,
+          "line": 48
+        },
+        {
+          "heading": "分支管理",
+          "level": 2,
+          "line": 61
+        },
+        {
+          "heading": "PR 流程",
+          "level": 2,
+          "line": 68
+        },
+        {
+          "heading": "测试",
+          "level": 2,
+          "line": 77
+        },
+        {
+          "heading": "目录结构",
+          "level": 2,
+          "line": 90
+        },
+        {
+          "heading": "包结构",
+          "level": 2,
+          "line": 94
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 11
+      }
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 121,
+      "nonEmptyLines": 101,
+      "sections": [
+        {
+          "heading": "Mira",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "技术栈",
+          "level": 2,
+          "line": 5
+        },
+        {
+          "heading": "快速开始",
+          "level": 2,
+          "line": 18
+        },
+        {
+          "heading": "项目结构",
+          "level": 2,
+          "line": 33
+        },
+        {
+          "heading": "桌面特性",
+          "level": 2,
+          "line": 72
+        },
+        {
+          "heading": "开发指南",
+          "level": 2,
+          "line": 92
+        },
+        {
+          "heading": "环境要求",
+          "level": 2,
+          "line": 116
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 7
+      }
+    },
+    {
+      "path": "SECURITY.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 56,
+      "nonEmptyLines": 40,
+      "sections": [
+        {
+          "heading": "安全策略",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "API Key 保护",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "权限系统",
+          "level": 2,
+          "line": 9
+        },
+        {
+          "heading": "数据存储",
+          "level": 2,
+          "line": 28
+        },
+        {
+          "heading": "网络安全",
+          "level": 2,
+          "line": 38
+        },
+        {
+          "heading": "权限规则",
+          "level": 2,
+          "line": 44
+        },
+        {
+          "heading": "报告漏洞",
+          "level": 2,
+          "line": 54
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 7
+      }
+    },
+    {
+      "path": "components.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 20,
+      "nonEmptyLines": 20,
+      "sections": [
+        {
+          "heading": "$schema",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "style",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "rsc",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "tsx",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "tailwind",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "aliases",
+          "level": 1,
+          "line": 13
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 6
+      }
+    },
+    {
+      "path": "electron-builder.yml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 35,
+      "nonEmptyLines": 29,
+      "sections": [
+        {
+          "heading": "appId",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "productName",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "copyright",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "directories",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "files",
+          "level": 1,
+          "line": 9
+        },
+        {
+          "heading": "extraResources",
+          "level": 1,
+          "line": 14
+        },
+        {
+          "heading": "win",
+          "level": 1,
+          "line": 16
+        },
+        {
+          "heading": "mac",
+          "level": 1,
+          "line": 23
+        },
+        {
+          "heading": "linux",
+          "level": 1,
+          "line": 30
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 9
+      }
+    },
+    {
+      "path": "index.html",
+      "language": "html",
+      "fileCategory": "markup",
+      "totalLines": 13,
+      "nonEmptyLines": 13,
+      "metrics": {}
+    },
+    {
+      "path": "package.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 66,
+      "nonEmptyLines": 66,
+      "sections": [
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "description",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "main",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "scripts",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "dependencies",
+          "level": 1,
+          "line": 19
+        },
+        {
+          "heading": "optionalDependencies",
+          "level": 1,
+          "line": 42
+        },
+        {
+          "heading": "devDependencies",
+          "level": 1,
+          "line": 45
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 8
+      }
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 7,
+      "nonEmptyLines": 7,
+      "sections": [
+        {
+          "heading": "packages",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "allowBuilds",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "nodeLinker",
+          "level": 1,
+          "line": 7
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 3
+      }
+    },
+    {
+      "path": "setup.ps1",
+      "language": "powershell",
+      "fileCategory": "script",
+      "totalLines": 26,
+      "nonEmptyLines": 22,
+      "metrics": {}
+    },
+    {
+      "path": "start.ps1",
+      "language": "powershell",
+      "fileCategory": "script",
+      "totalLines": 51,
+      "nonEmptyLines": 43,
+      "metrics": {}
+    },
+    {
+      "path": "start.sh",
+      "language": "shell",
+      "fileCategory": "script",
+      "totalLines": 29,
+      "nonEmptyLines": 23,
+      "functions": [
+        {
+          "name": "start_dev",
+          "startLine": 5,
+          "endLine": 15,
+          "params": []
+        },
+        {
+          "name": "start_package",
+          "startLine": 17,
+          "endLine": 23,
+          "params": []
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "tsconfig.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 27,
+      "nonEmptyLines": 27,
+      "sections": [
+        {
+          "heading": "compilerOptions",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "include",
+          "level": 1,
+          "line": 25
+        },
+        {
+          "heading": "exclude",
+          "level": 1,
+          "line": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 3
+      }
+    }
+  ]
+}

@@ -1,11 +1,11 @@
-export interface RouteConfig {
+interface RouteConfig {
   baseUrl: string
   apiKey: string
   headers?: Record<string, string>
   timeout?: number
 }
 
-export class RouteClient {
+class RouteClient {
   constructor(private config: RouteConfig) {}
 
   getBaseUrl(): string {

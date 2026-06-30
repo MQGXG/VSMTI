@@ -1,0 +1,244 @@
+{
+  "nodes": [
+    {
+      "id": "file:docs/api.md",
+      "type": "file",
+      "name": "api.md",
+      "filePath": "docs/api.md",
+      "summary": "Mira 项目的完整 API 文档，详细记录了 Electron IPC 通信的所有通道和方法。涵盖 Agent 执行、会话管理、项目管理、配置、记忆、Goal、Dream/Distill、Skill、子 Agent、任务管理、Sidecar、安全存储、文件对话框和窗口控制等 14 个 IPC 模块的接口定义，包含使用示例代码。",
+      "tags": ["api", "documentation", "ipc", "electron", "typescript", "接口文档"],
+      "complexity": 1,
+      "metadata": {
+        "totalLines": 161,
+        "language": "markdown",
+        "category": "docs"
+      }
+    },
+    {
+      "id": "file:docs/architecture.md",
+      "type": "file",
+      "name": "architecture.md",
+      "filePath": "docs/architecture.md",
+      "summary": "Mira 项目的完整架构文档，描述了四层包架构（@mira/core、@mira/electron、@mira/ui、@mira/desktop）、AI 对话流/工具执行流/记忆注入流/子 Agent 流等数据流、Agent Core 核心模块（主循环/LLM 分层/工具系统/权限系统/记忆系统/上下文管理）、高级特性（Goal Judge/Max Mode/Dynamic Workflow/Dream-Distill/Subagent 管理）、IPC 通信层、数据库 Schema、配置系统和关键设计决策。",
+      "tags": ["architecture", "documentation", "design", "system-design", "agent-core", "数据流"],
+      "complexity": 2,
+      "metadata": {
+        "totalLines": 426,
+        "language": "markdown",
+        "category": "docs"
+      }
+    },
+    {
+      "id": "file:docs/deployment.md",
+      "type": "file",
+      "name": "deployment.md",
+      "filePath": "docs/deployment.md",
+      "summary": "Mira 项目的部署文档，涵盖开发环境配置（Node.js 18+/pnpm 8+）、跨平台打包命令（Windows/macOS/Linux）、便携模式分发策略、数据目录结构、全局和项目级配置方式、环境变量引用语法以及常见故障排除方法。",
+      "tags": ["deployment", "documentation", "packaging", "configuration", "cross-platform", "便携模式"],
+      "complexity": 1,
+      "metadata": {
+        "totalLines": 144,
+        "language": "markdown",
+        "category": "docs"
+      }
+    },
+    {
+      "id": "file:docs/learn-claude-code-essentials.md",
+      "type": "file",
+      "name": "learn-claude-code-essentials.md",
+      "filePath": "docs/learn-claude-code-essentials.md",
+      "summary": "learn-claude-code 课程精华参考文档，系统性总结了 20 章 Agent 机制的核心模式，包括：Agent Loop 最简循环、Tool Dispatch 工具分发、三级权限管线、Hook 扩展系统、TodoWrite 任务规划、Subagent 子智能体、Skill 技能加载、Context Compact 四层压缩管线、Memory 记忆系统、System Prompt 组装、Error Recovery 错误恢复、Task 任务系统、Background 后台任务、Cron 定时调度、Teams 多 Agent 协作、Protocols 协议状态机、Autonomous 自治认领、Worktree 隔离、MCP 插件等，并附有 CLI Agent 与 GUI Agent 的架构差异对比。",
+      "tags": ["reference", "documentation", "agent-patterns", "learn-claude-code", "设计模式", "核心机制"],
+      "complexity": 3,
+      "metadata": {
+        "totalLines": 504,
+        "language": "markdown",
+        "category": "docs"
+      }
+    },
+    {
+      "id": "file:docs/learn-claude-code-vs-omniagent.md",
+      "type": "file",
+      "name": "learn-claude-code-vs-omniagent.md",
+      "filePath": "docs/learn-claude-code-vs-omniagent.md",
+      "summary": "learn-claude-code 课程与 Mira 实现的对照分析文档，将 20 个课程机制（s01-s20）逐一映射到 Mira 的 TypeScript 源码实现，并列出 6 项额外实现（LSP、Goal Judge、Max Mode、Dream-Distill、Dynamic Workflow、Gemini 协议），评估所有机制均已完整实现，记录了从 Python/FastAPI 迁移到全 TypeScript 架构的演进路径。",
+      "tags": ["comparison", "documentation", "implementation-status", "migración", "课程对照"],
+      "complexity": 2,
+      "metadata": {
+        "totalLines": 60,
+        "language": "markdown",
+        "category": "docs"
+      }
+    },
+    {
+      "id": "file:docs/monorepo-design.md",
+      "type": "file",
+      "name": "monorepo-design.md",
+      "filePath": "docs/monorepo-design.md",
+      "summary": "Mira Monorepo 架构设计文档，描述了基于 pnpm workspace 的四包架构：@mira/core（核心逻辑，零外部依赖）、@mira/electron（Electron 主进程）、@mira/ui（React 前端组件）、@mira/desktop（应用壳），包含详细的目录结构、包描述、依赖关系图、开发命令以及添加新工具/Provider/模式/IPC 模块的扩展指南。",
+      "tags": ["monorepo", "documentation", "pnpm", "package-architecture", "扩展指南", "workspace"],
+      "complexity": 2,
+      "metadata": {
+        "totalLines": 206,
+        "language": "markdown",
+        "category": "docs"
+      }
+    },
+    {
+      "id": "file:docs/ref-agent-patterns.md",
+      "type": "file",
+      "name": "ref-agent-patterns.md",
+      "filePath": "docs/ref-agent-patterns.md",
+      "summary": "Mira 开发参考的 Agent 模式源码手册，综合参考 OpenCode（178k★）、Codex CLI（93.3k★）、learn-claude-code（68.2k★）、Claude Code 官方/复刻、MiMo-Code 等六大开源项目，系统性地梳理了 Agent 核心循环、三级权限管线、Hook 扩展系统、SubAgent 模式（含 Single-Writer 增强）、四层上下文压缩管线、记忆系统（含四层记忆架构）、权限模型（OpenCode 通配符）、工程化规范（Codex）、多 Agent 协作模式（工作流引擎/团队模式）、设计原则速查表、Mira 当前架构对照索引及源码获取方式。",
+      "tags": ["reference", "documentation", "agent-patterns", "源码手册", "多项目参考", "设计原则"],
+      "complexity": 3,
+      "metadata": {
+        "totalLines": 885,
+        "language": "markdown",
+        "category": "docs"
+      }
+    },
+    {
+      "id": "file:docs/testing.md",
+      "type": "file",
+      "name": "testing.md",
+      "filePath": "docs/testing.md",
+      "summary": "Mira 项目的测试指南，描述了基于 Vitest 的测试框架配置，包含测试文件结构（core/ui/electron 三个包的 __tests__ 目录）、单元测试/Mock/集成测试编写规范、冒烟测试/性能测试模式、覆盖率报告生成以及 GitHub Actions CI/CD 工作流配置。",
+      "tags": ["testing", "documentation", "vitest", "ci-cd", "测试规范", "覆盖率"],
+      "complexity": 1,
+      "metadata": {
+        "totalLines": 188,
+        "language": "markdown",
+        "category": "docs"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:docs/api.md",
+      "target": "file:docs/architecture.md",
+      "type": "references",
+      "label": "API 通道在架构文档的 IPC 通信层中有对应说明"
+    },
+    {
+      "source": "file:docs/api.md",
+      "target": "file:docs/monorepo-design.md",
+      "type": "references",
+      "label": "IPC 模块对应 monorepo 中 @mira/electron 包的 ipc/ 目录"
+    },
+    {
+      "source": "file:docs/architecture.md",
+      "target": "file:docs/api.md",
+      "type": "references",
+      "label": "架构文档的 IPC 通信层与 API 文档的通道定义互相对照"
+    },
+    {
+      "source": "file:docs/architecture.md",
+      "target": "file:docs/monorepo-design.md",
+      "type": "references",
+      "label": "包架构和依赖关系在 monorepo 设计文档中有详细描述"
+    },
+    {
+      "source": "file:docs/architecture.md",
+      "target": "file:docs/learn-claude-code-essentials.md",
+      "type": "references",
+      "label": "架构文档的 Agent Core 模块设计参考了 learn-claude-code 的核心模式"
+    },
+    {
+      "source": "file:docs/architecture.md",
+      "target": "file:docs/ref-agent-patterns.md",
+      "type": "references",
+      "label": "架构文档的设计决策与 Agent 模式源码手册中的设计原则相对应"
+    },
+    {
+      "source": "file:docs/architecture.md",
+      "target": "file:docs/testing.md",
+      "type": "references",
+      "label": "架构文档描述的各模块对应测试指南中的测试文件结构"
+    },
+    {
+      "source": "file:docs/deployment.md",
+      "target": "file:docs/architecture.md",
+      "type": "references",
+      "label": "部署配置项（provider/model/apiKey 等）在架构文档的配置系统中有说明"
+    },
+    {
+      "source": "file:docs/deployment.md",
+      "target": "file:docs/monorepo-design.md",
+      "type": "references",
+      "label": "打包部署命令与 monorepo 的开发命令相对应"
+    },
+    {
+      "source": "file:docs/learn-claude-code-essentials.md",
+      "target": "file:docs/learn-claude-code-vs-omniagent.md",
+      "type": "references",
+      "label": "课程精华内容与 Mira 实现对照表互相引用"
+    },
+    {
+      "source": "file:docs/learn-claude-code-essentials.md",
+      "target": "file:docs/ref-agent-patterns.md",
+      "type": "references",
+      "label": "两份文档共享相同的学习参考来源（learn-claude-code 仓库）"
+    },
+    {
+      "source": "file:docs/learn-claude-code-vs-omniagent.md",
+      "target": "file:docs/learn-claude-code-essentials.md",
+      "type": "references",
+      "label": "对照表中的每个课程机制在精华文档中有详细说明"
+    },
+    {
+      "source": "file:docs/learn-claude-code-vs-omniagent.md",
+      "target": "file:docs/monorepo-design.md",
+      "type": "references",
+      "label": "对照表中映射的源码路径对应 monorepo 的包结构"
+    },
+    {
+      "source": "file:docs/monorepo-design.md",
+      "target": "file:docs/architecture.md",
+      "type": "references",
+      "label": "monorepo 包架构与架构文档的整体架构描述一致"
+    },
+    {
+      "source": "file:docs/monorepo-design.md",
+      "target": "file:docs/api.md",
+      "type": "references",
+      "label": "添加新 IPC 模块的指南与 API 文档的通道定义相关"
+    },
+    {
+      "source": "file:docs/monorepo-design.md",
+      "target": "file:docs/deployment.md",
+      "type": "references",
+      "label": "开发命令和打包命令与部署文档的流程一致"
+    },
+    {
+      "source": "file:docs/ref-agent-patterns.md",
+      "target": "file:docs/architecture.md",
+      "type": "references",
+      "label": "源码手册中的 Mira 对应索引与架构文档的模块描述互相对照"
+    },
+    {
+      "source": "file:docs/ref-agent-patterns.md",
+      "target": "file:docs/learn-claude-code-essentials.md",
+      "type": "references",
+      "label": "两份文档共同参考 learn-claude-code 课程的相同章节"
+    },
+    {
+      "source": "file:docs/ref-agent-patterns.md",
+      "target": "file:docs/learn-claude-code-vs-omniagent.md",
+      "type": "references",
+      "label": "源码手册的架构对照索引与对照表的实现状态评估一致"
+    },
+    {
+      "source": "file:docs/ref-agent-patterns.md",
+      "target": "file:docs/testing.md",
+      "type": "references",
+      "label": "源码手册中的模块对应测试指南中的测试文件"
+    },
+    {
+      "source": "file:docs/testing.md",
+      "target": "file:docs/monorepo-design.md",
+      "type": "references",
+      "label": "测试文件结构（__tests__ 目录）遵循 monorepo 的包结构"
+    }
+  ]
+}

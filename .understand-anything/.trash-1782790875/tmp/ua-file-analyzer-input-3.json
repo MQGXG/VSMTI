@@ -1,0 +1,320 @@
+{
+  "batchImportData": {
+    "packages/core/src/__tests__/llm-sdk.test.ts": [
+      "packages/core/src/llm-sdk.ts"
+    ],
+    "packages/core/src/__tests__/message-utils.test.ts": [
+      "packages/core/src/message-utils.ts"
+    ],
+    "packages/core/src/agent-profile.ts": [
+      "packages/core/src/permission.ts"
+    ],
+    "packages/core/src/agent.ts": [
+      "packages/core/src/agent/context.ts",
+      "packages/core/src/agent/max-mode.ts",
+      "packages/core/src/agent/state-machine.ts",
+      "packages/core/src/agent/turn-processor.ts",
+      "packages/core/src/agent/turn.ts",
+      "packages/core/src/agent/utils.ts",
+      "packages/core/src/context-manager.ts",
+      "packages/core/src/dream-distill.ts",
+      "packages/core/src/execution/orchestrator.ts",
+      "packages/core/src/goal-judge.ts",
+      "packages/core/src/iteration-budget.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/memory/builtin-provider.ts",
+      "packages/core/src/memory/checkpoint-provider.ts",
+      "packages/core/src/memory/file-memory-provider.ts",
+      "packages/core/src/memory/fts-memory-provider.ts",
+      "packages/core/src/memory/manager.ts",
+      "packages/core/src/memory/vector-provider.ts",
+      "packages/core/src/message-utils.ts",
+      "packages/core/src/modes.ts",
+      "packages/core/src/permission-gate.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/permission/approval-store.ts",
+      "packages/core/src/plugin-hooks.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/session-store.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/memory.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/context.ts": [
+      "packages/core/src/lsp/code-context.ts",
+      "packages/core/src/modes.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/agent/max-mode.ts": [
+      "packages/core/src/agent/turn.ts",
+      "packages/core/src/agent/utils.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/registry.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/modes.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/turn.ts": [
+      "packages/core/src/context-manager.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/utils.ts": [
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/message-utils.ts"
+    ],
+    "packages/core/src/compaction.ts": [],
+    "packages/core/src/compose-mode.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/memory/checkpoint-provider.ts",
+      "packages/core/src/subagent-manager.ts"
+    ],
+    "packages/core/src/context-manager.ts": [
+      "packages/core/src/compaction.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/llm/schema/messages.ts",
+      "packages/core/src/memory/checkpoint-provider.ts",
+      "packages/core/src/memory/manager.ts",
+      "packages/core/src/message-utils.ts"
+    ],
+    "packages/core/src/delegate-runner.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/iteration-budget.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/permission-gate.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/registry.ts"
+    ],
+    "packages/core/src/dream-distill.ts": [
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts"
+    ],
+    "packages/core/src/failover.ts": [
+      "packages/core/src/llm-sdk.ts"
+    ],
+    "packages/core/src/goal-judge.ts": [
+      "packages/core/src/database.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts"
+    ],
+    "packages/core/src/iteration-budget.ts": [],
+    "packages/core/src/llm-sdk.ts": [
+      "packages/core/src/llm/providers/index.ts",
+      "packages/core/src/llm/schema/errors.ts",
+      "packages/core/src/llm/schema/messages.ts",
+      "packages/core/src/llm/schema/options.ts",
+      "packages/core/src/zod-converter.ts"
+    ],
+    "packages/core/src/llm/cache-policy.ts": [
+      "packages/core/src/llm/schema/options.ts"
+    ],
+    "packages/core/src/llm/schema/errors.ts": [],
+    "packages/core/src/llm/schema/messages.ts": [],
+    "packages/core/src/llm/schema/options.ts": [],
+    "packages/core/src/lsp/code-context.ts": [],
+    "packages/core/src/message-utils.ts": [
+      "packages/core/src/llm-sdk.ts"
+    ],
+    "packages/core/src/modes.ts": [
+      "packages/core/src/agent-profile.ts",
+      "packages/core/src/permission.ts"
+    ],
+    "packages/core/src/subagent-manager.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/team-bus.ts"
+    ],
+    "packages/core/src/tools/agent-tools.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/subagent-manager.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/types.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/zod-converter.ts": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "packages/core/src/__tests__/llm-sdk.test.ts",
+      "language": "typescript",
+      "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/__tests__/message-utils.test.ts",
+      "language": "typescript",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent-profile.ts",
+      "language": "typescript",
+      "sizeLines": 174,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent.ts",
+      "language": "typescript",
+      "sizeLines": 618,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/context.ts",
+      "language": "typescript",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/max-mode.ts",
+      "language": "typescript",
+      "sizeLines": 193,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/registry.ts",
+      "language": "typescript",
+      "sizeLines": 43,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/turn.ts",
+      "language": "typescript",
+      "sizeLines": 118,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/utils.ts",
+      "language": "typescript",
+      "sizeLines": 83,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/compaction.ts",
+      "language": "typescript",
+      "sizeLines": 303,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/compose-mode.ts",
+      "language": "typescript",
+      "sizeLines": 477,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/context-manager.ts",
+      "language": "typescript",
+      "sizeLines": 528,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/delegate-runner.ts",
+      "language": "typescript",
+      "sizeLines": 226,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/dream-distill.ts",
+      "language": "typescript",
+      "sizeLines": 448,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/failover.ts",
+      "language": "typescript",
+      "sizeLines": 106,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/goal-judge.ts",
+      "language": "typescript",
+      "sizeLines": 438,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/iteration-budget.ts",
+      "language": "typescript",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm-sdk.ts",
+      "language": "typescript",
+      "sizeLines": 202,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/cache-policy.ts",
+      "language": "typescript",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/schema/errors.ts",
+      "language": "typescript",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/schema/messages.ts",
+      "language": "typescript",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/schema/options.ts",
+      "language": "typescript",
+      "sizeLines": 31,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/lsp/code-context.ts",
+      "language": "typescript",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/message-utils.ts",
+      "language": "typescript",
+      "sizeLines": 147,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/modes.ts",
+      "language": "typescript",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/subagent-manager.ts",
+      "language": "typescript",
+      "sizeLines": 406,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/tools/agent-tools.ts",
+      "language": "typescript",
+      "sizeLines": 198,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/types.ts",
+      "language": "typescript",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/zod-converter.ts",
+      "language": "typescript",
+      "sizeLines": 115,
+      "fileCategory": "code"
+    }
+  ]
+}

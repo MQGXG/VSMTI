@@ -1,33 +1,33 @@
-import { ToolRegistry } from "./registry"
-import type { ToolContext, ToolResult } from "./tool"
-import type { AgentEvent } from "./types"
-import { IterationBudget } from "./iteration-budget"
-import type { LLMMessage } from "./llm-sdk"
-import { estimateTokens } from "./message-utils"
-import { pluginHooks } from "./plugin-hooks"
-import { PermissionSet, type PermissionRule } from "./permission"
-import { MemoryManager } from "./memory/manager"
-import { BuiltinMemoryProvider } from "./memory/builtin-provider"
-import { appendMessage, loadSession } from "./session-store"
-import { VectorMemoryProvider } from "./memory/vector-provider"
-import { FileMemoryProvider } from "./memory/file-memory-provider"
-import { FTSMemoryProvider } from "./memory/fts-memory-provider"
-import { CheckpointProvider } from "./memory/checkpoint-provider"
-import { evaluateToolCalls, extractResources } from "./permission-gate"
-import { setFTSProvider } from "./tools/memory"
-import { ToolOrchestrator } from "./execution/orchestrator"
-import { AgentStateMachine } from "./agent/state-machine"
-import { buildToolContext, buildSystemMessage } from "./agent/context"
-import { ApprovalStore } from "./permission/approval-store"
-import { DreamDistillManager } from "./dream-distill"
-import { ContextManager } from "./context-manager"
-import { GoalJudge } from "./goal-judge"
-import type { LLMTurnConfig } from "./agent/turn"
-import { runMaxMode, type MaxModeConfig } from "./agent/max-mode"
-import { processTurn, executeCollectedTools } from "./agent/turn-processor"
-import { detectDoomLoop } from "./agent/utils"
-import type { AgentMode } from "./modes"
-import { getModeMaxIterations, getModeSystemPromptSuffix, modeSystemPrompt } from "./modes"
+import { ToolRegistry } from "../system/registry"
+import type { ToolContext, ToolResult } from "../shared/tool"
+import type { AgentEvent } from "../types"
+import { IterationBudget } from "../task/budget"
+import type { LLMMessage } from "../llm/client"
+import { estimateTokens } from "../shared/message-utils"
+import { pluginHooks } from "../shared/plugin-hooks"
+import { PermissionSet, type PermissionRule } from "../system/permission"
+import { MemoryManager } from "../memory/manager"
+import { BuiltinMemoryProvider } from "../memory/builtin-provider"
+import { appendMessage, loadSession } from "../session/store"
+import { VectorMemoryProvider } from "../memory/vector-provider"
+import { FileMemoryProvider } from "../memory/file-memory-provider"
+import { FTSMemoryProvider } from "../memory/fts-memory-provider"
+import { CheckpointProvider } from "../memory/checkpoint-provider"
+import { evaluateToolCalls, extractResources } from "../system/permission/gate"
+import { setFTSProvider } from "../tools/knowledge/memory"
+import { ToolOrchestrator } from "../orchestrate/execution"
+import { AgentStateMachine } from "./state-machine"
+import { buildToolContext, buildSystemMessage } from "./context"
+import { ApprovalStore } from "../system/permission/approval-store"
+import { DreamDistillManager } from "../orchestrate/dream"
+import { ContextManager } from "../session/context"
+import { GoalJudge } from "../orchestrate/goal-judge"
+import type { LLMTurnConfig } from "./turn"
+import { runMaxMode, type MaxModeConfig } from "./max-mode"
+import { processTurn, executeCollectedTools } from "./turn-processor"
+import { detectDoomLoop } from "./utils"
+import type { AgentMode } from "../config/modes"
+import { getModeMaxIterations, getModeSystemPromptSuffix, modeSystemPrompt } from "../config/modes"
 
 export type PermissionReply = "allow" | "deny" | "always"
 
@@ -56,7 +56,7 @@ export interface AgentConfig {
   autoAcceptPermissions?: boolean
 }
 
-export type { AgentEvent } from "./types"
+export type { AgentEvent } from "../types"
 
 export const DEFAULT_SYSTEM = `You are Mira, an AI assistant integrated into a desktop application.
 
@@ -613,6 +613,11 @@ function tryParseAssistantPayload(content: string): { text: string; tool_calls: 
     if (parsed && typeof parsed === "object" && Array.isArray(parsed.tool_calls)) {
       return { text: parsed.text || "", tool_calls: parsed.tool_calls }
     }
-  } catch {}
+  } catch { /* JSON parse fallback */ }
   return null
 }
+
+
+
+
+

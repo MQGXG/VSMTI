@@ -1,0 +1,745 @@
+{
+  "nodes": [
+    {
+      "id": "file::packages/core/src/llm/schema/events.ts",
+      "type": "file",
+      "name": "events.ts",
+      "filePath": "packages/core/src/llm/schema/events.ts",
+      "summary": "定义 LLM 流式事件类型系统，包括 TokenUsage 接口、FinishReason 联合类型和 LLMEvent 类型（含 text-delta、tool-call、finish、error 四种事件），以及对应的工厂方法。",
+      "tags": ["llm", "schema", "events", "类型定义", "流式处理"],
+      "complexity": 1
+    },
+    {
+      "id": "type::packages/core/src/llm/schema/events.ts::TokenUsage",
+      "type": "type",
+      "name": "TokenUsage",
+      "filePath": "packages/core/src/llm/schema/events.ts",
+      "summary": "Token 使用量统计接口，包含 promptTokens、completionTokens、totalTokens 以及可选的缓存 token 计数。",
+      "tags": ["接口", "token", "统计"],
+      "complexity": 1
+    },
+    {
+      "id": "type::packages/core/src/llm/schema/events.ts::FinishReason",
+      "type": "type",
+      "name": "FinishReason",
+      "filePath": "packages/core/src/llm/schema/events.ts",
+      "summary": "LLM 响应结束原因联合类型，包含 stop、length、tool-calls、error、content-filtered、unknown 六种原因。",
+      "tags": ["联合类型", "完成原因"],
+      "complexity": 1
+    },
+    {
+      "id": "type::packages/core/src/llm/schema/events.ts::LLMEvent",
+      "type": "type",
+      "name": "LLMEvent",
+      "filePath": "packages/core/src/llm/schema/events.ts",
+      "summary": "LLM 流式事件联合类型，包含 text-delta（文本增量）、tool-call（工具调用）、finish（完成）、error（错误）四种事件，同时提供工厂方法对象。",
+      "tags": ["联合类型", "事件", "流式"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/core/src/recovery.ts",
+      "type": "file",
+      "name": "recovery.ts",
+      "filePath": "packages/core/src/recovery.ts",
+      "summary": "结构化错误恢复模块，实现错误分类（rate_limit、overload、timeout、context_overflow、auth、invalid_request、network、unknown）、指数退避重试策略、恢复状态管理和恢复建议生成。",
+      "tags": ["error-recovery", "重试", "指数退避", "错误分类", "容错"],
+      "complexity": 3
+    },
+    {
+      "id": "fn::packages/core/src/recovery.ts::classifyError",
+      "type": "function",
+      "name": "classifyError",
+      "filePath": "packages/core/src/recovery.ts",
+      "summary": "将错误消息字符串分类为 8 种错误类别之一，通过关键词匹配（如 429、503、timeout、auth 等）进行识别。",
+      "tags": ["函数", "错误分类", "关键词匹配"],
+      "complexity": 2
+    },
+    {
+      "id": "fn::packages/core/src/recovery.ts::determineAction",
+      "type": "function",
+      "name": "determineAction",
+      "filePath": "packages/core/src/recovery.ts",
+      "summary": "根据错误类别和当前恢复状态决定恢复动作（retry、retry_backoff、compact_retry、fallback、abort）。",
+      "tags": ["函数", "恢复策略", "状态决策"],
+      "complexity": 2
+    },
+    {
+      "id": "fn::packages/core/src/recovery.ts::getBackoffMs",
+      "type": "function",
+      "name": "getBackoffMs",
+      "filePath": "packages/core/src/recovery.ts",
+      "summary": "计算指数退避时间（1s, 2s, 4s... 最大 30s），并加入 30% 随机抖动以避免惊群效应。",
+      "tags": ["函数", "指数退避", "抖动"],
+      "complexity": 2
+    },
+    {
+      "id": "fn::packages/core/src/recovery.ts::createRecoveryState",
+      "type": "function",
+      "name": "createRecoveryState",
+      "filePath": "packages/core/src/recovery.ts",
+      "summary": "创建初始恢复状态对象，设置默认最大重试次数为 3。",
+      "tags": ["函数", "工厂方法", "状态管理"],
+      "complexity": 1
+    },
+    {
+      "id": "fn::packages/core/src/recovery.ts::recoveryAdvice",
+      "type": "function",
+      "name": "recoveryAdvice",
+      "filePath": "packages/core/src/recovery.ts",
+      "summary": "核心恢复建议函数：更新恢复状态、分类错误、计算退避时间、决定恢复动作，并生成中文恢复建议消息。",
+      "tags": ["函数", "核心逻辑", "恢复建议"],
+      "complexity": 3
+    },
+    {
+      "id": "type::packages/core/src/recovery.ts::RecoveryState",
+      "type": "type",
+      "name": "RecoveryState",
+      "filePath": "packages/core/src/recovery.ts",
+      "summary": "恢复状态接口，跟踪重试次数、退避时间、最大重试次数、最后错误信息、错误类别、是否已压缩上下文和是否已使用 fallback。",
+      "tags": ["接口", "状态管理"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/core/src/server-manager.ts",
+      "type": "file",
+      "name": "server-manager.ts",
+      "filePath": "packages/core/src/server-manager.ts",
+      "summary": "Sidecar 进程管理器，负责启动和管理 Core HTTP 服务子进程。支持进程启动/停止、HTTP API 请求代理、SSE 实时事件流连接，以及就绪状态检测。",
+      "tags": ["sidecar", "进程管理", "http", "sse", "子进程"],
+      "complexity": 4
+    },
+    {
+      "id": "class::packages/core/src/server-manager.ts::ServerManager",
+      "type": "class",
+      "name": "ServerManager",
+      "filePath": "packages/core/src/server-manager.ts",
+      "summary": "Sidecar 进程管理器类，封装了 Core HTTP 服务的完整生命周期管理：spawn 子进程、解析 stdout 就绪信号、发送 HTTP 请求、建立 SSE 连接、优雅停止进程。支持 dev（tsx）和 prod（node）两种运行模式。",
+      "tags": ["类", "进程管理", "sidecar", "核心组件"],
+      "complexity": 4
+    },
+    {
+      "id": "fn::packages/core/src/server-manager.ts::ServerManager.start",
+      "type": "function",
+      "name": "ServerManager.start",
+      "filePath": "packages/core/src/server-manager.ts",
+      "summary": "启动 Core 服务子进程，解析 stdout 中的 ready JSON 行获取端口和 token，支持超时检测。",
+      "tags": ["方法", "进程启动", "就绪检测"],
+      "complexity": 3
+    },
+    {
+      "id": "fn::packages/core/src/server-manager.ts::ServerManager.request",
+      "type": "function",
+      "name": "ServerManager.request",
+      "filePath": "packages/core/src/server-manager.ts",
+      "summary": "向 Core 服务发送 HTTP API 请求，支持任意方法和路径，自动携带认证 token。",
+      "tags": ["方法", "http请求", "api调用"],
+      "complexity": 2
+    },
+    {
+      "id": "fn::packages/core/src/server-manager.ts::ServerManager.connectSSE",
+      "type": "function",
+      "name": "ServerManager.connectSSE",
+      "filePath": "packages/core/src/server-manager.ts",
+      "summary": "建立 SSE（Server-Sent Events）长连接，解析 event/data/id 行，触发回调。返回断开连接的清理函数。",
+      "tags": ["方法", "sse", "实时事件流"],
+      "complexity": 3
+    },
+    {
+      "id": "fn::packages/core/src/server-manager.ts::ServerManager.stop",
+      "type": "function",
+      "name": "ServerManager.stop",
+      "filePath": "packages/core/src/server-manager.ts",
+      "summary": "优雅停止 Core 服务进程：先发 SIGTERM，等待 5 秒后强制 SIGKILL。",
+      "tags": ["方法", "进程停止", "优雅关闭"],
+      "complexity": 2
+    },
+    {
+      "id": "file::packages/core/src/server/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/core/src/server/index.ts",
+      "summary": "Sidecar 服务器模块的统一导出入口，重新导出 server.ts 和 api.ts 中的创建、启动、API 处理等函数和类型。",
+      "tags": ["入口", "导出", "re-export"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/core/src/session-fork.ts",
+      "type": "file",
+      "name": "session-fork.ts",
+      "filePath": "packages/core/src/session-fork.ts",
+      "summary": "会话分叉管理模块，支持从任意消息分支点创建新会话（fork）、合并会话、会话 CRUD 操作。参考 MiMo-Code 的 Session Fork 机制。",
+      "tags": ["session", "fork", "会话管理", "分叉", "合并"],
+      "complexity": 3
+    },
+    {
+      "id": "class::packages/core/src/session-fork.ts::SessionForkManager",
+      "type": "class",
+      "name": "SessionForkManager",
+      "filePath": "packages/core/src/session-fork.ts",
+      "summary": "会话分叉管理器类，基于 Map 存储会话数据。支持 fork（从指定消息分叉）、merge（合并两个会话）、消息 CRUD、会话列表和删除操作。",
+      "tags": ["类", "会话管理", "分叉", "核心组件"],
+      "complexity": 3
+    },
+    {
+      "id": "fn::packages/core/src/session-fork.ts::SessionForkManager.fork",
+      "type": "function",
+      "name": "SessionForkManager.fork",
+      "filePath": "packages/core/src/session-fork.ts",
+      "summary": "从现有会话分叉：复制分叉点之前的消息（深拷贝），为每条消息生成新 ID 避免冲突，创建新会话并存储。",
+      "tags": ["方法", "分叉", "消息复制"],
+      "complexity": 2
+    },
+    {
+      "id": "fn::packages/core/src/session-fork.ts::SessionForkManager.merge",
+      "type": "function",
+      "name": "SessionForkManager.merge",
+      "filePath": "packages/core/src/session-fork.ts",
+      "summary": "将源会话的消息合并到目标会话的指定位置，插入的消息 ID 附加 _merged_ 时间戳避免冲突。",
+      "tags": ["方法", "合并", "消息插入"],
+      "complexity": 2
+    },
+    {
+      "id": "fn::packages/core/src/session-fork.ts::getSessionForkManager",
+      "type": "function",
+      "name": "getSessionForkManager",
+      "filePath": "packages/core/src/session-fork.ts",
+      "summary": "全局单例工厂函数，返回全局 SessionForkManager 实例。",
+      "tags": ["函数", "单例", "工厂方法"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/core/tsconfig.json",
+      "type": "file",
+      "name": "tsconfig.json",
+      "filePath": "packages/core/tsconfig.json",
+      "summary": "@mira/core 包的 TypeScript 编译配置，目标 ES2021，使用 bundler 模块解析，开启 strict 模式、composite 项目引用、sourceMap 和声明文件生成。",
+      "tags": ["配置", "typescript", "编译选项"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/core/tsconfig.tsbuildinfo",
+      "type": "file",
+      "name": "tsconfig.tsbuildinfo",
+      "filePath": "packages/core/tsconfig.tsbuildinfo",
+      "summary": "TypeScript incremental build 缓存文件，记录编译状态以加速增量构建。",
+      "tags": ["缓存", "构建产物", "typescript"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/electron/package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "packages/electron/package.json",
+      "summary": "@mira/electron 包的 npm 配置，定义包名、版本、构建脚本、依赖（@mira/core）和对 electron 的 peer 依赖。",
+      "tags": ["配置", "package", "依赖管理"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/electron/src/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/electron/src/index.ts",
+      "summary": "@mira/electron 包的统一导出入口，重新导出窗口管理（createWindow、showMainWindow）、托盘管理（createTray）、IPC 处理注册、日志工具和 shell 环境注入。",
+      "tags": ["入口", "导出", "electron主进程"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/electron/src/ipc/agent-ipc.ts",
+      "type": "file",
+      "name": "agent-ipc.ts",
+      "filePath": "packages/electron/src/ipc/agent-ipc.ts",
+      "summary": "Agent IPC 通信模块（已废弃，由 sidecar-bridge.ts 替代）。注册多个 ipcMain.handle 处理器：工具执行、Agent 列表、工具列表、流式 Agent 执行、权限回复、停止流、批量执行、旧版 chat 接口等。",
+      "tags": ["ipc", "agent", "通信", "已废弃", "sidecar迁移"],
+      "complexity": 4
+    },
+    {
+      "id": "fn::packages/electron/src/ipc/agent-ipc.ts::registerAgentIPC",
+      "type": "function",
+      "name": "registerAgentIPC",
+      "filePath": "packages/electron/src/ipc/agent-ipc.ts",
+      "summary": "注册所有 Agent 相关的 IPC 处理器，包括工具执行、Agent 流式执行（startStream）、权限回复、停止流、Skill 命令处理等。初始化数据库并构建权限系统。",
+      "tags": ["函数", "ipc注册", "核心路由"],
+      "complexity": 4
+    },
+    {
+      "id": "fn::packages/electron/src/ipc/agent-ipc.ts::buildPermissions",
+      "type": "function",
+      "name": "buildPermissions",
+      "filePath": "packages/electron/src/ipc/agent-ipc.ts",
+      "summary": "构建 Agent 权限集：加载工作区保存的权限规则，合并模式默认权限和配置覆盖，生成最终的 PermissionSet。",
+      "tags": ["函数", "权限", "合并策略"],
+      "complexity": 2
+    },
+    {
+      "id": "fn::packages/electron/src/ipc/agent-ipc.ts::runAgentInBackground",
+      "type": "function",
+      "name": "runAgentInBackground",
+      "filePath": "packages/electron/src/ipc/agent-ipc.ts",
+      "summary": "后台执行 Agent：遍历 Agent 流式事件并通过 IPC 发送到渲染进程，处理错误和完成事件，清理活跃会话。",
+      "tags": ["函数", "agent执行", "流式事件"],
+      "complexity": 3
+    },
+    {
+      "id": "fn::packages/electron/src/ipc/agent-ipc.ts::processSkillCommand",
+      "type": "function",
+      "name": "processSkillCommand",
+      "filePath": "packages/electron/src/ipc/agent-ipc.ts",
+      "summary": "检测用户消息是否为 Skill 命令（如 /skill-name），如果是则加载对应 Skill 并构建调用消息。",
+      "tags": ["函数", "skill", "命令解析"],
+      "complexity": 2
+    },
+    {
+      "id": "file::packages/electron/src/preload/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/electron/src/preload/index.ts",
+      "summary": "Electron 预加载脚本，通过 contextBridge 暴露 electronAPI 到渲染进程。包含窗口控制、文件对话框、API Key 加密、配置系统、会话/项目管理、Agent 流式执行、权限回复、任务追踪、子 Agent、Goal、Dream/Distill、Compose 模式、记忆系统等完整 IPC 接口。",
+      "tags": ["preload", "contextBridge", "ipc", "api暴露", "渲染进程接口"],
+      "complexity": 4
+    },
+    {
+      "id": "file::packages/electron/tsconfig.json",
+      "type": "file",
+      "name": "tsconfig.json",
+      "filePath": "packages/electron/tsconfig.json",
+      "summary": "@mira/electron 包的 TypeScript 编译配置，目标 ES2020，使用 CommonJS 模块输出，通过 paths 映射 @mira/core 到本地源码。",
+      "tags": ["配置", "typescript", "编译选项"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/ui/package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "packages/ui/package.json",
+      "summary": "@mira/ui 包的 npm 配置，依赖 @mira/core、@assistant-ui/react、Radix UI 组件、React 18、Tailwind CSS、Mermaid 图表库等。",
+      "tags": ["配置", "package", "依赖管理", "ui组件"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/ui/src/chat/__tests__/zod-schema.test.ts",
+      "type": "file",
+      "name": "zod-schema.test.ts",
+      "filePath": "packages/ui/src/chat/__tests__/zod-schema.test.ts",
+      "summary": "Zod Schema 到 JSON Schema 转换的测试文件，验证简单对象、描述信息、枚举、数组、嵌套对象、联合类型以及 OpenAI function calling 格式的兼容性。",
+      "tags": ["测试", "zod", "json-schema", "schema转换"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/ui/src/chat/MessageTimingDisplay.tsx",
+      "type": "file",
+      "name": "MessageTimingDisplay.tsx",
+      "filePath": "packages/ui/src/chat/MessageTimingDisplay.tsx",
+      "summary": "消息时间展示 React 组件，使用 @assistant-ui/react 的 useMessageTiming hook 获取流式时间、token 数量、token/s 速率和工具调用次数，以紧凑格式显示在消息下方。",
+      "tags": ["组件", "react", "消息展示", "性能指标", "timing"],
+      "complexity": 1
+    },
+    {
+      "id": "fn::packages/ui/src/chat/MessageTimingDisplay.tsx::MessageTimingDisplay",
+      "type": "function",
+      "name": "MessageTimingDisplay",
+      "filePath": "packages/ui/src/chat/MessageTimingDisplay.tsx",
+      "summary": "React 函数组件，读取消息的流式时间统计并渲染为小型信息标签，包含时钟图标和多个指标的点分隔字符串。",
+      "tags": ["组件", "react", "函数组件"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/ui/src/chat/tool-router.test.ts",
+      "type": "file",
+      "name": "tool-router.test.ts",
+      "filePath": "packages/ui/src/chat/tool-router.test.ts",
+      "summary": "前端工具路由的单元测试，验证 read、search、ls、grep、中文搜索、run 等命令前缀能正确路由到对应工具，以及普通文本和未知命令返回 null。",
+      "tags": ["测试", "工具路由", "单元测试"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/ui/src/chat/tool-router.ts",
+      "type": "file",
+      "name": "tool-router.ts",
+      "filePath": "packages/ui/src/chat/tool-router.ts",
+      "summary": "前端智能工具路由模块，基于关键词和语义模式匹配用户输入到对应工具。支持 read/open/cat → read_file、search/查找/谷歌 → web_search、ls/list/dir → list_files、grep → grep、glob/查找文件 → glob、run/运行/执行 → run_code、bash/终端/命令 → bash、edit/修改 → edit_file、write/创建/写入 → write_file 等映射。",
+      "tags": ["工具路由", "关键词匹配", "智能分发", "前端"],
+      "complexity": 3
+    },
+    {
+      "id": "fn::packages/ui/src/chat/tool-router.ts::routeToolMessage",
+      "type": "function",
+      "name": "routeToolMessage",
+      "filePath": "packages/ui/src/chat/tool-router.ts",
+      "summary": "将用户自然语言输入路由到最匹配的工具，通过关键词前缀匹配和评分排序（100-75分），支持中英文双语命令。",
+      "tags": ["函数", "路由", "匹配算法", "评分"],
+      "complexity": 3
+    },
+    {
+      "id": "file::packages/ui/src/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/ui/src/index.ts",
+      "summary": "@mira/ui 包的统一导出入口，按模块分组导出所有 Service 层、通用 UI 组件、聊天组件、侧边栏组件、布局组件、React Hooks、主题上下文和类型定义（共 41 个导出项）。",
+      "tags": ["入口", "导出", "ui组件库", "barrel"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/ui/src/services/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/ui/src/services/index.ts",
+      "summary": "Service 层统一导出入口，封装 IPC 调用以解耦 UI 与 Electron。导出 SessionService、ProjectService、AgentService、ConfigService、MemoryService、DialogService。",
+      "tags": ["入口", "导出", "service层", "ipc封装"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/ui/src/services/memory.service.ts",
+      "type": "file",
+      "name": "memory.service.ts",
+      "filePath": "packages/ui/src/services/memory.service.ts",
+      "summary": "记忆系统 Service，封装 memory IPC 调用，提供 search（搜索记忆条目）和 status（获取记忆系统就绪状态和条目数量）两个方法。",
+      "tags": ["service", "记忆系统", "ipc封装"],
+      "complexity": 1
+    },
+    {
+      "id": "file::packages/ui/src/sidebar/ProjectBar.tsx",
+      "type": "file",
+      "name": "ProjectBar.tsx",
+      "filePath": "packages/ui/src/sidebar/ProjectBar.tsx",
+      "summary": "项目栏 React 组件，以垂直图标列表形式展示所有项目，支持项目切换、右键菜单（编辑/启用工作区/清除通知/关闭）、项目图标自定义、隐藏项目功能（localStorage 持久化）。",
+      "tags": ["组件", "react", "侧边栏", "项目管理", "右键菜单"],
+      "complexity": 3
+    },
+    {
+      "id": "fn::packages/ui/src/sidebar/ProjectBar.tsx::ProjectBar",
+      "type": "function",
+      "name": "ProjectBar",
+      "filePath": "packages/ui/src/sidebar/ProjectBar.tsx",
+      "summary": "React 函数组件，渲染项目图标列表和添加按钮，管理右键上下文菜单状态，处理项目切换、编辑、隐藏等交互。",
+      "tags": ["组件", "react", "函数组件"],
+      "complexity": 2
+    },
+    {
+      "id": "file::packages/ui/src/types/electron.d.ts",
+      "type": "file",
+      "name": "electron.d.ts",
+      "filePath": "packages/ui/src/types/electron.d.ts",
+      "summary": "Electron API 全局类型声明文件，定义完整的 window.electronAPI 类型，包括窗口控制、文件对话框、配置系统、会话/项目管理、Agent 流式执行、权限、任务追踪、子 Agent、Goal、Dream/Distill、Compose 模式、记忆系统等所有 IPC 接口的类型签名。",
+      "tags": ["类型声明", "electron", "全局类型", "window"],
+      "complexity": 3
+    },
+    {
+      "id": "file::packages/ui/src/ui/ResizablePanel.tsx",
+      "type": "file",
+      "name": "ResizablePanel.tsx",
+      "filePath": "packages/ui/src/ui/ResizablePanel.tsx",
+      "summary": "可调整大小的面板 React 组件，支持鼠标拖拽调整左右面板宽度、最小/最大宽度限制、localStorage 持久化宽度、折叠模式（collapsedWidth 48px）和拖拽手柄。",
+      "tags": ["组件", "react", "可调整大小", "拖拽", "布局"],
+      "complexity": 3
+    },
+    {
+      "id": "fn::packages/ui/src/ui/ResizablePanel.tsx::ResizablePanel",
+      "type": "function",
+      "name": "ResizablePanel",
+      "filePath": "packages/ui/src/ui/ResizablePanel.tsx",
+      "summary": "React 函数组件，实现左右分栏布局，通过鼠标拖拽手柄调整宽度，支持折叠状态和宽度持久化。",
+      "tags": ["组件", "react", "函数组件", "拖拽交互"],
+      "complexity": 2
+    },
+    {
+      "id": "file::packages/ui/tsconfig.json",
+      "type": "file",
+      "name": "tsconfig.json",
+      "filePath": "packages/ui/tsconfig.json",
+      "summary": "@mira/ui 包的 TypeScript 编译配置，目标 ES2020，使用 ESNext 模块和 react-jsx 转换，通过 paths 映射 @mira/core 到本地源码。",
+      "tags": ["配置", "typescript", "react", "jsx"],
+      "complexity": 1
+    },
+    {
+      "id": "file::postcss.config.js",
+      "type": "file",
+      "name": "postcss.config.js",
+      "filePath": "postcss.config.js",
+      "summary": "PostCSS 配置文件，启用 tailwindcss 和 autoprefixer 插件。",
+      "tags": ["配置", "postcss", "tailwindcss", "构建"],
+      "complexity": 1
+    }
+  ],
+  "edges": [
+    {
+      "source": "file::packages/core/src/llm/schema/events.ts",
+      "target": "type::packages/core/src/llm/schema/events.ts::TokenUsage",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/core/src/llm/schema/events.ts",
+      "target": "type::packages/core/src/llm/schema/events.ts::FinishReason",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/core/src/llm/schema/events.ts",
+      "target": "type::packages/core/src/llm/schema/events.ts::LLMEvent",
+      "type": "defines"
+    },
+    {
+      "source": "type::packages/core/src/llm/schema/events.ts::LLMEvent",
+      "target": "type::packages/core/src/llm/schema/events.ts::FinishReason",
+      "type": "references"
+    },
+    {
+      "source": "type::packages/core/src/llm/schema/events.ts::LLMEvent",
+      "target": "type::packages/core/src/llm/schema/events.ts::TokenUsage",
+      "type": "references"
+    },
+    {
+      "source": "file::packages/core/src/recovery.ts",
+      "target": "fn::packages/core/src/recovery.ts::classifyError",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/core/src/recovery.ts",
+      "target": "fn::packages/core/src/recovery.ts::determineAction",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/core/src/recovery.ts",
+      "target": "fn::packages/core/src/recovery.ts::getBackoffMs",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/core/src/recovery.ts",
+      "target": "fn::packages/core/src/recovery.ts::createRecoveryState",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/core/src/recovery.ts",
+      "target": "fn::packages/core/src/recovery.ts::recoveryAdvice",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/core/src/recovery.ts",
+      "target": "type::packages/core/src/recovery.ts::RecoveryState",
+      "type": "defines"
+    },
+    {
+      "source": "fn::packages/core/src/recovery.ts::recoveryAdvice",
+      "target": "fn::packages/core/src/recovery.ts::classifyError",
+      "type": "calls"
+    },
+    {
+      "source": "fn::packages/core/src/recovery.ts::recoveryAdvice",
+      "target": "fn::packages/core/src/recovery.ts::getBackoffMs",
+      "type": "calls"
+    },
+    {
+      "source": "fn::packages/core/src/recovery.ts::recoveryAdvice",
+      "target": "fn::packages/core/src/recovery.ts::determineAction",
+      "type": "calls"
+    },
+    {
+      "source": "fn::packages/core/src/recovery.ts::recoveryAdvice",
+      "target": "type::packages/core/src/recovery.ts::RecoveryState",
+      "type": "references"
+    },
+    {
+      "source": "fn::packages/core/src/recovery.ts::determineAction",
+      "target": "type::packages/core/src/recovery.ts::RecoveryState",
+      "type": "references"
+    },
+    {
+      "source": "file::packages/core/src/server-manager.ts",
+      "target": "class::packages/core/src/server-manager.ts::ServerManager",
+      "type": "defines"
+    },
+    {
+      "source": "class::packages/core/src/server-manager.ts::ServerManager",
+      "target": "fn::packages/core/src/server-manager.ts::ServerManager.start",
+      "type": "defines"
+    },
+    {
+      "source": "class::packages/core/src/server-manager.ts::ServerManager",
+      "target": "fn::packages/core/src/server-manager.ts::ServerManager.request",
+      "type": "defines"
+    },
+    {
+      "source": "class::packages/core/src/server-manager.ts::ServerManager",
+      "target": "fn::packages/core/src/server-manager.ts::ServerManager.connectSSE",
+      "type": "defines"
+    },
+    {
+      "source": "class::packages/core/src/server-manager.ts::ServerManager",
+      "target": "fn::packages/core/src/server-manager.ts::ServerManager.stop",
+      "type": "defines"
+    },
+    {
+      "source": "fn::packages/core/src/server-manager.ts::ServerManager.request",
+      "target": "fn::packages/core/src/server-manager.ts::ServerManager.connectSSE",
+      "type": "references"
+    },
+    {
+      "source": "file::packages/core/src/server/index.ts",
+      "target": "file::packages/core/src/server-manager.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file::packages/core/src/session-fork.ts",
+      "target": "class::packages/core/src/session-fork.ts::SessionForkManager",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/core/src/session-fork.ts",
+      "target": "fn::packages/core/src/session-fork.ts::getSessionForkManager",
+      "type": "defines"
+    },
+    {
+      "source": "class::packages/core/src/session-fork.ts::SessionForkManager",
+      "target": "fn::packages/core/src/session-fork.ts::SessionForkManager.fork",
+      "type": "defines"
+    },
+    {
+      "source": "class::packages/core/src/session-fork.ts::SessionForkManager",
+      "target": "fn::packages/core/src/session-fork.ts::SessionForkManager.merge",
+      "type": "defines"
+    },
+    {
+      "source": "fn::packages/core/src/session-fork.ts::getSessionForkManager",
+      "target": "class::packages/core/src/session-fork.ts::SessionForkManager",
+      "type": "creates"
+    },
+    {
+      "source": "file::packages/electron/src/index.ts",
+      "target": "file::packages/electron/src/ipc/agent-ipc.ts",
+      "type": "re-exports"
+    },
+    {
+      "source": "file::packages/electron/src/ipc/agent-ipc.ts",
+      "target": "fn::packages/electron/src/ipc/agent-ipc.ts::registerAgentIPC",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/electron/src/ipc/agent-ipc.ts",
+      "target": "fn::packages/electron/src/ipc/agent-ipc.ts::buildPermissions",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/electron/src/ipc/agent-ipc.ts",
+      "target": "fn::packages/electron/src/ipc/agent-ipc.ts::runAgentInBackground",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/electron/src/ipc/agent-ipc.ts",
+      "target": "fn::packages/electron/src/ipc/agent-ipc.ts::processSkillCommand",
+      "type": "defines"
+    },
+    {
+      "source": "fn::packages/electron/src/ipc/agent-ipc.ts::registerAgentIPC",
+      "target": "fn::packages/electron/src/ipc/agent-ipc.ts::buildPermissions",
+      "type": "calls"
+    },
+    {
+      "source": "fn::packages/electron/src/ipc/agent-ipc.ts::registerAgentIPC",
+      "target": "fn::packages/electron/src/ipc/agent-ipc.ts::processSkillCommand",
+      "type": "calls"
+    },
+    {
+      "source": "fn::packages/electron/src/ipc/agent-ipc.ts::registerAgentIPC",
+      "target": "fn::packages/electron/src/ipc/agent-ipc.ts::runAgentInBackground",
+      "type": "calls"
+    },
+    {
+      "source": "file::packages/electron/src/preload/index.ts",
+      "target": "file::packages/ui/src/types/electron.d.ts",
+      "type": "implements"
+    },
+    {
+      "source": "file::packages/ui/src/chat/tool-router.ts",
+      "target": "fn::packages/ui/src/chat/tool-router.ts::routeToolMessage",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/ui/src/chat/tool-router.test.ts",
+      "target": "fn::packages/ui/src/chat/tool-router.ts::routeToolMessage",
+      "type": "tests"
+    },
+    {
+      "source": "file::packages/ui/src/chat/MessageTimingDisplay.tsx",
+      "target": "fn::packages/ui/src/chat/MessageTimingDisplay.tsx::MessageTimingDisplay",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/ProjectBar.tsx",
+      "target": "fn::packages/ui/src/sidebar/ProjectBar.tsx::ProjectBar",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/ui/src/ui/ResizablePanel.tsx",
+      "target": "fn::packages/ui/src/ui/ResizablePanel.tsx::ResizablePanel",
+      "type": "defines"
+    },
+    {
+      "source": "file::packages/ui/src/index.ts",
+      "target": "file::packages/ui/src/services/index.ts",
+      "type": "re-exports"
+    },
+    {
+      "source": "file::packages/ui/src/index.ts",
+      "target": "file::packages/ui/src/chat/MessageTimingDisplay.tsx",
+      "type": "re-exports"
+    },
+    {
+      "source": "file::packages/ui/src/index.ts",
+      "target": "file::packages/ui/src/sidebar/ProjectBar.tsx",
+      "type": "re-exports"
+    },
+    {
+      "source": "file::packages/ui/src/index.ts",
+      "target": "file::packages/ui/src/ui/ResizablePanel.tsx",
+      "type": "re-exports"
+    },
+    {
+      "source": "file::packages/ui/src/index.ts",
+      "target": "file::packages/ui/src/chat/tool-router.ts",
+      "type": "re-exports"
+    },
+    {
+      "source": "file::packages/ui/src/services/index.ts",
+      "target": "file::packages/ui/src/services/memory.service.ts",
+      "type": "re-exports"
+    },
+    {
+      "source": "file::packages/ui/src/services/memory.service.ts",
+      "target": "file::packages/electron/src/preload/index.ts",
+      "type": "calls"
+    },
+    {
+      "source": "file::packages/electron/src/preload/index.ts",
+      "target": "file::packages/electron/src/ipc/agent-ipc.ts",
+      "type": "calls"
+    },
+    {
+      "source": "file::packages/core/src/server-manager.ts",
+      "target": "file::packages/core/src/server/index.ts",
+      "type": "manages"
+    },
+    {
+      "source": "file::packages/electron/tsconfig.json",
+      "target": "file::packages/core/tsconfig.json",
+      "type": "depends-on"
+    },
+    {
+      "source": "file::packages/ui/tsconfig.json",
+      "target": "file::packages/core/tsconfig.json",
+      "type": "depends-on"
+    },
+    {
+      "source": "file::packages/electron/package.json",
+      "target": "file::packages/core/src/server-manager.ts",
+      "type": "depends-on"
+    },
+    {
+      "source": "file::packages/ui/package.json",
+      "target": "file::packages/core/src/recovery.ts",
+      "type": "depends-on"
+    },
+    {
+      "source": "file::postcss.config.js",
+      "target": "file::packages/ui/tsconfig.json",
+      "type": "configures"
+    }
+  ]
+}

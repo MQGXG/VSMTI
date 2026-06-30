@@ -3,8 +3,8 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
-import { sendMessage, readInbox, clearInbox, getProtocolState, setProtocolState } from "../team-bus"
+import { make } from "../../shared/tool"
+import { sendMessage, readInbox, clearInbox, getProtocolState, setProtocolState } from "../../orchestrate/team-bus"
 
 export const teamTool = make({
   name: "team_tool",
@@ -62,3 +62,5 @@ export const teamTool = make({
     }
   },
 })
+
+

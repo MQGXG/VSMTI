@@ -1,9 +1,9 @@
 import { randomUUID } from "crypto"
-import { Agent } from "./agent"
-import type { AgentConfig, AgentEvent } from "./agent"
-import type { ToolRegistry } from "./registry"
-import type { LLMMessage } from "./llm-sdk"
-import { logError } from "./logger"
+import { Agent } from "../agent/agent"
+import type { AgentConfig, AgentEvent } from "../agent/agent"
+import type { ToolRegistry } from "../system/registry"
+import type { LLMMessage } from "../llm/client"
+import { logError } from "../system/logger"
 import { sendMessage } from "./team-bus"
 
 export type SubagentStatus = "pending" | "running" | "completing" | "completed" | "failed" | "cancelled"
@@ -404,3 +404,5 @@ export class SubagentManager {
     }
   }
 }
+
+

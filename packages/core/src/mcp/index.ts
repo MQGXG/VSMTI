@@ -7,7 +7,7 @@ import { Client } from "@modelcontextprotocol/sdk/client"
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp"
 import { z } from "zod"
-import { make, type ToolDef, type ToolContext, type ToolResult } from "../tool"
+import { make, type ToolDef, type ToolContext, type ToolResult } from "../shared/tool"
 
 // MCP 服务器配置 Schema
 export const MCPServerConfigSchema = z.object({

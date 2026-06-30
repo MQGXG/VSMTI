@@ -1,0 +1,28 @@
+{
+  "batchImportData": {
+    "tailwind.config.js": [],
+    "vector-memory/test-session.json": [],
+    "vitest.config.ts": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "tailwind.config.js",
+      "language": "javascript",
+      "sizeLines": 130,
+      "fileCategory": "code"
+    },
+    {
+      "path": "vector-memory/test-session.json",
+      "language": "json",
+      "sizeLines": 2,
+      "fileCategory": "config"
+    },
+    {
+      "path": "vitest.config.ts",
+      "language": "typescript",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    }
+  ]
+}

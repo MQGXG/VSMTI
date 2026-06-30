@@ -1,5 +1,5 @@
-import type { ToolContext } from "../tool"
-import type { AgentMode } from "../modes"
+import type { ToolContext } from "../shared/tool"
+import type { AgentMode } from "../config/modes"
 import { CodeContext } from "../lsp/code-context"
 
 const codeContext = new CodeContext()
@@ -51,3 +51,4 @@ async function getCodeContextSuffix(workspace: string, currentFile?: string): Pr
     return ""
   }
 }
+

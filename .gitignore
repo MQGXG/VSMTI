@@ -12,3 +12,11 @@ __pycache__/
 data/
 !.env.example
 portable-python/
+
+# 构建缓存
+*.tsbuildinfo
+
+# 运行时数据
+*.db
+dev.log
+logs/

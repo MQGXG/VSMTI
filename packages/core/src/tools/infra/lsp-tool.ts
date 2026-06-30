@@ -4,8 +4,8 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
-import { lspManager } from "../lsp/manager"
+import { make } from "../../shared/tool"
+import { lspManager } from "../../lsp/manager"
 import * as path from "path"
 
 export const lspDefinitionTool = make({
@@ -87,3 +87,4 @@ export const lspHoverTool = make({
     }
   },
 })
+

@@ -1,6 +1,6 @@
 import { z } from "zod"
-import { make } from "../tool"
-import { getDbAsync } from "../database"
+import { make } from "../../shared/tool"
+import { getDbAsync } from "../../system/database"
 
 export const searchHistoryTool = make({
   name: "search_history",
@@ -80,3 +80,4 @@ export const searchHistoryTool = make({
     }
   },
 })
+

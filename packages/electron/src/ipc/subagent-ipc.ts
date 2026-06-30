@@ -1,9 +1,9 @@
 import { ipcMain, type WebContents } from "electron"
-import { createDefaultRegistry } from "@mira/core/registry-init"
-import { SubagentManager } from "@mira/core/subagent-manager"
-import { setSubagentManager } from "@mira/core/tools/agent-tools"
-import type { AgentConfig } from "@mira/core/agent"
-import type { SubagentEvent } from "@mira/core/subagent-manager"
+import { createDefaultRegistry } from "@mira/core/system/registry-init"
+import { SubagentManager } from "@mira/core/orchestrate/subagent"
+import { setSubagentManager } from "@mira/core/tools/orchestrate/agent-tools"
+import type { AgentConfig } from "@mira/core/agent/agent"
+import type { SubagentEvent } from "@mira/core/orchestrate/subagent"
 
 const registry = createDefaultRegistry()
 const subagentManager = new SubagentManager(registry, { maxParallel: 5 })
@@ -78,3 +78,4 @@ export function registerSubagentIPC(): void {
     return subagentManager.toText()
   })
 }
+

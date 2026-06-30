@@ -12,8 +12,8 @@
 
 import { join } from "path"
 import fs from "fs"
-import { createLLMClient, type LLMMessage } from "./llm-sdk"
-import { logError } from "./logger"
+import { createLLMClient, type LLMMessage } from "../llm/client"
+import { logError } from "../system/logger"
 
 interface DreamResult {
   timestamp: string
@@ -446,3 +446,5 @@ export class DreamDistillManager {
     } catch { /* 静默 */ }
   }
 }
+
+

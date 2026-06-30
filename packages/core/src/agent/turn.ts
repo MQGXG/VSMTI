@@ -1,6 +1,6 @@
-import { createLLMClient, type LLMToolSet, type LLMMessage } from "../llm-sdk"
+import { createLLMClient, type LLMToolSet, type LLMMessage } from "../llm/client"
 import type { AgentEvent } from "../types"
-import { ContextManager } from "../context-manager"
+import { ContextManager } from "../session/context"
 
 export interface LLMTurnConfig {
   provider: string
@@ -116,3 +116,5 @@ export async function* runLLMTurn(
 
   return { text: currentText, toolCalls: pendingToolCalls, compacted }
 }
+
+

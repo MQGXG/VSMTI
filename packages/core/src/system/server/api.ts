@@ -3,23 +3,21 @@
  * 参考 MiMo-Code 的 Sidecar 架构：Core 作为独立 HTTP 服务
  */
 
-import { Agent, type AgentConfig, type AgentEvent, type PermissionReply } from "../index"
-import { createDefaultRegistry, defaultPermissions, PermissionSet, resolveRuntimeConfig } from "../index"
-import { DEFAULT_SYSTEM } from "../agent"
-import { modeToPermissionSet, getModeConfig, getAllModes } from "../modes"
-import { getJsonSchema } from "../tool"
-import { loadWorkspacePermissions, saveWorkspacePermission } from "../permission-store"
-import { buildInstructionSystemPrompt } from "../instruction-context"
-import { matchSkillCommand, buildSkillInvocationMessage } from "../skill/skill-commands"
-import { loadSkill } from "../skill/skill-loader"
+import { Agent, type AgentConfig, type AgentEvent, type PermissionReply } from "../../index"
+import { createDefaultRegistry, defaultPermissions, PermissionSet, resolveRuntimeConfig } from "../../index"
+import { DEFAULT_SYSTEM } from "../../agent/agent"
+import { modeToPermissionSet, getModeConfig, getAllModes } from "../../config/modes"
+import { getJsonSchema } from "../../shared/tool"
+import { loadWorkspacePermissions, saveWorkspacePermission } from "../permission/store"
+import { buildInstructionSystemPrompt } from "../instruction"
+import { matchSkillCommand, buildSkillInvocationMessage } from "../../skill/skill-commands"
+import { loadSkill } from "../../skill/skill-loader"
 import { initDatabase } from "../database"
-import { AgentRegistry } from "../agent/registry"
+import { AgentRegistry } from "../../agent/registry"
 import { logError } from "../logger"
-import { taskTracker } from "../task-tracker"
-import { Effect } from "effect"
-import { AppLayer } from "../layers"
-import { setParentConfig } from "../tools/agent-tools"
-import { setFTSProvider } from "../tools/memory"
+import { taskTracker } from "../../task/tracker"
+import { setParentConfig } from "../../tools/orchestrate/agent-tools"
+import { setFTSProvider } from "../../tools/knowledge/memory"
 
 // ── 初始化 ──────────────────────────────────────────
 
@@ -40,11 +38,7 @@ for (const mode of getAllModes()) {
   })
 }
 
-Effect.runPromise(
-  Effect.gen(function* () {
-    yield* Effect.promise(() => initDatabase())
-  }).pipe(Effect.provide(AppLayer)),
-).catch((err) => logError("API 初始化失败", err))
+initDatabase().catch((err) => logError("API 初始化失败", err))
 
 // ── Agent 会话管理 ──────────────────────────────────
 

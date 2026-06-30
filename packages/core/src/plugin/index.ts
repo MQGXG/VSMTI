@@ -6,8 +6,8 @@
 import * as fs from "fs/promises"
 import * as path from "path"
 import { z } from "zod"
-import { make, type ToolDef, type ToolContext, type ToolResult } from "../tool"
-import { logError } from "../logger"
+import { make, type ToolDef, type ToolContext, type ToolResult } from "../shared/tool"
+import { logError } from "../system/logger"
 
 // ─── 插件接口 ──────────────────────────────────────────────────────
 

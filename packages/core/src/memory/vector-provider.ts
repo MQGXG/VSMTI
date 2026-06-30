@@ -6,7 +6,7 @@
 import { join } from "path"
 import fs from "fs"
 import { MemoryProvider } from "./types"
-import { getPlatformPaths } from "../platform-paths"
+import { getPlatformPaths } from "../config/paths"
 import { createHash } from "crypto"
 
 interface MemoryDocument {
@@ -182,3 +182,4 @@ export class VectorMemoryProvider implements MemoryProvider {
     } catch { /* 静默 */ }
   }
 }
+

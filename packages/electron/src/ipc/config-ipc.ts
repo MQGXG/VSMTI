@@ -1,5 +1,5 @@
 import { ipcMain } from "electron"
-import { getConfigForRenderer, saveGlobalConfig } from "@mira/core/config"
+import { getConfigForRenderer, saveGlobalConfig } from "@mira/core/config/index"
 
 export function registerConfigIPC(): void {
   ipcMain.handle("config:get", (_, workspace?: string) => {
@@ -9,3 +9,4 @@ export function registerConfigIPC(): void {
     saveGlobalConfig(config)
   })
 }
+

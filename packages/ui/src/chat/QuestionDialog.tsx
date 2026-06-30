@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { HelpCircle, Send } from "lucide-react";
 import { Modal } from "../ui/Modal";
 
@@ -12,13 +12,24 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
   const [customAnswer, setCustomAnswer] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (selected) {
       onSubmit(selected);
     } else if (customAnswer.trim()) {
       onSubmit(customAnswer.trim());
     }
-  };
+  }, [selected, customAnswer, onSubmit]);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit();
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [handleSubmit]);
 
   return (
     <Modal open={true} onClose={() => onSubmit("")} maxWidth="max-w-md">
@@ -40,6 +51,7 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
               onClick={() => {
                 setSelected(opt);
                 setCustomAnswer("");
+                onSubmit(opt);
               }}
               className="w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-150"
               style={{
@@ -60,9 +72,16 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
                 setCustomAnswer(e.target.value);
                 setSelected(null);
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
               placeholder="输入自定义回答..."
               className="w-full px-4 py-2.5 rounded-xl text-sm bg-transparent outline-none transition-all duration-200"
               style={{ border: "1px solid var(--border)", color: "var(--text-primary)" }}
+              autoFocus
             />
           </div>
         </div>

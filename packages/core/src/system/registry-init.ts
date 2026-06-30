@@ -2,29 +2,29 @@
  * 注册表初始化 — 从 index.ts 拆分以打破循环依赖
  */
 import { ToolRegistry } from "./registry"
-import { readFileTool } from "./tools/read-file"
+import { readFileTool } from "../tools/core/read-file"
 import {
   writeFileTool, listFilesTool,
   webSearchTool, webFetchTool, codeSearchTool, questionTool,
   grepTool, globTool, codeExecTool, bashTool, editFileTool,
-} from "./tools/index"
-import { skillsListTool, skillViewTool } from "./skill/skill-tools"
-import { memorySearchTool, memoryRecallTool } from "./tools/memory"
-import { dataAnalysisTool } from "./tools/data-analysis"
-import { webBrowseTool } from "./tools/web-browse"
-import { cronTool } from "./tools/cron-tool"
-import { taskTool } from "./tools/task-tool"
-import { delegateTaskTool } from "./tools/delegate-task"
-import { imageGenTool } from "./tools/image-gen"
-import { worktreeTool } from "./tools/worktree-tool"
-import { teamTool } from "./tools/team-tool"
-import { lspDefinitionTool, lspReferencesTool, lspHoverTool } from "./tools/lsp-tool"
-import { gitStatusTool, gitDiffTool, gitLogTool, gitCommitTool } from "./tools/git"
-import { createDocxTool } from "./tools/create-docx"
-import { searchHistoryTool } from "./tools/search-history"
-import { spawnAgentTool, waitAgentsTool, listSubagentsTool } from "./tools/agent-tools"
-import { workflowRunTool } from "./tools/workflow-tool"
-import type { MCPServerConfig } from "./mcp/index"
+} from "../tools/index"
+import { skillsListTool, skillViewTool } from "../skill/skill-tools"
+import { memorySearchTool, memoryRecallTool } from "../tools/knowledge/memory"
+import { dataAnalysisTool } from "../tools/knowledge/data-analysis"
+import { webBrowseTool } from "../tools/knowledge/web-browse"
+import { cronTool } from "../tools/orchestrate/cron-tool"
+import { taskTool } from "../tools/orchestrate/task-tool"
+import { delegateTaskTool } from "../tools/orchestrate/delegate-task"
+import { imageGenTool } from "../tools/execution/image-gen"
+import { worktreeTool } from "../tools/orchestrate/worktree-tool"
+import { teamTool } from "../tools/orchestrate/team-tool"
+import { lspDefinitionTool, lspReferencesTool, lspHoverTool } from "../tools/infra/lsp-tool"
+import { gitStatusTool, gitDiffTool, gitLogTool, gitCommitTool } from "../tools/core/git"
+import { createDocxTool } from "../tools/core/create-docx"
+import { searchHistoryTool } from "../tools/core/search-history"
+import { spawnAgentTool, waitAgentsTool, listSubagentsTool } from "../tools/orchestrate/agent-tools"
+import { workflowRunTool } from "../tools/orchestrate/workflow-tool"
+import type { MCPServerConfig } from "../mcp/index"
 
 export function createDefaultRegistry(): ToolRegistry {
   const registry = new ToolRegistry()

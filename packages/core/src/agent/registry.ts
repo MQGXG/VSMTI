@@ -3,10 +3,10 @@
  * 支持注册多个 Agent 实现，按名称路由
  */
 
-import type { LLMMessage } from "../llm-sdk"
+import type { LLMMessage } from "../llm/client"
 import type { AgentEvent } from "../types"
-import type { AgentConfig } from "../agent"
-import type { AgentMode } from "../modes"
+import type { AgentConfig } from "../agent/agent"
+import type { AgentMode } from "../config/modes"
 
 export interface AgentInfo {
   name: string
@@ -41,3 +41,5 @@ export class AgentRegistry {
     return Array.from(this.agents.values()).map((a) => a.info)
   }
 }
+
+

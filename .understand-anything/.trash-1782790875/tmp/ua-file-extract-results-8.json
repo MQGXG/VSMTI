@@ -1,0 +1,1501 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 13,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 144,
+      "nonEmptyLines": 130,
+      "functions": [
+        {
+          "name": "serializeMessages",
+          "startLine": 28,
+          "endLine": 54,
+          "params": [
+            "messages"
+          ]
+        },
+        {
+          "name": "serializeSystem",
+          "startLine": 56,
+          "endLine": 60,
+          "params": [
+            "messages"
+          ]
+        },
+        {
+          "name": "deserializeStreamEvent",
+          "startLine": 62,
+          "endLine": 102,
+          "params": [
+            "event"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "serializeMessages",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "serializeSystem",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "deserializeStreamEvent",
+          "line": 62,
+          "isDefault": false
+        },
+        {
+          "name": "AnthropicMessagesProtocol",
+          "line": 105,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "serializeMessages",
+          "callee": "result.push",
+          "lineNumber": 35
+        },
+        {
+          "caller": "serializeMessages",
+          "callee": "msg.content.map",
+          "lineNumber": 39
+        },
+        {
+          "caller": "serializeMessages",
+          "callee": "result.push",
+          "lineNumber": 50
+        },
+        {
+          "caller": "serializeSystem",
+          "callee": "messages.filter",
+          "lineNumber": 57
+        },
+        {
+          "caller": "serializeSystem",
+          "callee": "systemParts.map((m) => (typeof m.content === \"string\" ? m.content : \"\")).join",
+          "lineNumber": 59
+        },
+        {
+          "caller": "serializeSystem",
+          "callee": "systemParts.map",
+          "lineNumber": 59
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "serializeSystem",
+          "lineNumber": 108
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "serializeMessages",
+          "lineNumber": 111
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "request.messages.filter",
+          "lineNumber": 111
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "request.tools.map",
+          "lineNumber": 117
+        },
+        {
+          "caller": "deserializeEvent",
+          "callee": "deserializeStreamEvent",
+          "lineNumber": 131
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "response?.content?.map?.((block: any) => block.text).filter(Boolean).join",
+          "lineNumber": 136
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "response?.content?.map?.((block: any) => block.text).filter",
+          "lineNumber": 136
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "response?.content?.map",
+          "lineNumber": 136
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "response?.content?.filter?.((b: any) => b.type === \"tool_use\").map",
+          "lineNumber": 137
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "response?.content?.filter",
+          "lineNumber": 137
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "JSON.stringify",
+          "lineNumber": 140
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 4,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/protocols/gemini.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 173,
+      "nonEmptyLines": 154,
+      "functions": [
+        {
+          "name": "convertMessages",
+          "startLine": 36,
+          "endLine": 67,
+          "params": [
+            "messages"
+          ]
+        },
+        {
+          "name": "extractSystemMessage",
+          "startLine": 69,
+          "endLine": 74,
+          "params": [
+            "messages"
+          ]
+        },
+        {
+          "name": "mapFinishReason",
+          "startLine": 164,
+          "endLine": 173,
+          "params": [
+            "reason"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GeminiProtocol",
+          "line": 76,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "convertMessages",
+          "callee": "parts.push",
+          "lineNumber": 44
+        },
+        {
+          "caller": "convertMessages",
+          "callee": "parts.push",
+          "lineNumber": 48
+        },
+        {
+          "caller": "convertMessages",
+          "callee": "parts.push",
+          "lineNumber": 50
+        },
+        {
+          "caller": "convertMessages",
+          "callee": "parts.push",
+          "lineNumber": 55
+        },
+        {
+          "caller": "convertMessages",
+          "callee": "result.push",
+          "lineNumber": 64
+        },
+        {
+          "caller": "extractSystemMessage",
+          "callee": "messages\n    .filter((m) => m.role === \"system\")\n    .map((m) => (typeof m.content === \"string\" ? m.content : \"\"))\n    .join",
+          "lineNumber": 70
+        },
+        {
+          "caller": "extractSystemMessage",
+          "callee": "messages\n    .filter((m) => m.role === \"system\")\n    .map",
+          "lineNumber": 70
+        },
+        {
+          "caller": "extractSystemMessage",
+          "callee": "messages\n    .filter",
+          "lineNumber": 70
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "extractSystemMessage",
+          "lineNumber": 80
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "convertMessages",
+          "lineNumber": 82
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "request.tools.map",
+          "lineNumber": 90
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "Array.isArray",
+          "lineNumber": 101
+        },
+        {
+          "caller": "deserializeEvent",
+          "callee": "mapFinishReason",
+          "lineNumber": 116
+        },
+        {
+          "caller": "deserializeEvent",
+          "callee": "JSON.stringify",
+          "lineNumber": 131
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "toolCalls.push",
+          "lineNumber": 152
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "JSON.stringify",
+          "lineNumber": 155
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/protocols/openai-chat.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 128,
+      "nonEmptyLines": 114,
+      "functions": [
+        {
+          "name": "serializeMessages",
+          "startLine": 22,
+          "endLine": 56,
+          "params": [
+            "messages"
+          ]
+        },
+        {
+          "name": "deserializeChunk",
+          "startLine": 58,
+          "endLine": 82,
+          "params": [
+            "chunk"
+          ]
+        },
+        {
+          "name": "getFinishReason",
+          "startLine": 84,
+          "endLine": 86,
+          "params": [
+            "chunk"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "serializeMessages",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "deserializeChunk",
+          "line": 58,
+          "isDefault": false
+        },
+        {
+          "name": "getFinishReason",
+          "line": 84,
+          "isDefault": false
+        },
+        {
+          "name": "OpenAIChatProtocol",
+          "line": 89,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "serializeMessages",
+          "callee": "messages.map",
+          "lineNumber": 23
+        },
+        {
+          "caller": "serializeMessages",
+          "callee": "parts.filter((p) => p.type === \"text\").map((p) => p.text).join",
+          "lineNumber": 30
+        },
+        {
+          "caller": "serializeMessages",
+          "callee": "parts.filter((p) => p.type === \"text\").map",
+          "lineNumber": 30
+        },
+        {
+          "caller": "serializeMessages",
+          "callee": "parts.filter",
+          "lineNumber": 30
+        },
+        {
+          "caller": "serializeMessages",
+          "callee": "parts.filter",
+          "lineNumber": 31
+        },
+        {
+          "caller": "serializeMessages",
+          "callee": "parts.filter",
+          "lineNumber": 32
+        },
+        {
+          "caller": "serializeMessages",
+          "callee": "toolCalls.map",
+          "lineNumber": 46
+        },
+        {
+          "caller": "serializeMessages",
+          "callee": "JSON.stringify",
+          "lineNumber": 49
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "serializeMessages",
+          "lineNumber": 94
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "request.tools.map",
+          "lineNumber": 98
+        },
+        {
+          "caller": "deserializeEvent",
+          "callee": "deserializeChunk",
+          "lineNumber": 115
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "(choice?.message?.tool_calls || []).map",
+          "lineNumber": 121
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 4,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/protocols/openai-compatible-chat.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 66,
+      "nonEmptyLines": 62,
+      "functions": [
+        {
+          "name": "createCompatibleBody",
+          "startLine": 12,
+          "endLine": 25,
+          "params": [
+            "messages",
+            "tools",
+            "options"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "serializeMessages",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "deserializeChunk",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "getFinishReason",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "createCompatibleBody",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "OpenAICompatibleChatProtocol",
+          "line": 29,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createCompatibleBody",
+          "callee": "serializeMessages",
+          "lineNumber": 14
+        },
+        {
+          "caller": "createCompatibleBody",
+          "callee": "tools?.map",
+          "lineNumber": 15
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "serializeMessages",
+          "lineNumber": 34
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "request.tools.map",
+          "lineNumber": 38
+        },
+        {
+          "caller": "deserializeEvent",
+          "callee": "deserializeChunk",
+          "lineNumber": 54
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "(choice?.message?.tool_calls || []).map",
+          "lineNumber": 59
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 5,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/protocols/openai-responses.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 153,
+      "nonEmptyLines": 134,
+      "functions": [
+        {
+          "name": "serializeResponsesMessages",
+          "startLine": 21,
+          "endLine": 57,
+          "params": [
+            "messages"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "OpenAIResponsesProtocol",
+          "line": 59,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "serializeResponsesMessages",
+          "callee": "messages.map",
+          "lineNumber": 22
+        },
+        {
+          "caller": "serializeResponsesMessages",
+          "callee": "msg.content.filter((p) => p.type === \"text\").map((p) => p.text).join",
+          "lineNumber": 31
+        },
+        {
+          "caller": "serializeResponsesMessages",
+          "callee": "msg.content.filter((p) => p.type === \"text\").map",
+          "lineNumber": 31
+        },
+        {
+          "caller": "serializeResponsesMessages",
+          "callee": "msg.content.filter",
+          "lineNumber": 31
+        },
+        {
+          "caller": "serializeResponsesMessages",
+          "callee": "msg.content.filter",
+          "lineNumber": 32
+        },
+        {
+          "caller": "serializeResponsesMessages",
+          "callee": "msg.content.filter",
+          "lineNumber": 33
+        },
+        {
+          "caller": "serializeResponsesMessages",
+          "callee": "toolCalls.map",
+          "lineNumber": 47
+        },
+        {
+          "caller": "serializeResponsesMessages",
+          "callee": "JSON.stringify",
+          "lineNumber": 50
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "serializeResponsesMessages",
+          "lineNumber": 65
+        },
+        {
+          "caller": "serializeRequest",
+          "callee": "request.tools.map",
+          "lineNumber": 69
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "toolCalls.push",
+          "lineNumber": 140
+        },
+        {
+          "caller": "parseResponse",
+          "callee": "JSON.stringify",
+          "lineNumber": 143
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/providers/anthropic.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 61,
+      "nonEmptyLines": 55,
+      "classes": [
+        {
+          "name": "AnthropicProvider",
+          "startLine": 5,
+          "endLine": 61,
+          "methods": [
+            "constructor",
+            "stream"
+          ],
+          "properties": [
+            "client",
+            "name"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AnthropicProvider",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "stream",
+          "callee": "serializeSystem",
+          "lineNumber": 23
+        },
+        {
+          "caller": "stream",
+          "callee": "serializeMessages",
+          "lineNumber": 26
+        },
+        {
+          "caller": "stream",
+          "callee": "request.messages.filter",
+          "lineNumber": 26
+        },
+        {
+          "caller": "stream",
+          "callee": "request.tools.map",
+          "lineNumber": 33
+        },
+        {
+          "caller": "stream",
+          "callee": "this.client.postStream",
+          "lineNumber": 44
+        },
+        {
+          "caller": "stream",
+          "callee": "new TextDecoder().decode",
+          "lineNumber": 45
+        },
+        {
+          "caller": "stream",
+          "callee": "JSON.parse",
+          "lineNumber": 46
+        },
+        {
+          "caller": "stream",
+          "callee": "deserializeStreamEvent",
+          "lineNumber": 47
+        },
+        {
+          "caller": "stream",
+          "callee": "err.message?.includes",
+          "lineNumber": 56
+        },
+        {
+          "caller": "stream",
+          "callee": "LLMError.auth",
+          "lineNumber": 56
+        },
+        {
+          "caller": "stream",
+          "callee": "err.message?.includes",
+          "lineNumber": 57
+        },
+        {
+          "caller": "stream",
+          "callee": "LLMError.rateLimit",
+          "lineNumber": 57
+        },
+        {
+          "caller": "stream",
+          "callee": "LLMError.provider",
+          "lineNumber": 58
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "packages/core/src/llm/providers/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 182,
+      "nonEmptyLines": 167,
+      "functions": [
+        {
+          "name": "getProtocol",
+          "startLine": 99,
+          "endLine": 108,
+          "params": [
+            "protocolName"
+          ]
+        },
+        {
+          "name": "getEndpoint",
+          "startLine": 110,
+          "endLine": 114,
+          "params": [
+            "type",
+            "config",
+            "baseUrl"
+          ]
+        },
+        {
+          "name": "getAuth",
+          "startLine": 116,
+          "endLine": 125,
+          "params": [
+            "type",
+            "config",
+            "apiKey"
+          ]
+        },
+        {
+          "name": "getExtraHeaders",
+          "startLine": 127,
+          "endLine": 130,
+          "params": [
+            "config"
+          ]
+        },
+        {
+          "name": "createProvider",
+          "startLine": 132,
+          "endLine": 168,
+          "params": [
+            "type",
+            "apiKey",
+            "baseUrl",
+            "headers"
+          ]
+        },
+        {
+          "name": "getProviderNames",
+          "startLine": 170,
+          "endLine": 172,
+          "params": []
+        },
+        {
+          "name": "getProviderInfo",
+          "startLine": 174,
+          "endLine": 178,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "registerProvider",
+          "startLine": 180,
+          "endLine": 182,
+          "params": [
+            "name",
+            "config"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "createProvider",
+          "line": 132,
+          "isDefault": false
+        },
+        {
+          "name": "getProviderNames",
+          "line": 170,
+          "isDefault": false
+        },
+        {
+          "name": "getProviderInfo",
+          "line": 174,
+          "isDefault": false
+        },
+        {
+          "name": "registerProvider",
+          "line": 180,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getProtocol",
+          "callee": "LLMError.invalidRequest",
+          "lineNumber": 106
+        },
+        {
+          "caller": "createProvider",
+          "callee": "makeRoute",
+          "lineNumber": 142
+        },
+        {
+          "caller": "createProvider",
+          "callee": "LLMError.invalidRequest",
+          "lineNumber": 150
+        },
+        {
+          "caller": "createProvider",
+          "callee": "getEndpoint",
+          "lineNumber": 153
+        },
+        {
+          "caller": "createProvider",
+          "callee": "getAuth",
+          "lineNumber": 154
+        },
+        {
+          "caller": "createProvider",
+          "callee": "getExtraHeaders",
+          "lineNumber": 155
+        },
+        {
+          "caller": "createProvider",
+          "callee": "makeRoute",
+          "lineNumber": 158
+        },
+        {
+          "caller": "createProvider",
+          "callee": "getProtocol",
+          "lineNumber": 159
+        },
+        {
+          "caller": "createProvider",
+          "callee": "LLMError.provider",
+          "lineNumber": 166
+        },
+        {
+          "caller": "createProvider",
+          "callee": "String",
+          "lineNumber": 166
+        },
+        {
+          "caller": "getProviderNames",
+          "callee": "Object.keys",
+          "lineNumber": 171
+        }
+      ],
+      "metrics": {
+        "importCount": 8,
+        "exportCount": 4,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/providers/openai-compatible.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 62,
+      "nonEmptyLines": 56,
+      "classes": [
+        {
+          "name": "OpenAICompatibleProvider",
+          "startLine": 16,
+          "endLine": 62,
+          "methods": [
+            "constructor",
+            "stream"
+          ],
+          "properties": [
+            "client",
+            "name"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "OpenAICompatibleProvider",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "stream",
+          "callee": "serializeMessages",
+          "lineNumber": 29
+        },
+        {
+          "caller": "stream",
+          "callee": "request.tools.map",
+          "lineNumber": 33
+        },
+        {
+          "caller": "stream",
+          "callee": "this.client.postStream",
+          "lineNumber": 47
+        },
+        {
+          "caller": "stream",
+          "callee": "new TextDecoder().decode",
+          "lineNumber": 48
+        },
+        {
+          "caller": "stream",
+          "callee": "JSON.parse",
+          "lineNumber": 49
+        },
+        {
+          "caller": "stream",
+          "callee": "deserializeChunk",
+          "lineNumber": 50
+        },
+        {
+          "caller": "stream",
+          "callee": "LLMError.provider",
+          "lineNumber": 59
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "packages/core/src/llm/providers/openai.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 56,
+      "nonEmptyLines": 51,
+      "classes": [
+        {
+          "name": "OpenAIProvider",
+          "startLine": 5,
+          "endLine": 56,
+          "methods": [
+            "constructor",
+            "stream"
+          ],
+          "properties": [
+            "client",
+            "name"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "OpenAIProvider",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "stream",
+          "callee": "serializeMessages",
+          "lineNumber": 21
+        },
+        {
+          "caller": "stream",
+          "callee": "request.tools.map",
+          "lineNumber": 25
+        },
+        {
+          "caller": "stream",
+          "callee": "this.client.postStream",
+          "lineNumber": 39
+        },
+        {
+          "caller": "stream",
+          "callee": "new TextDecoder().decode",
+          "lineNumber": 40
+        },
+        {
+          "caller": "stream",
+          "callee": "JSON.parse",
+          "lineNumber": 41
+        },
+        {
+          "caller": "stream",
+          "callee": "deserializeChunk",
+          "lineNumber": 42
+        },
+        {
+          "caller": "stream",
+          "callee": "err.message?.includes",
+          "lineNumber": 51
+        },
+        {
+          "caller": "stream",
+          "callee": "LLMError.auth",
+          "lineNumber": 51
+        },
+        {
+          "caller": "stream",
+          "callee": "err.message?.includes",
+          "lineNumber": 52
+        },
+        {
+          "caller": "stream",
+          "callee": "LLMError.rateLimit",
+          "lineNumber": 52
+        },
+        {
+          "caller": "stream",
+          "callee": "LLMError.provider",
+          "lineNumber": 53
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "packages/core/src/llm/route/client.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 87,
+      "nonEmptyLines": 75,
+      "classes": [
+        {
+          "name": "RouteClient",
+          "startLine": 8,
+          "endLine": 87,
+          "methods": [
+            "constructor",
+            "getBaseUrl",
+            "getHeaders",
+            "post",
+            "postStream"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RouteClient",
+          "line": 8,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getBaseUrl",
+          "callee": "this.config.baseUrl.replace",
+          "lineNumber": 12
+        },
+        {
+          "caller": "post",
+          "callee": "this.getBaseUrl",
+          "lineNumber": 25
+        },
+        {
+          "caller": "post",
+          "callee": "setTimeout",
+          "lineNumber": 27
+        },
+        {
+          "caller": "post",
+          "callee": "controller.abort",
+          "lineNumber": 27
+        },
+        {
+          "caller": "post",
+          "callee": "fetch",
+          "lineNumber": 30
+        },
+        {
+          "caller": "post",
+          "callee": "this.getHeaders",
+          "lineNumber": 32
+        },
+        {
+          "caller": "post",
+          "callee": "JSON.stringify",
+          "lineNumber": 33
+        },
+        {
+          "caller": "post",
+          "callee": "clearTimeout",
+          "lineNumber": 38
+        },
+        {
+          "caller": "postStream",
+          "callee": "this.getBaseUrl",
+          "lineNumber": 43
+        },
+        {
+          "caller": "postStream",
+          "callee": "fetch",
+          "lineNumber": 44
+        },
+        {
+          "caller": "postStream",
+          "callee": "this.getHeaders",
+          "lineNumber": 46
+        },
+        {
+          "caller": "postStream",
+          "callee": "JSON.stringify",
+          "lineNumber": 47
+        },
+        {
+          "caller": "postStream",
+          "callee": "response.text",
+          "lineNumber": 51
+        },
+        {
+          "caller": "postStream",
+          "callee": "JSON.stringify",
+          "lineNumber": 52
+        },
+        {
+          "caller": "postStream",
+          "callee": "String",
+          "lineNumber": 52
+        },
+        {
+          "caller": "postStream",
+          "callee": "console.error",
+          "lineNumber": 53
+        },
+        {
+          "caller": "postStream",
+          "callee": "fullBody.slice",
+          "lineNumber": 56
+        },
+        {
+          "caller": "postStream",
+          "callee": "errorText.slice",
+          "lineNumber": 57
+        },
+        {
+          "caller": "postStream",
+          "callee": "response.body?.getReader",
+          "lineNumber": 60
+        },
+        {
+          "caller": "postStream",
+          "callee": "reader.read",
+          "lineNumber": 68
+        },
+        {
+          "caller": "postStream",
+          "callee": "decoder.decode",
+          "lineNumber": 71
+        },
+        {
+          "caller": "postStream",
+          "callee": "buffer.split",
+          "lineNumber": 72
+        },
+        {
+          "caller": "postStream",
+          "callee": "lines.pop",
+          "lineNumber": 73
+        },
+        {
+          "caller": "postStream",
+          "callee": "line.startsWith",
+          "lineNumber": 76
+        },
+        {
+          "caller": "postStream",
+          "callee": "line.slice(6).trim",
+          "lineNumber": 77
+        },
+        {
+          "caller": "postStream",
+          "callee": "line.slice",
+          "lineNumber": 77
+        },
+        {
+          "caller": "postStream",
+          "callee": "new TextEncoder().encode",
+          "lineNumber": 79
+        },
+        {
+          "caller": "postStream",
+          "callee": "reader.releaseLock",
+          "lineNumber": 84
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "packages/core/src/llm/route/route.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 182,
+      "nonEmptyLines": 159,
+      "functions": [
+        {
+          "name": "buildHeaders",
+          "startLine": 5,
+          "endLine": 21,
+          "params": [
+            "auth",
+            "framing",
+            "extra"
+          ]
+        },
+        {
+          "name": "makeStream",
+          "startLine": 23,
+          "endLine": 100,
+          "params": [
+            "protocol",
+            "url",
+            "headers",
+            "timeout"
+          ]
+        },
+        {
+          "name": "makeComplete",
+          "startLine": 102,
+          "endLine": 130,
+          "params": [
+            "protocol",
+            "url",
+            "headers",
+            "timeout"
+          ]
+        },
+        {
+          "name": "computeUrl",
+          "startLine": 132,
+          "endLine": 134,
+          "params": [
+            "endpoint"
+          ]
+        },
+        {
+          "name": "makeRoute",
+          "startLine": 136,
+          "endLine": 175,
+          "params": [
+            "config"
+          ]
+        },
+        {
+          "name": "executeRoute",
+          "startLine": 177,
+          "endLine": 182,
+          "params": [
+            "route",
+            "request"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "makeRoute",
+          "line": 136,
+          "isDefault": false
+        },
+        {
+          "name": "executeRoute",
+          "line": 177,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "makeStream",
+          "callee": "protocol.serializeRequest",
+          "lineNumber": 30
+        },
+        {
+          "caller": "makeStream",
+          "callee": "fetch",
+          "lineNumber": 32
+        },
+        {
+          "caller": "makeStream",
+          "callee": "JSON.stringify",
+          "lineNumber": 35
+        },
+        {
+          "caller": "makeStream",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 36
+        },
+        {
+          "caller": "makeStream",
+          "callee": "response.text",
+          "lineNumber": 40
+        },
+        {
+          "caller": "makeStream",
+          "callee": "LLMError.provider",
+          "lineNumber": 41
+        },
+        {
+          "caller": "makeStream",
+          "callee": "errorText.slice",
+          "lineNumber": 41
+        },
+        {
+          "caller": "makeStream",
+          "callee": "response.headers.get",
+          "lineNumber": 44
+        },
+        {
+          "caller": "makeStream",
+          "callee": "contentType.includes",
+          "lineNumber": 45
+        },
+        {
+          "caller": "makeStream",
+          "callee": "response.json",
+          "lineNumber": 48
+        },
+        {
+          "caller": "makeStream",
+          "callee": "protocol.parseResponse",
+          "lineNumber": 50
+        },
+        {
+          "caller": "makeStream",
+          "callee": "response.body?.getReader",
+          "lineNumber": 57
+        },
+        {
+          "caller": "makeStream",
+          "callee": "LLMError.provider",
+          "lineNumber": 58
+        },
+        {
+          "caller": "makeStream",
+          "callee": "reader.read",
+          "lineNumber": 65
+        },
+        {
+          "caller": "makeStream",
+          "callee": "decoder.decode",
+          "lineNumber": 68
+        },
+        {
+          "caller": "makeStream",
+          "callee": "buffer.split",
+          "lineNumber": 69
+        },
+        {
+          "caller": "makeStream",
+          "callee": "lines.pop",
+          "lineNumber": 70
+        },
+        {
+          "caller": "makeStream",
+          "callee": "line.startsWith",
+          "lineNumber": 73
+        },
+        {
+          "caller": "makeStream",
+          "callee": "line.slice(6).trim",
+          "lineNumber": 74
+        },
+        {
+          "caller": "makeStream",
+          "callee": "line.slice",
+          "lineNumber": 74
+        },
+        {
+          "caller": "makeStream",
+          "callee": "JSON.parse",
+          "lineNumber": 80
+        },
+        {
+          "caller": "makeStream",
+          "callee": "protocol.deserializeEvent",
+          "lineNumber": 81
+        },
+        {
+          "caller": "makeStream",
+          "callee": "reader.releaseLock",
+          "lineNumber": 97
+        },
+        {
+          "caller": "makeComplete",
+          "callee": "protocol.serializeRequest",
+          "lineNumber": 109
+        },
+        {
+          "caller": "makeComplete",
+          "callee": "fetch",
+          "lineNumber": 112
+        },
+        {
+          "caller": "makeComplete",
+          "callee": "JSON.stringify",
+          "lineNumber": 115
+        },
+        {
+          "caller": "makeComplete",
+          "callee": "AbortSignal.timeout",
+          "lineNumber": 116
+        },
+        {
+          "caller": "makeComplete",
+          "callee": "response.text",
+          "lineNumber": 120
+        },
+        {
+          "caller": "makeComplete",
+          "callee": "LLMError.provider",
+          "lineNumber": 121
+        },
+        {
+          "caller": "makeComplete",
+          "callee": "errorText.slice",
+          "lineNumber": 121
+        },
+        {
+          "caller": "makeComplete",
+          "callee": "response.json",
+          "lineNumber": 124
+        },
+        {
+          "caller": "makeComplete",
+          "callee": "protocol.parseResponse",
+          "lineNumber": 126
+        },
+        {
+          "caller": "makeComplete",
+          "callee": "JSON.stringify",
+          "lineNumber": 128
+        },
+        {
+          "caller": "computeUrl",
+          "callee": "endpoint.baseUrl.replace",
+          "lineNumber": 133
+        },
+        {
+          "caller": "makeRoute",
+          "callee": "buildHeaders",
+          "lineNumber": 137
+        },
+        {
+          "caller": "makeRoute",
+          "callee": "computeUrl",
+          "lineNumber": 138
+        },
+        {
+          "caller": "makeRoute",
+          "callee": "makeStream",
+          "lineNumber": 140
+        },
+        {
+          "caller": "makeRoute",
+          "callee": "makeComplete",
+          "lineNumber": 141
+        },
+        {
+          "caller": "with",
+          "callee": "makeRoute",
+          "lineNumber": 163
+        },
+        {
+          "caller": "executeRoute",
+          "callee": "route.stream",
+          "lineNumber": 181
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/route/types.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 68,
+      "nonEmptyLines": 57,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "packages/core/src/llm/schema/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 4,
+      "nonEmptyLines": 4,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

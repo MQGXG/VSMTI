@@ -1,0 +1,112 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 5,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 16,
+      "nonEmptyLines": 16,
+      "sections": [
+        {
+          "heading": "entries",
+          "level": 1,
+          "line": 2
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 1
+      }
+    },
+    {
+      "path": "memory/ses_mqylxdoz_0a181aef.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 58,
+      "nonEmptyLines": 58,
+      "sections": [
+        {
+          "heading": "entries",
+          "level": 1,
+          "line": 2
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 1
+      }
+    },
+    {
+      "path": "memory/ses_mqym26mg_b34e4a3b.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 40,
+      "nonEmptyLines": 40,
+      "sections": [
+        {
+          "heading": "entries",
+          "level": 1,
+          "line": 2
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 1
+      }
+    },
+    {
+      "path": "memory/ses_mqym31fq_c18a23a5.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 22,
+      "nonEmptyLines": 22,
+      "sections": [
+        {
+          "heading": "entries",
+          "level": 1,
+          "line": 2
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 1
+      }
+    },
+    {
+      "path": "memory/test-session.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 304,
+      "nonEmptyLines": 304,
+      "sections": [
+        {
+          "heading": "entries",
+          "level": 1,
+          "line": 2
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 1
+      }
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../../shared/tool"
 import type { BrowserContext, Page } from "playwright"
 
 let browserContext: BrowserContext | null = null
@@ -132,3 +132,4 @@ export const webBrowseTool = make({
     }
   },
 })
+

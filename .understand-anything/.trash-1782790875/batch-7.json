@@ -1,0 +1,1432 @@
+{
+  "nodes": [
+    {
+      "id": "file::packages/ui/src/chat/MiraLogo.tsx",
+      "type": "file",
+      "name": "MiraLogo.tsx",
+      "filePath": "packages/ui/src/chat/MiraLogo.tsx",
+      "summary": "Mira 品牌 Logo 的 SVG React 组件，提供标准版和小尺寸两个变体，使用蓝色渐变背景搭配白色 M 字母路径",
+      "tags": [
+        "react",
+        "svg",
+        "logo",
+        "branding",
+        "ui-component"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::MiraLogo",
+      "type": "function",
+      "name": "MiraLogo",
+      "filePath": "packages/ui/src/chat/MiraLogo.tsx",
+      "summary": "标准尺寸 Mira Logo 组件，渲染带渐变背景的 SVG 圆角方形和白色 M 字母",
+      "tags": [
+        "function"
+      ],
+      "complexity": "medium",
+      "startLine": 6,
+      "endLine": 43
+    },
+    {
+      "id": "func::MiraLogoSmall",
+      "type": "function",
+      "name": "MiraLogoSmall",
+      "filePath": "packages/ui/src/chat/MiraLogo.tsx",
+      "summary": "小尺寸 Mira Logo 组件，用于标题栏等紧凑场景",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 45,
+      "endLine": 73
+    },
+    {
+      "id": "file::packages/ui/src/contexts/ThemeContext.tsx",
+      "type": "file",
+      "name": "ThemeContext.tsx",
+      "filePath": "packages/ui/src/contexts/ThemeContext.tsx",
+      "summary": "主题管理 React Context，支持浅色/暗色/跟随系统三种模式，通过 localStorage 持久化，监听系统主题变化",
+      "tags": [
+        "react-context",
+        "theme",
+        "dark-mode",
+        "system-theme",
+        "localStorage"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::getSystemTheme",
+      "type": "function",
+      "name": "getSystemTheme",
+      "filePath": "packages/ui/src/contexts/ThemeContext.tsx",
+      "summary": "通过 window.matchMedia 检测系统是否为暗色模式",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 13,
+      "endLine": 15
+    },
+    {
+      "id": "func::ThemeProvider",
+      "type": "function",
+      "name": "ThemeProvider",
+      "filePath": "packages/ui/src/contexts/ThemeContext.tsx",
+      "summary": "主题上下文 Provider 组件，管理主题状态和系统偏好监听",
+      "tags": [
+        "function"
+      ],
+      "complexity": "medium",
+      "startLine": 17,
+      "endLine": 74
+    },
+    {
+      "id": "func::useTheme",
+      "type": "function",
+      "name": "useTheme",
+      "filePath": "packages/ui/src/contexts/ThemeContext.tsx",
+      "summary": "主题 Context Hook，返回当前主题、解析后主题和设置函数",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 76,
+      "endLine": 82
+    },
+    {
+      "id": "file::packages/ui/src/hooks/useProjects.ts",
+      "type": "file",
+      "name": "useProjects.ts",
+      "filePath": "packages/ui/src/hooks/useProjects.ts",
+      "summary": "项目管理 React Hook，封装 ProjectService 的完整 CRUD 操作，支持自动轮询刷新",
+      "tags": [
+        "react-hook",
+        "project-management",
+        "auto-refresh",
+        "CRUD"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::useProjects",
+      "type": "function",
+      "name": "useProjects",
+      "filePath": "packages/ui/src/hooks/useProjects.ts",
+      "summary": "项目管理 Hook，提供项目列表、激活项目切换、CRUD 操作，内置自动刷新",
+      "tags": [
+        "function"
+      ],
+      "complexity": "medium",
+      "startLine": 20,
+      "endLine": 89
+    },
+    {
+      "id": "file::packages/ui/src/hooks/useSessions.ts",
+      "type": "file",
+      "name": "useSessions.ts",
+      "filePath": "packages/ui/src/hooks/useSessions.ts",
+      "summary": "会话管理 React Hook，封装 SessionService 的列表/创建/删除/搜索操作，支持可配置的自动刷新",
+      "tags": [
+        "react-hook",
+        "session-management",
+        "auto-refresh",
+        "search"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::useSessions",
+      "type": "function",
+      "name": "useSessions",
+      "filePath": "packages/ui/src/hooks/useSessions.ts",
+      "summary": "会话管理 Hook，按项目加载会话列表，提供创建、删除、消息搜索功能",
+      "tags": [
+        "function"
+      ],
+      "complexity": "medium",
+      "startLine": 23,
+      "endLine": 78
+    },
+    {
+      "id": "file::packages/ui/src/layout/TitleBar.tsx",
+      "type": "file",
+      "name": "TitleBar.tsx",
+      "filePath": "packages/ui/src/layout/TitleBar.tsx",
+      "summary": "自定义 Electron 标题栏组件，包含 Mira Logo、主题切换按钮、Windows 风格窗口控制按钮",
+      "tags": [
+        "react-component",
+        "titlebar",
+        "electron",
+        "window-controls",
+        "theme-toggle"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::TitleBar",
+      "type": "function",
+      "name": "TitleBar",
+      "filePath": "packages/ui/src/layout/TitleBar.tsx",
+      "summary": "标题栏组件，展示 Mira Logo、主题切换、窗口控制按钮，检测 Core 状态",
+      "tags": [
+        "function"
+      ],
+      "complexity": "medium",
+      "startLine": 7,
+      "endLine": 62
+    },
+    {
+      "id": "file::packages/ui/src/services/config.service.ts",
+      "type": "file",
+      "name": "config.service.ts",
+      "filePath": "packages/ui/src/services/config.service.ts",
+      "summary": "配置管理服务，通过 Electron IPC 桥接读写应用配置，提供 API Key 加密/解密能力",
+      "tags": [
+        "service",
+        "config",
+        "electron-ipc",
+        "encryption",
+        "api-key"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "obj::ConfigService",
+      "type": "object",
+      "name": "ConfigService",
+      "filePath": "packages/ui/src/services/config.service.ts",
+      "summary": "ConfigService 服务对象，通过 electronAPI 桥接主进程",
+      "tags": [
+        "service",
+        "ipc-bridge"
+      ],
+      "complexity": "low",
+      "startLine": 13
+    },
+    {
+      "id": "file::packages/ui/src/services/project.service.ts",
+      "type": "file",
+      "name": "project.service.ts",
+      "filePath": "packages/ui/src/services/project.service.ts",
+      "summary": "项目管理服务，封装项目 CRUD 操作和本地颜色/隐藏状态管理",
+      "tags": [
+        "service",
+        "project-management",
+        "electron-ipc",
+        "localStorage",
+        "CRUD"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::getColorFromStorage",
+      "type": "function",
+      "name": "getColorFromStorage",
+      "filePath": "packages/ui/src/services/project.service.ts",
+      "summary": "getColorFromStorage 函数",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 18,
+      "endLine": 25
+    },
+    {
+      "id": "func::setColorToStorage",
+      "type": "function",
+      "name": "setColorToStorage",
+      "filePath": "packages/ui/src/services/project.service.ts",
+      "summary": "setColorToStorage 函数",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 27,
+      "endLine": 33
+    },
+    {
+      "id": "func::getHiddenProjects",
+      "type": "function",
+      "name": "getHiddenProjects",
+      "filePath": "packages/ui/src/services/project.service.ts",
+      "summary": "getHiddenProjects 函数",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 35,
+      "endLine": 41
+    },
+    {
+      "id": "func::setHiddenProjects",
+      "type": "function",
+      "name": "setHiddenProjects",
+      "filePath": "packages/ui/src/services/project.service.ts",
+      "summary": "setHiddenProjects 函数",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 43,
+      "endLine": 45
+    },
+    {
+      "id": "file::packages/ui/src/services/session.service.ts",
+      "type": "file",
+      "name": "session.service.ts",
+      "filePath": "packages/ui/src/services/session.service.ts",
+      "summary": "会话管理服务，封装会话列表/创建/删除、消息获取和全文搜索操作",
+      "tags": [
+        "service",
+        "session-management",
+        "electron-ipc",
+        "search",
+        "CRUD"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "obj::SessionService",
+      "type": "object",
+      "name": "SessionService",
+      "filePath": "packages/ui/src/services/session.service.ts",
+      "summary": "SessionService 服务对象，通过 electronAPI 桥接主进程",
+      "tags": [
+        "service",
+        "ipc-bridge"
+      ],
+      "complexity": "low",
+      "startLine": 28
+    },
+    {
+      "id": "file::packages/ui/src/sidebar/ConfigSourceIndicator.tsx",
+      "type": "file",
+      "name": "ConfigSourceIndicator.tsx",
+      "filePath": "packages/ui/src/sidebar/ConfigSourceIndicator.tsx",
+      "summary": "配置来源指示器组件，检测并显示 API Key 的来源（环境变量或配置文件）",
+      "tags": [
+        "react-component",
+        "config-indicator",
+        "api-key",
+        "settings"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "func::ConfigSourceIndicator",
+      "type": "function",
+      "name": "ConfigSourceIndicator",
+      "filePath": "packages/ui/src/sidebar/ConfigSourceIndicator.tsx",
+      "summary": "配置来源指示器组件，异步获取配置信息后展示 API Key 来源",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 5,
+      "endLine": 28
+    },
+    {
+      "id": "file::packages/ui/src/sidebar/ModelManager.tsx",
+      "type": "file",
+      "name": "ModelManager.tsx",
+      "filePath": "packages/ui/src/sidebar/ModelManager.tsx",
+      "summary": "模型管理组件，跨 Provider 聚合所有模型，支持搜索过滤和按 Provider 分组显示",
+      "tags": [
+        "react-component",
+        "model-management",
+        "search",
+        "toggle",
+        "settings"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::ModelManager",
+      "type": "function",
+      "name": "ModelManager",
+      "filePath": "packages/ui/src/sidebar/ModelManager.tsx",
+      "summary": "模型管理组件，聚合所有 Provider 的模型进行搜索过滤和启用/禁用切换",
+      "tags": [
+        "function"
+      ],
+      "complexity": "medium",
+      "startLine": 10,
+      "endLine": 92
+    },
+    {
+      "id": "file::packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "type": "file",
+      "name": "ProviderConfigPanel.tsx",
+      "filePath": "packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "summary": "Provider 配置面板组件，提供完整的 Provider CRUD 界面，支持基本信息、API 配置、请求头、选项和模型的编辑",
+      "tags": [
+        "react-component",
+        "provider-config",
+        "form",
+        "settings",
+        "CRUD"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "func::createProviderFromForm",
+      "type": "function",
+      "name": "createProviderFromForm",
+      "filePath": "packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "summary": "将表单数据转换为 Provider 对象，处理类型转换和初始化",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 15,
+      "endLine": 38
+    },
+    {
+      "id": "func::providerToFormData",
+      "type": "function",
+      "name": "providerToFormData",
+      "filePath": "packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "summary": "将 Provider 对象转换为表单数据，处理 entries 展开",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 40,
+      "endLine": 49
+    },
+    {
+      "id": "func::ProviderConfigPanel",
+      "type": "function",
+      "name": "ProviderConfigPanel",
+      "filePath": "packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "summary": "Provider 配置面板主组件，管理添加/编辑状态，提供完整表单界面",
+      "tags": [
+        "function"
+      ],
+      "complexity": "high",
+      "startLine": 51,
+      "endLine": 395
+    },
+    {
+      "id": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "type": "file",
+      "name": "SettingsDialog.tsx",
+      "filePath": "packages/ui/src/sidebar/SettingsDialog.tsx",
+      "summary": "设置对话框组件，提供五个 Tab 页（通用、快捷键、提供商、模型、关于），支持中文搜索过滤",
+      "tags": [
+        "react-component",
+        "settings-dialog",
+        "tabbed-ui",
+        "preferences"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "func::SettingsDialog",
+      "type": "function",
+      "name": "SettingsDialog",
+      "filePath": "packages/ui/src/sidebar/SettingsDialog.tsx",
+      "summary": "设置对话框主组件，管理五个 Tab 页，支持中文搜索过滤",
+      "tags": [
+        "function"
+      ],
+      "complexity": "high",
+      "startLine": 15,
+      "endLine": 253
+    },
+    {
+      "id": "func::getSettings",
+      "type": "function",
+      "name": "getSettings",
+      "filePath": "packages/ui/src/sidebar/SettingsDialog.tsx",
+      "summary": "导出的设置读取函数，从 localStorage 加载设置",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 255,
+      "endLine": 257
+    },
+    {
+      "id": "func::getActiveProvider",
+      "type": "function",
+      "name": "getActiveProvider",
+      "filePath": "packages/ui/src/sidebar/SettingsDialog.tsx",
+      "summary": "导出的动态导入函数，延迟加载 provider-data 中的 getActiveProvider",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 259,
+      "endLine": 262
+    },
+    {
+      "id": "func::getProviderById",
+      "type": "function",
+      "name": "getProviderById",
+      "filePath": "packages/ui/src/sidebar/SettingsDialog.tsx",
+      "summary": "导出的动态导入函数，延迟加载 provider-data 中的 getProviderById",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 264,
+      "endLine": 267
+    },
+    {
+      "id": "file::packages/ui/src/sidebar/Sidebar.tsx",
+      "type": "file",
+      "name": "Sidebar.tsx",
+      "filePath": "packages/ui/src/sidebar/Sidebar.tsx",
+      "summary": "侧边栏组件，包含项目切换栏、会话列表（按时间分组）、会话搜索、右键菜单、设置入口",
+      "tags": [
+        "react-component",
+        "sidebar",
+        "session-list",
+        "project-bar",
+        "search",
+        "context-menu"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "func::formatTime",
+      "type": "function",
+      "name": "formatTime",
+      "filePath": "packages/ui/src/sidebar/Sidebar.tsx",
+      "summary": "时间格式化工具函数，将 ISO 时间戳转为中文相对时间",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 22,
+      "endLine": 33
+    },
+    {
+      "id": "func::getTimeGroup",
+      "type": "function",
+      "name": "getTimeGroup",
+      "filePath": "packages/ui/src/sidebar/Sidebar.tsx",
+      "summary": "时间分组函数，将 ISO 时间戳分到今天/昨天/7天内/30天内/其他组",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 35,
+      "endLine": 46
+    },
+    {
+      "id": "func::SidebarContent",
+      "type": "function",
+      "name": "SidebarContent",
+      "filePath": "packages/ui/src/sidebar/Sidebar.tsx",
+      "summary": "侧边栏内容组件，管理会话列表、项目切换栏、搜索和右键菜单",
+      "tags": [
+        "function"
+      ],
+      "complexity": "high",
+      "startLine": 48,
+      "endLine": 230
+    },
+    {
+      "id": "func::Sidebar",
+      "type": "function",
+      "name": "Sidebar",
+      "filePath": "packages/ui/src/sidebar/Sidebar.tsx",
+      "summary": "侧边栏容器组件，控制显示/隐藏，使用 overlay + drawer 布局",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 232,
+      "endLine": 242
+    },
+    {
+      "id": "file::packages/ui/src/sidebar/ThemeSelector.tsx",
+      "type": "file",
+      "name": "ThemeSelector.tsx",
+      "filePath": "packages/ui/src/sidebar/ThemeSelector.tsx",
+      "summary": "主题选择器组件，提供浅色/暗色/跟随系统三个选项按钮，集成 ThemeContext",
+      "tags": [
+        "react-component",
+        "theme-selector",
+        "settings"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "func::ThemeSelector",
+      "type": "function",
+      "name": "ThemeSelector",
+      "filePath": "packages/ui/src/sidebar/ThemeSelector.tsx",
+      "summary": "主题选择器组件，三个图标按钮切换浅色/暗色/系统模式",
+      "tags": [
+        "function"
+      ],
+      "complexity": "medium",
+      "startLine": 4,
+      "endLine": 42
+    },
+    {
+      "id": "file::packages/ui/src/sidebar/provider-data.ts",
+      "type": "file",
+      "name": "provider-data.ts",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "Provider 数据管理层，包含默认 Provider 配置、API Key 加密存储、Provider 迁移逻辑、设置读写",
+      "tags": [
+        "service",
+        "provider-data",
+        "encryption",
+        "migration",
+        "localStorage",
+        "defaults"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "func::encryptApiKey",
+      "type": "function",
+      "name": "encryptApiKey",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "API Key 加密函数，通过 ConfigService.encryptApiKey 加密并添加前缀",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 6,
+      "endLine": 14
+    },
+    {
+      "id": "func::decryptApiKey",
+      "type": "function",
+      "name": "decryptApiKey",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "API Key 解密函数，检测前缀后通过 ConfigService.decryptApiKey 解密",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 16,
+      "endLine": 27
+    },
+    {
+      "id": "func::encryptProviders",
+      "type": "function",
+      "name": "encryptProviders",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "批量加密 Provider 列表中所有 Provider 的 API Key",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 29,
+      "endLine": 33
+    },
+    {
+      "id": "func::decryptProviders",
+      "type": "function",
+      "name": "decryptProviders",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "批量解密 Provider 列表中所有 Provider 的 API Key",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 35,
+      "endLine": 39
+    },
+    {
+      "id": "func::migrateProviders",
+      "type": "function",
+      "name": "migrateProviders",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "Provider 数据迁移函数，补充旧格式数据缺少的字段",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 41,
+      "endLine": 52
+    },
+    {
+      "id": "func::loadProviders",
+      "type": "function",
+      "name": "loadProviders",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "加载 Provider 列表，优先读加密格式，兼容旧键并自动迁移",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 94,
+      "endLine": 111
+    },
+    {
+      "id": "func::saveProviders",
+      "type": "function",
+      "name": "saveProviders",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "保存 Provider 列表到 localStorage，加密 API Key 并同步配置",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 113,
+      "endLine": 129
+    },
+    {
+      "id": "func::loadSettings",
+      "type": "function",
+      "name": "loadSettings",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "从 localStorage 加载应用设置",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 131,
+      "endLine": 134
+    },
+    {
+      "id": "func::saveSettings",
+      "type": "function",
+      "name": "saveSettings",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "保存应用设置到 localStorage",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 136,
+      "endLine": 138
+    },
+    {
+      "id": "func::getActiveProvider::provider-data",
+      "type": "function",
+      "name": "getActiveProvider",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "导出的动态导入函数，延迟加载 provider-data 中的 getActiveProvider",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 140,
+      "endLine": 149
+    },
+    {
+      "id": "func::getProviderById::provider-data",
+      "type": "function",
+      "name": "getProviderById",
+      "filePath": "packages/ui/src/sidebar/provider-data.ts",
+      "summary": "导出的动态导入函数，延迟加载 provider-data 中的 getProviderById",
+      "tags": [
+        "function"
+      ],
+      "complexity": "low",
+      "startLine": 151,
+      "endLine": 169
+    },
+    {
+      "id": "file::packages/ui/src/sidebar/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "packages/ui/src/sidebar/types.ts",
+      "summary": "侧边栏模块的 TypeScript 类型定义，包含 Provider/ProviderModel/ProviderFormData 接口",
+      "tags": [
+        "types",
+        "interface",
+        "provider",
+        "sidebar"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "type::ProviderModel",
+      "type": "type",
+      "name": "ProviderModel",
+      "filePath": "packages/ui/src/sidebar/types.ts",
+      "summary": "Provider 模型接口，定义 id/name/enabled 字段",
+      "tags": [
+        "interface",
+        "types"
+      ],
+      "complexity": "low",
+      "startLine": 1,
+      "endLine": 5
+    },
+    {
+      "id": "type::Provider",
+      "type": "type",
+      "name": "Provider",
+      "filePath": "packages/ui/src/sidebar/types.ts",
+      "summary": "Provider 配置接口，定义完整的 Provider 结构",
+      "tags": [
+        "interface",
+        "types"
+      ],
+      "complexity": "low",
+      "startLine": 7,
+      "endLine": 19
+    },
+    {
+      "id": "type::ProviderFormData",
+      "type": "type",
+      "name": "ProviderFormData",
+      "filePath": "packages/ui/src/sidebar/types.ts",
+      "summary": "Provider 表单数据接口，headers/options 为 Array 格式",
+      "tags": [
+        "interface",
+        "types"
+      ],
+      "complexity": "low",
+      "startLine": 21,
+      "endLine": 32
+    }
+  ],
+  "edges": [
+    {
+      "source": "func::MiraLogo",
+      "target": "file::packages/ui/src/chat/MiraLogo.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::MiraLogoSmall",
+      "target": "file::packages/ui/src/chat/MiraLogo.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::getSystemTheme",
+      "target": "file::packages/ui/src/contexts/ThemeContext.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::ThemeProvider",
+      "target": "file::packages/ui/src/contexts/ThemeContext.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::useTheme",
+      "target": "file::packages/ui/src/contexts/ThemeContext.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::useProjects",
+      "target": "file::packages/ui/src/hooks/useProjects.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::useSessions",
+      "target": "file::packages/ui/src/hooks/useSessions.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::TitleBar",
+      "target": "file::packages/ui/src/layout/TitleBar.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "obj::ConfigService",
+      "target": "file::packages/ui/src/services/config.service.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::getColorFromStorage",
+      "target": "file::packages/ui/src/services/project.service.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::setColorToStorage",
+      "target": "file::packages/ui/src/services/project.service.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::getHiddenProjects",
+      "target": "file::packages/ui/src/services/project.service.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::setHiddenProjects",
+      "target": "file::packages/ui/src/services/project.service.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "obj::SessionService",
+      "target": "file::packages/ui/src/services/session.service.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::ConfigSourceIndicator",
+      "target": "file::packages/ui/src/sidebar/ConfigSourceIndicator.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::ModelManager",
+      "target": "file::packages/ui/src/sidebar/ModelManager.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::createProviderFromForm",
+      "target": "file::packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::providerToFormData",
+      "target": "file::packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::ProviderConfigPanel",
+      "target": "file::packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::SettingsDialog",
+      "target": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::getSettings",
+      "target": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::getActiveProvider",
+      "target": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::getProviderById",
+      "target": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::formatTime",
+      "target": "file::packages/ui/src/sidebar/Sidebar.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::getTimeGroup",
+      "target": "file::packages/ui/src/sidebar/Sidebar.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::SidebarContent",
+      "target": "file::packages/ui/src/sidebar/Sidebar.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::Sidebar",
+      "target": "file::packages/ui/src/sidebar/Sidebar.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::ThemeSelector",
+      "target": "file::packages/ui/src/sidebar/ThemeSelector.tsx",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::encryptApiKey",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::decryptApiKey",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::encryptProviders",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::decryptProviders",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::migrateProviders",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::loadProviders",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::saveProviders",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::loadSettings",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::saveSettings",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::getActiveProvider::provider-data",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "func::getProviderById::provider-data",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "type::ProviderModel",
+      "target": "file::packages/ui/src/sidebar/types.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "type::Provider",
+      "target": "file::packages/ui/src/sidebar/types.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "type::ProviderFormData",
+      "target": "file::packages/ui/src/sidebar/types.ts",
+      "relation": "contains",
+      "label": "定义在文件中"
+    },
+    {
+      "source": "type::Provider",
+      "target": "type::ProviderModel",
+      "relation": "depends",
+      "label": "Provider 包含 ProviderModel 数组"
+    },
+    {
+      "source": "file::packages/ui/src/hooks/useProjects.ts",
+      "target": "file::packages/ui/src/services/project.service.ts",
+      "relation": "imports",
+      "label": "导入 ProjectService"
+    },
+    {
+      "source": "file::packages/ui/src/hooks/useSessions.ts",
+      "target": "file::packages/ui/src/services/session.service.ts",
+      "relation": "imports",
+      "label": "导入 SessionService"
+    },
+    {
+      "source": "file::packages/ui/src/layout/TitleBar.tsx",
+      "target": "file::packages/ui/src/contexts/ThemeContext.tsx",
+      "relation": "imports",
+      "label": "导入 useTheme Hook"
+    },
+    {
+      "source": "file::packages/ui/src/layout/TitleBar.tsx",
+      "target": "file::packages/ui/src/chat/MiraLogo.tsx",
+      "relation": "imports",
+      "label": "导入 MiraLogoSmall 组件"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/ConfigSourceIndicator.tsx",
+      "target": "file::packages/ui/src/services/config.service.ts",
+      "relation": "imports",
+      "label": "导入 ConfigService"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/ThemeSelector.tsx",
+      "target": "file::packages/ui/src/contexts/ThemeContext.tsx",
+      "relation": "imports",
+      "label": "导入 useTheme Hook"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/provider-data.ts",
+      "target": "file::packages/ui/src/sidebar/types.ts",
+      "relation": "imports",
+      "label": "导入 Provider 类型"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/provider-data.ts",
+      "target": "file::packages/ui/src/services/config.service.ts",
+      "relation": "imports",
+      "label": "导入 ConfigService"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/ModelManager.tsx",
+      "target": "file::packages/ui/src/sidebar/types.ts",
+      "relation": "imports",
+      "label": "导入 Provider 类型"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "target": "file::packages/ui/src/sidebar/types.ts",
+      "relation": "imports",
+      "label": "导入 Provider/ProviderFormData 类型"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "target": "file::packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "relation": "imports",
+      "label": "导入 ProviderConfigPanel"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "target": "file::packages/ui/src/sidebar/ModelManager.tsx",
+      "relation": "imports",
+      "label": "导入 ModelManager"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "target": "file::packages/ui/src/sidebar/ThemeSelector.tsx",
+      "relation": "imports",
+      "label": "导入 ThemeSelector"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "target": "file::packages/ui/src/sidebar/ConfigSourceIndicator.tsx",
+      "relation": "imports",
+      "label": "导入 ConfigSourceIndicator"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "target": "file::packages/ui/src/sidebar/provider-data.ts",
+      "relation": "imports",
+      "label": "导入 Provider 数据管理"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "target": "file::packages/ui/src/sidebar/types.ts",
+      "relation": "imports",
+      "label": "导入 Provider 类型"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/Sidebar.tsx",
+      "target": "file::packages/ui/src/sidebar/SettingsDialog.tsx",
+      "relation": "imports",
+      "label": "导入 SettingsDialog"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/Sidebar.tsx",
+      "target": "file::packages/ui/src/services/session.service.ts",
+      "relation": "imports",
+      "label": "导入 SessionService"
+    },
+    {
+      "source": "file::packages/ui/src/sidebar/Sidebar.tsx",
+      "target": "file::packages/ui/src/services/project.service.ts",
+      "relation": "imports",
+      "label": "导入 ProjectService"
+    },
+    {
+      "source": "func::TitleBar",
+      "target": "func::MiraLogoSmall",
+      "relation": "calls",
+      "label": "导入 MiraLogoSmall 组件"
+    },
+    {
+      "source": "func::TitleBar",
+      "target": "func::useTheme",
+      "relation": "calls",
+      "label": "调用 useTheme 获取主题状态"
+    },
+    {
+      "source": "func::ThemeProvider",
+      "target": "func::getSystemTheme",
+      "relation": "calls",
+      "label": "调用获取系统主题"
+    },
+    {
+      "source": "func::ThemeSelector",
+      "target": "func::useTheme",
+      "relation": "calls",
+      "label": "调用 useTheme 获取主题状态"
+    },
+    {
+      "source": "func::ConfigSourceIndicator",
+      "target": "obj::ConfigService",
+      "relation": "calls",
+      "label": "调用 ConfigService.get()"
+    },
+    {
+      "source": "func::useProjects",
+      "target": "obj::ProjectService",
+      "relation": "calls",
+      "label": "调用 ProjectService CRUD 操作"
+    },
+    {
+      "source": "func::useSessions",
+      "target": "obj::SessionService",
+      "relation": "calls",
+      "label": "调用 SessionService 操作"
+    },
+    {
+      "source": "func::createProviderFromForm",
+      "target": "type::ProviderFormData",
+      "relation": "calls",
+      "label": "接收 ProviderFormData 参数"
+    },
+    {
+      "source": "func::createProviderFromForm",
+      "target": "type::Provider",
+      "relation": "calls",
+      "label": "返回 Provider 对象"
+    },
+    {
+      "source": "func::providerToFormData",
+      "target": "type::Provider",
+      "relation": "calls",
+      "label": "接收 Provider 参数"
+    },
+    {
+      "source": "func::providerToFormData",
+      "target": "type::ProviderFormData",
+      "relation": "calls",
+      "label": "返回 ProviderFormData 对象"
+    },
+    {
+      "source": "func::ModelManager",
+      "target": "type::Provider",
+      "relation": "calls",
+      "label": "使用 Provider 类型"
+    },
+    {
+      "source": "func::ProviderConfigPanel",
+      "target": "func::createProviderFromForm",
+      "relation": "calls",
+      "label": "保存时调用表单转 Provider"
+    },
+    {
+      "source": "func::ProviderConfigPanel",
+      "target": "func::providerToFormData",
+      "relation": "calls",
+      "label": "编辑时调用 Provider 转表单"
+    },
+    {
+      "source": "func::ProviderConfigPanel",
+      "target": "type::Provider",
+      "relation": "calls",
+      "label": "使用 Provider 类型"
+    },
+    {
+      "source": "func::ProviderConfigPanel",
+      "target": "type::ProviderFormData",
+      "relation": "calls",
+      "label": "使用 ProviderFormData 类型"
+    },
+    {
+      "source": "func::SettingsDialog",
+      "target": "func::ProviderConfigPanel",
+      "relation": "calls",
+      "label": "导入并渲染 ProviderConfigPanel"
+    },
+    {
+      "source": "func::SettingsDialog",
+      "target": "func::ModelManager",
+      "relation": "calls",
+      "label": "导入并渲染 ModelManager"
+    },
+    {
+      "source": "func::SettingsDialog",
+      "target": "func::ThemeSelector",
+      "relation": "calls",
+      "label": "导入并渲染 ThemeSelector"
+    },
+    {
+      "source": "func::SettingsDialog",
+      "target": "func::ConfigSourceIndicator",
+      "relation": "calls",
+      "label": "导入并渲染 ConfigSourceIndicator"
+    },
+    {
+      "source": "func::SettingsDialog",
+      "target": "func::loadProviders",
+      "relation": "calls",
+      "label": "加载 Provider 列表"
+    },
+    {
+      "source": "func::SettingsDialog",
+      "target": "func::saveProviders",
+      "relation": "calls",
+      "label": "保存 Provider 列表"
+    },
+    {
+      "source": "func::SettingsDialog",
+      "target": "func::loadSettings",
+      "relation": "calls",
+      "label": "加载设置"
+    },
+    {
+      "source": "func::SettingsDialog",
+      "target": "func::saveSettings",
+      "relation": "calls",
+      "label": "保存设置"
+    },
+    {
+      "source": "func::getSettings",
+      "target": "func::loadSettings",
+      "relation": "calls",
+      "label": "委托调用 loadSettings"
+    },
+    {
+      "source": "func::getActiveProvider",
+      "target": "func::getActiveProvider::provider-data",
+      "relation": "calls",
+      "label": "动态导入并调用 getActiveProvider"
+    },
+    {
+      "source": "func::getProviderById",
+      "target": "func::getProviderById::provider-data",
+      "relation": "calls",
+      "label": "动态导入并调用 getProviderById"
+    },
+    {
+      "source": "func::SidebarContent",
+      "target": "func::getTimeGroup",
+      "relation": "calls",
+      "label": "会话分组时调用时间分组函数"
+    },
+    {
+      "source": "func::SidebarContent",
+      "target": "func::formatTime",
+      "relation": "calls",
+      "label": "显示会话时间时调用格式化"
+    },
+    {
+      "source": "func::SidebarContent",
+      "target": "obj::SessionService",
+      "relation": "calls",
+      "label": "调用 SessionService 操作"
+    },
+    {
+      "source": "func::SidebarContent",
+      "target": "obj::ProjectService",
+      "relation": "calls",
+      "label": "调用 ProjectService.hide"
+    },
+    {
+      "source": "func::SidebarContent",
+      "target": "func::SettingsDialog",
+      "relation": "calls",
+      "label": "通过 Portal 渲染 SettingsDialog"
+    },
+    {
+      "source": "func::Sidebar",
+      "target": "func::SidebarContent",
+      "relation": "calls",
+      "label": "渲染 SidebarContent 组件"
+    },
+    {
+      "source": "func::encryptApiKey",
+      "target": "obj::ConfigService",
+      "relation": "calls",
+      "label": "调用 ConfigService.encryptApiKey"
+    },
+    {
+      "source": "func::decryptApiKey",
+      "target": "obj::ConfigService",
+      "relation": "calls",
+      "label": "调用 ConfigService.decryptApiKey"
+    },
+    {
+      "source": "func::encryptProviders",
+      "target": "func::encryptApiKey",
+      "relation": "calls",
+      "label": "批量加密调用"
+    },
+    {
+      "source": "func::decryptProviders",
+      "target": "func::decryptApiKey",
+      "relation": "calls",
+      "label": "批量解密调用"
+    },
+    {
+      "source": "func::loadProviders",
+      "target": "func::migrateProviders",
+      "relation": "calls",
+      "label": "加载时迁移旧数据"
+    },
+    {
+      "source": "func::loadProviders",
+      "target": "func::decryptProviders",
+      "relation": "calls",
+      "label": "加载后解密 Provider"
+    },
+    {
+      "source": "func::loadProviders",
+      "target": "func::encryptProviders",
+      "relation": "calls",
+      "label": "迁移旧数据后加密存储"
+    },
+    {
+      "source": "func::saveProviders",
+      "target": "func::encryptProviders",
+      "relation": "calls",
+      "label": "保存前加密 Provider"
+    },
+    {
+      "source": "func::saveProviders",
+      "target": "obj::ConfigService",
+      "relation": "calls",
+      "label": "同步活跃 Provider 到配置文件"
+    },
+    {
+      "source": "func::getActiveProvider::provider-data",
+      "target": "func::loadProviders",
+      "relation": "calls",
+      "label": "加载 Provider 列表后查询"
+    },
+    {
+      "source": "func::getProviderById::provider-data",
+      "target": "func::loadProviders",
+      "relation": "calls",
+      "label": "加载 Provider 列表后查询"
+    },
+    {
+      "source": "func::getProviderById::provider-data",
+      "target": "obj::ConfigService",
+      "relation": "calls",
+      "label": "API Key 缺失时从配置文件补充"
+    }
+  ]
+}

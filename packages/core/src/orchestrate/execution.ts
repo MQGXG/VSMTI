@@ -3,11 +3,11 @@
  * 工具声明式并行 + Promise.allSettled 并发执行
  */
 
-import { ToolRegistry } from "../registry"
-import { ToolContext, ToolResult } from "../tool"
-import { executeToolCalls } from "../tool-executor"
-import { ToolOutputStore } from "../tools/tool-output-store"
-import { isToolParallel } from "../tools/tool-meta"
+import { ToolRegistry } from "../system/registry"
+import { ToolContext, ToolResult } from "../shared/tool"
+import { executeToolCalls } from "../shared/tool-executor"
+import { ToolOutputStore } from "../tools/shared/tool-output-store"
+import { isToolParallel } from "../tools/shared/tool-meta"
 
 export interface OrchestratedToolCall {
   id: string

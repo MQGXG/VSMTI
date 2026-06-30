@@ -5,7 +5,7 @@
 
 import { join, dirname } from "path"
 import fs from "fs"
-import { getPlatformPaths } from "./platform-paths"
+import { getPlatformPaths } from "../config/paths"
 
 /** 从指定路径向上查找直到找到 .git 标志或达到根目录 */
 export function findProjectRoot(start: string): string {
@@ -82,3 +82,4 @@ export function buildInstructionSystemPrompt(workspace: string): string {
 
   return parts.join("\n\n")
 }
+

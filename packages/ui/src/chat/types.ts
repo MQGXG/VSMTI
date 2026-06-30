@@ -12,7 +12,6 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   toolCalls?: ToolCallInfo[];
-  isToolCall?: boolean;
   dbId?: number;
 }
 

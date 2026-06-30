@@ -1,7 +1,7 @@
 import { execFile } from "child_process"
 import { promisify } from "util"
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../../shared/tool"
 
 const execAsync = promisify(execFile)
 
@@ -86,3 +86,4 @@ export const gitCommitTool = make({
     }
   },
 })
+

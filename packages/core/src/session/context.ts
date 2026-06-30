@@ -1,9 +1,9 @@
-import type { CheckpointProvider } from "./memory/checkpoint-provider"
-import type { MemoryManager } from "./memory/manager"
-import { needsContextRebuild, rebuildContextFromCheckpoint, truncateToBudget, estimateTokens, type CheckpointData } from "./message-utils"
-import type { LLMMessage, ContentPart, ToolResultPart } from "./llm/schema/messages"
+import type { CheckpointProvider } from "../memory/checkpoint-provider"
+import type { MemoryManager } from "../memory/manager"
+import { needsContextRebuild, rebuildContextFromCheckpoint, truncateToBudget, estimateTokens, type CheckpointData } from "../shared/message-utils"
+import type { LLMMessage, ContentPart, ToolResultPart } from "../llm/schema/messages"
 import { compactMessages, type CompactLevel } from "./compaction"
-import { createLLMClient } from "./llm-sdk"
+import { createLLMClient } from "../llm/client"
 import * as fs from "fs"
 import * as path from "path"
 
@@ -94,10 +94,8 @@ export class ContextManager {
     sessionID: string,
   ): Promise<{ enrichedUser: string; memoryPrompt: string }> {
     const memoryPrompt = this.memoryManager.buildSystemPrompt()
-    const tokenBudget = this.config.memoryTokenBudget
-    const prefetched = await this.memoryManager.prefetch(userMessage, sessionID, tokenBudget)
-    const enrichedUser = prefetched ? `${prefetched}\n\n${userMessage}` : userMessage
-    return { enrichedUser, memoryPrompt }
+    // 记忆注入由 pre_llm hook 中的 injectMemories 统一处理，避免重复注入
+    return { enrichedUser: userMessage, memoryPrompt }
   }
 
   async syncTurn(user: string, assistant: string, sessionID: string): Promise<void> {
@@ -528,3 +526,5 @@ export class ContextManager {
     ].join("\n")
   }
 }
+
+

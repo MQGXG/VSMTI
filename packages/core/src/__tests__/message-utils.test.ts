@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { repairMessageSequence, estimateTokens, truncateToBudget } from '../message-utils'
+import { repairMessageSequence, estimateTokens, truncateToBudget } from '../shared/message-utils'
 
 test('repairs tool followed by user', () => {
   const out = repairMessageSequence([

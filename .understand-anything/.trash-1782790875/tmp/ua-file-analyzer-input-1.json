@@ -1,0 +1,321 @@
+{
+  "batchImportData": {
+    "packages/core/src/__tests__/agent.test.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/__tests__/permission-loop.test.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/__tests__/tool.test.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/agent/pipeline.ts": [
+      "packages/core/src/agent/state-machine.ts",
+      "packages/core/src/execution/orchestrator.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/permission-gate.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/permission/approval-store.ts",
+      "packages/core/src/plugin-hooks.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/session-store.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/state-machine.ts": [],
+    "packages/core/src/agent/text-ngram.ts": [],
+    "packages/core/src/agent/turn-processor.ts": [
+      "packages/core/src/agent/state-machine.ts",
+      "packages/core/src/agent/text-ngram.ts",
+      "packages/core/src/execution/orchestrator.ts",
+      "packages/core/src/feature-flags.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/permission-gate.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/permission/approval-store.ts",
+      "packages/core/src/plugin-hooks.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/session-store.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/tool-meta.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/config.ts": [
+      "packages/core/src/mcp/index.ts",
+      "packages/core/src/platform-paths.ts",
+      "packages/core/src/plugin/index.ts"
+    ],
+    "packages/core/src/cron-scheduler.ts": [],
+    "packages/core/src/execution/orchestrator.ts": [
+      "packages/core/src/registry.ts",
+      "packages/core/src/tool-executor.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/tool-meta.ts",
+      "packages/core/src/tools/tool-output-store.ts"
+    ],
+    "packages/core/src/feature-flags.ts": [],
+    "packages/core/src/hooks-setup.ts": [
+      "packages/core/src/plugin-hooks.ts"
+    ],
+    "packages/core/src/llm/tool-runtime.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/lsp/client.ts": [],
+    "packages/core/src/lsp/manager.ts": [
+      "packages/core/src/lsp/client.ts"
+    ],
+    "packages/core/src/mcp/index.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/permission-gate.ts": [
+      "packages/core/src/permission.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/permission-store.ts": [
+      "packages/core/src/database.ts",
+      "packages/core/src/permission.ts"
+    ],
+    "packages/core/src/permission.ts": [],
+    "packages/core/src/permission/approval-store.ts": [
+      "packages/core/src/permission-store.ts",
+      "packages/core/src/permission.ts"
+    ],
+    "packages/core/src/plugin-hooks.ts": [],
+    "packages/core/src/plugin/index.ts": [
+      "packages/core/src/logger.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/registry-init.ts": [
+      "packages/core/src/mcp/index.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/skill/skill-tools.ts",
+      "packages/core/src/tools/agent-tools.ts",
+      "packages/core/src/tools/create-docx.ts",
+      "packages/core/src/tools/cron-tool.ts",
+      "packages/core/src/tools/data-analysis.ts",
+      "packages/core/src/tools/delegate-task.ts",
+      "packages/core/src/tools/git.ts",
+      "packages/core/src/tools/image-gen.ts",
+      "packages/core/src/tools/index.ts",
+      "packages/core/src/tools/lsp-tool.ts",
+      "packages/core/src/tools/memory.ts",
+      "packages/core/src/tools/read-file.ts",
+      "packages/core/src/tools/search-history.ts",
+      "packages/core/src/tools/task-tool.ts",
+      "packages/core/src/tools/team-tool.ts",
+      "packages/core/src/tools/web-browse.ts",
+      "packages/core/src/tools/workflow-tool.ts",
+      "packages/core/src/tools/worktree-tool.ts"
+    ],
+    "packages/core/src/registry.ts": [
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts",
+      "packages/core/src/mcp/index.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/plugin/index.ts",
+      "packages/core/src/tool-effect.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/tool-meta.ts"
+    ],
+    "packages/core/src/snapshot.ts": [],
+    "packages/core/src/task-planner.ts": [],
+    "packages/core/src/tool-effect.ts": [],
+    "packages/core/src/tool-executor.ts": [
+      "packages/core/src/logger.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tool.ts": [],
+    "packages/core/src/tools/bash-security.ts": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "packages/core/src/__tests__/agent.test.ts",
+      "language": "typescript",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/__tests__/permission-loop.test.ts",
+      "language": "typescript",
+      "sizeLines": 149,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/__tests__/tool.test.ts",
+      "language": "typescript",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/pipeline.ts",
+      "language": "typescript",
+      "sizeLines": 174,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/state-machine.ts",
+      "language": "typescript",
+      "sizeLines": 45,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/text-ngram.ts",
+      "language": "typescript",
+      "sizeLines": 93,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/agent/turn-processor.ts",
+      "language": "typescript",
+      "sizeLines": 422,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/config.ts",
+      "language": "typescript",
+      "sizeLines": 312,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/cron-scheduler.ts",
+      "language": "typescript",
+      "sizeLines": 126,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/execution/orchestrator.ts",
+      "language": "typescript",
+      "sizeLines": 160,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/feature-flags.ts",
+      "language": "typescript",
+      "sizeLines": 227,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/hooks-setup.ts",
+      "language": "typescript",
+      "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/llm/tool-runtime.ts",
+      "language": "typescript",
+      "sizeLines": 70,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/lsp/client.ts",
+      "language": "typescript",
+      "sizeLines": 168,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/lsp/manager.ts",
+      "language": "typescript",
+      "sizeLines": 139,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/mcp/index.ts",
+      "language": "typescript",
+      "sizeLines": 331,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/permission-gate.ts",
+      "language": "typescript",
+      "sizeLines": 84,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/permission-store.ts",
+      "language": "typescript",
+      "sizeLines": 44,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/permission.ts",
+      "language": "typescript",
+      "sizeLines": 209,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/permission/approval-store.ts",
+      "language": "typescript",
+      "sizeLines": 123,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/plugin-hooks.ts",
+      "language": "typescript",
+      "sizeLines": 90,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/plugin/index.ts",
+      "language": "typescript",
+      "sizeLines": 393,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/registry-init.ts",
+      "language": "typescript",
+      "sizeLines": 93,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/registry.ts",
+      "language": "typescript",
+      "sizeLines": 339,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/snapshot.ts",
+      "language": "typescript",
+      "sizeLines": 176,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/task-planner.ts",
+      "language": "typescript",
+      "sizeLines": 198,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/tool-effect.ts",
+      "language": "typescript",
+      "sizeLines": 165,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/tool-executor.ts",
+      "language": "typescript",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/tool.ts",
+      "language": "typescript",
+      "sizeLines": 334,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/core/src/tools/bash-security.ts",
+      "language": "typescript",
+      "sizeLines": 226,
+      "fileCategory": "code"
+    }
+  ]
+}

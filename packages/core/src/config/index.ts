@@ -1,9 +1,9 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from "fs"
 import { join, resolve, isAbsolute } from "path"
 import { homedir } from "os"
-import { getPlatformPaths } from "./platform-paths"
-import type { MCPServerConfig } from "./mcp/index"
-import type { PluginConfigMap } from "./plugin/index"
+import { getPlatformPaths } from "./paths"
+import type { MCPServerConfig } from "../mcp/index"
+import type { PluginConfigMap } from "../plugin/index"
 
 // ─── 类型定义 ──────────────────────────────────────────────────────
 
@@ -310,3 +310,4 @@ export function togglePlugin(name: string, enabled: boolean): void {
   config.plugins[name].enabled = enabled
   savePluginConfig(config.plugins)
 }
+

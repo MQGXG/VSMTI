@@ -11,8 +11,8 @@
  * 请使用 GoalJudge 替代，此文件将在下一轮清理中移除。
  */
 
-import { createLLMClient, type LLMMessage } from "./llm-sdk"
-import { logError } from "./logger"
+import { createLLMClient, type LLMMessage } from "../llm/client"
+import { logError } from "../system/logger"
 
 export interface GoalCondition {
   id: string
@@ -267,3 +267,5 @@ export class GoalManager {
     return { satisfied, reasoning, events: [] }
   }
 }
+
+

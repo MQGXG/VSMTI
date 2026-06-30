@@ -16,9 +16,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "paths": {
-      "@mira/core": ["../../packages/core/src"],
-      "@mira/tools": ["../../packages/tools/src"],
-      "@mira/ui": ["../../packages/ui/src"],
+    "@mira/core": ["../../packages/core/src"],
+    "@mira/ui": ["../../packages/ui/src"],
       "@mira/electron": ["../../packages/electron/src"]
     }
   },

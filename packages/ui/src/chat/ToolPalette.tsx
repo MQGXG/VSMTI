@@ -32,6 +32,15 @@ const toolKeywords: Record<string, string[]> = {
   bash: ["bash", "shell", "terminal", "command", "终端", "命令", "cmd", "powershell", "执行命令"],
 }
 
+const btnStyle = {
+  color: 'var(--text-secondary)',
+  background: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  fontSize: 'inherit',
+  fontFamily: 'inherit',
+}
+
 export function ToolPalette({ onResult, disabled, inputHint }: Props) {
   const [open, setOpen] = useState(false)
   const [tools, setTools] = useState<ToolInfo[]>([])
@@ -42,17 +51,13 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
   const paletteRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (open) {
-      AgentService.listTools().then(setTools)
-    }
+    if (open) { AgentService.listTools().then(setTools) }
   }, [open])
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (paletteRef.current && !paletteRef.current.contains(e.target as Node)) {
-        setOpen(false)
-        setSelectedTool(null)
-        setResultMsg(null)
+        setOpen(false); setSelectedTool(null); setResultMsg(null)
       }
     }
     document.addEventListener("mousedown", handleClick)
@@ -71,23 +76,19 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
   }, [inputHint, tools, open])
 
   const handleSelectTool = (tool: ToolInfo) => {
-    setSelectedTool(tool)
-    setResultMsg(null)
-    setInputs({})
+    setSelectedTool(tool); setResultMsg(null); setInputs({})
   }
 
   const handleExecute = async () => {
     if (!selectedTool) return
-    setLoading(true)
-    setResultMsg(null)
+    setLoading(true); setResultMsg(null)
     try {
       const args: Record<string, unknown> = {}
       const props = selectedTool.parameters?.properties as Record<string, { type: string }> | undefined
       if (props) {
         for (const [key] of Object.entries(props)) {
           if (inputs[key] !== undefined && inputs[key] !== "") {
-            const prop = props[key]
-            args[key] = prop.type === "number" ? Number(inputs[key]) : inputs[key]
+            args[key] = props[key].type === "number" ? Number(inputs[key]) : inputs[key]
           }
         }
       }
@@ -102,31 +103,27 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
     } catch (e) {
       onResult(selectedTool.name, { success: false, output: "", error: String(e) })
       setResultMsg(`❌ ${String(e)}`)
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   return (
     <div ref={paletteRef} className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        disabled={disabled}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all duration-200 disabled:opacity-30 ${
-          suggestedTool && !open
-            ? "text-primary-400 animate-pulse-glow"
-            : "text-neutral-500 hover:text-neutral-300 hover:bg-neutral-700/50"
-        }`}
-        style={suggestedTool && !open ? { background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)' } : {}}
-        title="工具面板 (可直接执行，不经过 LLM)"
-      >
+      <button onClick={() => setOpen(!open)} disabled={disabled}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all duration-200 disabled:opacity-30"
+        style={{
+          ...btnStyle,
+          color: suggestedTool && !open ? 'var(--accent)' : 'var(--text-tertiary)',
+          background: suggestedTool && !open ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
+          border: suggestedTool && !open ? '1px solid rgba(0, 217, 192, 0.2)' : '1px solid transparent',
+        }}
+        title="工具面板 (可直接执行，不经过 LLM)">
         <Wrench className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">{suggestedTool ? suggestedTool.name : "工具"}</span>
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden shadow-glass-lg z-50 animate-scale-in"
-          style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
+        <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden z-50"
+          style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}>
           {resultMsg ? (
             <div className="p-4 text-sm text-center" style={{ color: 'var(--text-primary)' }}>{resultMsg}</div>
           ) : !selectedTool ? (
@@ -140,16 +137,13 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                   const Icon = toolIcons[tool.name] || Wrench
                   const isSuggested = tool.name === suggestedTool?.name
                   return (
-                    <button
-                      key={tool.name}
-                      onClick={() => handleSelectTool(tool)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200 ${
-                        isSuggested
-                          ? "text-primary-300"
-                          : "text-neutral-300 hover:bg-neutral-800/50"
-                      }`}
-                      style={isSuggested ? { background: 'rgba(0, 217, 192, 0.1)', border: '1px solid rgba(0, 217, 192, 0.2)' } : {}}
-                    >
+                    <button key={tool.name} onClick={() => handleSelectTool(tool)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200"
+                      style={{
+                        color: isSuggested ? 'var(--accent)' : 'var(--text-primary)',
+                        background: isSuggested ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
+                        border: isSuggested ? '1px solid rgba(0, 217, 192, 0.2)' : 'none',
+                      }}>
                       <Icon className="w-4 h-4 shrink-0" style={{ color: isSuggested ? 'var(--accent-start)' : 'var(--text-secondary)' }} />
                       <div className="min-w-0 flex-1">
                         <div className="font-medium truncate">{tool.name}</div>
@@ -168,7 +162,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                   {(() => { const Icon = toolIcons[selectedTool.name] || Wrench; return <Icon className="w-4 h-4" style={{ color: 'var(--accent-start)' }} /> })()}
                   <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{selectedTool.name}</span>
                 </div>
-                <button onClick={() => setSelectedTool(null)} className="p-1.5 rounded-lg transition-colors hover:bg-neutral-700/50">
+                <button onClick={() => setSelectedTool(null)} className="p-1.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5">
                   <X className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
                 </button>
               </div>
@@ -182,8 +176,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                     return (
                       <div key={key}>
                         <label className="text-xs block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                          {key}
-                          {required.includes(key) && <span className="ml-1" style={{ color: '#FF4757' }}>*</span>}
+                          {key}{required.includes(key) && <span className="ml-1" style={{ color: '#FF4757' }}>*</span>}
                         </label>
                         <input
                           type={prop.type === "number" ? "number" : "text"}
@@ -205,7 +198,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                   {loading ? "执行中..." : "执行"}
                 </button>
                 <button onClick={() => setSelectedTool(null)}
-                  className="px-4 py-2.5 rounded-xl text-sm transition-colors hover:bg-neutral-700/50"
+                  className="px-4 py-2.5 rounded-xl text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
                   style={{ color: 'var(--text-secondary)' }}>
                   返回
                 </button>

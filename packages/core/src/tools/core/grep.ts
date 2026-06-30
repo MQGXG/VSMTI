@@ -2,7 +2,7 @@ import { execFile } from "child_process"
 import { promisify } from "util"
 import * as path from "path"
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../../shared/tool"
 
 const execFileAsync = promisify(execFile)
 
@@ -46,3 +46,4 @@ export const grepTool = make({
     }
   },
 })
+

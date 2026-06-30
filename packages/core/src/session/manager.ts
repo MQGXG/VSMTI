@@ -1,6 +1,9 @@
 import { randomUUID } from "crypto"
-import { loadSession, listSessions as sqliteListSessions } from "./session-store"
-import { getDbAsync, runWrite, reloadDatabase } from "./database"
+import { loadSession, listSessions as sqliteListSessions } from "../session/store"
+import { getDbAsync, runWrite, reloadDatabase } from "../system/database"
+import { getPlatformPaths } from "../config/paths"
+import { join } from "path"
+import fs from "fs"
 
 export interface SessionInfo {
   session_id: string
@@ -133,4 +136,35 @@ export async function deleteSessionById(sessionId: string): Promise<void> {
   const db = await getDbAsync()
   runWrite("DELETE FROM messages WHERE session_id = ?", [sessionId])
   runWrite("DELETE FROM sessions WHERE session_id = ?", [sessionId])
+
+  // 清理关联的记忆文件
+  try {
+    const baseDir = getPlatformPaths().userData
+    // 清理 BuiltinMemoryProvider JSON
+    const memoryPath = join(baseDir, "memory", `${sessionId}.json`)
+    if (fs.existsSync(memoryPath)) fs.unlinkSync(memoryPath)
+    // 清理 VectorMemoryProvider JSON
+    const vectorPath = join(baseDir, "vector-memory", `${sessionId}.json`)
+    if (fs.existsSync(vectorPath)) fs.unlinkSync(vectorPath)
+    // 清理 CheckpointProvider 目录
+    const checkpointDir = join(baseDir, "checkpoints", sessionId)
+    if (fs.existsSync(checkpointDir)) fs.rmSync(checkpointDir, { recursive: true, force: true })
+  } catch { /* 文件清理失败不阻塞主流程 */ }
+
+  // 清理 FTS 记忆索引
+  try {
+    const initSqlJs = require("sql.js")
+    const _SQL = await initSqlJs()
+    const ftsPath = join(getPlatformPaths().userData, "fts-memory.db")
+    if (fs.existsSync(ftsPath)) {
+      const buffer = fs.readFileSync(ftsPath)
+      const ftsDb = new _SQL.Database(buffer)
+      ftsDb.run("DELETE FROM fts_memory WHERE session_id = ?", [sessionId])
+      ftsDb.run("DELETE FROM fts_memory_fts WHERE session_id = ?", [sessionId])
+      fs.writeFileSync(ftsPath, Buffer.from(ftsDb.export()))
+      ftsDb.close()
+    }
+  } catch { /* FTS 清理失败不阻塞 */ }
 }
+
+

@@ -1,0 +1,10 @@
+{
+  "lastAnalyzedAt": "2026-06-30T10:50:00.000Z",
+  "gitCommitHash": "4471750f25e8f15c598f8a4c461b105f14150789",
+  "version": "1.0.0",
+  "analyzedFiles": 293,
+  "totalNodes": 654,
+  "totalEdges": 1011,
+  "totalLayers": 10,
+  "tourSteps": 12
+}

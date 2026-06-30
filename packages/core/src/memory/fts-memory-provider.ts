@@ -7,7 +7,7 @@
 
 import { MemoryProvider } from "./types"
 import initSqlJs, { type Database as SqliteDb } from "sql.js"
-import { getPlatformPaths } from "../platform-paths"
+import { getPlatformPaths } from "../config/paths"
 import { join } from "path"
 import * as fss from "fs"
 import * as fsp from "fs/promises"
@@ -105,6 +105,8 @@ export class FTSMemoryProvider implements MemoryProvider {
       )`)
       this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_memory_fts USING fts5(
         content,
+        session_id UNINDEXED,
+        source UNINDEXED,
         tokenize='unicode61'
       )`)
       this._hasFTS5 = true
@@ -118,6 +120,26 @@ export class FTSMemoryProvider implements MemoryProvider {
     this.db.run(`CREATE TABLE IF NOT EXISTS fts_memory (
       id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT, content TEXT, session_id TEXT
     )`)
+
+    // 升级旧版 fts_memory_fts（缺少 session_id/source 列）：重建并重新索引
+    if (this._hasFTS5) {
+      try {
+        this.db.exec("SELECT session_id FROM fts_memory_fts LIMIT 0")
+      } catch {
+        try {
+          this.db.run("DROP TABLE IF EXISTS fts_memory_fts")
+          this.db.run(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_memory_fts USING fts5(
+            content, session_id UNINDEXED, source UNINDEXED, tokenize='unicode61'
+          )`)
+          const rows = this.db.exec("SELECT content, session_id, source FROM fts_memory")
+          if (rows.length > 0 && rows[0].values) {
+            for (const row of rows[0].values) {
+              this.db.run("INSERT INTO fts_memory_fts (content, session_id, source) VALUES (?, ?, ?)", row)
+            }
+          }
+        } catch { /* 迁移失败则降级为 LIKE 搜索 */ }
+      }
+    }
 
     if (this.reconcileInterval > 0) {
       this.reconcileTimer = setInterval(() => this.reconcile(), this.reconcileInterval)
@@ -292,7 +314,8 @@ export class FTSMemoryProvider implements MemoryProvider {
         ["checkpoint", summary.slice(0, 1000), sessionID],
       )
       if (this._hasFTS5) {
-        this.db.run("INSERT INTO fts_memory_fts (content) VALUES (?)", [summary.slice(0, 1000)])
+        this.db.run("INSERT INTO fts_memory_fts (content, session_id, source) VALUES (?, ?, ?)",
+          [summary.slice(0, 1000), sessionID, "checkpoint"])
       }
     } catch { /* 跳过 */ }
   }
@@ -306,7 +329,8 @@ export class FTSMemoryProvider implements MemoryProvider {
         ["memory_md", content.slice(0, 2000), sessionID],
       )
       if (this._hasFTS5) {
-        this.db.run("INSERT INTO fts_memory_fts (content) VALUES (?)", [content.slice(0, 2000)])
+        this.db.run("INSERT INTO fts_memory_fts (content, session_id, source) VALUES (?, ?, ?)",
+          [content.slice(0, 2000), sessionID, "memory_md"])
       }
     } catch { /* 跳过 */ }
   }
@@ -318,7 +342,7 @@ export class FTSMemoryProvider implements MemoryProvider {
     return this.searchMemoryLikeFallback(query, limit)
   }
 
-  /** 跨 session 记忆搜索 — FTS5 */
+  /** 跨 session 记忆搜索 — FTS5（直接查询 fts_memory_fts，不依赖 JOIN） */
   private async searchMemoryFTS5(query: string, limit = 3): Promise<string> {
     if (!this.db) return ""
     const ftsQuery = FTSMemoryProvider.toFTS5Query(query)
@@ -326,10 +350,9 @@ export class FTSMemoryProvider implements MemoryProvider {
 
     try {
       const stmt = this.db.prepare(`
-        SELECT m.source, m.content, m.session_id,
-               snippet(m_fts, 0, '<b>', '</b>', '...', 32) AS snip, rank
-        FROM fts_memory_fts m_fts
-        JOIN fts_memory m ON m_fts.rowid = m.id
+        SELECT session_id, source, content,
+               snippet(fts_memory_fts, 0, '<b>', '</b>', '...', 32) AS snip, rank
+        FROM fts_memory_fts
         WHERE fts_memory_fts MATCH ?
         ORDER BY rank
         LIMIT ?
@@ -434,3 +457,4 @@ export class FTSMemoryProvider implements MemoryProvider {
     return results
   }
 }
+

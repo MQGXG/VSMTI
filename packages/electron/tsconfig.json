@@ -14,8 +14,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "paths": {
-      "@mira/core": ["../core/src"],
-      "@mira/tools": ["../tools/src"]
+    "@mira/core": ["../core/src"]
     }
   },
   "include": ["src/**/*"],

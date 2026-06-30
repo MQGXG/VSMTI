@@ -1,0 +1,119 @@
+{
+  "batchImportData": {
+    ".env.example": [],
+    "AGENTS.md": [],
+    "CHANGELOG.md": [],
+    "CONTEXT.md": [],
+    "CONTRIBUTING.md": [],
+    "README.md": [],
+    "SECURITY.md": [],
+    "components.json": [],
+    "electron-builder.yml": [],
+    "index.html": [],
+    "package.json": [],
+    "pnpm-workspace.yaml": [],
+    "setup.ps1": [],
+    "start.ps1": [],
+    "start.sh": [],
+    "tsconfig.json": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": ".env.example",
+      "language": "config",
+      "sizeLines": 7,
+      "fileCategory": "config"
+    },
+    {
+      "path": "AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 381,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "language": "markdown",
+      "sizeLines": 56,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "CONTEXT.md",
+      "language": "markdown",
+      "sizeLines": 122,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "language": "markdown",
+      "sizeLines": 102,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "sizeLines": 121,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "SECURITY.md",
+      "language": "markdown",
+      "sizeLines": 56,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "components.json",
+      "language": "json",
+      "sizeLines": 20,
+      "fileCategory": "config"
+    },
+    {
+      "path": "electron-builder.yml",
+      "language": "yaml",
+      "sizeLines": 35,
+      "fileCategory": "config"
+    },
+    {
+      "path": "index.html",
+      "language": "html",
+      "sizeLines": 13,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "package.json",
+      "language": "json",
+      "sizeLines": 66,
+      "fileCategory": "config"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "language": "yaml",
+      "sizeLines": 7,
+      "fileCategory": "config"
+    },
+    {
+      "path": "setup.ps1",
+      "language": "powershell",
+      "sizeLines": 26,
+      "fileCategory": "script"
+    },
+    {
+      "path": "start.ps1",
+      "language": "powershell",
+      "sizeLines": 51,
+      "fileCategory": "script"
+    },
+    {
+      "path": "start.sh",
+      "language": "shell",
+      "sizeLines": 29,
+      "fileCategory": "script"
+    },
+    {
+      "path": "tsconfig.json",
+      "language": "json",
+      "sizeLines": 27,
+      "fileCategory": "config"
+    }
+  ]
+}

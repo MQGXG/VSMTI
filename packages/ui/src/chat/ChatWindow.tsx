@@ -15,6 +15,8 @@ import { MarkdownRenderer } from "./MarkdownRenderer";
 import { ThinkingBlock } from "./ThinkingBlock";
 import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { VoiceInput } from "./VoiceInput";
+import { ToolCallView } from "./ToolCallView";
+import type { MiraRuntimeContext } from "./MiraRuntimeProvider";
 import { AgentService } from "../services/agent.service";
 
 interface Props { sessionId: string; onSessionChange?: (id: string) => void; }
@@ -41,7 +43,7 @@ function WelcomeScreen({ onSuggest }: { onSuggest: (text: string) => void }) {
   );
 }
 
-function MessageActions({ messageId, ctx }: { messageId: string; ctx: any }) {
+function MessageActions({ messageId, ctx }: { messageId: string; ctx: MiraRuntimeContext }) {
   return (
     <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
       <BranchPickerPrimitive.Root hideWhenSingleBranch className="inline-flex items-center gap-1 text-[11px]" style={{ color: "var(--fg-tertiary)" }}>
@@ -66,7 +68,7 @@ function MessageActions({ messageId, ctx }: { messageId: string; ctx: any }) {
 }
 
 function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange, goalCondition, setGoalCondition }: {
-  ctx: any; selectedModel: ModelOption; onModelChange: (m: ModelOption) => void;
+  ctx: MiraRuntimeContext; selectedModel: ModelOption; onModelChange: (m: ModelOption) => void;
   agentMode: AgentMode; onModeChange: (m: AgentMode) => void;
   goalCondition: string | null; setGoalCondition: (v: string | null) => void;
 }) {
@@ -160,6 +162,13 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                             <MessagePrimitive.Parts>
                               {({ part }) => { if (part.type === "text") return <MarkdownRenderer content={part.text} />; return null; }}
                             </MessagePrimitive.Parts>
+                            {orig?.toolCalls && orig.toolCalls.length > 0 && (
+                              <div className="mt-2 space-y-1.5">
+                                {orig.toolCalls.map((tc) => (
+                                  <ToolCallView key={tc.toolCallId} info={tc} />
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                         <MessagePrimitive.Error>

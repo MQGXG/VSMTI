@@ -1,0 +1,149 @@
+{
+  "batchImportData": {
+    "packages/ui/src/chat/MiraLogo.tsx": [],
+    "packages/ui/src/contexts/ThemeContext.tsx": [],
+    "packages/ui/src/hooks/useProjects.ts": [
+      "packages/ui/src/services/project.service.ts"
+    ],
+    "packages/ui/src/hooks/useSessions.ts": [
+      "packages/ui/src/services/session.service.ts"
+    ],
+    "packages/ui/src/layout/TitleBar.tsx": [
+      "packages/ui/src/chat/MiraLogo.tsx",
+      "packages/ui/src/contexts/ThemeContext.tsx",
+      "packages/ui/src/services/agent.service.ts"
+    ],
+    "packages/ui/src/services/config.service.ts": [],
+    "packages/ui/src/services/project.service.ts": [],
+    "packages/ui/src/services/session.service.ts": [],
+    "packages/ui/src/sidebar/ConfigSourceIndicator.tsx": [
+      "packages/ui/src/services/config.service.ts"
+    ],
+    "packages/ui/src/sidebar/ModelManager.tsx": [
+      "packages/ui/src/sidebar/types.ts"
+    ],
+    "packages/ui/src/sidebar/ProviderConfigPanel.tsx": [
+      "packages/ui/src/sidebar/types.ts"
+    ],
+    "packages/ui/src/sidebar/SettingsDialog.tsx": [
+      "packages/ui/src/sidebar/ConfigSourceIndicator.tsx",
+      "packages/ui/src/sidebar/ModelManager.tsx",
+      "packages/ui/src/sidebar/provider-data.ts",
+      "packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "packages/ui/src/sidebar/ThemeSelector.tsx",
+      "packages/ui/src/sidebar/types.ts"
+    ],
+    "packages/ui/src/sidebar/Sidebar.tsx": [
+      "packages/ui/src/services/project.service.ts",
+      "packages/ui/src/services/session.service.ts",
+      "packages/ui/src/sidebar/SettingsDialog.tsx"
+    ],
+    "packages/ui/src/sidebar/ThemeSelector.tsx": [
+      "packages/ui/src/contexts/ThemeContext.tsx"
+    ],
+    "packages/ui/src/sidebar/provider-data.ts": [
+      "packages/ui/src/services/config.service.ts",
+      "packages/ui/src/sidebar/types.ts"
+    ],
+    "packages/ui/src/sidebar/types.ts": []
+  },
+  "projectRoot": "D:\\开发\\VSMTI",
+  "batchFiles": [
+    {
+      "path": "packages/ui/src/chat/MiraLogo.tsx",
+      "language": "typescript",
+      "sizeLines": 73,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/contexts/ThemeContext.tsx",
+      "language": "typescript",
+      "sizeLines": 82,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/hooks/useProjects.ts",
+      "language": "typescript",
+      "sizeLines": 89,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/hooks/useSessions.ts",
+      "language": "typescript",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/layout/TitleBar.tsx",
+      "language": "typescript",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/services/config.service.ts",
+      "language": "typescript",
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/services/project.service.ts",
+      "language": "typescript",
+      "sizeLines": 98,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/services/session.service.ts",
+      "language": "typescript",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/sidebar/ConfigSourceIndicator.tsx",
+      "language": "typescript",
+      "sizeLines": 28,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/sidebar/ModelManager.tsx",
+      "language": "typescript",
+      "sizeLines": 92,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "language": "typescript",
+      "sizeLines": 395,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/sidebar/SettingsDialog.tsx",
+      "language": "typescript",
+      "sizeLines": 267,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/sidebar/Sidebar.tsx",
+      "language": "typescript",
+      "sizeLines": 242,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/sidebar/ThemeSelector.tsx",
+      "language": "typescript",
+      "sizeLines": 42,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/sidebar/provider-data.ts",
+      "language": "typescript",
+      "sizeLines": 169,
+      "fileCategory": "code"
+    },
+    {
+      "path": "packages/ui/src/sidebar/types.ts",
+      "language": "typescript",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    }
+  ]
+}

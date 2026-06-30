@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../../shared/tool"
 
 /**
  * Agent 记忆工具 — Agent 可主动调用 memory_search 和 memory_recall
@@ -107,3 +107,4 @@ export const memoryRecallTool = make({
     }
   },
 })
+

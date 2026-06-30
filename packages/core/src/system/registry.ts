@@ -1,15 +1,15 @@
 import * as fs from "fs"
 import * as path from "path"
 import { z } from "zod"
-import { ToolDef, ToolContext, ToolResult, ToolCall, settle, getJsonSchema, Content } from "./tool"
+import { ToolDef, ToolContext, ToolResult, ToolCall, settle, getJsonSchema, Content } from "../shared/tool"
 import { PermissionSet } from "./permission"
 import { Effect } from "effect"
-import * as ToolEffect from "./tool-effect"
-import type { LLMToolSet } from "./llm-sdk"
-import { toolMetadata, type ToolCategory } from "./tools/tool-meta"
+import * as ToolEffect from "../shared/tool-effect"
+import type { LLMToolSet } from "../llm/client"
+import { toolMetadata, type ToolCategory } from "../tools/shared/tool-meta"
 import { logError } from "./logger"
-import { MCPManager, createMCPTool, type MCPServerConfig } from "./mcp/index"
-import { PluginManager, type Plugin, type PluginHook } from "./plugin/index"
+import { MCPManager, createMCPTool, type MCPServerConfig } from "../mcp/index"
+import { PluginManager, type Plugin, type PluginHook } from "../plugin/index"
 
 export interface Materialization {
   definitions: LLMToolSet
@@ -337,3 +337,4 @@ export class ToolRegistry {
     }
   }
 }
+

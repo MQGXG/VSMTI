@@ -4,7 +4,7 @@
  */
 
 import { startServer } from "./server"
-import { initPlatformPaths } from "../platform-paths"
+import { initPlatformPaths } from "../../config/paths"
 
 const args = process.argv.slice(2)
 const portIdx = args.indexOf("--port")

@@ -1,0 +1,165 @@
+{
+  "nodes": [
+    {
+      "id": "file:apps/desktop/electron-builder.yml",
+      "type": "file",
+      "name": "electron-builder.yml",
+      "filePath": "apps/desktop/electron-builder.yml",
+      "summary": "electron-builder 打包配置文件，定义应用 ID（com.mira.app）、产品名称（Mira）、输出目录（release）、构建资源（resources）、三平台打包配置：Windows 便携版（portable/x64）、macOS DMG（x64+arm64）、Linux AppImage（x64），使用自定义产物命名模板",
+      "tags": ["config", "electron-builder", "打包", "构建", "desktop"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:apps/desktop/index.html",
+      "type": "file",
+      "name": "index.html",
+      "filePath": "apps/desktop/index.html",
+      "summary": "Electron 应用 HTML 入口文件，设置中文语言（zh-CN）、CSP 安全策略（限制 script/style/connect/img 来源）、挂载 React 根节点 div#root 并通过 module 方式加载 /src/main.tsx 入口脚本",
+      "tags": ["html", "entry", "入口", "csp", "desktop"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:apps/desktop/package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "apps/desktop/package.json",
+      "summary": "@mira/desktop 应用壳包配置，定义包名、版本（1.0.0）、入口文件（dist-electron/main/index.js）、构建脚本（electron-vite dev/build/package）、运行时依赖（@mira/core/@mira/ui/@mira/electron workspace 引用）和开发依赖（Electron 31/electron-builder/electron-vite/Vite 5/TypeScript 5/Tailwind CSS/Vitest）",
+      "tags": ["config", "package", "desktop", "依赖管理"],
+      "complexity": "low"
+    },
+    {
+      "id": "file:apps/desktop/tsconfig.json",
+      "type": "file",
+      "name": "tsconfig.json",
+      "filePath": "apps/desktop/tsconfig.json",
+      "summary": "@mira/desktop TypeScript 编译配置，设置 ES2020 目标、ESNext 模块、bundler 模块解析、React JSX 支持、严格模式、路径别名映射（@mira/core/ui/electron → packages 对应源码目录）、声明文件和 sourceMap 生成",
+      "tags": ["config", "typescript", "编译配置", "desktop"],
+      "complexity": "low"
+    },
+    {
+      "id": "config:electron-builder-win",
+      "type": "section",
+      "name": "win",
+      "filePath": "apps/desktop/electron-builder.yml",
+      "summary": "Windows 打包配置，使用 icon.ico 图标，目标为 portable 便携版（x64 架构），产物命名为 Mira-${version}-portable.exe",
+      "tags": ["electron-builder", "windows", "portable", "打包"],
+      "complexity": "low"
+    },
+    {
+      "id": "config:electron-builder-mac",
+      "type": "section",
+      "name": "mac",
+      "filePath": "apps/desktop/electron-builder.yml",
+      "summary": "macOS 打包配置，使用 icon.icns 图标，目标为 DMG（x64+arm64 双架构），产物命名为 Mira-${version}.dmg",
+      "tags": ["electron-builder", "macos", "dmg", "打包"],
+      "complexity": "low"
+    },
+    {
+      "id": "config:electron-builder-linux",
+      "type": "section",
+      "name": "linux",
+      "filePath": "apps/desktop/electron-builder.yml",
+      "summary": "Linux 打包配置，使用 icon.png 图标，目标为 AppImage（x64 架构），产物命名为 Mira-${version}.AppImage",
+      "tags": ["electron-builder", "linux", "appimage", "打包"],
+      "complexity": "low"
+    },
+    {
+      "id": "config:desktop-scripts",
+      "type": "section",
+      "name": "scripts",
+      "filePath": "apps/desktop/package.json",
+      "summary": "构建脚本集合，包括 dev（electron-vite dev 热重载开发）、build（electron-vite build 编译）、package/package:win/mac/linux（编译+打包）、test（vitest 测试）、typecheck（tsc 类型检查）、lint/lint:fix（ESLint 检查/修复）、clean（清理产物）",
+      "tags": ["scripts", "构建", "开发工具"],
+      "complexity": "low"
+    },
+    {
+      "id": "config:desktop-compiler-options",
+      "type": "section",
+      "name": "compilerOptions",
+      "filePath": "apps/desktop/tsconfig.json",
+      "summary": "TypeScript 编译器选项，ES2020 目标 + ESNext 模块 + bundler 解析 + react-jsx + 严格模式 + 路径别名（@mira/core/ui/electron 映射到 packages 源码）+ 声明文件/sourceMap 生成",
+      "tags": ["typescript", "编译选项", "路径别名"],
+      "complexity": "low"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:apps/desktop/electron-builder.yml",
+      "target": "config:electron-builder-win",
+      "type": "defines",
+      "label": "Windows 打包配置"
+    },
+    {
+      "source": "file:apps/desktop/electron-builder.yml",
+      "target": "config:electron-builder-mac",
+      "type": "defines",
+      "label": "macOS 打包配置"
+    },
+    {
+      "source": "file:apps/desktop/electron-builder.yml",
+      "target": "config:electron-builder-linux",
+      "type": "defines",
+      "label": "Linux 打包配置"
+    },
+    {
+      "source": "file:apps/desktop/package.json",
+      "target": "config:desktop-scripts",
+      "type": "defines",
+      "label": "构建脚本"
+    },
+    {
+      "source": "file:apps/desktop/tsconfig.json",
+      "target": "config:desktop-compiler-options",
+      "type": "defines",
+      "label": "编译器选项"
+    },
+    {
+      "source": "file:apps/desktop/package.json",
+      "target": "file:apps/desktop/electron-builder.yml",
+      "type": "configures",
+      "label": "package:win/mac/linux 脚本调用 electron-builder"
+    },
+    {
+      "source": "file:apps/desktop/package.json",
+      "target": "file:apps/desktop/tsconfig.json",
+      "type": "configures",
+      "label": "typecheck 脚本引用 tsconfig"
+    },
+    {
+      "source": "file:apps/desktop/package.json",
+      "target": "file:apps/desktop/index.html",
+      "type": "belongs_to",
+      "label": "Vite 开发模式使用 index.html 作为入口"
+    },
+    {
+      "source": "file:apps/desktop/index.html",
+      "target": "file:apps/desktop/package.json",
+      "type": "references",
+      "label": "module 脚本依赖 Vite 构建链"
+    },
+    {
+      "source": "file:apps/desktop/tsconfig.json",
+      "target": "file:apps/desktop/package.json",
+      "type": "references",
+      "label": "TypeScript 配置引用包依赖的 workspace 路径"
+    },
+    {
+      "source": "config:desktop-scripts",
+      "target": "file:apps/desktop/electron-builder.yml",
+      "type": "executes",
+      "label": "package 脚本调用 electron-builder"
+    },
+    {
+      "source": "config:electron-builder-win",
+      "target": "config:electron-builder-mac",
+      "type": "parallel",
+      "label": "同级平台配置（win/mac/linux）"
+    },
+    {
+      "source": "config:electron-builder-mac",
+      "target": "config:electron-builder-linux",
+      "type": "parallel",
+      "label": "同级平台配置（mac/linux）"
+    }
+  ]
+}

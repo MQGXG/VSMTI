@@ -1,5 +1,5 @@
 import { ipcMain } from "electron"
-import { taskTracker } from "@mira/core/task-tracker"
+import { taskTracker } from "@mira/core/task/tracker"
 
 export function registerTaskIPC(): void {
   ipcMain.handle("task:create", (_, summary: string, parentId?: string) => {
@@ -30,3 +30,4 @@ export function registerTaskIPC(): void {
     return taskTracker.toText()
   })
 }
+

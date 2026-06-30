@@ -12,7 +12,8 @@
 import * as fs from "fs/promises"
 import * as path from "path"
 import { z } from "zod"
-import { make, type Content } from "../tool"
+import { make, type Content } from "../../shared/tool"
+import { getSnapshotManager } from "../../session/snapshot"
 
 async function realPath(p: string): Promise<string> {
   try { return await fs.realpath(p) } catch { return p }
@@ -335,6 +336,10 @@ export const editFileTool = make({
       return { success: false, error: "oldString must not be empty. Use write_file to create files." }
     }
 
+    // 快照：编辑前捕获文件状态
+    const snapshotMgr = getSnapshotManager(ctx.workspace)
+    await snapshotMgr.capture([real], `edit_file: ${input.path}`)
+
     let originalBytes: Buffer
     try {
       originalBytes = await fs.readFile(real)
@@ -378,3 +383,5 @@ export const editFileTool = make({
     }
   },
 })
+
+

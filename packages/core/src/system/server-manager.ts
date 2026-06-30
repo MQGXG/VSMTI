@@ -30,20 +30,21 @@ const DEFAULT_OPTIONS: Required<Omit<ServerManagerOptions, "serverEntry">> & { s
   authToken: "",
   timeout: 15000,
   useTsx: false,
+  userData: "",
 }
 
 export class ServerManager {
   private process: ChildProcess | null = null
   private resolvedPort = 0
   private resolvedToken = ""
-  private resolveReady: ((port: number, token: string) => void) | null = null
+  private resolveReady: ((value: { port: number; token: string }) => void) | null = null
   private readyPromise: Promise<{ port: number; token: string }> | null = null
   private timeout: number
 
   constructor(private options: ServerManagerOptions = {}) {
     const merged = { ...DEFAULT_OPTIONS, ...options }
     if (!merged.serverEntry) {
-      merged.serverEntry = path.resolve(__dirname, "../server/cli.js")
+      merged.serverEntry = path.resolve(__dirname, "../system/server/cli.js")
     }
     this.options = merged
     this.timeout = merged.timeout
@@ -70,7 +71,7 @@ export class ServerManager {
     // 从项目根目录解析 server CLI 路径（兼容 dev 和 prod 两种运行场景）
     const projectRoot = process.env.INIT_CWD || process.cwd()
     const entry = opts.useTsx
-      ? path.join(projectRoot, "packages/core/src/server/cli.ts")
+      ? path.join(projectRoot, "packages/core/src/system/server/cli.ts")
       : opts.serverEntry
 
     // 使用本地 tsx（避免 Electron 的 PATH 找不到 npx）

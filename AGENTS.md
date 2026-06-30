@@ -379,3 +379,31 @@ pnpm lint:fix
 - pnpm 8+
 - Windows / macOS / Linux
 - **无需 Python**（Agent Core 完全由 TypeScript 实现）
+
+## Understand Anything Dashboard（代码图谱可视化）
+
+知识图谱仪表盘用于交互式浏览代码库结构。当用户说"看图谱"、"启动可视化"等时执行以下流程：
+
+### 启动命令
+
+```powershell
+$env:GRAPH_DIR = "<项目根目录>"
+Set-Location -LiteralPath "$HOME\.understand-anything\repo\understand-anything-plugin\packages\dashboard"
+npx vite --host 127.0.0.1
+```
+
+### 路径信息
+
+- 插件根目录：`C:\Users\Devenv114\.understand-anything\repo`
+- 仪表盘目录：`$HOME\.understand-anything\repo\understand-anything-plugin\packages\dashboard`
+- 知识图谱文件：`<项目根目录>\.understand-anything\knowledge-graph.json`
+
+### 前置检查
+
+1. 检查知识图谱是否存在：`Test-Path "<项目根目录>\.understand-anything\knowledge-graph.json"`
+2. 如果不存在，提示用户先运行 `/understand` 命令
+3. 检查 `$HOME\.understand-anything\repo\understand-anything-plugin\packages\core\dist\index.js` 是否存在，若不存在则构建 core 包
+
+### Token 提取
+
+从 Vite 启动输出中提取 `🔑 Dashboard URL: http://127.0.0.1:<PORT>/?token=<TOKEN>` 这行，向用户返回完整的带 token 的 URL。

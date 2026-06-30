@@ -22,6 +22,12 @@ const defaultConfigs: Record<string, ToolFoldConfig> = {
   glob:         { defaultExpanded: true,  maxPreviewLines: 15 },
   list_files:   { defaultExpanded: false, maxPreviewLines: 10 },
   data_analysis:{ defaultExpanded: true,  maxPreviewLines: 20 },
+  image_gen:    { defaultExpanded: true,  maxPreviewLines: 10 },
+  create_docx:  { defaultExpanded: true,  maxPreviewLines: 10 },
+  delegate_task:{ defaultExpanded: false, maxPreviewLines: 8 },
+  question:     { defaultExpanded: true,  maxPreviewLines: 5 },
+  cron_tool:    { defaultExpanded: false, maxPreviewLines: 10 },
+  workflow_run: { defaultExpanded: true,  maxPreviewLines: 15 },
   default:      { defaultExpanded: false, maxPreviewLines: 8 },
 }
 

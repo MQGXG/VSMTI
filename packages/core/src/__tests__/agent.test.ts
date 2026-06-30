@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { Agent } from '../agent'
-import { ToolRegistry } from '../registry'
-import { make } from '../tool'
+import { Agent } from '../agent/agent'
+import { ToolRegistry } from '../system/registry'
+import { make } from '../shared/tool'
 import { z } from 'zod'
 
 const echoTool = make({

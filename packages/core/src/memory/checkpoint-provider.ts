@@ -8,9 +8,9 @@
 import { join } from "path"
 import fs from "fs"
 import { MemoryProvider } from "./types"
-import { getPlatformPaths } from "../platform-paths"
-import { createLLMClient, type LLMMessage } from "../llm-sdk"
-import { logError } from "../logger"
+import { getPlatformPaths } from "../config/paths"
+import { createLLMClient, type LLMMessage } from "../llm/client"
+import { logError } from "../system/logger"
 import type { FTSMemoryProvider } from "./fts-memory-provider"
 
 interface CheckpointData {
@@ -393,3 +393,5 @@ export class CheckpointProvider implements MemoryProvider {
     return parts.join("\n")
   }
 }
+
+

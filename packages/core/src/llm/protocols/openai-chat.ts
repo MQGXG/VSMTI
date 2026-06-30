@@ -1,4 +1,4 @@
-import type { LLMMessage, LLMEvent } from "../schema"
+import type { LLMMessage, LLMEvent, FinishReason } from "../schema"
 import type { Protocol } from "../route/types"
 
 interface OpenAIChunk {
@@ -59,7 +59,7 @@ export function deserializeChunk(chunk: OpenAIChunk): LLMEvent | null {
   const delta = chunk.choices?.[0]?.delta
   if (!delta) {
     if (chunk.choices?.[0]?.finish_reason) {
-      return { type: "finish", reason: chunk.choices[0].finish_reason as any || "stop" }
+      return { type: "finish", reason: chunk.choices[0].finish_reason as FinishReason || "stop" }
     }
     return null
   }

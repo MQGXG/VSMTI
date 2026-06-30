@@ -27,35 +27,22 @@ export interface ToolCallPart {
   result?: string;
 }
 
-export interface ToolResultPart {
-  type: "tool-result";
-  toolCallId: string;
-  toolName: string;
-  result: string;
-  status: "success" | "error";
-}
-
-export type MiraMessagePart = ToolCallPart | ToolResultPart;
-
 export function convertMessage(message: MiraMessage): ThreadMessageLike {
-  const parts: any[] = [];
+  const parts: ThreadMessageLike["content"] = [];
 
   const text = typeof message.content === "string" ? message.content : String(message.content || "");
   if (text) {
-    parts.push({
-      type: "text",
-      text,
-    });
+    parts.push({ type: "text", text });
   }
 
   if (message.toolCalls && message.toolCalls.length > 0) {
     for (const tc of message.toolCalls) {
       parts.push({
-        type: "tool-call",
+        type: "tool-call" as const,
         toolCallId: tc.toolCallId,
         toolName: tc.name,
         args: tc.args,
-      } as any);
+      });
     }
   }
 
@@ -64,10 +51,9 @@ export function convertMessage(message: MiraMessage): ThreadMessageLike {
     content: parts.length > 0 ? parts : "",
     id: message.id,
     createdAt: message.createdAt,
-    metadata: message.timing ? {
-      timing: message.timing,
-      custom: {},
-    } : undefined,
+    metadata: message.timing
+      ? { timing: message.timing, custom: {} }
+      : undefined,
   };
 }
 
@@ -88,10 +74,7 @@ export function updateMiraMessageContent(
   message: MiraMessage,
   newContent: string
 ): MiraMessage {
-  return {
-    ...message,
-    content: newContent,
-  };
+  return { ...message, content: newContent };
 }
 
 export function addToolCallToMessage(
@@ -101,19 +84,5 @@ export function addToolCallToMessage(
   return {
     ...message,
     toolCalls: [...(message.toolCalls || []), toolCall],
-  };
-}
-
-export function updateToolCallInMessage(
-  message: MiraMessage,
-  toolCallId: string,
-  updates: Partial<ToolCallInfo>
-): MiraMessage {
-  if (!message.toolCalls) return message;
-  return {
-    ...message,
-    toolCalls: message.toolCalls.map((tc) =>
-      tc.toolCallId === toolCallId ? { ...tc, ...updates } : tc
-    ),
   };
 }

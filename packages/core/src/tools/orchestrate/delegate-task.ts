@@ -3,24 +3,24 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
-import { runDelegate, getDelegationStatus, listActiveDelegations, cleanupDelegations } from "../delegate-runner"
-import { ToolRegistry } from "../registry"
-import { readFileTool } from "./read-file-effect"
-import { writeFileTool } from "./write-file"
-import { listFilesTool } from "./list-files"
-import { webSearchTool } from "./web-search"
-import { grepTool } from "./grep"
-import { globTool } from "./glob"
-import { codeExecTool } from "./code-exec"
-import { bashTool } from "./bash"
-import { editFileTool } from "./edit-file"
-import { skillsListTool } from "../skill/skill-tools"
-import { skillViewTool } from "../skill/skill-tools"
-import { dataAnalysisTool } from "./data-analysis"
-import { webBrowseTool } from "./web-browse"
-import { cronTool } from "./cron-tool"
-import { taskTool } from "./task-tool"
+import { make } from "../../shared/tool"
+import { runDelegate, getDelegationStatus, listActiveDelegations, cleanupDelegations } from "../../orchestrate/delegate"
+import { ToolRegistry } from "../../system/registry"
+import { readFileTool } from "../core/read-file-effect"
+import { writeFileTool } from "../core/write-file"
+import { listFilesTool } from "../core/list-files"
+import { webSearchTool } from "../knowledge/web-search"
+import { grepTool } from "../core/grep"
+import { globTool } from "../core/glob"
+import { codeExecTool } from "../execution/code-exec"
+import { bashTool } from "../execution/bash"
+import { editFileTool } from "../core/edit-file"
+import { skillsListTool } from "../../skill/skill-tools"
+import { skillViewTool } from "../../skill/skill-tools"
+import { dataAnalysisTool } from "../knowledge/data-analysis"
+import { webBrowseTool } from "../knowledge/web-browse"
+import { cronTool } from "../orchestrate/cron-tool"
+import { taskTool } from "../orchestrate/task-tool"
 
 // 共享注册表（直接构造避免循环依赖）
 const registry = new ToolRegistry()
@@ -104,7 +104,7 @@ export const delegateTaskTool = make({
       }
 
       if (input.action === "list") {
-        const { cleanupDelegations: cleanup } = await import("../delegate-runner")
+        const { cleanupDelegations: cleanup } = await import("../../orchestrate/delegate")
         cleanup()
         return { success: true, output: "已清理超过 5 分钟的已完成任务" }
       }
@@ -120,3 +120,5 @@ export const delegateTaskTool = make({
     }
   },
 })
+
+

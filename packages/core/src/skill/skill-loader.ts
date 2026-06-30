@@ -5,7 +5,7 @@
 
 import { join } from "path"
 import fs from "fs"
-import { getPlatformPaths } from "../platform-paths"
+import { getPlatformPaths } from "../config/paths"
 
 export interface SkillMeta {
   name: string
@@ -142,3 +142,4 @@ export function loadSkillFile(name: string, filePath: string): string | null {
     return null
   }
 }
+

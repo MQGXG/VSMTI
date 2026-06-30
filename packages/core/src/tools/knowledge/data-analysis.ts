@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
+import { make } from "../../shared/tool"
 import { readFileSync, existsSync } from "fs"
 
 /** 简易 CSV 解析 */
@@ -281,3 +281,4 @@ export const dataAnalysisTool = make({
     }
   },
 })
+

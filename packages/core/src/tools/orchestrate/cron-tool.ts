@@ -3,8 +3,8 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
-import { cronScheduler } from "../cron-scheduler"
+import { make } from "../../shared/tool"
+import { cronScheduler } from "../../background/cron"
 
 export const cronTool = make({
   name: "cronjob",
@@ -50,3 +50,4 @@ export const cronTool = make({
     }
   },
 })
+

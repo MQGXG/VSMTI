@@ -9,10 +9,11 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
-import { SubagentManager } from "../subagent-manager"
+import { make } from "../../shared/tool"
+import { SubagentManager } from "../../orchestrate/subagent"
+import type { SubagentInfo } from "../../orchestrate/subagent"
 
-import type { AgentConfig } from "../agent"
+import type { AgentConfig } from "../../agent/agent"
 
 /** 模块级单例，由 server/api.ts 或 electron/ipc 初始化时注入 */
 let manager: SubagentManager | null = null
@@ -127,8 +128,8 @@ export const waitAgentsTool = make({
     try {
       const timeoutMs = (input.timeout || 300) * 1000
 
-      const results = input.mode === "any"
-        ? [await mgr.waitAny(input.agent_ids, timeoutMs)].filter(Boolean)
+      const results: SubagentInfo[] = input.mode === "any"
+        ? [await mgr.waitAny(input.agent_ids, timeoutMs)].filter((x): x is SubagentInfo => x !== null)
         : await mgr.waitAll(input.agent_ids, timeoutMs)
 
       if (results.length === 0) {
@@ -196,3 +197,5 @@ export const listSubagentsTool = make({
     }
   },
 })
+
+

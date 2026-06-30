@@ -1,4 +1,4 @@
-import type { ToolDef, ToolCall } from "../tool"
+import type { ToolDef, ToolCall } from "../shared/tool"
 
 export interface ToolRuntimeConfig {
   tools: ToolDef[]
@@ -20,7 +20,7 @@ export class ToolRuntime {
     }))
   }
 
-  async execute(toolCall: ToolCall, ctx: import("../tool").ToolContext): Promise<import("../tool").ToolResult> {
+  async execute(toolCall: ToolCall, ctx: import("../shared/tool").ToolContext): Promise<import("../shared/tool").ToolResult> {
     const tool = this.tools.find((t) => t.name === toolCall.name)
     if (!tool) {
       return { success: false, error: `Unknown tool: ${toolCall.name}` }

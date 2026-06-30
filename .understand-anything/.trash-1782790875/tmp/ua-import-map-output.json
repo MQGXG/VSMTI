@@ -1,0 +1,863 @@
+{
+  "scriptCompleted": true,
+  "stats": {
+    "filesScanned": 293,
+    "filesWithImports": 147,
+    "totalEdges": 413
+  },
+  "importMap": {
+    ".env.example": [],
+    ".eslintignore": [],
+    ".understand-anything/.understandignore": [],
+    "AGENTS.md": [],
+    "apps/desktop/electron-builder.yml": [],
+    "apps/desktop/electron.vite.config.ts": [],
+    "apps/desktop/index.html": [],
+    "apps/desktop/package.json": [],
+    "apps/desktop/src/App.tsx": [],
+    "apps/desktop/src/lib": [],
+    "apps/desktop/src/main.ts": [
+      "packages/electron/src/index.ts"
+    ],
+    "apps/desktop/src/main.tsx": [
+      "apps/desktop/src/App.tsx",
+      "apps/desktop/src/styles/globals.css"
+    ],
+    "apps/desktop/src/styles/globals.css": [],
+    "apps/desktop/tsconfig.json": [],
+    "CHANGELOG.md": [],
+    "checkpoints/offline-8e14d950-a741-494d-9ed3-353a7a26efbf/checkpoint.md": [],
+    "checkpoints/ses_mqylxdoz_0a181aef/checkpoint.md": [],
+    "checkpoints/ses_mqym26mg_b34e4a3b/checkpoint.md": [],
+    "checkpoints/ses_mqym31fq_c18a23a5/checkpoint.md": [],
+    "checkpoints/test-session/checkpoint.md": [],
+    "components.json": [],
+    "CONTEXT.md": [],
+    "CONTRIBUTING.md": [],
+    "docs/api.md": [],
+    "docs/architecture.md": [],
+    "docs/deployment.md": [],
+    "docs/learn-claude-code-essentials.md": [],
+    "docs/learn-claude-code-vs-omniagent.md": [],
+    "docs/monorepo-design.md": [],
+    "docs/plans/2026-06-11-agent-loop-core-design.md": [],
+    "docs/plans/2026-06-11-agent-loop-core.md": [],
+    "docs/plans/2026-06-12-fix-tools-execution-plan.md": [],
+    "docs/plans/2026-06-12-ui-ux-redesign-plan.md": [],
+    "docs/plans/2026-06-12-ui-ux-redesign.md": [],
+    "docs/plans/2026-06-14-phases-2-5-plus-extensions.md": [],
+    "docs/plans/2026-06-14-typescript-agent-core-react-upgrade.md": [],
+    "docs/plans/2026-06-16-mira-agent-core-optimization.md": [],
+    "docs/plans/2026-06-16-mira-dual-mode-platform.md": [],
+    "docs/ref-agent-patterns.md": [],
+    "docs/testing.md": [],
+    "electron-builder.yml": [],
+    "electron.vite.config.ts": [],
+    "fts-memory.db": [],
+    "index.html": [],
+    "memory/offline-8e14d950-a741-494d-9ed3-353a7a26efbf.json": [],
+    "memory/ses_mqylxdoz_0a181aef.json": [],
+    "memory/ses_mqym26mg_b34e4a3b.json": [],
+    "memory/ses_mqym31fq_c18a23a5.json": [],
+    "memory/test-session.json": [],
+    "mira.db": [],
+    "package.json": [],
+    "packages/core/package.json": [],
+    "packages/core/src/__tests__/agent.test.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/__tests__/benchmark.test.ts": [
+      "packages/core/src/instruction-context.ts",
+      "packages/core/src/registry.ts"
+    ],
+    "packages/core/src/__tests__/llm-sdk.test.ts": [
+      "packages/core/src/llm-sdk.ts"
+    ],
+    "packages/core/src/__tests__/message-utils.test.ts": [
+      "packages/core/src/message-utils.ts"
+    ],
+    "packages/core/src/__tests__/permission-loop.test.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/__tests__/setup.ts": [
+      "packages/core/src/database.ts",
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/__tests__/smoke.test.ts": [],
+    "packages/core/src/__tests__/tool.test.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/agent-profile.ts": [
+      "packages/core/src/permission.ts"
+    ],
+    "packages/core/src/agent.ts": [
+      "packages/core/src/agent/context.ts",
+      "packages/core/src/agent/max-mode.ts",
+      "packages/core/src/agent/state-machine.ts",
+      "packages/core/src/agent/turn-processor.ts",
+      "packages/core/src/agent/turn.ts",
+      "packages/core/src/agent/utils.ts",
+      "packages/core/src/context-manager.ts",
+      "packages/core/src/dream-distill.ts",
+      "packages/core/src/execution/orchestrator.ts",
+      "packages/core/src/goal-judge.ts",
+      "packages/core/src/iteration-budget.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/memory/builtin-provider.ts",
+      "packages/core/src/memory/checkpoint-provider.ts",
+      "packages/core/src/memory/file-memory-provider.ts",
+      "packages/core/src/memory/fts-memory-provider.ts",
+      "packages/core/src/memory/manager.ts",
+      "packages/core/src/memory/vector-provider.ts",
+      "packages/core/src/message-utils.ts",
+      "packages/core/src/modes.ts",
+      "packages/core/src/permission-gate.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/permission/approval-store.ts",
+      "packages/core/src/plugin-hooks.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/session-store.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/memory.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/context.ts": [
+      "packages/core/src/lsp/code-context.ts",
+      "packages/core/src/modes.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/agent/fork-cache.ts": [],
+    "packages/core/src/agent/index.ts": [],
+    "packages/core/src/agent/max-mode.ts": [
+      "packages/core/src/agent/turn.ts",
+      "packages/core/src/agent/utils.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/pipeline.ts": [
+      "packages/core/src/agent/state-machine.ts",
+      "packages/core/src/execution/orchestrator.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/permission-gate.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/permission/approval-store.ts",
+      "packages/core/src/plugin-hooks.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/session-store.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/registry.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/modes.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/state-machine.ts": [],
+    "packages/core/src/agent/system-context.ts": [],
+    "packages/core/src/agent/text-ngram.ts": [],
+    "packages/core/src/agent/turn-processor.ts": [
+      "packages/core/src/agent/state-machine.ts",
+      "packages/core/src/agent/text-ngram.ts",
+      "packages/core/src/execution/orchestrator.ts",
+      "packages/core/src/feature-flags.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/permission-gate.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/permission/approval-store.ts",
+      "packages/core/src/plugin-hooks.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/session-store.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/tool-meta.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/turn.ts": [
+      "packages/core/src/context-manager.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/types.ts"
+    ],
+    "packages/core/src/agent/utils.ts": [
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/message-utils.ts"
+    ],
+    "packages/core/src/background.ts": [],
+    "packages/core/src/compaction.ts": [],
+    "packages/core/src/compose-mode.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/memory/checkpoint-provider.ts",
+      "packages/core/src/subagent-manager.ts"
+    ],
+    "packages/core/src/config.ts": [
+      "packages/core/src/mcp/index.ts",
+      "packages/core/src/platform-paths.ts",
+      "packages/core/src/plugin/index.ts"
+    ],
+    "packages/core/src/context-manager.ts": [
+      "packages/core/src/compaction.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/llm/schema/messages.ts",
+      "packages/core/src/memory/checkpoint-provider.ts",
+      "packages/core/src/memory/manager.ts",
+      "packages/core/src/message-utils.ts"
+    ],
+    "packages/core/src/cron-scheduler.ts": [],
+    "packages/core/src/database.ts": [
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/delegate-runner.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/iteration-budget.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/permission-gate.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/registry.ts"
+    ],
+    "packages/core/src/dream-distill.ts": [
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts"
+    ],
+    "packages/core/src/execution/orchestrator.ts": [
+      "packages/core/src/registry.ts",
+      "packages/core/src/tool-executor.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/tool-meta.ts",
+      "packages/core/src/tools/tool-output-store.ts"
+    ],
+    "packages/core/src/failover.ts": [
+      "packages/core/src/llm-sdk.ts"
+    ],
+    "packages/core/src/feature-flags.ts": [],
+    "packages/core/src/goal-judge.ts": [
+      "packages/core/src/database.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts"
+    ],
+    "packages/core/src/goal-manager.ts": [
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts"
+    ],
+    "packages/core/src/hooks-setup.ts": [
+      "packages/core/src/plugin-hooks.ts"
+    ],
+    "packages/core/src/index.ts": [],
+    "packages/core/src/instruction-context.ts": [
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/iteration-budget.ts": [],
+    "packages/core/src/layers.ts": [
+      "packages/core/src/database.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/registry-init.ts",
+      "packages/core/src/registry.ts"
+    ],
+    "packages/core/src/llm-sdk.ts": [
+      "packages/core/src/llm/providers/index.ts",
+      "packages/core/src/llm/schema/errors.ts",
+      "packages/core/src/llm/schema/messages.ts",
+      "packages/core/src/llm/schema/options.ts",
+      "packages/core/src/zod-converter.ts"
+    ],
+    "packages/core/src/llm/cache-policy.ts": [
+      "packages/core/src/llm/schema/options.ts"
+    ],
+    "packages/core/src/llm/index.ts": [],
+    "packages/core/src/llm/protocols/anthropic-messages.ts": [
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/protocols/gemini.ts": [
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/protocols/index.ts": [],
+    "packages/core/src/llm/protocols/openai-chat.ts": [
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/protocols/openai-compatible-chat.ts": [
+      "packages/core/src/llm/protocols/openai-chat.ts",
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/protocols/openai-responses.ts": [
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/providers/anthropic.ts": [
+      "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "packages/core/src/llm/route/client.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/providers/index.ts": [
+      "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "packages/core/src/llm/protocols/gemini.ts",
+      "packages/core/src/llm/protocols/openai-chat.ts",
+      "packages/core/src/llm/protocols/openai-compatible-chat.ts",
+      "packages/core/src/llm/protocols/openai-responses.ts",
+      "packages/core/src/llm/route/route.ts",
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/providers/openai-compatible.ts": [
+      "packages/core/src/llm/protocols/openai-compatible-chat.ts",
+      "packages/core/src/llm/route/client.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/providers/openai.ts": [
+      "packages/core/src/llm/protocols/openai-chat.ts",
+      "packages/core/src/llm/route/client.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/route/client.ts": [],
+    "packages/core/src/llm/route/index.ts": [],
+    "packages/core/src/llm/route/route.ts": [
+      "packages/core/src/llm/route/types.ts",
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/route/types.ts": [
+      "packages/core/src/llm/schema/index.ts"
+    ],
+    "packages/core/src/llm/schema/errors.ts": [],
+    "packages/core/src/llm/schema/events.ts": [],
+    "packages/core/src/llm/schema/index.ts": [],
+    "packages/core/src/llm/schema/messages.ts": [],
+    "packages/core/src/llm/schema/options.ts": [],
+    "packages/core/src/llm/tool-runtime.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/logger.ts": [
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/lsp/client.ts": [],
+    "packages/core/src/lsp/code-context.ts": [],
+    "packages/core/src/lsp/manager.ts": [
+      "packages/core/src/lsp/client.ts"
+    ],
+    "packages/core/src/mcp/index.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/memory/builtin-provider.ts": [
+      "packages/core/src/memory/types.ts",
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/memory/checkpoint-provider.ts": [
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts",
+      "packages/core/src/memory/fts-memory-provider.ts",
+      "packages/core/src/memory/types.ts",
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/memory/file-memory-provider.ts": [
+      "packages/core/src/memory/types.ts"
+    ],
+    "packages/core/src/memory/fts-memory-provider.ts": [
+      "packages/core/src/memory/types.ts",
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/memory/manager.ts": [
+      "packages/core/src/logger.ts",
+      "packages/core/src/memory/builtin-provider.ts",
+      "packages/core/src/memory/file-memory-provider.ts",
+      "packages/core/src/memory/fts-memory-provider.ts",
+      "packages/core/src/memory/types.ts"
+    ],
+    "packages/core/src/memory/types.ts": [],
+    "packages/core/src/memory/vector-provider.ts": [
+      "packages/core/src/memory/types.ts",
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/message-utils.ts": [
+      "packages/core/src/llm-sdk.ts"
+    ],
+    "packages/core/src/modes.ts": [
+      "packages/core/src/agent-profile.ts",
+      "packages/core/src/permission.ts"
+    ],
+    "packages/core/src/permission-gate.ts": [
+      "packages/core/src/permission.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/permission-store.ts": [
+      "packages/core/src/database.ts",
+      "packages/core/src/permission.ts"
+    ],
+    "packages/core/src/permission.ts": [],
+    "packages/core/src/permission/approval-store.ts": [
+      "packages/core/src/permission-store.ts",
+      "packages/core/src/permission.ts"
+    ],
+    "packages/core/src/platform-paths.ts": [],
+    "packages/core/src/plugin-hooks.ts": [],
+    "packages/core/src/plugin/index.ts": [
+      "packages/core/src/logger.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/recovery.ts": [],
+    "packages/core/src/registry-init.ts": [
+      "packages/core/src/mcp/index.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/skill/skill-tools.ts",
+      "packages/core/src/tools/agent-tools.ts",
+      "packages/core/src/tools/create-docx.ts",
+      "packages/core/src/tools/cron-tool.ts",
+      "packages/core/src/tools/data-analysis.ts",
+      "packages/core/src/tools/delegate-task.ts",
+      "packages/core/src/tools/git.ts",
+      "packages/core/src/tools/image-gen.ts",
+      "packages/core/src/tools/index.ts",
+      "packages/core/src/tools/lsp-tool.ts",
+      "packages/core/src/tools/memory.ts",
+      "packages/core/src/tools/read-file.ts",
+      "packages/core/src/tools/search-history.ts",
+      "packages/core/src/tools/task-tool.ts",
+      "packages/core/src/tools/team-tool.ts",
+      "packages/core/src/tools/web-browse.ts",
+      "packages/core/src/tools/workflow-tool.ts",
+      "packages/core/src/tools/worktree-tool.ts"
+    ],
+    "packages/core/src/registry.ts": [
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts",
+      "packages/core/src/mcp/index.ts",
+      "packages/core/src/permission.ts",
+      "packages/core/src/plugin/index.ts",
+      "packages/core/src/tool-effect.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/tool-meta.ts"
+    ],
+    "packages/core/src/server-manager.ts": [],
+    "packages/core/src/server/api.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/agent/registry.ts",
+      "packages/core/src/database.ts",
+      "packages/core/src/index.ts",
+      "packages/core/src/instruction-context.ts",
+      "packages/core/src/layers.ts",
+      "packages/core/src/logger.ts",
+      "packages/core/src/modes.ts",
+      "packages/core/src/permission-store.ts",
+      "packages/core/src/skill/skill-commands.ts",
+      "packages/core/src/skill/skill-loader.ts",
+      "packages/core/src/task-tracker.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/agent-tools.ts",
+      "packages/core/src/tools/memory.ts"
+    ],
+    "packages/core/src/server/cli.ts": [
+      "packages/core/src/platform-paths.ts",
+      "packages/core/src/server/server.ts"
+    ],
+    "packages/core/src/server/index.ts": [],
+    "packages/core/src/server/server.ts": [
+      "packages/core/src/server/api.ts"
+    ],
+    "packages/core/src/session-fork.ts": [],
+    "packages/core/src/session-manager.ts": [
+      "packages/core/src/database.ts",
+      "packages/core/src/platform-paths.ts",
+      "packages/core/src/session-store.ts"
+    ],
+    "packages/core/src/session-store.ts": [
+      "packages/core/src/database.ts"
+    ],
+    "packages/core/src/skill/skill-commands.ts": [
+      "packages/core/src/skill/skill-loader.ts"
+    ],
+    "packages/core/src/skill/skill-loader.ts": [
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/skill/skill-tools.ts": [
+      "packages/core/src/skill/skill-loader.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/snapshot.ts": [],
+    "packages/core/src/subagent-manager.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/team-bus.ts"
+    ],
+    "packages/core/src/task-planner.ts": [],
+    "packages/core/src/task-tracker.ts": [
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/team-bus.ts": [
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/tool-effect.ts": [],
+    "packages/core/src/tool-executor.ts": [
+      "packages/core/src/logger.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tool.ts": [],
+    "packages/core/src/tools/agent-tools.ts": [
+      "packages/core/src/agent.ts",
+      "packages/core/src/subagent-manager.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/bash-security.ts": [],
+    "packages/core/src/tools/bash.ts": [
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/bash-security.ts"
+    ],
+    "packages/core/src/tools/code-exec.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/code-search.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/create-docx.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/cron-tool.ts": [
+      "packages/core/src/cron-scheduler.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/data-analysis.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/delegate-task.ts": [
+      "packages/core/src/delegate-runner.ts",
+      "packages/core/src/registry.ts",
+      "packages/core/src/skill/skill-tools.ts",
+      "packages/core/src/tool.ts",
+      "packages/core/src/tools/bash.ts",
+      "packages/core/src/tools/code-exec.ts",
+      "packages/core/src/tools/cron-tool.ts",
+      "packages/core/src/tools/data-analysis.ts",
+      "packages/core/src/tools/edit-file.ts",
+      "packages/core/src/tools/glob.ts",
+      "packages/core/src/tools/grep.ts",
+      "packages/core/src/tools/list-files.ts",
+      "packages/core/src/tools/read-file-effect.ts",
+      "packages/core/src/tools/task-tool.ts",
+      "packages/core/src/tools/web-browse.ts",
+      "packages/core/src/tools/web-search.ts",
+      "packages/core/src/tools/write-file.ts"
+    ],
+    "packages/core/src/tools/edit-file.ts": [
+      "packages/core/src/snapshot.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/git.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/glob.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/grep.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/image-gen.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/index.ts": [],
+    "packages/core/src/tools/list-files.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/lsp-tool.ts": [
+      "packages/core/src/lsp/manager.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/memory.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/question.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/read-file-effect.ts": [
+      "packages/core/src/tool-effect.ts"
+    ],
+    "packages/core/src/tools/read-file.ts": [
+      "packages/core/src/lsp/manager.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/search-history.ts": [
+      "packages/core/src/database.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/task-tool.ts": [
+      "packages/core/src/task-planner.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/team-tool.ts": [
+      "packages/core/src/team-bus.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/tool-loader.ts": [
+      "packages/core/src/tools/tool-meta.ts"
+    ],
+    "packages/core/src/tools/tool-meta.ts": [],
+    "packages/core/src/tools/tool-output-store.ts": [],
+    "packages/core/src/tools/web-browse.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/web-fetch.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/web-search.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/tools/workflow-tool.ts": [
+      "packages/core/src/tool.ts",
+      "packages/core/src/workflow/index.ts"
+    ],
+    "packages/core/src/tools/worktree-tool.ts": [
+      "packages/core/src/tool.ts",
+      "packages/core/src/worktree-manager.ts"
+    ],
+    "packages/core/src/tools/write-file.ts": [
+      "packages/core/src/snapshot.ts",
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/types.ts": [
+      "packages/core/src/tool.ts"
+    ],
+    "packages/core/src/workflow/index.ts": [
+      "packages/core/src/llm-sdk.ts",
+      "packages/core/src/logger.ts"
+    ],
+    "packages/core/src/worktree-manager.ts": [
+      "packages/core/src/platform-paths.ts"
+    ],
+    "packages/core/src/zod-converter.ts": [],
+    "packages/core/tsconfig.json": [],
+    "packages/core/tsconfig.tsbuildinfo": [],
+    "packages/electron/package.json": [],
+    "packages/electron/src/index.ts": [],
+    "packages/electron/src/ipc/agent-ipc.ts": [],
+    "packages/electron/src/ipc/compose-ipc.ts": [],
+    "packages/electron/src/ipc/config-ipc.ts": [],
+    "packages/electron/src/ipc/dream-ipc.ts": [],
+    "packages/electron/src/ipc/goal-ipc.ts": [],
+    "packages/electron/src/ipc/handlers.ts": [
+      "packages/electron/src/ipc/index.ts",
+      "packages/electron/src/managers/window-manager.ts"
+    ],
+    "packages/electron/src/ipc/index.ts": [
+      "packages/electron/src/ipc/compose-ipc.ts",
+      "packages/electron/src/ipc/config-ipc.ts",
+      "packages/electron/src/ipc/dream-ipc.ts",
+      "packages/electron/src/ipc/goal-ipc.ts",
+      "packages/electron/src/ipc/memory-ipc.ts",
+      "packages/electron/src/ipc/question-ipc.ts",
+      "packages/electron/src/ipc/session-ipc.ts",
+      "packages/electron/src/ipc/sidecar-bridge.ts",
+      "packages/electron/src/ipc/skill-ipc.ts",
+      "packages/electron/src/ipc/subagent-ipc.ts",
+      "packages/electron/src/ipc/task-ipc.ts"
+    ],
+    "packages/electron/src/ipc/memory-ipc.ts": [
+      "packages/electron/src/ipc/sidecar-bridge.ts"
+    ],
+    "packages/electron/src/ipc/question-ipc.ts": [],
+    "packages/electron/src/ipc/session-ipc.ts": [],
+    "packages/electron/src/ipc/sidecar-bridge.ts": [
+      "packages/core/src/index.ts"
+    ],
+    "packages/electron/src/ipc/skill-ipc.ts": [],
+    "packages/electron/src/ipc/subagent-ipc.ts": [],
+    "packages/electron/src/ipc/task-ipc.ts": [],
+    "packages/electron/src/main/index.ts": [
+      "packages/core/src/index.ts",
+      "packages/electron/src/ipc/handlers.ts",
+      "packages/electron/src/ipc/sidecar-bridge.ts",
+      "packages/electron/src/managers/tray-manager.ts",
+      "packages/electron/src/managers/window-manager.ts",
+      "packages/electron/src/utils/logger.ts",
+      "packages/electron/src/utils/shell-env.ts"
+    ],
+    "packages/electron/src/managers/tray-manager.ts": [
+      "packages/electron/src/managers/window-manager.ts"
+    ],
+    "packages/electron/src/managers/window-manager.ts": [],
+    "packages/electron/src/preload/index.ts": [],
+    "packages/electron/src/utils/logger.ts": [],
+    "packages/electron/src/utils/shell-env.ts": [],
+    "packages/electron/tsconfig.json": [],
+    "packages/ui/package.json": [],
+    "packages/ui/src/chat/__tests__/zod-schema.test.ts": [],
+    "packages/ui/src/chat/ChatWindow.tsx": [
+      "packages/ui/src/chat/MarkdownRenderer.tsx",
+      "packages/ui/src/chat/mira-runtime.ts",
+      "packages/ui/src/chat/MiraRuntimeProvider.tsx",
+      "packages/ui/src/chat/ModelSelector.tsx",
+      "packages/ui/src/chat/PermissionDialog.tsx",
+      "packages/ui/src/chat/QuestionDialog.tsx",
+      "packages/ui/src/chat/ThinkingBlock.tsx",
+      "packages/ui/src/chat/types.ts",
+      "packages/ui/src/chat/VoiceInput.tsx",
+      "packages/ui/src/services/agent.service.ts"
+    ],
+    "packages/ui/src/chat/CodeBlock.tsx": [],
+    "packages/ui/src/chat/MarkdownRenderer.tsx": [
+      "packages/ui/src/chat/CodeBlock.tsx",
+      "packages/ui/src/chat/MermaidBlock.tsx"
+    ],
+    "packages/ui/src/chat/MermaidBlock.tsx": [],
+    "packages/ui/src/chat/MessageTimingDisplay.tsx": [],
+    "packages/ui/src/chat/mira-runtime.ts": [
+      "packages/ui/src/chat/types.ts"
+    ],
+    "packages/ui/src/chat/MiraLogo.tsx": [],
+    "packages/ui/src/chat/MiraRuntimeProvider.tsx": [
+      "packages/ui/src/chat/mira-runtime.ts",
+      "packages/ui/src/chat/ModelSelector.tsx",
+      "packages/ui/src/chat/types.ts",
+      "packages/ui/src/hooks/useMiraChat.ts"
+    ],
+    "packages/ui/src/chat/ModelSelector.tsx": [
+      "packages/ui/src/chat/types.ts"
+    ],
+    "packages/ui/src/chat/PermissionDialog.tsx": [
+      "packages/ui/src/ui/Modal.tsx"
+    ],
+    "packages/ui/src/chat/QuestionDialog.tsx": [
+      "packages/ui/src/ui/Modal.tsx"
+    ],
+    "packages/ui/src/chat/ThinkingBlock.tsx": [],
+    "packages/ui/src/chat/tool-router.test.ts": [
+      "packages/ui/src/chat/tool-router.ts"
+    ],
+    "packages/ui/src/chat/tool-router.ts": [],
+    "packages/ui/src/chat/tool-views/tool-fold.ts": [],
+    "packages/ui/src/chat/tool-views/ToolDiffView.tsx": [
+      "packages/ui/src/chat/CodeBlock.tsx",
+      "packages/ui/src/chat/tool-views/tool-fold.ts"
+    ],
+    "packages/ui/src/chat/tool-views/ToolGenericView.tsx": [
+      "packages/ui/src/chat/types.ts"
+    ],
+    "packages/ui/src/chat/tool-views/ToolReadView.tsx": [
+      "packages/ui/src/chat/CodeBlock.tsx",
+      "packages/ui/src/chat/tool-views/tool-fold.ts"
+    ],
+    "packages/ui/src/chat/tool-views/ToolSearchView.tsx": [
+      "packages/ui/src/chat/tool-views/tool-fold.ts"
+    ],
+    "packages/ui/src/chat/tool-views/ToolShellView.tsx": [
+      "packages/ui/src/chat/tool-views/tool-fold.ts"
+    ],
+    "packages/ui/src/chat/ToolCallView.tsx": [
+      "packages/ui/src/chat/types.ts"
+    ],
+    "packages/ui/src/chat/ToolPalette.tsx": [
+      "packages/ui/src/services/agent.service.ts"
+    ],
+    "packages/ui/src/chat/types.ts": [],
+    "packages/ui/src/chat/VoiceInput.tsx": [],
+    "packages/ui/src/contexts/ThemeContext.tsx": [],
+    "packages/ui/src/hooks/useAgent.ts": [
+      "packages/ui/src/services/agent.service.ts"
+    ],
+    "packages/ui/src/hooks/useMiraChat.ts": [
+      "packages/ui/src/chat/mira-runtime.ts",
+      "packages/ui/src/chat/ModelSelector.tsx",
+      "packages/ui/src/chat/types.ts",
+      "packages/ui/src/services/agent.service.ts",
+      "packages/ui/src/services/session.service.ts",
+      "packages/ui/src/sidebar/SettingsDialog.tsx"
+    ],
+    "packages/ui/src/hooks/useProjects.ts": [
+      "packages/ui/src/services/project.service.ts"
+    ],
+    "packages/ui/src/hooks/useSessions.ts": [
+      "packages/ui/src/services/session.service.ts"
+    ],
+    "packages/ui/src/index.ts": [],
+    "packages/ui/src/layout/TitleBar.tsx": [
+      "packages/ui/src/chat/MiraLogo.tsx",
+      "packages/ui/src/contexts/ThemeContext.tsx",
+      "packages/ui/src/services/agent.service.ts"
+    ],
+    "packages/ui/src/lib/utils.ts": [],
+    "packages/ui/src/services/agent.service.ts": [],
+    "packages/ui/src/services/config.service.ts": [],
+    "packages/ui/src/services/dialog.service.ts": [],
+    "packages/ui/src/services/index.ts": [],
+    "packages/ui/src/services/memory.service.ts": [],
+    "packages/ui/src/services/project.service.ts": [],
+    "packages/ui/src/services/session.service.ts": [],
+    "packages/ui/src/sidebar/ConfigSourceIndicator.tsx": [
+      "packages/ui/src/services/config.service.ts"
+    ],
+    "packages/ui/src/sidebar/EditProjectDialog.tsx": [
+      "packages/ui/src/ui/Modal.tsx"
+    ],
+    "packages/ui/src/sidebar/ModelManager.tsx": [
+      "packages/ui/src/sidebar/types.ts"
+    ],
+    "packages/ui/src/sidebar/NewProjectDialog.tsx": [
+      "packages/ui/src/services/dialog.service.ts",
+      "packages/ui/src/ui/Modal.tsx"
+    ],
+    "packages/ui/src/sidebar/ProjectBar.tsx": [],
+    "packages/ui/src/sidebar/provider-data.ts": [
+      "packages/ui/src/services/config.service.ts",
+      "packages/ui/src/sidebar/types.ts"
+    ],
+    "packages/ui/src/sidebar/ProviderConfigPanel.tsx": [
+      "packages/ui/src/sidebar/types.ts"
+    ],
+    "packages/ui/src/sidebar/SettingsDialog.tsx": [
+      "packages/ui/src/sidebar/ConfigSourceIndicator.tsx",
+      "packages/ui/src/sidebar/ModelManager.tsx",
+      "packages/ui/src/sidebar/provider-data.ts",
+      "packages/ui/src/sidebar/ProviderConfigPanel.tsx",
+      "packages/ui/src/sidebar/ThemeSelector.tsx",
+      "packages/ui/src/sidebar/types.ts"
+    ],
+    "packages/ui/src/sidebar/Sidebar.tsx": [
+      "packages/ui/src/services/project.service.ts",
+      "packages/ui/src/services/session.service.ts",
+      "packages/ui/src/sidebar/SettingsDialog.tsx"
+    ],
+    "packages/ui/src/sidebar/ThemeSelector.tsx": [
+      "packages/ui/src/contexts/ThemeContext.tsx"
+    ],
+    "packages/ui/src/sidebar/types.ts": [],
+    "packages/ui/src/types/electron.d.ts": [],
+    "packages/ui/src/ui/dialog.tsx": [
+      "packages/ui/src/lib/utils.ts"
+    ],
+    "packages/ui/src/ui/Modal.tsx": [
+      "packages/ui/src/ui/dialog.tsx"
+    ],
+    "packages/ui/src/ui/ResizablePanel.tsx": [],
+    "packages/ui/src/ui/select.tsx": [
+      "packages/ui/src/lib/utils.ts"
+    ],
+    "packages/ui/src/ui/switch.tsx": [
+      "packages/ui/src/lib/utils.ts"
+    ],
+    "packages/ui/src/ui/tabs.tsx": [
+      "packages/ui/src/lib/utils.ts"
+    ],
+    "packages/ui/src/ui/tooltip.tsx": [
+      "packages/ui/src/lib/utils.ts"
+    ],
+    "packages/ui/tsconfig.json": [],
+    "pnpm-workspace.yaml": [],
+    "postcss.config.js": [],
+    "README.md": [],
+    "SECURITY.md": [],
+    "setup.ps1": [],
+    "start.ps1": [],
+    "start.sh": [],
+    "tailwind.config.js": [],
+    "tsconfig.json": [],
+    "vector-memory/test-session.json": [],
+    "vitest.config.ts": []
+  }
+}

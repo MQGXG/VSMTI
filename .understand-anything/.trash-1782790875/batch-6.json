@@ -1,0 +1,1426 @@
+{
+  "nodes": [
+    {
+      "id": "file:packages/core/src/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/core/src/index.ts",
+      "summary": "@mira/core 包的统一导出入口（barrel file），集中 re-export Agent 核心循环、工具注册表、权限系统、Agent 模式、上下文管理、Goal 审判、LLM SDK、全部工具定义、Skill 系统、Workflow 引擎、Subagent 管理、Cron 调度、配置系统、平台路径、Sidecar 服务等全部核心模块的公共 API。",
+      "tags": [
+        "barrel-export",
+        "core",
+        "公共API",
+        "统一导出",
+        "入口文件"
+      ],
+      "complexity": "low",
+      "lineCount": 98
+    },
+    {
+      "id": "file:packages/electron/src/ipc/compose-ipc.ts",
+      "type": "file",
+      "name": "compose-ipc.ts",
+      "filePath": "packages/electron/src/ipc/compose-ipc.ts",
+      "summary": "组合模式（Compose Mode）的 Electron IPC 处理层，注册 16 个 ipcMain.handle 端点，将渲染进程的组合模式操作代理到 ComposeModeManager 实例。",
+      "tags": [
+        "ipc",
+        "compose-mode",
+        "electron",
+        "组合模式",
+        "阶段管理"
+      ],
+      "complexity": "medium",
+      "lineCount": 64
+    },
+    {
+      "id": "func:compose-ipc.ts:registerComposeIPC",
+      "type": "function",
+      "name": "registerComposeIPC",
+      "filePath": "packages/electron/src/ipc/compose-ipc.ts",
+      "summary": "注册组合模式的全部 16 个 IPC 端点，通过 ComposeModeManager 实例处理前端请求。",
+      "tags": [
+        "ipc注册",
+        "compose",
+        "端点注册"
+      ],
+      "complexity": "medium",
+      "lineCount": 59
+    },
+    {
+      "id": "file:packages/electron/src/ipc/config-ipc.ts",
+      "type": "file",
+      "name": "config-ipc.ts",
+      "filePath": "packages/electron/src/ipc/config-ipc.ts",
+      "summary": "配置系统的 Electron IPC 处理层，注册 2 个端点：config:get 读取渲染进程配置，config:save 保存全局配置。",
+      "tags": [
+        "ipc",
+        "config",
+        "electron",
+        "配置管理"
+      ],
+      "complexity": "low",
+      "lineCount": 11
+    },
+    {
+      "id": "func:config-ipc.ts:registerConfigIPC",
+      "type": "function",
+      "name": "registerConfigIPC",
+      "filePath": "packages/electron/src/ipc/config-ipc.ts",
+      "summary": "注册配置读写两个 IPC 端点，桥接渲染进程与核心配置模块。",
+      "tags": [
+        "ipc注册",
+        "配置"
+      ],
+      "complexity": "low",
+      "lineCount": 8
+    },
+    {
+      "id": "file:packages/electron/src/ipc/dream-ipc.ts",
+      "type": "file",
+      "name": "dream-ipc.ts",
+      "filePath": "packages/electron/src/ipc/dream-ipc.ts",
+      "summary": "Dream/Distill 记忆进化系统的 Electron IPC 处理层，注册 4 个端点：dream、distill、getKnowledge、toText。",
+      "tags": [
+        "ipc",
+        "dream",
+        "distill",
+        "记忆进化",
+        "electron"
+      ],
+      "complexity": "low",
+      "lineCount": 21
+    },
+    {
+      "id": "func:dream-ipc.ts:registerDreamIPC",
+      "type": "function",
+      "name": "registerDreamIPC",
+      "filePath": "packages/electron/src/ipc/dream-ipc.ts",
+      "summary": "注册 Dream/Distill 的 4 个 IPC 端点，初始化 DreamDistillManager 并代理记忆进化操作。",
+      "tags": [
+        "ipc注册",
+        "dream",
+        "distill"
+      ],
+      "complexity": "low",
+      "lineCount": 16
+    },
+    {
+      "id": "file:packages/electron/src/ipc/goal-ipc.ts",
+      "type": "file",
+      "name": "goal-ipc.ts",
+      "filePath": "packages/electron/src/ipc/goal-ipc.ts",
+      "summary": "Goal 审判系统的 Electron IPC 处理层，包含 initGoalIPC（初始化 SQLite）和 registerGoalIPC（7 个端点），管理任务目标的设置、查询、取消和持久化。",
+      "tags": [
+        "ipc",
+        "goal",
+        "goal-judge",
+        "electron",
+        "目标验证"
+      ],
+      "complexity": "low",
+      "lineCount": 34
+    },
+    {
+      "id": "func:goal-ipc.ts:initGoalIPC",
+      "type": "function",
+      "name": "initGoalIPC",
+      "filePath": "packages/electron/src/ipc/goal-ipc.ts",
+      "summary": "Goal IPC 初始化函数，初始化 SQLite 数据库为 Goal 持久化做准备。",
+      "tags": [
+        "初始化",
+        "database",
+        "goal"
+      ],
+      "complexity": "low",
+      "lineCount": 3
+    },
+    {
+      "id": "func:goal-ipc.ts:registerGoalIPC",
+      "type": "function",
+      "name": "registerGoalIPC",
+      "filePath": "packages/electron/src/ipc/goal-ipc.ts",
+      "summary": "注册 Goal 审判系统的 7 个 IPC 端点，通过 GoalJudge 实例管理目标生命周期。",
+      "tags": [
+        "ipc注册",
+        "goal",
+        "目标管理"
+      ],
+      "complexity": "low",
+      "lineCount": 23
+    },
+    {
+      "id": "file:packages/electron/src/ipc/handlers.ts",
+      "type": "file",
+      "name": "handlers.ts",
+      "filePath": "packages/electron/src/ipc/handlers.ts",
+      "summary": "Electron 主进程 IPC 处理器的总注册入口，汇总调用 registerAgentIPCHandlers 并注册窗口控制、文件对话框、系统通知、API Key 加密存储等系统级端点。",
+      "tags": [
+        "ipc",
+        "handlers",
+        "electron",
+        "窗口控制",
+        "对话框",
+        "加密存储"
+      ],
+      "complexity": "medium",
+      "lineCount": 65
+    },
+    {
+      "id": "func:handlers.ts:registerIPCHandlers",
+      "type": "function",
+      "name": "registerIPCHandlers",
+      "filePath": "packages/electron/src/ipc/handlers.ts",
+      "summary": "顶层 IPC 注册函数，调用 registerAgentIPCHandlers 后注册窗口控制、文件对话框、通知和安全存储等系统级端点。",
+      "tags": [
+        "ipc注册",
+        "系统端点",
+        "窗口控制",
+        "对话框",
+        "安全存储"
+      ],
+      "complexity": "medium",
+      "lineCount": 61
+    },
+    {
+      "id": "file:packages/electron/src/ipc/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/electron/src/ipc/index.ts",
+      "summary": "Electron IPC 模块的统一注册入口（barrel file），registerAgentIPCHandlers 按序注册 11 个子模块的 IPC 处理器。",
+      "tags": [
+        "barrel",
+        "ipc",
+        "electron",
+        "统一注册",
+        "模块编排"
+      ],
+      "complexity": "low",
+      "lineCount": 33
+    },
+    {
+      "id": "func:index.ts:registerAgentIPCHandlers",
+      "type": "function",
+      "name": "registerAgentIPCHandlers",
+      "filePath": "packages/electron/src/ipc/index.ts",
+      "summary": "Agent IPC 统一注册函数，执行初始化后按序注册 11 个子模块的 IPC 处理器。",
+      "tags": [
+        "ipc注册",
+        "统一入口",
+        "初始化",
+        "模块编排"
+      ],
+      "complexity": "medium",
+      "lineCount": 19
+    },
+    {
+      "id": "file:packages/electron/src/ipc/memory-ipc.ts",
+      "type": "file",
+      "name": "memory-ipc.ts",
+      "filePath": "packages/electron/src/ipc/memory-ipc.ts",
+      "summary": "记忆搜索系统的 Electron IPC 处理层，注册 memory:search 和 memory:status 两个端点，通过 Sidecar HTTP 代理查询向量记忆。",
+      "tags": [
+        "ipc",
+        "memory",
+        "sidecar",
+        "向量记忆",
+        "electron"
+      ],
+      "complexity": "low",
+      "lineCount": 24
+    },
+    {
+      "id": "func:memory-ipc.ts:registerMemoryIPC",
+      "type": "function",
+      "name": "registerMemoryIPC",
+      "filePath": "packages/electron/src/ipc/memory-ipc.ts",
+      "summary": "注册记忆搜索的 2 个 IPC 端点，通过 Sidecar HTTP 代理转发记忆查询请求。",
+      "tags": [
+        "ipc注册",
+        "memory",
+        "sidecar代理"
+      ],
+      "complexity": "low",
+      "lineCount": 21
+    },
+    {
+      "id": "file:packages/electron/src/ipc/question-ipc.ts",
+      "type": "file",
+      "name": "question-ipc.ts",
+      "filePath": "packages/electron/src/ipc/question-ipc.ts",
+      "summary": "用户交互问答系统的 Electron IPC 处理层，注册 question:answer 和 question:listPending 两个端点。",
+      "tags": [
+        "ipc",
+        "question",
+        "用户交互",
+        "electron"
+      ],
+      "complexity": "low",
+      "lineCount": 12
+    },
+    {
+      "id": "func:question-ipc.ts:registerQuestionIPC",
+      "type": "function",
+      "name": "registerQuestionIPC",
+      "filePath": "packages/electron/src/ipc/question-ipc.ts",
+      "summary": "注册问答交互的 2 个 IPC 端点，桥接 Agent 提问与用户回答。",
+      "tags": [
+        "ipc注册",
+        "question",
+        "问答"
+      ],
+      "complexity": "low",
+      "lineCount": 9
+    },
+    {
+      "id": "file:packages/electron/src/ipc/session-ipc.ts",
+      "type": "file",
+      "name": "session-ipc.ts",
+      "filePath": "packages/electron/src/ipc/session-ipc.ts",
+      "summary": "会话/项目管理的 Electron IPC 处理层，注册 9 个端点用于项目和会话的 CRUD 操作。",
+      "tags": [
+        "ipc",
+        "session",
+        "project",
+        "会话管理",
+        "electron",
+        "CRUD"
+      ],
+      "complexity": "low",
+      "lineCount": 14
+    },
+    {
+      "id": "func:session-ipc.ts:registerSessionIPC",
+      "type": "function",
+      "name": "registerSessionIPC",
+      "filePath": "packages/electron/src/ipc/session-ipc.ts",
+      "summary": "注册会话/项目管理的 9 个 IPC 端点，桥接前端与 session-manager 模块。",
+      "tags": [
+        "ipc注册",
+        "session",
+        "CRUD"
+      ],
+      "complexity": "low",
+      "lineCount": 11
+    },
+    {
+      "id": "file:packages/electron/src/ipc/sidecar-bridge.ts",
+      "type": "file",
+      "name": "sidecar-bridge.ts",
+      "filePath": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "summary": "Sidecar Bridge -- Electron IPC 与 Core HTTP 的代理层，核心桥接模块。管理 ServerManager 生命周期、健康检查自动重连、SSE 事件流管理、以及 6 个 IPC 端点。",
+      "tags": [
+        "ipc",
+        "sidecar",
+        "bridge",
+        "SSE",
+        "HTTP代理",
+        "健康检查",
+        "重连",
+        "electron"
+      ],
+      "complexity": "high",
+      "lineCount": 264
+    },
+    {
+      "id": "func:sidecar-bridge.ts:getServerManager",
+      "type": "function",
+      "name": "getServerManager",
+      "filePath": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "summary": "获取当前 ServerManager 实例的 getter 函数。",
+      "tags": [
+        "getter",
+        "server-manager",
+        "sidecar"
+      ],
+      "complexity": "low",
+      "lineCount": 3
+    },
+    {
+      "id": "func:sidecar-bridge.ts:startSidecar",
+      "type": "function",
+      "name": "startSidecar",
+      "filePath": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "summary": "启动 Sidecar Core 服务，创建 ServerManager 实例并开启健康检查定时器。",
+      "tags": [
+        "启动",
+        "sidecar",
+        "server-manager",
+        "生命周期"
+      ],
+      "complexity": "medium",
+      "lineCount": 14
+    },
+    {
+      "id": "func:sidecar-bridge.ts:stopSidecar",
+      "type": "function",
+      "name": "stopSidecar",
+      "filePath": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "summary": "停止 Sidecar 服务，停止健康检查、销毁所有 SSE 会话、关闭 ServerManager。",
+      "tags": [
+        "停止",
+        "sidecar",
+        "清理",
+        "生命周期"
+      ],
+      "complexity": "low",
+      "lineCount": 12
+    },
+    {
+      "id": "func:sidecar-bridge.ts:startHealthCheck",
+      "type": "function",
+      "name": "startHealthCheck",
+      "filePath": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "summary": "启动 Sidecar 健康检查定时器（10 秒间隔），失败时触发 reconnect。",
+      "tags": [
+        "健康检查",
+        "定时器",
+        "sidecar"
+      ],
+      "complexity": "low",
+      "lineCount": 14
+    },
+    {
+      "id": "func:sidecar-bridge.ts:stopHealthCheck",
+      "type": "function",
+      "name": "stopHealthCheck",
+      "filePath": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "summary": "停止健康检查定时器。",
+      "tags": [
+        "健康检查",
+        "定时器清理"
+      ],
+      "complexity": "low",
+      "lineCount": 6
+    },
+    {
+      "id": "func:sidecar-bridge.ts:reconnect",
+      "type": "function",
+      "name": "reconnect",
+      "filePath": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "summary": "Sidecar 自动重连逻辑，延迟 2 秒后尝试重启并验证，失败时递归重试。",
+      "tags": [
+        "重连",
+        "容错",
+        "sidecar",
+        "递归重试"
+      ],
+      "complexity": "medium",
+      "lineCount": 25
+    },
+    {
+      "id": "func:sidecar-bridge.ts:connectAndGetChannel",
+      "type": "function",
+      "name": "connectAndGetChannel",
+      "filePath": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "summary": "建立 SSE 连接并等待 channel 分配事件，每个连接有独立 Promise resolution 和 15 秒超时。",
+      "tags": [
+        "SSE",
+        "channel",
+        "流式连接",
+        "超时处理"
+      ],
+      "complexity": "high",
+      "lineCount": 53
+    },
+    {
+      "id": "func:sidecar-bridge.ts:registerSidecarIPCHandlers",
+      "type": "function",
+      "name": "registerSidecarIPCHandlers",
+      "filePath": "packages/electron/src/ipc/sidecar-bridge.ts",
+      "summary": "注册 Sidecar 相关的 6 个 IPC 端点，实现 Agent 流式执行的 SSE 代理、权限回复转发、退出清理。",
+      "tags": [
+        "ipc注册",
+        "sidecar",
+        "SSE代理",
+        "权限转发",
+        "清理"
+      ],
+      "complexity": "high",
+      "lineCount": 81
+    },
+    {
+      "id": "file:packages/electron/src/ipc/skill-ipc.ts",
+      "type": "file",
+      "name": "skill-ipc.ts",
+      "filePath": "packages/electron/src/ipc/skill-ipc.ts",
+      "summary": "Skill 系统的 Electron IPC 处理层，注册 1 个端点：skill:listSkills。",
+      "tags": [
+        "ipc",
+        "skill",
+        "electron",
+        "Skill加载"
+      ],
+      "complexity": "low",
+      "lineCount": 12
+    },
+    {
+      "id": "func:skill-ipc.ts:registerSkillIPC",
+      "type": "function",
+      "name": "registerSkillIPC",
+      "filePath": "packages/electron/src/ipc/skill-ipc.ts",
+      "summary": "注册 Skill 列表查询的 IPC 端点，扫描所有 Skill 并返回精简信息。",
+      "tags": [
+        "ipc注册",
+        "skill"
+      ],
+      "complexity": "low",
+      "lineCount": 8
+    },
+    {
+      "id": "file:packages/electron/src/ipc/subagent-ipc.ts",
+      "type": "file",
+      "name": "subagent-ipc.ts",
+      "filePath": "packages/electron/src/ipc/subagent-ipc.ts",
+      "summary": "子 Agent 管理系统的 Electron IPC 处理层，注册 11 个端点，创建 SubagentManager 实例并通过 forwardSubagentEvent 实时转发状态变更。",
+      "tags": [
+        "ipc",
+        "subagent",
+        "子Agent",
+        "electron",
+        "并行管理",
+        "事件转发"
+      ],
+      "complexity": "medium",
+      "lineCount": 80
+    },
+    {
+      "id": "func:subagent-ipc.ts:forwardSubagentEvent",
+      "type": "function",
+      "name": "forwardSubagentEvent",
+      "filePath": "packages/electron/src/ipc/subagent-ipc.ts",
+      "summary": "将子 Agent 事件转发到前端渲染进程。",
+      "tags": [
+        "事件转发",
+        "subagent",
+        "前端通信"
+      ],
+      "complexity": "low",
+      "lineCount": 10
+    },
+    {
+      "id": "func:subagent-ipc.ts:registerSubagentIPC",
+      "type": "function",
+      "name": "registerSubagentIPC",
+      "filePath": "packages/electron/src/ipc/subagent-ipc.ts",
+      "summary": "注册子 Agent 管理的 11 个 IPC 端点，管理生命周期、状态查询、批量操作和配置。",
+      "tags": [
+        "ipc注册",
+        "subagent",
+        "生命周期管理"
+      ],
+      "complexity": "medium",
+      "lineCount": 57
+    },
+    {
+      "id": "file:packages/electron/src/ipc/task-ipc.ts",
+      "type": "file",
+      "name": "task-ipc.ts",
+      "filePath": "packages/electron/src/ipc/task-ipc.ts",
+      "summary": "任务追踪系统的 Electron IPC 处理层，注册 8 个端点用于任务的创建、状态更新、查询和文本导出。",
+      "tags": [
+        "ipc",
+        "task-tracker",
+        "任务管理",
+        "electron"
+      ],
+      "complexity": "low",
+      "lineCount": 32
+    },
+    {
+      "id": "func:task-ipc.ts:registerTaskIPC",
+      "type": "function",
+      "name": "registerTaskIPC",
+      "filePath": "packages/electron/src/ipc/task-ipc.ts",
+      "summary": "注册任务追踪的 8 个 IPC 端点，桥接前端与 taskTracker 模块。",
+      "tags": [
+        "ipc注册",
+        "task",
+        "任务追踪"
+      ],
+      "complexity": "low",
+      "lineCount": 29
+    },
+    {
+      "id": "file:packages/electron/src/main/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "packages/electron/src/main/index.ts",
+      "summary": "Electron 应用主进程入口文件，定义 initializeApp 异步函数完成全部初始化流程：平台路径、Shell 环境、日志、Sidecar、IPC、窗口、托盘、快捷键。",
+      "tags": [
+        "electron",
+        "main",
+        "应用入口",
+        "初始化",
+        "生命周期",
+        "sidecar",
+        "窗口",
+        "托盘"
+      ],
+      "complexity": "medium",
+      "lineCount": 47
+    },
+    {
+      "id": "func:main/index.ts:initializeApp",
+      "type": "function",
+      "name": "initializeApp",
+      "filePath": "packages/electron/src/main/index.ts",
+      "summary": "应用初始化主函数，按序执行平台路径、Shell 环境、日志、Sidecar、IPC、窗口、托盘、快捷键等初始化。",
+      "tags": [
+        "初始化",
+        "生命周期",
+        "启动流程",
+        "编排"
+      ],
+      "complexity": "medium",
+      "lineCount": 31
+    },
+    {
+      "id": "file:packages/electron/src/managers/tray-manager.ts",
+      "type": "file",
+      "name": "tray-manager.ts",
+      "filePath": "packages/electron/src/managers/tray-manager.ts",
+      "summary": "系统托盘管理模块，提供 createTray 和 destroyTray 两个函数。",
+      "tags": [
+        "tray",
+        "系统托盘",
+        "electron",
+        "菜单"
+      ],
+      "complexity": "low",
+      "lineCount": 32
+    },
+    {
+      "id": "func:tray-manager.ts:createTray",
+      "type": "function",
+      "name": "createTray",
+      "filePath": "packages/electron/src/managers/tray-manager.ts",
+      "summary": "创建系统托盘图标，配置右键菜单和单击事件。",
+      "tags": [
+        "托盘创建",
+        "菜单",
+        "UI"
+      ],
+      "complexity": "low",
+      "lineCount": 20
+    },
+    {
+      "id": "func:tray-manager.ts:destroyTray",
+      "type": "function",
+      "name": "destroyTray",
+      "filePath": "packages/electron/src/managers/tray-manager.ts",
+      "summary": "销毁系统托盘图标并清空引用。",
+      "tags": [
+        "托盘销毁",
+        "清理"
+      ],
+      "complexity": "low",
+      "lineCount": 6
+    },
+    {
+      "id": "file:packages/electron/src/managers/window-manager.ts",
+      "type": "file",
+      "name": "window-manager.ts",
+      "filePath": "packages/electron/src/managers/window-manager.ts",
+      "summary": "Electron 窗口管理模块，提供完整的窗口生命周期管理：createWindow、getMainWindow、showMainWindow、minimizeWindow、toggleMaximizeWindow、hideWindow、closeAllWindows。开发模式自动探测 Vite 端口。",
+      "tags": [
+        "electron",
+        "窗口管理",
+        "BrowserWindow",
+        "Vite探测",
+        "无边框窗口"
+      ],
+      "complexity": "medium",
+      "lineCount": 110
+    },
+    {
+      "id": "func:window-manager.ts:probePort",
+      "type": "function",
+      "name": "probePort",
+      "filePath": "packages/electron/src/managers/window-manager.ts",
+      "summary": "端口探测函数，通过 HTTP HEAD 请求检测端口可用性。",
+      "tags": [
+        "端口探测",
+        "网络",
+        "工具函数"
+      ],
+      "complexity": "low",
+      "lineCount": 18
+    },
+    {
+      "id": "func:window-manager.ts:findVitePort",
+      "type": "function",
+      "name": "findVitePort",
+      "filePath": "packages/electron/src/managers/window-manager.ts",
+      "summary": "Vite 开发服务器端口自动发现，遍历 5173-5180 范围。",
+      "tags": [
+        "Vite",
+        "端口发现",
+        "开发模式",
+        "重试"
+      ],
+      "complexity": "medium",
+      "lineCount": 16
+    },
+    {
+      "id": "func:window-manager.ts:createWindow",
+      "type": "function",
+      "name": "createWindow",
+      "filePath": "packages/electron/src/managers/window-manager.ts",
+      "summary": "创建主窗口（1200x800，无边框），开发模式加载 Vite URL，生产模式加载本地 HTML。",
+      "tags": [
+        "窗口创建",
+        "BrowserWindow",
+        "开发/生产模式"
+      ],
+      "complexity": "medium",
+      "lineCount": 36
+    },
+    {
+      "id": "func:window-manager.ts:getMainWindow",
+      "type": "function",
+      "name": "getMainWindow",
+      "filePath": "packages/electron/src/managers/window-manager.ts",
+      "summary": "获取主窗口实例引用。",
+      "tags": [
+        "getter",
+        "窗口"
+      ],
+      "complexity": "low",
+      "lineCount": 3
+    },
+    {
+      "id": "func:window-manager.ts:showMainWindow",
+      "type": "function",
+      "name": "showMainWindow",
+      "filePath": "packages/electron/src/managers/window-manager.ts",
+      "summary": "显示并聚焦主窗口。",
+      "tags": [
+        "窗口控制",
+        "显示"
+      ],
+      "complexity": "low",
+      "lineCount": 4
+    },
+    {
+      "id": "func:window-manager.ts:minimizeWindow",
+      "type": "function",
+      "name": "minimizeWindow",
+      "filePath": "packages/electron/src/managers/window-manager.ts",
+      "summary": "最小化主窗口。",
+      "tags": [
+        "窗口控制",
+        "最小化"
+      ],
+      "complexity": "low",
+      "lineCount": 3
+    },
+    {
+      "id": "func:window-manager.ts:toggleMaximizeWindow",
+      "type": "function",
+      "name": "toggleMaximizeWindow",
+      "filePath": "packages/electron/src/managers/window-manager.ts",
+      "summary": "切换主窗口最大化/还原状态。",
+      "tags": [
+        "窗口控制",
+        "最大化"
+      ],
+      "complexity": "low",
+      "lineCount": 5
+    },
+    {
+      "id": "func:window-manager.ts:hideWindow",
+      "type": "function",
+      "name": "hideWindow",
+      "filePath": "packages/electron/src/managers/window-manager.ts",
+      "summary": "隐藏主窗口。",
+      "tags": [
+        "窗口控制",
+        "隐藏"
+      ],
+      "complexity": "low",
+      "lineCount": 3
+    },
+    {
+      "id": "func:window-manager.ts:closeAllWindows",
+      "type": "function",
+      "name": "closeAllWindows",
+      "filePath": "packages/electron/src/managers/window-manager.ts",
+      "summary": "关闭所有 BrowserWindow 实例。",
+      "tags": [
+        "窗口控制",
+        "关闭",
+        "清理"
+      ],
+      "complexity": "low",
+      "lineCount": 3
+    },
+    {
+      "id": "file:packages/electron/src/utils/logger.ts",
+      "type": "file",
+      "name": "logger.ts",
+      "filePath": "packages/electron/src/utils/logger.ts",
+      "summary": "Electron 主进程日志系统，提供按日期分文件的日志写入、console 重定向、Python 日志流创建等功能。",
+      "tags": [
+        "logger",
+        "日志",
+        "electron",
+        "文件日志",
+        "console重定向"
+      ],
+      "complexity": "medium",
+      "lineCount": 71
+    },
+    {
+      "id": "func:logger.ts:ensureLogDir",
+      "type": "function",
+      "name": "ensureLogDir",
+      "filePath": "packages/electron/src/utils/logger.ts",
+      "summary": "确保日志目录存在，不存在则递归创建。",
+      "tags": [
+        "日志",
+        "目录创建",
+        "工具函数"
+      ],
+      "complexity": "low",
+      "lineCount": 8
+    },
+    {
+      "id": "func:logger.ts:initLogger",
+      "type": "function",
+      "name": "initLogger",
+      "filePath": "packages/electron/src/utils/logger.ts",
+      "summary": "初始化日志系统，设置当日日志文件路径。",
+      "tags": [
+        "日志",
+        "初始化"
+      ],
+      "complexity": "low",
+      "lineCount": 5
+    },
+    {
+      "id": "func:logger.ts:getLogFilePath",
+      "type": "function",
+      "name": "getLogFilePath",
+      "filePath": "packages/electron/src/utils/logger.ts",
+      "summary": "返回当前日志文件的完整路径。",
+      "tags": [
+        "日志",
+        "getter"
+      ],
+      "complexity": "low",
+      "lineCount": 3
+    },
+    {
+      "id": "func:logger.ts:logToFile",
+      "type": "function",
+      "name": "logToFile",
+      "filePath": "packages/electron/src/utils/logger.ts",
+      "summary": "将日志消息追加写入日志文件。",
+      "tags": [
+        "日志",
+        "文件写入",
+        "追加"
+      ],
+      "complexity": "low",
+      "lineCount": 10
+    },
+    {
+      "id": "func:logger.ts:patchConsole",
+      "type": "function",
+      "name": "patchConsole",
+      "filePath": "packages/electron/src/utils/logger.ts",
+      "summary": "重定向 console.log/error/warn 到文件同时保持控制台输出。",
+      "tags": [
+        "console重定向",
+        "日志",
+        "补丁"
+      ],
+      "complexity": "medium",
+      "lineCount": 23
+    },
+    {
+      "id": "func:logger.ts:createPythonLogStream",
+      "type": "function",
+      "name": "createPythonLogStream",
+      "filePath": "packages/electron/src/utils/logger.ts",
+      "summary": "创建 Python 日志文件写入流。",
+      "tags": [
+        "日志",
+        "Python",
+        "写入流"
+      ],
+      "complexity": "low",
+      "lineCount": 6
+    },
+    {
+      "id": "func:logger.ts:getLogsDir",
+      "type": "function",
+      "name": "getLogsDir",
+      "filePath": "packages/electron/src/utils/logger.ts",
+      "summary": "返回日志目录路径。",
+      "tags": [
+        "日志",
+        "目录",
+        "getter"
+      ],
+      "complexity": "low",
+      "lineCount": 3
+    },
+    {
+      "id": "file:packages/electron/src/utils/shell-env.ts",
+      "type": "file",
+      "name": "shell-env.ts",
+      "filePath": "packages/electron/src/utils/shell-env.ts",
+      "summary": "Shell 环境变量注入工具，从系统 shell 获取 PATH 并注入到 process.env.PATH。",
+      "tags": [
+        "shell-env",
+        "PATH",
+        "环境变量",
+        "跨平台",
+        "electron"
+      ],
+      "complexity": "medium",
+      "lineCount": 44
+    },
+    {
+      "id": "func:shell-env.ts:loadShellEnv",
+      "type": "function",
+      "name": "loadShellEnv",
+      "filePath": "packages/electron/src/utils/shell-env.ts",
+      "summary": "从系统 shell 加载环境变量（主要是 PATH），支持 Windows 和 Unix。",
+      "tags": [
+        "环境变量",
+        "跨平台",
+        "PATH加载"
+      ],
+      "complexity": "medium",
+      "lineCount": 29
+    },
+    {
+      "id": "func:shell-env.ts:injectShellEnv",
+      "type": "function",
+      "name": "injectShellEnv",
+      "filePath": "packages/electron/src/utils/shell-env.ts",
+      "summary": "将系统 shell 的 PATH 注入到 process.env.PATH，防止 PATH 重复。",
+      "tags": [
+        "环境变量注入",
+        "PATH合并",
+        "去重"
+      ],
+      "complexity": "low",
+      "lineCount": 12
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:packages/electron/src/main/index.ts",
+      "target": "file:packages/electron/src/managers/window-manager.ts",
+      "type": "imports",
+      "label": "导入 createWindow, showMainWindow"
+    },
+    {
+      "source": "file:packages/electron/src/main/index.ts",
+      "target": "file:packages/electron/src/managers/tray-manager.ts",
+      "type": "imports",
+      "label": "导入 createTray"
+    },
+    {
+      "source": "file:packages/electron/src/main/index.ts",
+      "target": "file:packages/electron/src/ipc/handlers.ts",
+      "type": "imports",
+      "label": "导入 registerIPCHandlers"
+    },
+    {
+      "source": "file:packages/electron/src/main/index.ts",
+      "target": "file:packages/electron/src/ipc/sidecar-bridge.ts",
+      "type": "imports",
+      "label": "导入 startSidecar, stopSidecar"
+    },
+    {
+      "source": "file:packages/electron/src/main/index.ts",
+      "target": "file:packages/electron/src/utils/logger.ts",
+      "type": "imports",
+      "label": "导入 initLogger, patchConsole, getLogFilePath"
+    },
+    {
+      "source": "file:packages/electron/src/main/index.ts",
+      "target": "file:packages/electron/src/utils/shell-env.ts",
+      "type": "imports",
+      "label": "导入 injectShellEnv"
+    },
+    {
+      "source": "file:packages/electron/src/main/index.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 initPlatformPaths"
+    },
+    {
+      "source": "func:main/index.ts:initializeApp",
+      "target": "func:window-manager.ts:createWindow",
+      "type": "calls",
+      "label": "调用创建窗口"
+    },
+    {
+      "source": "func:main/index.ts:initializeApp",
+      "target": "func:tray-manager.ts:createTray",
+      "type": "calls",
+      "label": "调用创建托盘"
+    },
+    {
+      "source": "func:main/index.ts:initializeApp",
+      "target": "func:window-manager.ts:showMainWindow",
+      "type": "calls",
+      "label": "快捷键回调"
+    },
+    {
+      "source": "func:main/index.ts:initializeApp",
+      "target": "func:logger.ts:initLogger",
+      "type": "calls",
+      "label": "初始化日志"
+    },
+    {
+      "source": "func:main/index.ts:initializeApp",
+      "target": "func:logger.ts:patchConsole",
+      "type": "calls",
+      "label": "重定向 console"
+    },
+    {
+      "source": "func:main/index.ts:initializeApp",
+      "target": "func:logger.ts:getLogFilePath",
+      "type": "calls",
+      "label": "获取日志路径"
+    },
+    {
+      "source": "func:main/index.ts:initializeApp",
+      "target": "func:shell-env.ts:injectShellEnv",
+      "type": "calls",
+      "label": "注入 Shell 环境"
+    },
+    {
+      "source": "func:main/index.ts:initializeApp",
+      "target": "func:sidecar-bridge.ts:startSidecar",
+      "type": "calls",
+      "label": "启动 Sidecar"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/handlers.ts",
+      "target": "file:packages/electron/src/managers/window-manager.ts",
+      "type": "imports",
+      "label": "导入窗口控制函数"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/handlers.ts",
+      "target": "file:packages/electron/src/ipc/index.ts",
+      "type": "imports",
+      "label": "导入 registerAgentIPCHandlers"
+    },
+    {
+      "source": "func:handlers.ts:registerIPCHandlers",
+      "target": "func:index.ts:registerAgentIPCHandlers",
+      "type": "calls",
+      "label": "调用 Agent IPC 注册"
+    },
+    {
+      "source": "func:handlers.ts:registerIPCHandlers",
+      "target": "func:window-manager.ts:minimizeWindow",
+      "type": "calls",
+      "label": "注册窗口最小化"
+    },
+    {
+      "source": "func:handlers.ts:registerIPCHandlers",
+      "target": "func:window-manager.ts:toggleMaximizeWindow",
+      "type": "calls",
+      "label": "注册窗口最大化"
+    },
+    {
+      "source": "func:handlers.ts:registerIPCHandlers",
+      "target": "func:window-manager.ts:hideWindow",
+      "type": "calls",
+      "label": "注册窗口隐藏"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/sidecar-bridge.ts",
+      "type": "imports",
+      "label": "导入 registerSidecarIPCHandlers"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/session-ipc.ts",
+      "type": "imports",
+      "label": "导入 registerSessionIPC"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/config-ipc.ts",
+      "type": "imports",
+      "label": "导入 registerConfigIPC"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/task-ipc.ts",
+      "type": "imports",
+      "label": "导入 registerTaskIPC"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/subagent-ipc.ts",
+      "type": "imports",
+      "label": "导入 registerSubagentIPC"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/goal-ipc.ts",
+      "type": "imports",
+      "label": "导入 registerGoalIPC"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/dream-ipc.ts",
+      "type": "imports",
+      "label": "导入 registerDreamIPC"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/compose-ipc.ts",
+      "type": "imports",
+      "label": "导入 registerComposeIPC"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/skill-ipc.ts",
+      "type": "imports",
+      "label": "导入 registerSkillIPC"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/question-ipc.ts",
+      "type": "imports",
+      "label": "导入 registerQuestionIPC"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/electron/src/ipc/memory-ipc.ts",
+      "type": "imports",
+      "label": "导入 registerMemoryIPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:sidecar-bridge.ts:registerSidecarIPCHandlers",
+      "type": "calls",
+      "label": "注册 Sidecar IPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:session-ipc.ts:registerSessionIPC",
+      "type": "calls",
+      "label": "注册会话 IPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:config-ipc.ts:registerConfigIPC",
+      "type": "calls",
+      "label": "注册配置 IPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:task-ipc.ts:registerTaskIPC",
+      "type": "calls",
+      "label": "注册任务 IPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:subagent-ipc.ts:registerSubagentIPC",
+      "type": "calls",
+      "label": "注册子 Agent IPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:goal-ipc.ts:registerGoalIPC",
+      "type": "calls",
+      "label": "注册 Goal IPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:dream-ipc.ts:registerDreamIPC",
+      "type": "calls",
+      "label": "注册 Dream IPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:compose-ipc.ts:registerComposeIPC",
+      "type": "calls",
+      "label": "注册组合模式 IPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:skill-ipc.ts:registerSkillIPC",
+      "type": "calls",
+      "label": "注册 Skill IPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:question-ipc.ts:registerQuestionIPC",
+      "type": "calls",
+      "label": "注册问答 IPC"
+    },
+    {
+      "source": "func:index.ts:registerAgentIPCHandlers",
+      "target": "func:memory-ipc.ts:registerMemoryIPC",
+      "type": "calls",
+      "label": "注册记忆 IPC"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/memory-ipc.ts",
+      "target": "file:packages/electron/src/ipc/sidecar-bridge.ts",
+      "type": "imports",
+      "label": "导入 getServerManager"
+    },
+    {
+      "source": "func:memory-ipc.ts:registerMemoryIPC",
+      "target": "func:sidecar-bridge.ts:getServerManager",
+      "type": "calls",
+      "label": "获取 ServerManager 实例"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/goal-ipc.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 GoalJudge, initDatabase"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/dream-ipc.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 DreamDistillManager"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/compose-ipc.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 ComposeModeManager"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/subagent-ipc.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 SubagentManager, createDefaultRegistry"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/task-ipc.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 taskTracker"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/skill-ipc.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 scanSkills"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/question-ipc.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 answerQuestion, getPendingQuestions"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/session-ipc.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 session-manager 函数"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/config-ipc.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 getConfigForRenderer, saveGlobalConfig"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/index.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 setupDefaultHooks, cronScheduler"
+    },
+    {
+      "source": "file:packages/electron/src/managers/tray-manager.ts",
+      "target": "file:packages/electron/src/managers/window-manager.ts",
+      "type": "imports",
+      "label": "导入 getMainWindow, showMainWindow"
+    },
+    {
+      "source": "func:tray-manager.ts:createTray",
+      "target": "func:window-manager.ts:showMainWindow",
+      "type": "calls",
+      "label": "单击/菜单触发显示窗口"
+    },
+    {
+      "source": "func:sidecar-bridge.ts:startSidecar",
+      "target": "func:sidecar-bridge.ts:startHealthCheck",
+      "type": "calls",
+      "label": "启动后开启健康检查"
+    },
+    {
+      "source": "func:sidecar-bridge.ts:startHealthCheck",
+      "target": "func:sidecar-bridge.ts:stopHealthCheck",
+      "type": "calls",
+      "label": "先停止旧检查"
+    },
+    {
+      "source": "func:sidecar-bridge.ts:startHealthCheck",
+      "target": "func:sidecar-bridge.ts:reconnect",
+      "type": "calls",
+      "label": "健康检查失败触发重连"
+    },
+    {
+      "source": "func:sidecar-bridge.ts:stopSidecar",
+      "target": "func:sidecar-bridge.ts:stopHealthCheck",
+      "type": "calls",
+      "label": "停止时清理健康检查"
+    },
+    {
+      "source": "func:sidecar-bridge.ts:registerSidecarIPCHandlers",
+      "target": "func:sidecar-bridge.ts:getServerManager",
+      "type": "calls",
+      "label": "获取 ServerManager"
+    },
+    {
+      "source": "func:sidecar-bridge.ts:registerSidecarIPCHandlers",
+      "target": "func:sidecar-bridge.ts:connectAndGetChannel",
+      "type": "calls",
+      "label": "流式执行建立 SSE 连接"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/sidecar-bridge.ts",
+      "target": "file:packages/core/src/index.ts",
+      "type": "imports",
+      "label": "导入 ServerManager"
+    },
+    {
+      "source": "func:logger.ts:initLogger",
+      "target": "func:logger.ts:ensureLogDir",
+      "type": "calls",
+      "label": "确保日志目录"
+    },
+    {
+      "source": "func:logger.ts:patchConsole",
+      "target": "func:logger.ts:logToFile",
+      "type": "calls",
+      "label": "console 输出写入文件"
+    },
+    {
+      "source": "func:logger.ts:createPythonLogStream",
+      "target": "func:logger.ts:ensureLogDir",
+      "type": "calls",
+      "label": "确保日志目录"
+    },
+    {
+      "source": "func:logger.ts:getLogsDir",
+      "target": "func:logger.ts:ensureLogDir",
+      "type": "calls",
+      "label": "确保日志目录"
+    },
+    {
+      "source": "func:shell-env.ts:injectShellEnv",
+      "target": "func:shell-env.ts:loadShellEnv",
+      "type": "calls",
+      "label": "加载 Shell 环境"
+    },
+    {
+      "source": "func:sidecar-bridge.ts:startSidecar",
+      "target": "func:sidecar-bridge.ts:getServerManager",
+      "type": "calls",
+      "label": "创建 ServerManager 实例"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/compose-ipc.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/config-ipc.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/dream-ipc.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/goal-ipc.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/index.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/question-ipc.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/session-ipc.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/skill-ipc.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/subagent-ipc.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/task-ipc.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/ipc/sidecar-bridge.ts",
+      "type": "dependency",
+      "label": "核心包被 IPC 模块依赖"
+    },
+    {
+      "source": "file:packages/core/src/index.ts",
+      "target": "file:packages/electron/src/main/index.ts",
+      "type": "dependency",
+      "label": "核心包被主进程入口依赖"
+    },
+    {
+      "source": "file:packages/electron/src/ipc/sidecar-bridge.ts",
+      "target": "file:packages/electron/src/ipc/memory-ipc.ts",
+      "type": "dependency",
+      "label": "memory-ipc 依赖 getServerManager"
+    },
+    {
+      "source": "file:packages/electron/src/managers/window-manager.ts",
+      "target": "file:packages/electron/src/ipc/handlers.ts",
+      "type": "dependency",
+      "label": "窗口管理被 IPC handlers 使用"
+    },
+    {
+      "source": "file:packages/electron/src/managers/window-manager.ts",
+      "target": "file:packages/electron/src/managers/tray-manager.ts",
+      "type": "dependency",
+      "label": "窗口管理被托盘管理使用"
+    }
+  ]
+}

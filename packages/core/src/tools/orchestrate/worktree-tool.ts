@@ -3,8 +3,8 @@
  */
 
 import { z } from "zod"
-import { make } from "../tool"
-import { createWorktree, runInWorktree, closeoutWorktree, listWorktrees } from "../worktree-manager"
+import { make } from "../../shared/tool"
+import { createWorktree, runInWorktree, closeoutWorktree, listWorktrees } from "../../background/worktree"
 
 export const worktreeTool = make({
   name: "worktree",
@@ -59,3 +59,4 @@ export const worktreeTool = make({
     }
   },
 })
+

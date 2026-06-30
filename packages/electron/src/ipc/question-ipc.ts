@@ -1,5 +1,5 @@
 import { ipcMain } from "electron"
-import { answerQuestion, getPendingQuestions } from "@mira/core/tools/question"
+import { answerQuestion, getPendingQuestions } from "@mira/core/tools/interaction/question"
 
 export function registerQuestionIPC(): void {
   ipcMain.handle("question:answer", (_, questionId: string, answer: string) => {
@@ -10,3 +10,4 @@ export function registerQuestionIPC(): void {
     return getPendingQuestions()
   })
 }
+

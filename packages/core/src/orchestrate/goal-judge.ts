@@ -1,6 +1,6 @@
-import { createLLMClient, type LLMMessage } from "./llm-sdk"
-import { logError } from "./logger"
-import { getDbAsync, runWrite } from "./database"
+import { createLLMClient, type LLMMessage } from "../llm/client"
+import { logError } from "../system/logger"
+import { getDbAsync, runWrite } from "../system/database"
 
 export interface GoalConfig {
   apiKey: string
@@ -436,3 +436,5 @@ export class GoalJudge {
     }
   }
 }
+
+

@@ -1,0 +1,1224 @@
+{
+  "nodes": [
+    {
+      "id": "b8:file:schema-index",
+      "type": "file",
+      "name": "schema/index.ts",
+      "filePath": "packages/core/src/llm/schema/index.ts",
+      "summary": "LLM Schema 模块的 barrel 导出文件，统一导出 messages、events、options、errors 四个子模块的类型定义。提供 LLM 消息、流式事件、请求选项和错误类型的基础类型系统。",
+      "tags": [
+        "llm",
+        "schema",
+        "barrel-export",
+        "类型定义"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:file:route-types",
+      "type": "file",
+      "name": "route/types.ts",
+      "filePath": "packages/core/src/llm/route/types.ts",
+      "summary": "LLM 路由层核心类型定义，定义了 Protocol（协议接口）、Endpoint（端点）、Auth（认证方式）、Framing（帧格式）、RouteConfig（路由配置）和 RouteInstance（路由实例）等关键接口。Protocol 接口是所有 LLM 协议适配器必须实现的统一契约，包含 serializeRequest、deserializeEvent、parseResponse 三个核心方法。",
+      "tags": [
+        "llm",
+        "route",
+        "types",
+        "protocol",
+        "interface",
+        "core-contract"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:iface:RouteConfig",
+      "type": "interface",
+      "name": "RouteConfig",
+      "filePath": "packages/core/src/llm/route/types.ts",
+      "summary": "路由配置接口，定义创建路由实例所需的完整配置：协议实现、端点地址、认证方式、帧格式、自定义头和超时时间。",
+      "tags": [
+        "config",
+        "route",
+        "interface"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:iface:RouteInstance",
+      "type": "interface",
+      "name": "RouteInstance",
+      "filePath": "packages/core/src/llm/route/types.ts",
+      "summary": "路由实例接口，代表一个可执行的 LLM 连接实例。提供 stream（流式调用）、complete（完整调用）和 with（覆盖配置创建新实例）三个核心方法。是 Provider 层和 Route 层之间的桥梁。",
+      "tags": [
+        "route",
+        "instance",
+        "interface",
+        "core-contract"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:iface:Protocol",
+      "type": "interface",
+      "name": "Protocol",
+      "filePath": "packages/core/src/llm/route/types.ts",
+      "summary": "LLM 协议适配器接口，定义了三个核心方法：serializeRequest（将统一请求序列化为特定协议格式）、deserializeEvent（将特定协议的流式事件反序列化为统一 LLMEvent）、parseResponse（将非流式响应解析为统一格式）。所有协议实现必须遵循此接口。",
+      "tags": [
+        "protocol",
+        "adapter",
+        "interface",
+        "core-contract"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:file:route-client",
+      "type": "file",
+      "name": "route/client.ts",
+      "filePath": "packages/core/src/llm/route/client.ts",
+      "summary": "HTTP 路由客户端实现，提供 RouteClient 类。封装了对 LLM API 的 HTTP 通信：post 方法用于普通 POST 请求（支持超时中断），postStream 方法用于 SSE 流式请求（解析 data: 前缀的 SSE 行，yield 二进制数据块）。是 Provider 层直接使用的底层 HTTP 传输层。",
+      "tags": [
+        "llm",
+        "route",
+        "http",
+        "client",
+        "sse",
+        "streaming"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:class:RouteClient",
+      "type": "class",
+      "name": "RouteClient",
+      "filePath": "packages/core/src/llm/route/client.ts",
+      "summary": "HTTP 路由客户端，封装 fetch API 实现 LLM API 通信。构造函数接收 RouteConfig（baseUrl/apiKey/headers/timeout）。核心方法：getBaseUrl（去尾斜杠）、getHeaders（合并认证和自定义头）、post（带超时的 POST 请求）、postStream（SSE 流式 POST，解析 data: 行并 yield 二进制数据）。",
+      "tags": [
+        "http-client",
+        "route",
+        "sse",
+        "streaming",
+        "fetch"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:iface:RouteClientConfig",
+      "type": "interface",
+      "name": "RouteConfig",
+      "filePath": "packages/core/src/llm/route/client.ts",
+      "summary": "RouteClient 使用的本地配置接口，包含 baseUrl（API 基础地址）、apiKey（认证密钥）、headers（自定义请求头）、timeout（超时时间毫秒）。",
+      "tags": [
+        "config",
+        "http-client"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:file:route-route",
+      "type": "file",
+      "name": "route/route.ts",
+      "filePath": "packages/core/src/llm/route/route.ts",
+      "summary": "路由工厂和执行引擎，提供 makeRoute（根据 RouteConfig 创建 RouteInstance）、executeRoute（执行路由调用）以及内部辅助函数 buildHeaders、makeStream、makeComplete、computeUrl。实现了 Protocol 驱动的统一流式/非流式调用逻辑，自动处理 SSE 和 JSON 两种帧格式。",
+      "tags": [
+        "llm",
+        "route",
+        "factory",
+        "streaming",
+        "execution",
+        "core-engine"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "b8:func:makeRoute",
+      "type": "function",
+      "name": "makeRoute",
+      "filePath": "packages/core/src/llm/route/route.ts",
+      "summary": "路由工厂函数，接收 RouteConfig 配置，构建请求头和 URL，创建 stream 和 complete 执行函数，返回完整的 RouteInstance。支持通过 with() 方法覆盖配置创建新实例。",
+      "tags": [
+        "factory",
+        "route",
+        "exported"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "b8:func:executeRoute",
+      "type": "function",
+      "name": "executeRoute",
+      "filePath": "packages/core/src/llm/route/route.ts",
+      "summary": "路由执行函数，直接调用 route.stream(request) 返回 AsyncGenerator<LLMEvent>，是调用 LLM 的最简入口。",
+      "tags": [
+        "execution",
+        "route",
+        "exported"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:func:makeStream",
+      "type": "function",
+      "name": "makeStream",
+      "filePath": "packages/core/src/llm/route/route.ts",
+      "summary": "创建流式执行闭包。内部通过 fetch 发送请求，自动判断响应是 SSE 流还是普通 JSON。SSE 模式下逐行解析 data: 前缀，通过 protocol.deserializeEvent 转换为统一 LLMEvent；JSON 模式下通过 protocol.parseResponse 一次性解析。支持 AbortSignal 超时中断。",
+      "tags": [
+        "streaming",
+        "sse",
+        "internal"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "b8:func:makeComplete",
+      "type": "function",
+      "name": "makeComplete",
+      "filePath": "packages/core/src/llm/route/route.ts",
+      "summary": "创建完整调用闭包。发送非流式请求（stream=false），通过 protocol.parseResponse 解析响应，返回包含 content 和 toolCalls 的结构化结果。",
+      "tags": [
+        "complete",
+        "non-streaming",
+        "internal"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:file:protocol-openai-chat",
+      "type": "file",
+      "name": "protocols/openai-chat.ts",
+      "filePath": "packages/core/src/llm/protocols/openai-chat.ts",
+      "summary": "OpenAI Chat Completions 协议适配器，实现 Protocol 接口。提供 serializeMessages（将 LLMMessage 转为 OpenAI 格式，处理 text/tool-call/tool-result 三种内容类型）、deserializeChunk（将 SSE chunk 转为 LLMEvent）、getFinishReason、以及 OpenAIChatProtocol 常量。支持 assistant 消息的 tool_calls 序列化和 tool 角色消息的 tool_call_id 映射。",
+      "tags": [
+        "llm",
+        "protocol",
+        "openai",
+        "chat-completions",
+        "adapter"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:func:oc-serializeMessages",
+      "type": "function",
+      "name": "serializeMessages",
+      "filePath": "packages/core/src/llm/protocols/openai-chat.ts",
+      "summary": "将统一 LLMMessage 数组转换为 OpenAI Chat 格式消息数组。处理三种情况：纯文本消息直接映射；包含 tool-call 的 assistant 消息序列化为 tool_calls 数组；包含 tool-result 的 tool 消息序列化为 tool_call_id + content。",
+      "tags": [
+        "serialization",
+        "openai",
+        "exported"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:func:oc-deserializeChunk",
+      "type": "function",
+      "name": "deserializeChunk",
+      "filePath": "packages/core/src/llm/protocols/openai-chat.ts",
+      "summary": "将 OpenAI SSE chunk 反序列化为统一 LLMEvent。处理 delta.content（文本增量）、delta.tool_calls（工具调用）、finish_reason（结束原因）三种情况。",
+      "tags": [
+        "deserialization",
+        "openai",
+        "exported"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:func:oc-getFinishReason",
+      "type": "function",
+      "name": "getFinishReason",
+      "filePath": "packages/core/src/llm/protocols/openai-chat.ts",
+      "summary": "从 OpenAI chunk 中提取 finish_reason 字段，用于判断请求结束原因。",
+      "tags": [
+        "utility",
+        "openai",
+        "exported"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:const:OpenAIChatProtocol",
+      "type": "constant",
+      "name": "OpenAIChatProtocol",
+      "filePath": "packages/core/src/llm/protocols/openai-chat.ts",
+      "summary": "完整的 OpenAI Chat Protocol 实现，实现 Protocol 接口。serializeRequest 构建包含 model/messages/tools/generation 参数的请求体；deserializeEvent 委托给 deserializeChunk；parseResponse 解析非流式响应中的 content 和 tool_calls。",
+      "tags": [
+        "protocol",
+        "openai",
+        "chat-completions",
+        "exported"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:file:protocol-openai-compatible",
+      "type": "file",
+      "name": "protocols/openai-compatible-chat.ts",
+      "filePath": "packages/core/src/llm/protocols/openai-compatible-chat.ts",
+      "summary": "通用 OpenAI 兼容协议适配器，适用于 DeepSeek、Ollama、Groq、Fireworks、Together 等第三方 Provider。复用 openai-chat 的序列化/反序列化函数，通过 re-export 暴露 serializeMessages/deserializeChunk/getFinishReason。额外提供 createCompatibleBody 工具函数和 OpenAICompatibleChatProtocol 常量。",
+      "tags": [
+        "llm",
+        "protocol",
+        "openai-compatible",
+        "deepseek",
+        "ollama",
+        "adapter",
+        "reusable"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:func:occ-createCompatibleBody",
+      "type": "function",
+      "name": "createCompatibleBody",
+      "filePath": "packages/core/src/llm/protocols/openai-compatible-chat.ts",
+      "summary": "构建兼容 OpenAI 格式的请求体，接收 messages/tools/options 三个参数，将消息序列化后与工具定义和额外选项合并返回。",
+      "tags": [
+        "utility",
+        "compatible",
+        "exported"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:const:OpenAICompatibleChatProtocol",
+      "type": "constant",
+      "name": "OpenAICompatibleChatProtocol",
+      "filePath": "packages/core/src/llm/protocols/openai-compatible-chat.ts",
+      "summary": "OpenAI 兼容协议 Protocol 实现，逻辑与 OpenAIChatProtocol 完全一致，区别在于复用 openai-chat 的函数而非重新实现。适用于所有 OpenAI API 兼容的第三方 Provider。",
+      "tags": [
+        "protocol",
+        "openai-compatible",
+        "exported"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:file:protocol-anthropic",
+      "type": "file",
+      "name": "protocols/anthropic-messages.ts",
+      "filePath": "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "summary": "Anthropic Messages API 协议适配器，实现 Protocol 接口。提供 serializeMessages（转换为 Anthropic content block 格式）、serializeSystem（提取 system 消息为独立字段）、deserializeStreamEvent（处理 content_block_delta/start、message_delta/stop、error 等事件类型）、以及 AnthropicMessagesProtocol 常量。支持 tool_use/tool_result 内容块、缓存 token 统计。",
+      "tags": [
+        "llm",
+        "protocol",
+        "anthropic",
+        "claude",
+        "adapter"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "b8:func:am-serializeMessages",
+      "type": "function",
+      "name": "serializeMessages",
+      "filePath": "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "summary": "将 LLMMessage 转换为 Anthropic 消息格式。跳过 system 消息，将 tool-call 转为 tool_use 块（含 id/name/input），将 tool-result 转为 tool_result 块（含 tool_use_id/content）。",
+      "tags": [
+        "serialization",
+        "anthropic",
+        "exported"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:func:am-serializeSystem",
+      "type": "function",
+      "name": "serializeSystem",
+      "filePath": "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "summary": "从消息数组中提取所有 system 角色消息，拼接为单个字符串。Anthropic API 要求 system 消息作为独立字段传递而非消息列表的一部分。",
+      "tags": [
+        "serialization",
+        "anthropic",
+        "exported"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:func:am-deserializeStreamEvent",
+      "type": "function",
+      "name": "deserializeStreamEvent",
+      "filePath": "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "summary": "将 Anthropic SSE 事件反序列化为统一 LLMEvent。处理 content_block_delta（文本/JSON 增量）、content_block_start（工具调用开始）、message_delta（使用统计和停止原因）、message_stop（结束）、error（错误）五种事件类型。",
+      "tags": [
+        "deserialization",
+        "anthropic",
+        "exported"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "b8:const:AnthropicMessagesProtocol",
+      "type": "constant",
+      "name": "AnthropicMessagesProtocol",
+      "filePath": "packages/core/src/llm/protocols/anthropic-messages.ts",
+      "summary": "完整的 Anthropic Messages Protocol 实现。serializeRequest 构建包含 model/system/messages/max_tokens/tools/temperature/top_p/stop_sequences 的请求体；deserializeEvent 委托给 deserializeStreamEvent；parseResponse 从 content 数组中提取文本和 tool_use 块。",
+      "tags": [
+        "protocol",
+        "anthropic",
+        "claude",
+        "exported"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:file:protocol-gemini",
+      "type": "file",
+      "name": "protocols/gemini.ts",
+      "filePath": "packages/core/src/llm/protocols/gemini.ts",
+      "summary": "Google Gemini API 协议适配器，实现 Protocol 接口。提供 convertMessages（将 LLMMessage 转为 Gemini contents 格式，assistant->model 角色映射）、extractSystemMessage（提取系统提示）、mapFinishReason（将 Gemini 终止原因映射为统一格式）、以及 GeminiProtocol 常量。支持 functionCall/functionResponse 工具调用格式。",
+      "tags": [
+        "llm",
+        "protocol",
+        "gemini",
+        "google",
+        "adapter"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "b8:func:gem-convertMessages",
+      "type": "function",
+      "name": "convertMessages",
+      "filePath": "packages/core/src/llm/protocols/gemini.ts",
+      "summary": "将 LLMMessage 数组转换为 Gemini contents 格式。跳过 system 消息，将 assistant 角色映射为 model，将 tool-call 转为 functionCall，将 tool-result 转为 functionResponse。",
+      "tags": [
+        "serialization",
+        "gemini",
+        "internal"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:func:gem-extractSystemMessage",
+      "type": "function",
+      "name": "extractSystemMessage",
+      "filePath": "packages/core/src/llm/protocols/gemini.ts",
+      "summary": "从消息数组中提取 system 角色消息，拼接为单个字符串。Gemini API 将系统提示作为 systemInstruction 字段传递。",
+      "tags": [
+        "serialization",
+        "gemini",
+        "internal"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:func:gem-mapFinishReason",
+      "type": "function",
+      "name": "mapFinishReason",
+      "filePath": "packages/core/src/llm/protocols/gemini.ts",
+      "summary": "将 Gemini 终止原因映射为统一格式：STOP->stop、MAX_TOKENS->length、SAFETY/RECITATION->content_filter。",
+      "tags": [
+        "mapping",
+        "gemini",
+        "internal"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:const:GeminiProtocol",
+      "type": "constant",
+      "name": "GeminiProtocol",
+      "filePath": "packages/core/src/llm/protocols/gemini.ts",
+      "summary": "完整的 Gemini Protocol 实现。serializeRequest 构建包含 contents/systemInstruction/tools/generationConfig 的请求体；deserializeEvent 处理 candidates 中的文本和 functionCall；parseResponse 从候选结果中提取文本和工具调用。",
+      "tags": [
+        "protocol",
+        "gemini",
+        "google",
+        "exported"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:file:protocol-openai-responses",
+      "type": "file",
+      "name": "protocols/openai-responses.ts",
+      "filePath": "packages/core/src/llm/protocols/openai-responses.ts",
+      "summary": "OpenAI Responses API 协议适配器，实现 Protocol 接口。这是 OpenAI 最新的 API 格式（逐步取代 Chat Completions）。提供 serializeResponsesMessages（转换消息格式）、以及 OpenAIResponsesProtocol 常量。使用 input 字段替代 messages，支持 response.output_text.delta、response.function_call_arguments.delta/done、response.completed 等新一代事件类型。",
+      "tags": [
+        "llm",
+        "protocol",
+        "openai",
+        "responses-api",
+        "adapter",
+        "next-gen"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "b8:func:or-serializeResponsesMessages",
+      "type": "function",
+      "name": "serializeResponsesMessages",
+      "filePath": "packages/core/src/llm/protocols/openai-responses.ts",
+      "summary": "将 LLMMessage 转换为 OpenAI Responses API 格式。处理 tool 结果（提取 tool_call_id）、assistant 工具调用（序列化为 tool_calls 数组）、普通文本消息三种情况。",
+      "tags": [
+        "serialization",
+        "openai-responses",
+        "internal"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:const:OpenAIResponsesProtocol",
+      "type": "constant",
+      "name": "OpenAIResponsesProtocol",
+      "filePath": "packages/core/src/llm/protocols/openai-responses.ts",
+      "summary": "完整的 OpenAI Responses Protocol 实现。serializeRequest 使用 input 字段（非 messages），支持 max_output_tokens/temperature/top_p/seed 等参数；deserializeEvent 处理 response.output_text.delta（文本增量）、response.function_call_arguments.delta/done（工具调用参数流）、response.completed（完成）、error 事件；parseResponse 从 output 数组中提取 message 和 function_call。",
+      "tags": [
+        "protocol",
+        "openai-responses",
+        "exported"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "b8:file:provider-openai",
+      "type": "file",
+      "name": "providers/openai.ts",
+      "filePath": "packages/core/src/llm/providers/openai.ts",
+      "summary": "OpenAI 原生 Provider 实现，提供 OpenAIProvider 类。通过 RouteClient 发送 HTTP 流式请求到 OpenAI API，使用 openai-chat 协议的序列化/反序列化函数。内置错误分类处理：401->认证错误、429->限流错误、其他->Provider 错误。",
+      "tags": [
+        "llm",
+        "provider",
+        "openai",
+        "streaming"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:class:OpenAIProvider",
+      "type": "class",
+      "name": "OpenAIProvider",
+      "filePath": "packages/core/src/llm/providers/openai.ts",
+      "summary": "OpenAI LLM Provider 类。构造函数创建 RouteClient（默认 baseUrl: api.openai.com/v1）。stream 方法是核心：构建请求体->通过 RouteClient.postStream 发送->解码 JSON->通过反序列化函数转换为 LLMEvent->yield 事件流。错误处理区分超时、认证、限流和通用错误。",
+      "tags": [
+        "provider",
+        "openai",
+        "streaming",
+        "exported"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:file:provider-anthropic",
+      "type": "file",
+      "name": "providers/anthropic.ts",
+      "filePath": "packages/core/src/llm/providers/anthropic.ts",
+      "summary": "Anthropic 原生 Provider 实现，提供 AnthropicProvider 类。通过 RouteClient 发送 HTTP 流式请求到 Anthropic API，使用 anthropic-messages 协议的序列化/反序列化函数。自动设置 x-api-key 和 anthropic-version 请求头。",
+      "tags": [
+        "llm",
+        "provider",
+        "anthropic",
+        "claude",
+        "streaming"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:class:AnthropicProvider",
+      "type": "class",
+      "name": "AnthropicProvider",
+      "filePath": "packages/core/src/llm/providers/anthropic.ts",
+      "summary": "Anthropic LLM Provider 类。构造函数创建 RouteClient（默认 baseUrl: api.anthropic.com，自动附加 x-api-key 和 anthropic-version 头）。stream 方法构建包含 system 字段的请求体，通过 RouteClient.postStream 发送到 /v1/messages 端点，反序列化 Anthropic SSE 事件。错误处理区分超时、认证、限流和通用错误。",
+      "tags": [
+        "provider",
+        "anthropic",
+        "claude",
+        "streaming",
+        "exported"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:file:provider-openai-compatible",
+      "type": "file",
+      "name": "providers/openai-compatible.ts",
+      "filePath": "packages/core/src/llm/providers/openai-compatible.ts",
+      "summary": "通用 OpenAI 兼容 Provider 适配器，提供 OpenAICompatibleProvider 类。支持 DeepSeek、Ollama、Groq、Fireworks、Together AI、Cerebras、xAI、Perplexity 等第三方 Provider。复用 openai-compatible-chat 协议的序列化/反序列化函数。添加新 Provider 只需在 providers/index.ts 中新增配置即可，无需编写代码。",
+      "tags": [
+        "llm",
+        "provider",
+        "openai-compatible",
+        "deepseek",
+        "ollama",
+        "generic"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:class:OpenAICompatibleProvider",
+      "type": "class",
+      "name": "OpenAICompatibleProvider",
+      "filePath": "packages/core/src/llm/providers/openai-compatible.ts",
+      "summary": "通用 OpenAI 兼容 Provider 类。构造函数接收 CompatibleProviderConfig（扩展 RouteConfig，增加 name 属性）。stream 方法与 OpenAIProvider 类似，构建请求体->通过 RouteClient.postStream 发送到 /chat/completions->反序列化为 LLMEvent。错误处理较简单（仅区分超时和通用错误）。",
+      "tags": [
+        "provider",
+        "openai-compatible",
+        "streaming",
+        "exported"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "b8:file:providers-index",
+      "type": "file",
+      "name": "providers/index.ts",
+      "filePath": "packages/core/src/llm/providers/index.ts",
+      "summary": "Provider 注册表和工厂模块，是整个 LLM Provider 系统的入口。定义了所有支持的 Provider 配置（openai/anthropic/deepseek/ollama/groq/fireworks/together/cerebras/perplexity/gemini/vertex），提供 createProvider（工厂函数）、getProviderNames、getProviderInfo、registerProvider。内部通过 getProtocol 选择协议、getEndpoint 构建端点、getAuth 配置认证。",
+      "tags": [
+        "llm",
+        "provider",
+        "registry",
+        "factory",
+        "central-hub"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "b8:func:createProvider",
+      "type": "function",
+      "name": "createProvider",
+      "filePath": "packages/core/src/llm/providers/index.ts",
+      "summary": "Provider 工厂函数（导出），根据 type 字符串创建对应的 RouteInstance。内置配置匹配：已知 Provider 使用 providerConfigs 中的配置；未知 Provider 但提供 baseUrl 时使用 OpenAICompatibleChatProtocol 兜底；否则抛出错误。",
+      "tags": [
+        "factory",
+        "provider",
+        "exported",
+        "core-entry"
+      ],
+      "complexity": "high"
+    },
+    {
+      "id": "b8:func:getProtocol",
+      "type": "function",
+      "name": "getProtocol",
+      "filePath": "packages/core/src/llm/providers/index.ts",
+      "summary": "根据协议名称字符串返回对应的 Protocol 实现。支持 openai-chat/anthropic-messages/openai-compatible/gemini/openai-responses 五种协议。",
+      "tags": [
+        "protocol-selector",
+        "internal"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:func:getEndpoint",
+      "type": "function",
+      "name": "getEndpoint",
+      "filePath": "packages/core/src/llm/providers/index.ts",
+      "summary": "根据 Provider 类型和配置构建 Endpoint（baseUrl + path）。Anthropic 使用 /v1/messages，其他使用 /chat/completions。",
+      "tags": [
+        "endpoint",
+        "internal"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:func:getAuth",
+      "type": "function",
+      "name": "getAuth",
+      "filePath": "packages/core/src/llm/providers/index.ts",
+      "summary": "根据 Provider 配置的 authType 构建 Auth 对象。支持 none/api-key/oauth/bearer 四种认证方式。",
+      "tags": [
+        "auth",
+        "internal"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:func:getExtraHeaders",
+      "type": "function",
+      "name": "getExtraHeaders",
+      "filePath": "packages/core/src/llm/providers/index.ts",
+      "summary": "根据 Provider 配置提取额外请求头（如 Anthropic 的 anthropic-version 头）。",
+      "tags": [
+        "headers",
+        "internal"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:func:getProviderNames",
+      "type": "function",
+      "name": "getProviderNames",
+      "filePath": "packages/core/src/llm/providers/index.ts",
+      "summary": "返回所有已注册 Provider 的名称列表（导出），从 providerConfigs 的键中提取。",
+      "tags": [
+        "registry",
+        "exported"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:func:getProviderInfo",
+      "type": "function",
+      "name": "getProviderInfo",
+      "filePath": "packages/core/src/llm/providers/index.ts",
+      "summary": "根据 Provider 名称返回其默认模型和支持的模型列表（导出）。",
+      "tags": [
+        "registry",
+        "exported"
+      ],
+      "complexity": "low"
+    },
+    {
+      "id": "b8:func:registerProvider",
+      "type": "function",
+      "name": "registerProvider",
+      "filePath": "packages/core/src/llm/providers/index.ts",
+      "summary": "动态注册新 Provider 配置（导出），将 ProviderConfig 写入 providerConfigs 映射表。",
+      "tags": [
+        "registry",
+        "exported",
+        "extensible"
+      ],
+      "complexity": "low"
+    }
+  ],
+  "edges": [
+    {
+      "source": "b8:file:route-types",
+      "target": "b8:iface:RouteConfig",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:route-types",
+      "target": "b8:iface:RouteInstance",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:route-types",
+      "target": "b8:iface:Protocol",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:route-types",
+      "target": "b8:file:schema-index",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:route-client",
+      "target": "b8:class:RouteClient",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:class:RouteClient",
+      "target": "b8:iface:RouteClientConfig",
+      "relation": "uses"
+    },
+    {
+      "source": "b8:file:route-route",
+      "target": "b8:func:makeRoute",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:route-route",
+      "target": "b8:func:executeRoute",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:route-route",
+      "target": "b8:func:makeStream",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:route-route",
+      "target": "b8:func:makeComplete",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:route-route",
+      "target": "b8:file:route-types",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:route-route",
+      "target": "b8:file:schema-index",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:func:makeRoute",
+      "target": "b8:func:makeStream",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:func:makeRoute",
+      "target": "b8:func:makeComplete",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:file:protocol-openai-chat",
+      "target": "b8:func:oc-serializeMessages",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-openai-chat",
+      "target": "b8:func:oc-deserializeChunk",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-openai-chat",
+      "target": "b8:func:oc-getFinishReason",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-openai-chat",
+      "target": "b8:const:OpenAIChatProtocol",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-openai-chat",
+      "target": "b8:file:schema-index",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:protocol-openai-chat",
+      "target": "b8:file:route-types",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:const:OpenAIChatProtocol",
+      "target": "b8:iface:Protocol",
+      "relation": "implements"
+    },
+    {
+      "source": "b8:const:OpenAIChatProtocol",
+      "target": "b8:func:oc-serializeMessages",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:const:OpenAIChatProtocol",
+      "target": "b8:func:oc-deserializeChunk",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:file:protocol-openai-compatible",
+      "target": "b8:func:occ-createCompatibleBody",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-openai-compatible",
+      "target": "b8:const:OpenAICompatibleChatProtocol",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-openai-compatible",
+      "target": "b8:file:protocol-openai-chat",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:protocol-openai-compatible",
+      "target": "b8:file:route-types",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:const:OpenAICompatibleChatProtocol",
+      "target": "b8:iface:Protocol",
+      "relation": "implements"
+    },
+    {
+      "source": "b8:func:occ-createCompatibleBody",
+      "target": "b8:func:oc-serializeMessages",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:const:OpenAICompatibleChatProtocol",
+      "target": "b8:func:oc-serializeMessages",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:const:OpenAICompatibleChatProtocol",
+      "target": "b8:func:oc-deserializeChunk",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:file:protocol-anthropic",
+      "target": "b8:func:am-serializeMessages",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-anthropic",
+      "target": "b8:func:am-serializeSystem",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-anthropic",
+      "target": "b8:func:am-deserializeStreamEvent",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-anthropic",
+      "target": "b8:const:AnthropicMessagesProtocol",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-anthropic",
+      "target": "b8:file:schema-index",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:protocol-anthropic",
+      "target": "b8:file:route-types",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:const:AnthropicMessagesProtocol",
+      "target": "b8:iface:Protocol",
+      "relation": "implements"
+    },
+    {
+      "source": "b8:const:AnthropicMessagesProtocol",
+      "target": "b8:func:am-serializeMessages",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:const:AnthropicMessagesProtocol",
+      "target": "b8:func:am-serializeSystem",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:const:AnthropicMessagesProtocol",
+      "target": "b8:func:am-deserializeStreamEvent",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:file:protocol-gemini",
+      "target": "b8:func:gem-convertMessages",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-gemini",
+      "target": "b8:func:gem-extractSystemMessage",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-gemini",
+      "target": "b8:func:gem-mapFinishReason",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-gemini",
+      "target": "b8:const:GeminiProtocol",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-gemini",
+      "target": "b8:file:schema-index",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:protocol-gemini",
+      "target": "b8:file:route-types",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:const:GeminiProtocol",
+      "target": "b8:iface:Protocol",
+      "relation": "implements"
+    },
+    {
+      "source": "b8:const:GeminiProtocol",
+      "target": "b8:func:gem-convertMessages",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:const:GeminiProtocol",
+      "target": "b8:func:gem-extractSystemMessage",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:const:GeminiProtocol",
+      "target": "b8:func:gem-mapFinishReason",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:file:protocol-openai-responses",
+      "target": "b8:func:or-serializeResponsesMessages",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-openai-responses",
+      "target": "b8:const:OpenAIResponsesProtocol",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:protocol-openai-responses",
+      "target": "b8:file:schema-index",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:protocol-openai-responses",
+      "target": "b8:file:route-types",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:const:OpenAIResponsesProtocol",
+      "target": "b8:iface:Protocol",
+      "relation": "implements"
+    },
+    {
+      "source": "b8:const:OpenAIResponsesProtocol",
+      "target": "b8:func:or-serializeResponsesMessages",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:file:provider-openai",
+      "target": "b8:class:OpenAIProvider",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:provider-openai",
+      "target": "b8:file:schema-index",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:provider-openai",
+      "target": "b8:file:protocol-openai-chat",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:provider-openai",
+      "target": "b8:file:route-client",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:class:OpenAIProvider",
+      "target": "b8:class:RouteClient",
+      "relation": "uses"
+    },
+    {
+      "source": "b8:class:OpenAIProvider",
+      "target": "b8:func:oc-serializeMessages",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:class:OpenAIProvider",
+      "target": "b8:func:oc-deserializeChunk",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:file:provider-anthropic",
+      "target": "b8:class:AnthropicProvider",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:provider-anthropic",
+      "target": "b8:file:schema-index",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:provider-anthropic",
+      "target": "b8:file:protocol-anthropic",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:provider-anthropic",
+      "target": "b8:file:route-client",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:class:AnthropicProvider",
+      "target": "b8:class:RouteClient",
+      "relation": "uses"
+    },
+    {
+      "source": "b8:class:AnthropicProvider",
+      "target": "b8:func:am-serializeMessages",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:class:AnthropicProvider",
+      "target": "b8:func:am-serializeSystem",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:class:AnthropicProvider",
+      "target": "b8:func:am-deserializeStreamEvent",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:file:provider-openai-compatible",
+      "target": "b8:class:OpenAICompatibleProvider",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:provider-openai-compatible",
+      "target": "b8:file:schema-index",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:provider-openai-compatible",
+      "target": "b8:file:protocol-openai-compatible",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:provider-openai-compatible",
+      "target": "b8:file:route-client",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:class:OpenAICompatibleProvider",
+      "target": "b8:class:RouteClient",
+      "relation": "uses"
+    },
+    {
+      "source": "b8:class:OpenAICompatibleProvider",
+      "target": "b8:func:oc-serializeMessages",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:class:OpenAICompatibleProvider",
+      "target": "b8:func:oc-deserializeChunk",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:func:createProvider",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:func:getProtocol",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:func:getEndpoint",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:func:getAuth",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:func:getExtraHeaders",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:func:getProviderNames",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:func:getProviderInfo",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:func:registerProvider",
+      "relation": "defines"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:file:schema-index",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:file:protocol-openai-chat",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:file:protocol-anthropic",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:file:protocol-openai-compatible",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:file:protocol-gemini",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:file:protocol-openai-responses",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:file:route-route",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:file:route-types",
+      "relation": "imports"
+    },
+    {
+      "source": "b8:func:createProvider",
+      "target": "b8:func:getProtocol",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:func:createProvider",
+      "target": "b8:func:getEndpoint",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:func:createProvider",
+      "target": "b8:func:getAuth",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:func:createProvider",
+      "target": "b8:func:getExtraHeaders",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:func:createProvider",
+      "target": "b8:func:makeRoute",
+      "relation": "calls"
+    },
+    {
+      "source": "b8:func:getProtocol",
+      "target": "b8:const:OpenAIChatProtocol",
+      "relation": "returns"
+    },
+    {
+      "source": "b8:func:getProtocol",
+      "target": "b8:const:AnthropicMessagesProtocol",
+      "relation": "returns"
+    },
+    {
+      "source": "b8:func:getProtocol",
+      "target": "b8:const:OpenAICompatibleChatProtocol",
+      "relation": "returns"
+    },
+    {
+      "source": "b8:func:getProtocol",
+      "target": "b8:const:GeminiProtocol",
+      "relation": "returns"
+    },
+    {
+      "source": "b8:func:getProtocol",
+      "target": "b8:const:OpenAIResponsesProtocol",
+      "relation": "returns"
+    },
+    {
+      "source": "b8:file:route-route",
+      "target": "b8:file:route-client",
+      "relation": "depends-on"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:class:OpenAIProvider",
+      "relation": "references"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:class:AnthropicProvider",
+      "relation": "references"
+    },
+    {
+      "source": "b8:file:providers-index",
+      "target": "b8:class:OpenAICompatibleProvider",
+      "relation": "references"
+    }
+  ]
+}

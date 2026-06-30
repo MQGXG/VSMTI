@@ -6,7 +6,7 @@
 import { execSync } from "child_process"
 import { join, relative, resolve } from "path"
 import fs from "fs"
-import { getPlatformPaths } from "./platform-paths"
+import { getPlatformPaths } from "../config/paths"
 
 export interface WorktreeInfo {
   id: string
@@ -151,3 +151,4 @@ export function cleanupWorktrees(): void {
     }
   }
 }
+

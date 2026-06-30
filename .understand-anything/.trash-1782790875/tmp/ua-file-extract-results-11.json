@@ -1,0 +1,158 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 4,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "apps/desktop/electron-builder.yml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 35,
+      "nonEmptyLines": 29,
+      "sections": [
+        {
+          "heading": "appId",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "productName",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "copyright",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "directories",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "files",
+          "level": 1,
+          "line": 9
+        },
+        {
+          "heading": "extraResources",
+          "level": 1,
+          "line": 14
+        },
+        {
+          "heading": "win",
+          "level": 1,
+          "line": 16
+        },
+        {
+          "heading": "mac",
+          "level": 1,
+          "line": 23
+        },
+        {
+          "heading": "linux",
+          "level": 1,
+          "line": 30
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 9
+      }
+    },
+    {
+      "path": "apps/desktop/index.html",
+      "language": "html",
+      "fileCategory": "markup",
+      "totalLines": 13,
+      "nonEmptyLines": 13,
+      "metrics": {}
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 38,
+      "nonEmptyLines": 38,
+      "sections": [
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "description",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "main",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "scripts",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "dependencies",
+          "level": 1,
+          "line": 19
+        },
+        {
+          "heading": "devDependencies",
+          "level": 1,
+          "line": 24
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 7
+      }
+    },
+    {
+      "path": "apps/desktop/tsconfig.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 26,
+      "nonEmptyLines": 26,
+      "sections": [
+        {
+          "heading": "compilerOptions",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "include",
+          "level": 1,
+          "line": 24
+        },
+        {
+          "heading": "exclude",
+          "level": 1,
+          "line": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 3
+      }
+    }
+  ]
+}

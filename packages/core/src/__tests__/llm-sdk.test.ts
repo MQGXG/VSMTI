@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { createLLMClient } from '../llm-sdk'
+import { createLLMClient } from '../llm/client'
 
 describe('createLLMClient', () => {
   test('creates OpenAI client', () => {
@@ -37,3 +37,4 @@ describe('createLLMClient', () => {
     expect(typeof client.complete).toBe('function')
   })
 })
+
