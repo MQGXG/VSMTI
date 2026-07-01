@@ -213,6 +213,10 @@ importers:
       vitest:
         specifier: ^4.1.8
         version: 4.1.9(@types/node@26.0.1)(@vitest/ui@4.1.9)(vite@5.3.1(@types/node@26.0.1))
+    optionalDependencies:
+      playwright:
+        specifier: ^1.60.0
+        version: 1.61.1
 
   packages/electron:
     dependencies:
@@ -7178,7 +7182,7 @@ snapshots:
 
   '@types/minimatch@6.0.0':
     dependencies:
-      minimatch: 5.1.9
+      minimatch: 10.2.5
     optional: true
 
   '@types/ms@2.1.0': {}

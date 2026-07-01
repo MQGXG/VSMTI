@@ -348,7 +348,7 @@ export class Agent {
       { role: "user", content: enrichedUser },
     ]
 
-    const modeMaxSteps = getModeMaxIterations(config.mode || config.mode || "assistant")
+    const modeMaxSteps = getModeMaxIterations(config.mode || "assistant")
     const budget = new IterationBudget(config.maxSteps || modeMaxSteps || 10)
     const llmConfig: LLMTurnConfig = {
       provider: config.provider || "openai",

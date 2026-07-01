@@ -1,5 +1,5 @@
 import { Shield, AlertTriangle } from "lucide-react";
-import { Modal } from "../ui/Modal";
+import { Modal } from "../components/ui/Modal";
 
 interface Props {
   toolName: string;

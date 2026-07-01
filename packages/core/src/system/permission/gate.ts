@@ -52,7 +52,7 @@ export function evaluateToolCalls(
 ): ApprovalResult[] {
   return toolCalls.map((call) => {
     let args: Record<string, unknown> = {}
-    try { args = JSON.parse(call.function.arguments) } catch {}
+    try { args = JSON.parse(call.function.arguments) } catch { /* JSON 解析失败时使用空对象兜底 */ }
     const def = registry.get(call.function.name)
     const permissionAction = def?.permission || call.function.name
     const resource = extractActionResource(call.function.name, args)

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Plus, Trash2, Globe, Key, Server, Download, Save, X } from "lucide-react";
 import type { Provider, ProviderFormData } from "./types";
+import { Switch } from "../components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 
 interface Props {
   providers: Provider[];
@@ -217,17 +219,18 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
           <div className="space-y-4">
             <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>API 配置</div>
             <div className="space-y-2">
-              <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>接口格式</label>
-              <select
-                value={editingProvider.apiFormat}
-                onChange={(e) => updateForm({ apiFormat: e.target.value as any })}
-                className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all duration-200"
-                style={inputStyle}
-              >
-                <option value="openai">OpenAI Compatible</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="custom">自定义</option>
-              </select>
+              <label className="text-xs text-secondary">接口格式</label>
+              <Select value={editingProvider.apiFormat}
+                onValueChange={(v) => updateForm({ apiFormat: v as any })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openai">OpenAI Compatible</SelectItem>
+                  <SelectItem value="anthropic">Anthropic</SelectItem>
+                  <SelectItem value="custom">自定义</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>API Key</label>
@@ -370,11 +373,8 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
-                <div onClick={() => toggleProvider(provider.id)}
-                  className="w-9 h-5 rounded-full relative cursor-pointer transition-colors"
-                  style={{ background: provider.enabled ? '#00D9C0' : 'var(--border)' }}>
-                  <div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ transform: provider.enabled ? 'translateX(16px)' : 'translateX(2px)' }} />
-                </div>
+                <Switch checked={provider.enabled}
+                  onCheckedChange={() => toggleProvider(provider.id)} />
               </div>
             </div>
             {provider.enabled && (

@@ -1,9 +1,17 @@
 import { useState, useEffect, useMemo } from "react";
-import { createPortal } from "react-dom";
 import { MessageSquarePlus, Settings, Trash2, MessageSquare, Search, X, FileText, Plus } from "lucide-react";
 import { SettingsDialog } from "./SettingsDialog";
 import { SessionService, type SessionInfo } from "../services/session.service";
 import { ProjectService, type ProjectInfo } from "../services/project.service";
+import { Input } from "../components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuPortal,
+} from "../components/ui/dropdown-menu";
 
 interface Props {
   open: boolean;
@@ -65,11 +73,15 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
   useEffect(() => { loadSessions(); const timer = setInterval(loadSessions, 10000); return () => clearInterval(timer); }, [activeProject]);
 
   useEffect(() => {
-    if (!contextMenu) return;
-    const close = () => setContextMenu(null);
-    document.addEventListener("click", close);
-    return () => document.removeEventListener("click", close);
-  }, [contextMenu]);
+    const h = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+        e.preventDefault();
+        onNewSession();
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onNewSession]);
 
   const groupedSessions = useMemo(() => {
     const groups: Record<string, SessionInfo[]> = { "今天": [], "昨天": [], "7天内": [], "30天内": [], "其他": [] };
@@ -120,41 +132,44 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
 
       {/* Context menu */}
       {contextMenu && (
-        <div className="fixed z-[100] rounded-xl overflow-hidden shadow-glass-lg"
-          style={{ left: contextMenu.x, top: contextMenu.y, background: 'var(--surface-elevated)', border: '1px solid var(--border)', minWidth: '140px' }}>
-          <button onClick={() => { onEditProject(contextMenu.project); setContextMenu(null); }}
-            className="w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: 'var(--text-primary)' }}>
-            编辑
-          </button>
-          <button onClick={() => setContextMenu(null)}
-            className="w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: 'var(--text-primary)' }}>
-            启用工作区
-          </button>
-          <button onClick={() => setContextMenu(null)}
-            className="w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: 'var(--text-tertiary)' }}>
-            清除通知
-          </button>
-          <div style={{ borderTop: '1px solid var(--border)' }} />
-          <button onClick={() => {
-              ProjectService.hide(contextMenu.project.project_id);
-              setContextMenu(null);
-              window.location.reload();
-            }}
-            className="w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: 'var(--text-primary)' }}>
-            关闭
-          </button>
-        </div>
+        <DropdownMenu open={true} onOpenChange={(open) => { if (!open) setContextMenu(null); }}>
+          <DropdownMenuTrigger asChild>
+            <div style={{ position: 'fixed', left: contextMenu.x, top: contextMenu.y, width: 0, height: 0 }} />
+          </DropdownMenuTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuContent side="bottom" align="start" className="min-w-[140px] p-1"
+              onCloseAutoFocus={(e) => e.preventDefault()}>
+              <DropdownMenuItem onSelect={() => { onEditProject(contextMenu.project); setContextMenu(null); }}>
+                编辑
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setContextMenu(null)}>
+                启用工作区
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setContextMenu(null)}>
+                清除通知
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => {
+                ProjectService.hide(contextMenu.project.project_id);
+                setContextMenu(null);
+                window.location.reload();
+              }}>
+                关闭
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenuPortal>
+        </DropdownMenu>
       )}
 
       {/* Search */}
       <div className="px-3 pb-2 pt-3 relative">
         <div className="relative">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--fg-tertiary)" }} />
-          <input value={searchQuery} onChange={async (e) => {
+          <Input value={searchQuery} onChange={async (e) => {
             const v = e.target.value; setSearchQuery(v);
             if (!v.trim()) { setSearchResults(null); return; }
             try { setSearchResults(await SessionService.search(v)); } catch { setSearchResults([]); }
-          }} placeholder="搜索会话..." className="w-full pl-9 pr-3 py-2 rounded-lg text-xs outline-none" style={{ background: "var(--bg)", color: "var(--fg)", border: "1px solid var(--border-subtle)" }} />
+          }} placeholder="搜索会话..." className="pl-9 pr-3 py-2 text-xs" />
           {searchQuery && <button onClick={() => { setSearchQuery(""); setSearchResults(null); }} className="absolute right-2 top-1/2 -translate-y-1/2 btn-ghost p-0.5"><X className="w-3 h-3" /></button>}
         </div>
       </div>
@@ -224,7 +239,15 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
         })}
       </div>
 
-      {settingsOpen && createPortal(<SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />, document.body)}
+      <div className="p-3 border-t border-standard">
+        <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-2.5 sidebar-item rounded-lg px-3 py-2 text-sm transition-all">
+          <Settings className="w-4 h-4" />
+          设置
+          <span className="ml-auto text-[10px] text-tertiary">Ctrl+,</span>
+        </button>
+      </div>
+
+      {settingsOpen && <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }

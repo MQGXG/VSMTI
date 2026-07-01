@@ -9,6 +9,7 @@
  */
 
 import { z } from "zod"
+import { zodToJsonSchema as zodToJsonSchemaConverter } from "./zod-converter"
 
 export interface ToolContext {
   sessionID: string
@@ -82,37 +83,6 @@ const runtimeMap = new WeakMap<ToolDef, {
   outputJsonSchema: Record<string, unknown>
 }>()
 
-function cleanJsonSchema(raw: Record<string, unknown>): Record<string, unknown> {
-  const cleaned: Record<string, unknown> = {}
-  const allowed = new Set(["type", "properties", "required", "items", "description", "enum", "minItems", "maxItems", "minimum", "maximum", "minLength", "maxLength", "pattern", "default", "anyOf", "oneOf", "allOf", "not", "if", "then", "else"])
-  for (const [key, value] of Object.entries(raw)) {
-    if (allowed.has(key)) {
-      cleaned[key] = value
-      if (key === "items" && typeof value === "object" && value !== null) {
-        cleaned[key] = cleanJsonSchema(value as Record<string, unknown>)
-      }
-      if ((key === "properties" || key === "anyOf" || key === "oneOf") && typeof value === "object" && value !== null) {
-        const props: Record<string, unknown> = {}
-        for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-          props[k] = typeof v === "object" && v !== null ? cleanJsonSchema(v as Record<string, unknown>) : v
-        }
-        cleaned[key] = props
-      }
-    }
-  }
-  if (!raw.type && Object.keys(cleaned).length === 0) return { type: "string" }
-  return cleaned
-}
-
-function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
-  try {
-    const raw = schema.toJSONSchema()
-    return cleanJsonSchema(raw as Record<string, unknown>)
-  } catch {
-    return { type: "object", properties: {} }
-  }
-}
-
 export function make<Input, Output>(
   config: {
     name: string
@@ -136,8 +106,8 @@ export function make<Input, Output>(
     maxOutputLength: config.maxOutputLength,
   }
 
-  const jsonschema = zodToJsonSchema(config.inputSchema)
-  const outputJsonSchema = zodToJsonSchema(config.outputSchema)
+  const jsonschema = zodToJsonSchemaConverter(config.inputSchema)
+  const outputJsonSchema = zodToJsonSchemaConverter(config.outputSchema)
   if (!jsonschema.type) jsonschema.type = "object"
   if (!jsonschema.properties) jsonschema.properties = {}
   runtimeMap.set(def, {

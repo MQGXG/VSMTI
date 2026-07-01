@@ -11,10 +11,10 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "components": "@mira/ui/components",
+    "utils": "@mira/ui/lib/utils",
+    "ui": "@mira/ui/components/ui",
+    "lib": "@mira/ui/lib",
+    "hooks": "@mira/ui/hooks"
   }
 }

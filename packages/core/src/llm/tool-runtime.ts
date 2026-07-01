@@ -1,4 +1,5 @@
 import type { ToolDef, ToolCall } from "../shared/tool"
+import { zodToJsonSchema } from "../shared/zod-converter"
 
 export interface ToolRuntimeConfig {
   tools: ToolDef[]
@@ -35,36 +36,8 @@ export class ToolRuntime {
 }
 
 function extractJsonSchema(schema: any): Record<string, unknown> {
-  if (typeof schema === "object" && schema._def?.typeName === "ZodObject") {
+  if (typeof schema === "object" && schema._def?.typeName) {
     return zodToJsonSchema(schema)
   }
   return schema
-}
-
-function zodToJsonSchema(zodSchema: any): Record<string, unknown> {
-  const def = zodSchema._def
-  switch (def.typeName) {
-    case "ZodObject": {
-      const shape = def.shape()
-      const properties: Record<string, unknown> = {}
-      const required: string[] = []
-      for (const [key, value] of Object.entries(shape)) {
-        properties[key] = zodToJsonSchema(value as any)
-        if (!(value as any)._def?.isOptional) required.push(key)
-      }
-      return { type: "object", properties, required: required.length > 0 ? required : undefined }
-    }
-    case "ZodString":
-      return { type: "string" }
-    case "ZodNumber":
-      return { type: "number" }
-    case "ZodBoolean":
-      return { type: "boolean" }
-    case "ZodArray":
-      return { type: "array", items: zodToJsonSchema(def.type) }
-    case "ZodOptional":
-      return zodToJsonSchema(def.innerType)
-    default:
-      return { type: "string" }
-  }
 }

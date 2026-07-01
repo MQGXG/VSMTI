@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Search, Cpu } from "lucide-react";
 import type { Provider, ProviderModel } from "./types";
+import { Switch } from "../components/ui/switch";
+import { Input } from "../components/ui/input";
 
 interface Props {
   providers: Provider[];
@@ -40,19 +42,18 @@ export function ModelManager({ providers, onChange }: Props) {
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>模型</h3>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>管理所有可用模型，启用后可在对话框中选择使用</p>
+          <h3 className="text-lg font-medium text-primary">模型</h3>
+          <p className="text-xs mt-1 text-secondary">管理所有可用模型，启用后可在对话框中选择使用</p>
         </div>
-        <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>已启用 {enabledCount} / {totalCount}</div>
+        <div className="text-xs text-secondary">已启用 {enabledCount} / {totalCount}</div>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
-        <input
-          type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" />
+        <Input
+          value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="搜索模型..."
-          className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none transition-all duration-200"
-          style={{ background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          className="pl-10 pr-4 py-2.5 text-sm"
         />
       </div>
 
@@ -60,27 +61,23 @@ export function ModelManager({ providers, onChange }: Props) {
         {Object.entries(grouped).map(([providerName, models]) => (
           <div key={providerName} className="space-y-2">
             <div className="flex items-center gap-2 px-1">
-              <Cpu className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
-              <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{providerName}</span>
-              <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>({models.length})</span>
+              <Cpu className="w-4 h-4 text-secondary" />
+              <span className="text-sm font-medium text-primary">{providerName}</span>
+              <span className="text-xs text-tertiary">({models.length})</span>
             </div>
             <div className="space-y-1">
               {models.map((model) => (
                 <div key={`${model.providerId}-${model.id}`}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200"
-                  style={{ background: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
+                  className="flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 bg-surface-elevated border border-standard">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full" style={{ background: model.enabled ? '#00D9C0' : 'var(--border)' }} />
                     <div>
-                      <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{model.name}</div>
-                      <div className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>{model.id}</div>
+                      <div className="text-sm text-primary">{model.name}</div>
+                      <div className="text-xs font-mono text-tertiary">{model.id}</div>
                     </div>
                   </div>
-                  <div onClick={() => toggleModel(model.providerId, model.id)}
-                    className="w-11 h-6 rounded-full relative cursor-pointer transition-colors"
-                    style={{ background: model.enabled ? '#00D9C0' : 'var(--border)' }}>
-                    <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: model.enabled ? 'translateX(20px)' : 'translateX(2px)' }} />
-                  </div>
+                  <Switch checked={model.enabled}
+                    onCheckedChange={() => toggleModel(model.providerId, model.id)} />
                 </div>
               ))}
             </div>

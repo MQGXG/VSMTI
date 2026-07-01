@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Check, Upload, Trash2, FolderOpen } from "lucide-react";
-import { Modal } from "../ui/Modal";
+import { Modal } from "../components/ui/Modal";
 
 interface Project {
   project_id: string;

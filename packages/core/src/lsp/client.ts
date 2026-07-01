@@ -163,6 +163,6 @@ export class LSPClient {
         if (msg.error) reject(new Error(msg.error.message))
         else resolve(msg.result)
       }
-    } catch {}
+    } catch { /* 消息处理异常不中断连接 */ }
   }
 }

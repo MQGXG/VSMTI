@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { HelpCircle, Send } from "lucide-react";
-import { Modal } from "../ui/Modal";
+import { Modal } from "../components/ui/Modal";
 
 interface Props {
   question: string;

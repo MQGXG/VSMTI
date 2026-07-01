@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { getProviderById, getSettings } from "../sidebar/SettingsDialog";
+import { getProviderById, loadSettings as getSettings } from "../sidebar/provider-data";
 import type { MiraMessage } from "../chat/mira-runtime";
 import {
   createMiraMessage,

@@ -61,18 +61,21 @@ export class ToolOrchestrator {
         }
       } else {
         const semaphore = 5
-        const executing = group.map(async (call) => {
-          const result = await this.executeSingle(call, ctx, extra)
-          for (const [id, r] of result) {
-            if (r.output) this.outputStore.store(id, call.name, r.output)
-            return { id, result: r }
+        for (let i = 0; i < group.length; i += semaphore) {
+          const batch = group.slice(i, i + semaphore)
+          const batchResults = await Promise.all(
+            batch.map(async (call) => {
+              const result = await this.executeSingle(call, ctx, extra)
+              for (const [id, r] of result) {
+                if (r.output) this.outputStore.store(id, call.name, r.output)
+                return { id, result: r }
+              }
+              return { id: call.id, result: { success: false, error: "No result" } as ToolResult }
+            }),
+          )
+          for (const item of batchResults) {
+            yield item
           }
-          return { id: call.id, result: { success: false, error: "No result" } as ToolResult }
-        })
-
-        for (const promise of executing) {
-          const { id, result } = await promise
-          yield { id, result }
         }
       }
     }

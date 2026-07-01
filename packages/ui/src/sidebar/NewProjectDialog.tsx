@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Folder, Plus } from "lucide-react";
-import { Modal } from "../ui/Modal";
+import { Modal } from "../components/ui/Modal";
 import { DialogService } from "../services/dialog.service";
 
 interface Props {

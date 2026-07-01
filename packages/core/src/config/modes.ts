@@ -2,7 +2,7 @@ import { PermissionSet, type PermissionRule } from "../system/permission"
 import type { AgentProfile } from "./profile"
 import { createDefaultRegistry, getGlobalAgentDir, getProjectAgentDir } from "./profile"
 
-export type AgentMode = string
+export type AgentMode = "assistant" | "expert" | "action" | "safe" | "plan"
 
 const _registry = createDefaultRegistry()
 

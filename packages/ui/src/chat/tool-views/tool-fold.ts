@@ -1,8 +1,3 @@
-/**
- * 工具输出折叠策略 — 参考 OpenCode collapseToolOutput()
- * 不同工具有不同的默认折叠行数，偏好持久化到 localStorage
- */
-
 const STORAGE_KEY = "tool_fold_preferences"
 
 export interface ToolFoldConfig {
@@ -31,6 +26,14 @@ const defaultConfigs: Record<string, ToolFoldConfig> = {
   default:      { defaultExpanded: false, maxPreviewLines: 8 },
 }
 
+function loadSettings(): Record<string, any> {
+  try {
+    return JSON.parse(localStorage.getItem("settings") || "{}")
+  } catch {
+    return {}
+  }
+}
+
 function loadOverrides(): Record<string, Partial<ToolFoldConfig>> {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}")
@@ -44,7 +47,19 @@ function saveOverrides(overrides: Record<string, Partial<ToolFoldConfig>>): void
 }
 
 export function getFoldConfig(toolName: string): ToolFoldConfig {
-  const base = defaultConfigs[toolName] || defaultConfigs.default
+  const settings = loadSettings()
+  let base = defaultConfigs[toolName] || defaultConfigs.default
+
+  const shellTools = ["bash", "code_exec"]
+  const editTools = ["write_file", "edit_file"]
+
+  if (settings.expandShellTools && shellTools.includes(toolName)) {
+    base = { ...base, defaultExpanded: true }
+  }
+  if (settings.expandEditTools && editTools.includes(toolName)) {
+    base = { ...base, defaultExpanded: true }
+  }
+
   const overrides = loadOverrides()
   const override = overrides[toolName]
   if (!override) return base

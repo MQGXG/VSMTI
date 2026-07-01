@@ -12,7 +12,7 @@ export async function loadWorkspacePermissions(workspace: string): Promise<Permi
       resource: (r[1] as string) || "*",
       effect: r[2] as "allow" | "deny" | "ask",
     }))
-  } catch {
+  } catch { /* 数据库读取失败时返回空权限列表 */
     return []
   }
 }

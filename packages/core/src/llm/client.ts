@@ -2,6 +2,7 @@ import { z } from "zod"
 import { createProvider } from "./providers"
 import { LLMError } from "./schema/errors"
 import type { LLMMessage } from "./schema/messages"
+import { getToolResultOutput } from "./schema/messages"
 import type { LLMRequest as LLMRequestSchema } from "./schema/options"
 import { zodToJsonSchema } from "../shared/zod-converter"
 
@@ -46,10 +47,10 @@ function convertMessages(messages: LLMMessage[]): LLMMessage[] {
       : m.content.map((part: any) => {
           if (part.type === "text") return { type: "text" as const, text: part.text }
           if (part.type === "tool-call") return { type: "tool-call" as const, toolCallId: part.toolCallId, toolName: part.toolName, args: part.args }
-          if (part.type === "tool-result") return { type: "tool-result" as const, toolCallId: part.toolCallId, toolName: part.toolName, output: typeof part.output === "string" ? part.output : (part.output as any)?.value || "" }
+          if (part.type === "tool-result") return { type: "tool-result" as const, toolCallId: part.toolCallId, toolName: part.toolName, output: getToolResultOutput(part.output) }
           return { type: "text" as const, text: "" }
         }),
-    tool_call_id: (m as any).tool_call_id,
+    tool_call_id: "tool_call_id" in m ? m.tool_call_id as string : undefined,
   }))
 }
 

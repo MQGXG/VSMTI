@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   AuiIf, ComposerPrimitive, ThreadPrimitive, MessagePrimitive,
   ActionBarPrimitive, ErrorPrimitive, BranchPickerPrimitive,
@@ -16,6 +16,8 @@ import { MarkdownText } from "../components/assistant-ui/markdown-text";
 import { MessageTiming } from "../components/assistant-ui/message-timing";
 import { ContextDisplay } from "../components/assistant-ui/context-display";
 import { ThinkingBlock } from "./ThinkingBlock";
+import { ProgressBar } from "./ProgressBar";
+import { loadSettings } from "../sidebar/provider-data";
 import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { VoiceInput } from "./VoiceInput";
 import { ToolCallView } from "./ToolCallView";
@@ -88,6 +90,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   const [isFocused, setIsFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
+  const settings = useMemo(() => loadSettings(), []);
 
   useEffect(() => { AgentService.listSkills().then((l) => setSkills(l)).catch(() => {}); }, []);
   useEffect(() => {
@@ -134,6 +137,8 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
         </div>
       )}
 
+      {settings.showProgressBar !== false && ctx.isRunning && <ProgressBar />}
+
       <ThreadPrimitive.Root className="flex-1 flex flex-col min-h-0">
         <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 scrollbar-custom">
           <div className="flex flex-col mx-auto py-6 min-h-full px-6" style={{ maxWidth: "760px", width: "100%" }}>
@@ -159,7 +164,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                 const isUser = message.role === "user";
                 return (
                   <MessagePrimitive.Root className="group mb-5 animate-message">
-                    {orig?.thinking && <ThinkingBlock text={orig.thinking} />}
+                    {orig?.thinking && settings.showReasoning !== false && <ThinkingBlock text={orig.thinking} />}
                     <div className={`flex w-full gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
                       {!isUser && (
                         <div className="shrink-0 mt-1">

@@ -17,8 +17,7 @@ export type { ConfigInfo } from "./services/config.service"
 export type { MemoryEntry } from "./services/memory.service"
 
 // ─── 通用 UI 组件 ──────────────────────────────────────────────
-export { Modal } from "./ui/Modal"
-export { ResizablePanel } from "./ui/ResizablePanel"
+export { Modal } from "./components/ui/Modal"
 
 // ─── 聊天组件 ──────────────────────────────────────────────────
 export { ChatWindow } from "./chat/ChatWindow"

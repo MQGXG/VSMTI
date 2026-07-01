@@ -238,7 +238,7 @@ export class ToolRegistry {
         this.register(tool)
       }
       
-      logError(`[registry] MCP initialized: ${mcpTools.length} tools registered`)
+      console.log(`[registry] MCP initialized: ${mcpTools.length} tools registered`)
     } catch (error) {
       logError("[registry] MCP initialization failed", error)
     }
@@ -292,7 +292,7 @@ export class ToolRegistry {
         this.register(tool)
       }
       
-      logError(`[registry] Plugins initialized: ${pluginTools.length} tools registered`)
+      console.log(`[registry] Plugins initialized: ${pluginTools.length} tools registered`)
     } catch (error) {
       logError("[registry] Plugin initialization failed", error)
     }

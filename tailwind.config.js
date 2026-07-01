@@ -96,8 +96,13 @@ module.exports = {
         "bounce-dot": "bounce-dot 1.4s ease-in-out infinite",
         "in": "in 0.2s ease-out",
         "out": "out 0.2s ease-in",
+        "progress": "progress 1.5s ease-in-out infinite",
       },
       keyframes: {
+        "progress": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
         "pulse-glow": {
           "0%, 100%": { opacity: "1", filter: "brightness(1)" },
           "50%": { opacity: "0.7", filter: "brightness(1.3)" },
