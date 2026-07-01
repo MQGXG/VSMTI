@@ -9,7 +9,7 @@ Mira 是一个全能 AI 助手桌面应用，基于 **Electron + TypeScript Agen
 | 层次 | 技术选型 |
 |------|----------|
 | 桌面框架 | Electron 31 (electron-vite) |
-| 前端 | React 18 + TypeScript 5 + Tailwind CSS + @assistant-ui/react |
+| 前端 | React 18 + TypeScript 5 + Tailwind CSS + @assistant-ui/react + @assistant-ui/react-streamdown |
 | Agent Core | TypeScript（纯 TS 实现，无 Python） |
 | LLM | OpenAI / Anthropic Claude / DeepSeek / Ollama / Groq / Gemini / 自定义 API |
 | 数据库 | SQLite (sql.js WASM，防抖持久化) |
@@ -25,99 +25,153 @@ mira/
 ├── packages/
 │   ├── core/                        # @mira/core — Agent Core 核心逻辑
 │   │   └── src/
-│   │       ├── agent.ts             # Agent 核心循环（流式 LLM → 工具调用 → 权限）
-│   │       ├── agent/               # Agent 子模块
+│   │       ├── index.ts             # 统一导出
+│   │       ├── types.ts             # AgentEvent 类型
+│   │       ├── compose-mode.ts      # 组合模式
+│   │       ├── agent/               # Agent 核心子模块
+│   │       │   ├── index.ts
+│   │       │   ├── agent.ts         #   Agent 核心循环
 │   │       │   ├── context.ts       #   系统提示构建
-│   │       │   ├── state-machine.ts #   Agent 生命周期状态机
+│   │       │   ├── state-machine.ts #   生命周期状态机
 │   │       │   ├── turn-processor.ts#   单回合工具调用编排
 │   │       │   ├── turn.ts          #   回合配置
 │   │       │   ├── max-mode.ts      #   并行采样选优
 │   │       │   ├── pipeline.ts      #   执行管线
-│   │       │   └── utils.ts         #   Doom Loop 检测等
-│   │       ├── llm-sdk.ts           # LLM SDK 封装（向后兼容层）
+│   │       │   ├── utils.ts         #   Doom Loop 检测
+│   │       │   ├── fork-cache.ts    #   分支缓存
+│   │       │   ├── text-ngram.ts    #   文本 N-gram 分析
+│   │       │   ├── registry.ts      #   Agent 内部注册表
+│   │       │   └── system-context.ts#   系统级上下文
 │   │       ├── llm/                 # LLM 分层架构
+│   │       │   ├── index.ts
+│   │       │   ├── client.ts        #   LLM 客户端
+│   │       │   ├── cache-policy.ts  #   缓存策略
+│   │       │   ├── tool-runtime.ts  #   工具运行时
 │   │       │   ├── schema/          #   消息/事件/错误类型
+│   │       │   │   ├── index.ts
 │   │       │   │   ├── messages.ts  #     LLMMessage 类型
 │   │       │   │   ├── events.ts    #     流式事件类型
 │   │       │   │   ├── errors.ts    #     LLMError 类型
 │   │       │   │   └── options.ts   #     请求选项
 │   │       │   ├── protocols/       #   协议适配器
+│   │       │   │   ├── index.ts
 │   │       │   │   ├── openai-chat.ts         # OpenAI Chat Completions
 │   │       │   │   ├── openai-responses.ts    # OpenAI Responses API
 │   │       │   │   ├── openai-compatible-chat.ts # OpenAI 兼容协议
 │   │       │   │   ├── anthropic-messages.ts  # Anthropic Messages API
 │   │       │   │   └── gemini.ts              # Google Gemini
-│   │       │   ├── providers/       #   Provider 实现
-│   │       │   │   ├── openai.ts              # OpenAI
-│   │       │   │   ├── anthropic.ts           # Anthropic
-│   │       │   │   └── openai-compatible.ts   # DeepSeek/Ollama/Groq/自定义
-│   │       │   ├── route/           #   路由客户端（自动选择协议）
-│   │       │   ├── cache-policy.ts  #   缓存策略
-│   │       │   └── tool-runtime.ts  #   工具运行时
-│   │       ├── tools/               # 32 个工具
-│   │       ├── memory/              # 四层记忆系统
-│   │       ├── skill/               # Skill 系统（Slash 命令 + 动态加载）
-│   │       ├── permission.ts        # 声明式权限（通配符 + 硬拒绝）
-│   │       ├── permission/          # 权限子模块
-│   │       │   └── approval-store.ts #  审批存储
-│   │       ├── modes.ts             # Agent 模式（可扩展）
-│   │       ├── agent-profile.ts     # Agent 配置（JSON 可序列化）
-│   │       ├── config.ts            # 多层配置合并
-│   │       ├── database.ts          # SQLite (sql.js)
-│   │       ├── session-manager.ts   # 项目/会话管理
-│   │       ├── session-store.ts     # 会话持久化
-│   │       ├── registry.ts          # 工具注册表
-│   │       ├── context-manager.ts   # 上下文窗口管理（checkpoint/rebuild）
-│   │       ├── compaction.ts        # 上下文压缩
-│   │       ├── message-utils.ts     # 消息工具函数
-│   │       ├── goal-judge.ts        # Goal 完成度验证
-│   │       ├── goal-manager.ts      # Goal 管理
-│   │       ├── dream-distill.ts     # Dream/Distill 记忆进化
-│   │       ├── subagent-manager.ts  # 子 Agent 管理
-│   │       ├── delegate-runner.ts   # 任务委派执行
-│   │       ├── team-bus.ts          # 团队通信总线
-│   │       ├── task-tracker.ts      # 任务追踪
-│   │       ├── task-planner.ts      # 任务规划
-│   │       ├── iteration-budget.ts  # 迭代预算控制
-│   │       ├── failover.ts          # LLM 故障转移
-│   │       ├── recovery.ts          # 错误恢复
-│   │       ├── background.ts        # 后台任务
-│   │       ├── cron-scheduler.ts    # 定时调度
-│   │       ├── worktree-manager.ts  # Git Worktree 管理
-│   │       ├── instruction-context.ts # 指令上下文
-│   │       ├── layers.ts            # 分层架构
-│   │       ├── logger.ts            # 日志系统
-│   │       ├── platform-paths.ts    # 跨平台路径
-│   │       ├── plugin-hooks.ts      # 插件钩子
-│   │       ├── plugin/              # 插件系统
-│   │       ├── mcp/                 # MCP 协议支持
+│   │       │   ├── providers/       #   Provider 实现（配置驱动）
+│   │       │   │   └── index.ts     #   12 种 Provider（OpenAI/Anthropic/DeepSeek/Ollama/Groq/Fireworks/Together/Cerebras/Perplexity/Gemini/Vertex/自定义）
+│   │       │   └── route/           #   路由客户端
+│   │       │       ├── index.ts
+│   │       │       ├── types.ts     #   路由类型（Auth/Endpoint/Framing/Protocol）
+│   │       │       ├── route.ts     #   路由实例创建
+│   │       │       └── client.ts    #   路由客户端实现
+│   │       ├── config/              # 配置模块
+│   │       │   ├── index.ts
+│   │       │   ├── flags.ts         #   特性开关
+│   │       │   ├── modes.ts         #   Agent 模式定义
+│   │       │   ├── paths.ts         #   跨平台路径
+│   │       │   └── profile.ts       #   Agent 配置（JSON 可序列化）
+│   │       ├── system/              # 系统级模块
+│   │       │   ├── database.ts      #   SQLite (sql.js)
+│   │       │   ├── instruction.ts   #   指令上下文
+│   │       │   ├── logger.ts        #   日志系统
+│   │       │   ├── registry.ts      #   工具注册表
+│   │       │   ├── registry-init.ts #   注册表初始化
+│   │       │   ├── server-manager.ts#   服务器管理器
+│   │       │   ├── permission/      #   权限子模块
+│   │       │   │   ├── index.ts
+│   │       │   │   ├── gate.ts      #     权限门控
+│   │       │   │   ├── store.ts     #     权限规则存储
+│   │       │   │   └── approval-store.ts # 审批存储
+│   │       │   └── server/          #   API 服务
+│   │       │       ├── index.ts
+│   │       │       ├── server.ts    #     HTTP 服务
+│   │       │       ├── api.ts       #     REST API
+│   │       │       └── cli.ts       #     CLI 入口
+│   │       ├── session/             # 会话管理
+│   │       │   ├── manager.ts       #   项目/会话管理
+│   │       │   ├── store.ts         #   会话持久化
+│   │       │   ├── context.ts       #   上下文窗口管理（checkpoint/rebuild）
+│   │       │   ├── compaction.ts    #   上下文压缩
+│   │       │   ├── fork.ts          #   会话分支
+│   │       │   └── snapshot.ts      #   会话快照
+│   │       ├── memory/              # 记忆系统
+│   │       │   ├── manager.ts       #   记忆管理器
+│   │       │   ├── types.ts         #   记忆类型定义
+│   │       │   ├── builtin-provider.ts    #   内置记忆提供者
+│   │       │   ├── checkpoint-provider.ts #   检查点提供者
+│   │       │   ├── file-memory-provider.ts #  文件记忆提供者
+│   │       │   ├── fts-memory-provider.ts #  全文搜索记忆提供者
+│   │       │   └── vector-provider.ts     #   向量记忆提供者
+│   │       ├── shared/              # 共享工具模块
+│   │       │   ├── tool.ts          #   工具定义工厂
+│   │       │   ├── tool-executor.ts #   工具执行器
+│   │       │   ├── tool-effect.ts   #   工具副作用处理
+│   │       │   ├── zod-converter.ts #   Zod → JSON Schema 转换
+│   │       │   ├── message-utils.ts #   消息工具函数
+│   │       │   ├── plugin-hooks.ts  #   插件钩子
+│   │       │   └── hooks-setup.ts   #   Hook 默认设置
+│   │       ├── orchestrate/         # 编排模块
+│   │       │   ├── goal-judge.ts    #   Goal 完成度验证
+│   │       │   ├── goal-manager.ts  #   Goal 管理
+│   │       │   ├── subagent.ts      #   子 Agent 管理
+│   │       │   ├── delegate.ts      #   任务委派执行
+│   │       │   ├── team-bus.ts      #   团队通信总线
+│   │       │   ├── execution.ts     #   工具编排执行（并行/串行）
+│   │       │   ├── dream.ts         #   Dream/Distill 记忆进化
+│   │       │   └── failover.ts      #   LLM 故障转移
+│   │       ├── task/                # 任务管理
+│   │       │   ├── tracker.ts       #   任务追踪
+│   │       │   ├── planner.ts       #   任务规划
+│   │       │   └── budget.ts        #   迭代预算控制
+│   │       ├── background/          # 后台任务
+│   │       │   ├── index.ts
+│   │       │   ├── cron.ts          #   定时调度
+│   │       │   ├── recovery.ts      #   错误恢复
+│   │       │   └── worktree.ts      #   Git Worktree 管理
+│   │       ├── skill/               # Skill 系统
+│   │       │   ├── skill-loader.ts  #   动态加载
+│   │       │   ├── skill-commands.ts#   Slash 命令
+│   │       │   └── skill-tools.ts   #   Skill 工具
+│   │       ├── tools/               # 工具层（7 个子目录，32+ 工具文件）
+│   │       │   ├── index.ts         #   导出 22+ 工具
+│   │       │   ├── core/            #   核心工具（read/write/edit/list/grep/glob/git/code-search/search-history/create-docx/bash-security）
+│   │       │   ├── execution/       #   执行工具（bash/code-exec/image-gen）
+│   │       │   ├── knowledge/       #   知识工具（web-search/web-browse/web-fetch/data-analysis/memory）
+│   │       │   ├── orchestrate/     #   编排工具（agent-tools/delegate-task/team-tool/task-tool/cron-tool/worktree-tool/workflow-tool）
+│   │       │   ├── infra/           #   基础设施（lsp-tool）
+│   │       │   ├── interaction/     #   交互工具（question）
+│   │       │   └── shared/          #   工具共享（tool-loader/tool-meta/tool-output-store）
 │   │       ├── lsp/                 # LSP 代码智能
 │   │       │   ├── client.ts        #   LSP 客户端
 │   │       │   ├── manager.ts       #   LSP 管理器
 │   │       │   └── code-context.ts  #   代码上下文提取
+│   │       ├── mcp/                 # MCP 协议支持
+│   │       │   └── index.ts
+│   │       ├── plugin/              # 插件系统
+│   │       │   └── index.ts
 │   │       ├── workflow/            # Dynamic Workflow 编排
-│   │       ├── execution/           # 工具编排执行
-│   │       │   └── orchestrator.ts  #   并行/串行工具编排
-│   │       ├── server/              # API 服务
-│   │       │   ├── server.ts        #   HTTP 服务
-│   │       │   ├── api.ts           #   REST API
-│   │       │   └── cli.ts           #   CLI 入口
-│   │       ├── zod-converter.ts     # Zod → JSON Schema 转换
-│   │       ├── tool.ts              # 工具定义工厂
-│   │       ├── tool-executor.ts     # 工具执行器
-│   │       ├── tool-effect.ts       # 工具副作用处理
-│   │       ├── hooks-setup.ts       # Hook 默认设置
-│   │       ├── compose-mode.ts      # 组合模式
-│   │       ├── index.ts             # 统一导出
-│   │       └── types.ts             # AgentEvent 类型
+│   │       │   └── index.ts
+│   │       └── __tests__/           # 测试
+│   │           ├── setup.ts
+│   │           ├── agent.test.ts
+│   │           ├── tool.test.ts
+│   │           ├── smoke.test.ts
+│   │           ├── llm-sdk.test.ts
+│   │           ├── message-utils.test.ts
+│   │           ├── permission-loop.test.ts
+│   │           └── benchmark.test.ts
 │   │
 │   ├── electron/                    # @mira/electron — Electron 主进程
 │   │   └── src/
-│   │       ├── main/index.ts        # 应用入口
+│   │       ├── index.ts             # 主进程入口
+│   │       ├── main/                # 应用入口
 │   │       ├── preload/index.ts     # 预加载脚本 (contextBridge)
-│   │       ├── ipc/                 # IPC 通信层（14 个模块）
+│   │       ├── ipc/                 # IPC 通信层（13 个模块）
+│   │       │   ├── index.ts         #   统一导出
 │   │       │   ├── handlers.ts      #   统一注册
-│   │       │   ├── agent-ipc.ts     #   Agent 流式执行
 │   │       │   ├── compose-ipc.ts   #   组合模式
 │   │       │   ├── config-ipc.ts    #   配置读写
 │   │       │   ├── dream-ipc.ts     #   Dream/Distill
@@ -134,15 +188,13 @@ mira/
 │   │
 │   └── ui/                          # @mira/ui — React 前端组件
 │       └── src/
+│           ├── index.ts             # 统一导出
 │           ├── chat/                # 聊天组件
 │           │   ├── ChatWindow.tsx   #   主聊天界面
 │           │   ├── MiraRuntimeProvider.tsx # 运行时状态
 │           │   ├── ModelSelector.tsx #  模型/模式选择
 │           │   ├── PermissionDialog.tsx # 权限审批弹窗
 │           │   ├── QuestionDialog.tsx #  用户交互弹窗
-│           │   ├── MarkdownRenderer.tsx # Markdown 渲染
-│           │   ├── CodeBlock.tsx    #   代码块
-│           │   ├── MermaidBlock.tsx #   Mermaid 图表
 │           │   ├── ThinkingBlock.tsx #  思考过程展示
 │           │   ├── VoiceInput.tsx   #   语音输入
 │           │   ├── ToolCallView.tsx #   工具调用展示
@@ -151,29 +203,43 @@ mira/
 │           │   ├── mira-runtime.ts  #   运行时类型
 │           │   ├── types.ts         #   类型定义
 │           │   └── tool-views/      #   工具结果视图
-│           │       ├── ToolDiffView.tsx     # Diff 视图
-│           │       ├── ToolShellView.tsx    # Shell 输出
-│           │       ├── ToolReadView.tsx     # 文件读取
-│           │       ├── ToolSearchView.tsx   # 搜索结果
-│           │       ├── ToolGenericView.tsx  # 通用视图
-│           │       └── tool-fold.ts         # 折叠逻辑
+│           │       ├── ToolDiffView.tsx
+│           │       ├── ToolShellView.tsx
+│           │       ├── ToolReadView.tsx
+│           │       ├── ToolSearchView.tsx
+│           │       ├── ToolGenericView.tsx
+│           │       └── tool-fold.ts
+│           ├── components/          # 组件
+│           │   ├── assistant-ui/    #   shadcn 风格组件
+│           │   │   ├── markdown-text.tsx
+│           │   │   ├── reasoning.tsx
+│           │   │   ├── tool-fallback.tsx
+│           │   │   ├── tool-group.tsx
+│           │   │   ├── diff-viewer.tsx
+│           │   │   ├── message-timing.tsx
+│           │   │   ├── context-display.tsx
+│           │   │   └── tooltip-icon-button.tsx
+│           │   └── ui/              #   基础 UI 组件
+│           │       ├── button.tsx
+│           │       ├── collapsible.tsx
+│           │       └── tooltip.tsx
 │           ├── sidebar/             # 侧边栏
-│           │   ├── Sidebar.tsx      #   会话列表
-│           │   ├── ProjectBar.tsx   #   项目切换
-│           │   ├── SettingsDialog.tsx # 设置面板
-│           │   ├── ModelManager.tsx #   模型管理
-│           │   ├── ProviderConfigPanel.tsx # Provider 配置
-│           │   ├── ThemeSelector.tsx #  主题选择
-│           │   ├── NewProjectDialog.tsx # 新建项目
-│           │   ├── EditProjectDialog.tsx # 编辑项目
-│           │   └── types.ts         #   类型定义
+│           │   ├── Sidebar.tsx
+│           │   ├── ProjectBar.tsx
+│           │   ├── SettingsDialog.tsx
+│           │   ├── ModelManager.tsx
+│           │   ├── ProviderConfigPanel.tsx
+│           │   ├── ThemeSelector.tsx
+│           │   ├── NewProjectDialog.tsx
+│           │   ├── EditProjectDialog.tsx
+│           │   └── types.ts
 │           ├── layout/TitleBar.tsx  # 自定义标题栏
-│           ├── ui/                  # 通用 UI 组件
 │           ├── hooks/               # React Hooks
 │           ├── contexts/            # React Contexts
 │           ├── lib/                 # 工具函数
+│           ├── services/            # 服务层
 │           ├── types/               # 类型声明
-│           └── index.ts             # 统一导出
+│           └── ui/                  # 额外 UI 组件
 │
 ├── apps/
 │   └── desktop/                     # @mira/desktop — Electron 应用壳
@@ -181,6 +247,7 @@ mira/
 │       │   ├── App.tsx              # 应用根组件
 │       │   ├── main.tsx             # React 入口
 │       │   ├── main.ts              # Electron 入口
+│       │   ├── lib/                 # 工具库
 │       │   └── styles/              # 全局样式
 │       ├── index.html               # HTML 模板
 │       ├── electron.vite.config.ts  # Vite 构建配置
@@ -193,13 +260,16 @@ mira/
 ├── checkpoints/                     # 检查点快照
 ├── docs/                            # 文档
 ├── resources/                       # 打包资源（图标等）
+├── logs/                            # 运行日志
 ├── package.json                     # 根 package.json
 ├── pnpm-workspace.yaml              # pnpm workspace 配置
 ├── electron.vite.config.ts          # 根 Vite 配置
 ├── electron-builder.yml             # 根打包配置
 ├── tailwind.config.js               # Tailwind 主题
+├── postcss.config.js                # PostCSS 配置
 ├── tsconfig.json                    # 根 TypeScript 配置
 ├── vitest.config.ts                 # 测试配置
+├── components.json                  # shadcn 组件配置
 ├── AGENTS.md                        # 本文件
 ├── CONTEXT.md                       # 开发上下文
 ├── CONTRIBUTING.md                  # 贡献指南
@@ -259,13 +329,16 @@ mira/
 | | code_exec | 代码执行 |
 | | image_gen | AI 图片生成 |
 | | git_commit | Git 提交 |
-| **orchestration** | delegate_task | 任务委派给子 Agent |
+| **orchestrate** | delegate_task | 任务委派给子 Agent |
 | | team_tool | 团队协作工具 |
 | | task_planner | 任务规划 |
 | | cron_tool | 定时任务调度 |
 | | worktree_tool | Git Worktree 管理 |
 | | workflow_run | Dynamic Workflow 执行 |
-| **infrastructure** | lsp_definition | 跳转到定义 |
+| | spawn_agent | 启动子 Agent |
+| | wait_agents | 等待子 Agent 完成 |
+| | list_subagents | 列出子 Agent 状态 |
+| **infra** | lsp_definition | 跳转到定义 |
 | | lsp_references | 查找引用 |
 | | lsp_hover | 悬停信息 |
 | **interaction** | question | 向用户提问 |
@@ -286,6 +359,7 @@ mira/
 | Cerebras | 兼容 | `api.cerebras.ai/v1` |
 | Perplexity | 兼容 | `api.perplexity.ai` |
 | Gemini | 协议适配 | Gemini API |
+| Vertex | 协议适配 | Vertex AI API |
 | Custom | 兼容 | 用户自定义 URL |
 
 ## 高级特性
@@ -314,25 +388,45 @@ mira/
 ### LSP（Language Server Protocol）
 代码智能：定义跳转、引用查找、悬停信息。
 
+## assistant-ui 组件集成
+
+项目使用 assistant-ui 作为聊天 UI 框架，采用 `ExternalStoreRuntime` 桥接自定义状态：
+
+| 集成方式 | 组件 |
+|---------|------|
+| Runtime | `ExternalStoreRuntime` — 桥接 `useMiraChat` 状态 |
+| Primitives | `ThreadPrimitive`、`MessagePrimitive`、`ComposerPrimitive` |
+| Actions | `ActionBarPrimitive`、`BranchPickerPrimitive`、`SelectionToolbarPrimitive` |
+| Markdown | `@assistant-ui/react-streamdown` — Streamdown（Shiki + Mermaid 内置） |
+| Voice | `WebSpeechSynthesisAdapter`（TTS）、`WebSpeechDictationAdapter`（STT） |
+| Files | `AttachmentAdapter` — 自定义文件上传 |
+| shadcn 组件 | ToolFallback、ToolGroup、Reasoning、DiffViewer、MessageTiming、ContextDisplay |
+
+未使用内置 `<Thread />` 组件，而是用 Primitives 自行拼装以满足定制需求（Skill 补全/ModelSelector/WelcomeScreen）。
+
 ## IPC 通信
 
 `preload.ts` 通过 `contextBridge` 暴露 `electronAPI`：
 
-- `agent.*` — Agent 流式执行、权限回复、工具调用、Skill 列表
-- `compose.*` — 组合模式
-- `config.*` — 配置读写（全局 JSON + 项目 JSON + 环境变量）
-- `dream.*` — Dream/Distill 操作
-- `goal.*` — Goal 管理
-- `memory.*` — 记忆操作
-- `question.*` — 用户交互
-- `session.*` — 项目/会话 CRUD、消息搜索
-- `sidecar.*` — Sidecar 进程通信
-- `skill.*` — Skill 加载
-- `subagent.*` — 子 Agent 状态
-- `task.*` — 任务管理
-- `safeStorage.*` — API Key 加密存储（Electron safeStorage）
-- `dialog/*` — 文件/目录选择对话框
-- `window:*` — 窗口控制（最小化/最大化/关闭）
+| 命名空间 | 功能 |
+|---------|------|
+| `agent.*` | Agent 流式执行、工具调用、权限回复、Skill 列表 |
+| `agent.question.*` | Agent 向用户提问与回答 |
+| `agent.task.*` | 任务追踪 CRUD |
+| `agent.subagent.*` | 子 Agent 生命周期控制 |
+| `agent.goal.*` | Goal 管理 |
+| `agent.dreamDistill.*` | Dream/Distill 记忆进化 |
+| `agent.compose.*` | 组合模式全流程 |
+| `agent.onEvent` | 监听 Agent 流式事件 |
+| `config.*` | 配置读写（全局 JSON + 项目 JSON + 环境变量） |
+| `ts.*` | 项目/会话 CRUD、消息搜索 |
+| `memory.*` | 记忆搜索与状态查询 |
+| `encryptApiKey` / `decryptApiKey` / `isEncryptionAvailable` | API Key 加密存储（Electron safeStorage） |
+| `platform` | 当前平台标识 |
+| `notify` | 系统通知 |
+| `openFile` / `openDirectory` / `saveFile` | 文件/目录选择对话框 |
+| `getPythonStatus` / `getPythonLogs` / `restartPython` | Python 进程管理 |
+| `minimizeWindow` / `maximizeWindow` / `closeWindow` | 窗口控制 |
 
 ## 数据库
 

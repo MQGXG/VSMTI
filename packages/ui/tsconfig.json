@@ -14,8 +14,10 @@
     "declarationMap": true,
     "sourceMap": true,
     "jsx": "react-jsx",
+    "baseUrl": "src",
     "paths": {
-      "@mira/core": ["../core/src"]
+      "@mira/core": ["../core/src"],
+      "@/*": ["./*"]
     }
   },
   "include": ["src/**/*"],

@@ -9,6 +9,7 @@ import { useMiraChat } from "../hooks/useMiraChat";
 import { convertMessage, type MiraMessage } from "./mira-runtime";
 import type { ModelOption } from "./ModelSelector";
 import type { AgentMode } from "./types";
+import { fileAttachmentAdapter } from "../lib/attachment-adapter";
 
 export interface MiraRuntimeContext {
   messages: MiraMessage[];
@@ -96,12 +97,23 @@ export function MiraRuntimeProvider({
     []
   );
 
+  const suggestions = useMemo(() => chat.messages.length === 0 ? [
+    { prompt: "帮我写一段代码" },
+    { prompt: "分析这份数据" },
+    { prompt: "搜索一下最新AI新闻" },
+    { prompt: "解释这个技术概念" },
+  ] : undefined, [chat.messages.length]);
+
   const runtime = useExternalStoreRuntime<ThreadMessageLike>({
     isRunning: chat.isRunning,
     messages: convertedMessages,
     onNew,
     onCancel,
     convertMessage: convertThreadMessage,
+    suggestions,
+    adapters: {
+      attachments: fileAttachmentAdapter,
+    },
   });
 
   const context: MiraRuntimeContext = {

@@ -6,6 +6,8 @@
  * L4: compact_history - LLM 摘要压缩
  */
 
+import { getToolResultOutput } from "../llm/schema/messages"
+
 export type CompactLevel = "none" | "l1_snip" | "l2_micro" | "l3_auto"
 
 interface Message {
@@ -47,7 +49,7 @@ function getMessageTokens(msg: Message): number {
   if (Array.isArray(msg.content)) {
     return msg.content.reduce((sum, part) => {
       if (part.type === "text") return sum + estimateTokens(part.text || "")
-      if (part.type === "tool-result") return sum + estimateTokens(part.output || "")
+      if (part.type === "tool-result") return sum + estimateTokens(getToolResultOutput(part.output) || "")
       return sum
     }, 0)
   }
@@ -99,14 +101,14 @@ function microCompact(messages: Message[], config: CompactionConfig): Message[] 
 
     if (Array.isArray(msg.content)) {
       const hasLargeResult = msg.content.some(
-        part => part.type === "tool-result" && (part.output || "").length > config.toolResultMaxChars
+        part => part.type === "tool-result" && getToolResultOutput(part.output).length > config.toolResultMaxChars
       )
       if (hasLargeResult) {
         return {
           ...msg,
           content: msg.content.map(part => {
-            if (part.type === "tool-result" && (part.output || "").length > config.toolResultMaxChars) {
-              return { ...part, output: `[Earlier tool result compacted. Length: ${(part.output || "").length} chars]` }
+            if (part.type === "tool-result" && getToolResultOutput(part.output).length > config.toolResultMaxChars) {
+              return { ...part, output: `[Earlier tool result compacted. Length: ${getToolResultOutput(part.output).length} chars]` }
             }
             return part
           }),
@@ -137,8 +139,8 @@ function toolResultBudget(messages: Message[], maxChars: number): Message[] {
       return {
         ...msg,
         content: msg.content.map(part => {
-          if (part.type === "tool-result" && (part.output || "").length > maxChars) {
-            return { ...part, output: (part.output || "").slice(0, maxChars) + `\n... [truncated]` }
+          if (part.type === "tool-result" && getToolResultOutput(part.output).length > maxChars) {
+            return { ...part, output: getToolResultOutput(part.output).slice(0, maxChars) + `\n... [truncated]` }
           }
           return part
         }),

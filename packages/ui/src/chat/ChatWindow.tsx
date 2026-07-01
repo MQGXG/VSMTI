@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import {
   AuiIf, ComposerPrimitive, ThreadPrimitive, MessagePrimitive,
   ActionBarPrimitive, ErrorPrimitive, BranchPickerPrimitive,
+  SelectionToolbarPrimitive,
   useAui, useAuiState,
 } from "@assistant-ui/react";
 import { MiraRuntimeProvider } from "./MiraRuntimeProvider";
@@ -11,7 +12,9 @@ import type { AgentMode } from "./types";
 import type { MiraMessage } from "./mira-runtime";
 import { PermissionDialog } from "./PermissionDialog";
 import { QuestionDialog } from "./QuestionDialog";
-import { MarkdownRenderer } from "./MarkdownRenderer";
+import { MarkdownText } from "../components/assistant-ui/markdown-text";
+import { MessageTiming } from "../components/assistant-ui/message-timing";
+import { ContextDisplay } from "../components/assistant-ui/context-display";
 import { ThinkingBlock } from "./ThinkingBlock";
 import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { VoiceInput } from "./VoiceInput";
@@ -63,6 +66,7 @@ function MessageActions({ messageId, ctx }: { messageId: string; ctx: MiraRuntim
       <ActionBarPrimitive.Edit asChild>
         <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="编辑"><Edit3 className="w-3 h-3" /></button>
       </ActionBarPrimitive.Edit>
+      <MessageTiming />
     </div>
   );
 }
@@ -135,6 +139,18 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
           <div className="flex flex-col mx-auto py-6 min-h-full px-6" style={{ maxWidth: "760px", width: "100%" }}>
             <AuiIf condition={(s) => s.thread.isEmpty}>
               <WelcomeScreen onSuggest={(text) => { aui.composer().setText(text); textareaRef.current?.focus(); }} />
+              <div className="flex flex-wrap justify-center gap-2 max-w-sm mx-auto mt-2">
+                <ThreadPrimitive.Suggestions>
+                  {({ suggestion }) => (
+                    <ThreadPrimitive.Suggestion
+                      prompt={suggestion.prompt}
+                      send
+                      className="px-4 py-2 text-xs rounded-full transition-all hover:scale-105 cursor-pointer"
+                      style={{ background: "var(--bg-secondary)", color: "var(--fg-secondary)", border: "none" }}
+                    />
+                  )}
+                </ThreadPrimitive.Suggestions>
+              </div>
             </AuiIf>
 
             <ThreadPrimitive.Messages>
@@ -160,7 +176,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                         ) : (
                           <div className="bubble-assistant">
                             <MessagePrimitive.Parts>
-                              {({ part }) => { if (part.type === "text") return <MarkdownRenderer content={part.text} />; return null; }}
+                              {({ part }) => { if (part.type === "text") return <MarkdownText />; return null; }}
                             </MessagePrimitive.Parts>
                             {orig?.toolCalls && orig.toolCalls.length > 0 && (
                               <div className="mt-2 space-y-1.5">
@@ -169,6 +185,12 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                                 ))}
                               </div>
                             )}
+                            <SelectionToolbarPrimitive.Root>
+                              <SelectionToolbarPrimitive.Quote
+                                className="btn-ghost text-[11px]"
+                                style={{ padding: "4px 8px" }}
+                              />
+                            </SelectionToolbarPrimitive.Root>
                           </div>
                         )}
                         <MessagePrimitive.Error>
@@ -206,8 +228,17 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
               )}
 
               <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2 rounded-xl px-4 py-3 transition-all duration-200"
+                <div className="flex flex-col gap-2 rounded-xl px-4 py-3 transition-all duration-200"
                   style={{ background: "var(--bg-elevated)", border: "1px solid", borderColor: isFocused ? "var(--fg)" : "var(--border)", boxShadow: isFocused ? "var(--shadow-elevated)" : "none" }}>
+                  <ComposerPrimitive.Quote className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs"
+                    style={{ background: "var(--surface-secondary)", border: "1px solid var(--border-light)" }}>
+                    <ComposerPrimitive.QuoteText className="flex-1 truncate" />
+                    <ComposerPrimitive.QuoteDismiss className="shrink-0 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                      style={{ color: "var(--text-tertiary)" }}>
+                      ✕
+                    </ComposerPrimitive.QuoteDismiss>
+                  </ComposerPrimitive.Quote>
+                  <div className="flex items-center gap-2">
                   <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="添加附件">
                     <Paperclip className="w-4 h-4" />
                   </button>
@@ -233,9 +264,11 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                     </ComposerPrimitive.Send>
                   )}
                 </div>
+                </div>
 
                 <div className="flex items-center justify-between">
                   <ModelSelector selectedModel={selectedModel} onModelChange={onModelChange} agentMode={agentMode} onModeChange={onModeChange} />
+                  <ContextDisplay />
                 </div>
 
                 {goalCondition && (

@@ -1,4 +1,5 @@
 import type { LLMMessage, LLMEvent, FinishReason } from "../schema"
+import { getToolResultOutput } from "../schema/messages"
 import type { Protocol } from "../route/types"
 
 interface OpenAIChunk {
@@ -35,7 +36,7 @@ export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
       return {
         role: "tool",
         tool_call_id: toolResults[0].toolCallId,
-        content: toolResults[0].output,
+        content: getToolResultOutput(toolResults[0].output),
       } as OpenAIMessage
     }
 
