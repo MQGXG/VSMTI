@@ -46,6 +46,11 @@ export { ProjectBar } from "./sidebar/ProjectBar"
 export { ThemeSelector } from "./sidebar/ThemeSelector"
 export { ProviderConfigPanel } from "./sidebar/ProviderConfigPanel"
 
+// ─── 知识图谱 ──────────────────────────────────────────────────
+export { MemoryGraph } from "./memory/MemoryGraph"
+export { GraphPanel } from "./memory/GraphPanel"
+export type { GraphNode, GraphLink, GraphData } from "./memory/graph-data"
+
 // ─── 布局组件 ──────────────────────────────────────────────────
 export { TitleBar } from "./layout/TitleBar"
 

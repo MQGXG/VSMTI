@@ -1,4 +1,5 @@
-import { createLLMClient, type LLMToolSet, type LLMMessage } from "../llm/client"
+import { createLLMClient, type LLMToolSet, type LLMMessage, type SDKConfig } from "../llm/client"
+import { FallbackClient } from "../orchestrate/failover"
 import type { AgentEvent } from "../types"
 import type { ToolResult, ToolContext } from "../shared/tool"
 import type { ToolRegistry } from "../system/registry"
@@ -14,7 +15,7 @@ import type { ApprovalResult } from "../system/permission/gate"
 import { TextNgramMonitor } from "./text-ngram"
 import { isFeatureEnabled } from "../config/flags"
 
-export type TurnSignal = "continue" | "stop" | "compact"
+export type TurnSignal = "continue" | "stop" | "compact" | "context_overflow"
 
 export interface TurnProcessorInput {
   messages: LLMMessage[]
@@ -32,6 +33,7 @@ export interface TurnProcessorInput {
     permissions?: PermissionSet
     onPermissionSave?: (rules: PermissionRule[]) => void
     autoAcceptPermissions?: boolean
+    fallbacks?: SDKConfig[]
   }
   signal?: AbortSignal
   deps: {
@@ -207,6 +209,7 @@ export async function* executeCollectedTools(
   }
 
   const resultMap = new Map(results.map(r => [r.id, r.result]))
+  pluginHooks.emitAsync("post_tool_use", toolCalls, resultMap)
   for (const tc of toolCalls) {
     const result = resultMap.get(tc.id)
     const text = result?.success ? (result.output || "") : (result?.error || "No result")
@@ -242,14 +245,18 @@ export async function* processTurn(
     ctx,
   }
 
-  const client = createLLMClient({
+  const primaryConfig: SDKConfig = {
     provider: config.provider,
     model: config.model,
     apiKey: config.apiKey,
     apiUrl: config.apiUrl,
     headers: config.headers,
     options: config.options,
-  })
+  }
+
+  const client = config.fallbacks && config.fallbacks.length > 0
+    ? new FallbackClient({ primary: primaryConfig, fallbacks: config.fallbacks })
+    : createLLMClient(primaryConfig)
 
   const stream = client.stream({ messages, tools })
   const toolDoneQueue: Array<{ id: string; result: ToolResult }> = []
@@ -257,7 +264,7 @@ export async function* processTurn(
   const pendingTools = new Map<string, Promise<ToolResult>>()
   const MAX_CONCURRENT = 10
 
-  // 并发控制信号量
+  // 并发控制信号量（并行工具共享）
   let activeCount = 0
   const waitQueue: Array<() => void> = []
   const acquire = () => new Promise<void>(resolve => {
@@ -269,19 +276,36 @@ export async function* processTurn(
     if (waitQueue.length > 0) { activeCount++; waitQueue.shift()!() }
   }
 
+  // 非并行工具的排他锁（如 git_commit）—— 确保同一时刻只有一个非并行工具在执行
+  let serialQueue: Array<() => void> = []
+  let serialActive = false
+  const acquireSerial = () => new Promise<void>(resolve => {
+    if (!serialActive) { serialActive = true; resolve() }
+    else serialQueue.push(resolve)
+  })
+  const releaseSerial = () => {
+    if (serialQueue.length > 0) { serialQueue.shift()!() }
+    else serialActive = false
+  }
+
   // 启动工具执行（异步，不阻塞流）
   const startToolExecution = async (tc: { id: string; name: string; arguments: string }) => {
+    const parallel = isToolParallel(tc.name)
+    if (!parallel) await acquireSerial()
     await acquire()
     try {
       const result = await executeTool(tc, directInput)
       toolResults.push({ id: tc.id, result })
       toolDoneQueue.push({ id: tc.id, result })
+      pluginHooks.emitAsync("post_tool_use", [tc], new Map([[tc.id, result]]))
     } catch (err) {
       const result = { success: false, error: err instanceof Error ? err.message : String(err) } as ToolResult
       toolResults.push({ id: tc.id, result })
       toolDoneQueue.push({ id: tc.id, result })
+      pluginHooks.emitAsync("post_tool_use", [tc], new Map([[tc.id, result]]))
     } finally {
       release()
+      if (!parallel) releaseSerial()
     }
   }
 
@@ -364,6 +388,10 @@ export async function* processTurn(
         }
       }
     } else if (event.type === "error") {
+      const errMsg = (event.error?.message || "").toLowerCase()
+      if (errMsg.includes("prompt_too_long") || errMsg.includes("context_length_exceeded") || errMsg.includes("too many tokens")) {
+        return { text, toolCalls: toolCallList, signal: "context_overflow" as TurnSignal, messages, toolResults }
+      }
       llmFailed = true
       yield { type: "error" as const, message: event.error?.message || "LLM stream error" }
       break
@@ -412,7 +440,7 @@ export async function* processTurn(
       const resultText = result?.success ? (result.output || "") : (result?.error || "No result")
       messages.push({
         role: "tool",
-        content: [{ type: "text" as const, text: resultText }],
+        content: [{ type: "tool-result" as const, toolCallId: tc.id, toolName: tc.name, output: resultText }],
         tool_call_id: tc.id,
       } as any)
     }

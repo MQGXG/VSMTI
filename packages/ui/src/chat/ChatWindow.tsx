@@ -81,6 +81,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   const aui = useAui();
   const composerText = useAuiState((s) => s.composer.text);
   const composerIsEmpty = useAuiState((s) => s.composer.isEmpty);
+  const threadEmpty = useAuiState((s) => s.thread.isEmpty);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [skills, setSkills] = useState<SkillInfo[]>([]);
@@ -140,7 +141,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
       {settings.showProgressBar !== false && ctx.isRunning && <ProgressBar />}
 
       <ThreadPrimitive.Root className="flex-1 flex flex-col min-h-0">
-        <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 scrollbar-custom">
+        <ThreadPrimitive.Viewport className={`flex-1 overflow-x-hidden min-h-0 ${threadEmpty ? "overflow-y-hidden" : "overflow-y-auto scrollbar-custom"}`}>
           <div className="flex flex-col mx-auto py-6 min-h-full px-6" style={{ maxWidth: "760px", width: "100%" }}>
             <AuiIf condition={(s) => s.thread.isEmpty}>
               <WelcomeScreen onSuggest={(text) => { aui.composer().setText(text); textareaRef.current?.focus(); }} />

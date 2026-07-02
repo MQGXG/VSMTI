@@ -38,6 +38,24 @@ interface DistillWorkflow {
   examples: string[]
 }
 
+interface GraphEntity {
+  id: string
+  name: string
+  type: string
+  description?: string
+}
+
+interface GraphRelationship {
+  source: string
+  target: string
+  relation: string
+}
+
+interface GraphStore {
+  entities: GraphEntity[]
+  relationships: GraphRelationship[]
+}
+
 interface KnowledgeStore {
   entries: KnowledgeEntry[]
 }
@@ -60,6 +78,10 @@ Extract:
 4. Configuration details
 5. Lessons learned and best practices
 
+ALSO extract graph entities and their relationships for knowledge graph visualization:
+- Entities: key concepts, technologies, files, tools, decisions mentioned
+- Relationships: how entities relate to each other (depends_on, contains, based_on, similar_to, etc.)
+
 Also identify outdated or incorrect knowledge that should be removed.
 
 Respond in JSON format:
@@ -67,6 +89,14 @@ Respond in JSON format:
   "knowledge": [
     {"content": "...", "tags": ["tag1", "tag2"]}
   ],
+  "graph": {
+    "entities": [
+      {"name": "EntityName", "type": "concept|file|tool|decision", "description": "brief description"}
+    ],
+    "relationships": [
+      {"source": "EntityA", "target": "EntityB", "relation": "depends_on|contains|based_on|similar_to|uses|implements|extends"}
+    ]
+  },
   "outdated": ["entry to remove"],
   "summary": "Brief summary of changes"
 }`
@@ -104,7 +134,9 @@ Respond in JSON format:
 export class DreamDistillManager {
   private knowledgeDir = ""
   private knowledgePath = ""
+  private graphPath = ""
   private store: KnowledgeStore = { entries: [] }
+  private graphStore: GraphStore = { entities: [], relationships: [] }
   private dreamHistory: DreamResult[] = []
   private distillHistory: DistillResult[] = []
   private turnCount = 0
@@ -118,7 +150,9 @@ export class DreamDistillManager {
       fs.mkdirSync(this.knowledgeDir, { recursive: true })
     }
     this.knowledgePath = join(this.knowledgeDir, "knowledge.json")
+    this.graphPath = join(this.knowledgeDir, "graph.json")
     this.loadStore()
+    this.loadGraphStore()
   }
 
   /** 设置 LLM 配置（用于自动 Dream） */
@@ -127,7 +161,7 @@ export class DreamDistillManager {
   }
 
   /**
-   * 记录回合（用于自动 Dream 触发）
+   * 记录回合（用于自动 Dream 触发 + 实时图谱提取）
    */
   recordTurn(user: string, assistant: string): void {
     this.turnCount++
@@ -138,6 +172,55 @@ export class DreamDistillManager {
     // 保留最近 30 条消息
     if (this.pendingConversation.length > 30) {
       this.pendingConversation = this.pendingConversation.slice(-30)
+    }
+
+    // 每回合实时提取基础实体（无 LLM，纯正则）
+    this.extractLightweightGraph(user + "\n" + assistant)
+  }
+
+  /** 轻量级实体提取 — 纯正则，无 LLM 调用，每回合执行 */
+  private extractLightweightGraph(text: string): void {
+    const newEntities: GraphEntity[] = []
+    const newRelationships: GraphRelationship[] = []
+    const existingNames = new Set(this.graphStore.entities.map(e => e.name.toLowerCase()))
+
+    // 文件路径
+    for (const m of text.matchAll(/[\w\-/\\]+\.(?:ts|tsx|js|jsx|py|rs|go|json|yaml|yml|toml|md|css|html)\b/g)) {
+      const name = m[0]
+      if (!existingNames.has(name.toLowerCase())) {
+        newEntities.push({ id: "", name, type: "file" })
+        existingNames.add(name.toLowerCase())
+      }
+    }
+
+    // PascalCase 模块名
+    for (const m of text.matchAll(/\b([A-Z][a-z]+(?:[A-Z][a-z]+){1,3})\b/g)) {
+      const name = m[1]
+      if (name.length > 5 && !/^(The|This|That|What|When|Where|How|Why|And|But|For|Not|You|Can|Has|Was|Are|Been|Will|May|Shall|Some|More|Most|Other|Each|Every|Both|Few|Many|Much|Such)$/.test(name)) {
+        if (!existingNames.has(name.toLowerCase())) {
+          newEntities.push({ id: "", name, type: "concept" })
+          existingNames.add(name.toLowerCase())
+        }
+      }
+    }
+
+    // 共现关系：同一句中的实体互连
+    const sentences = text.split(/[。！？\n.!?]+/)
+    for (const sentence of sentences) {
+      const found: string[] = []
+      for (const entity of newEntities) {
+        if (sentence.includes(entity.name)) found.push(entity.name)
+      }
+      for (let i = 0; i < found.length; i++) {
+        for (let j = i + 1; j < found.length; j++) {
+          newRelationships.push({ source: found[i], target: found[j], relation: "co_occurs" })
+        }
+      }
+    }
+
+    if (newEntities.length > 0 || newRelationships.length > 0) {
+      this.mergeGraphData(newEntities, newRelationships)
+      this.saveGraphStore()
     }
   }
 
@@ -195,6 +278,12 @@ export class DreamDistillManager {
       }
 
       const parsed = this.parseDreamResponse(responseText)
+
+      // 合并图谱数据
+      if (parsed.graph) {
+        this.mergeGraphData(parsed.graph.entities || [], parsed.graph.relationships || [])
+        this.saveGraphStore()
+      }
 
       for (const knowledge of parsed.knowledge) {
         const entry: KnowledgeEntry = {
@@ -395,6 +484,7 @@ export class DreamDistillManager {
 
   private parseDreamResponse(response: string): {
     knowledge: Array<{ content: string; tags: string[] }>
+    graph?: { entities: GraphEntity[]; relationships: GraphRelationship[] }
     outdated: string[]
     summary: string
   } {
@@ -404,6 +494,10 @@ export class DreamDistillManager {
         const parsed = JSON.parse(jsonMatch[0])
         return {
           knowledge: Array.isArray(parsed.knowledge) ? parsed.knowledge : [],
+          graph: parsed.graph ? {
+            entities: Array.isArray(parsed.graph.entities) ? parsed.graph.entities : [],
+            relationships: Array.isArray(parsed.graph.relationships) ? parsed.graph.relationships : [],
+          } : undefined,
           outdated: Array.isArray(parsed.outdated) ? parsed.outdated : [],
           summary: String(parsed.summary || ""),
         }
@@ -444,6 +538,57 @@ export class DreamDistillManager {
     try {
       fs.writeFileSync(this.knowledgePath, JSON.stringify(this.store, null, 2), "utf-8")
     } catch { /* 静默 */ }
+  }
+
+  private loadGraphStore(): void {
+    try {
+      if (fs.existsSync(this.graphPath)) {
+        const raw = fs.readFileSync(this.graphPath, "utf-8")
+        this.graphStore = JSON.parse(raw)
+      }
+    } catch {
+      this.graphStore = { entities: [], relationships: [] }
+    }
+  }
+
+  private saveGraphStore(): void {
+    try {
+      fs.writeFileSync(this.graphPath, JSON.stringify(this.graphStore, null, 2), "utf-8")
+    } catch { /* 静默 */ }
+  }
+
+  /** 获取图谱数据（供 API 和图谱面板使用） */
+  getGraphData(): GraphStore {
+    return { ...this.graphStore }
+  }
+
+  /** 合并 Dream 提取的图谱数据 */
+  private mergeGraphData(newEntities: GraphEntity[], newRelationships: GraphRelationship[]): void {
+    const existingNames = new Set(this.graphStore.entities.map(e => e.name.toLowerCase()))
+
+    for (const entity of newEntities) {
+      if (!existingNames.has(entity.name.toLowerCase())) {
+        this.graphStore.entities.push({
+          id: `g-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+          name: entity.name,
+          type: entity.type,
+          description: entity.description,
+        })
+        existingNames.add(entity.name.toLowerCase())
+      }
+    }
+
+    const existingRels = new Set(
+      this.graphStore.relationships.map(r => `${r.source.toLowerCase()}→${r.target.toLowerCase()}→${r.relation}`)
+    )
+
+    for (const rel of newRelationships) {
+      const key = `${rel.source.toLowerCase()}→${rel.target.toLowerCase()}→${rel.relation}`
+      if (!existingRels.has(key)) {
+        this.graphStore.relationships.push(rel)
+        existingRels.add(key)
+      }
+    }
   }
 }
 

@@ -8,6 +8,7 @@ import * as path from "path"
 import { z } from "zod"
 import { make, type ToolDef, type ToolContext, type ToolResult } from "../shared/tool"
 import { logError } from "../system/logger"
+import { pluginHooks } from "../shared/plugin-hooks"
 
 // ─── 插件接口 ──────────────────────────────────────────────────────
 
@@ -209,12 +210,14 @@ export class PluginManager {
   }
 
   /**
-   * 注册钩子
+   * 注册钩子 — 同时注册到全局 pluginHooks 系统
    */
   private registerHook(hook: PluginHook): void {
     const hooks = this.hooks.get(hook.name) || []
     hooks.push(hook)
     this.hooks.set(hook.name, hooks)
+    // 桥接到全局 pluginHooks（触发器/通知模式由 hook name 决定）
+    pluginHooks.on(hook.name, hook.handler)
   }
 
   /**

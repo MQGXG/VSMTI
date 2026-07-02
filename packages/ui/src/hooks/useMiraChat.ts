@@ -247,6 +247,10 @@ function handleStreamEvent(
         `⚠️ ${cleanMsg || raw}${hint ? `\n\n💡 ${hint}` : ""}`
       ),
     ]);
+    contentBuffers.get(channel)?.flush();
+    contentBuffers.delete(channel);
+    setIsRunning(false);
+    clearCurrentChannel();
   } else if (event.type === "finish") {
     const t = timingRef.current;
     if (t) {
@@ -394,6 +398,21 @@ export function useMiraChat({
         const apiKey = provider?.apiKey || "";
         const apiUrl = provider?.apiUrl || "";
 
+        if (!apiKey) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId
+                ? updateMiraMessageContent(
+                    m,
+                    "⚠️ 未配置 API Key。请点击右上角 ⚙️ 设置，配置 Provider 的 API Key 后重试。"
+                  )
+                : m
+            )
+          );
+          setIsRunning(false);
+          return;
+        }
+
         if (apiKey || provider) {
           const workspace =
             window.electronAPI.platform === "win32" ? "C:\\" : "/";
@@ -416,13 +435,29 @@ export function useMiraChat({
           };
 
           const actualSessionId = sessionId || getOfflineSessionId();
+
+          // 首次对话自动创建会话（如果尚未创建）
+          if (!sessionId) {
+            try {
+              const projects = await window.electronAPI.ts.listProjects();
+              const projectId = projects?.[0]?.project_id;
+              if (projectId) {
+                const session = await window.electronAPI.ts.createSession(projectId, effectiveContent.slice(0, 50));
+                if (session?.session_id) {
+                  config.sessionID = session.session_id;
+                  if (onSessionChange) onSessionChange(session.session_id);
+                }
+              }
+            } catch { /* 静默，继续使用 offline session */ }
+          }
+
           const channel = await AgentService.startStream(
-            actualSessionId,
+            config.sessionID,
             effectiveContent,
             config
           );
           currentChannelRef.current = channel;
-          if (onSessionChange && !sessionId) onSessionChange(actualSessionId);
+          if (onSessionChange && !sessionId) onSessionChange(config.sessionID);
 
           timingRef.current = {
             streamStartTime: Date.now(),

@@ -342,6 +342,60 @@ export class FTSMemoryProvider implements MemoryProvider {
     return this.searchMemoryLikeFallback(query, limit)
   }
 
+  /** 按项目过滤的记忆搜索 — JOIN sessions 表获取 project_id */
+  async searchMemoryByProject(query: string, projectId: string, limit = 50): Promise<Array<{ content: string; source: string; sessionId: string }>> {
+    if (!this.db) return []
+    const ftsQuery = FTSMemoryProvider.toFTS5Query(query || "*")
+    if (!ftsQuery) return []
+
+    try {
+      const results: Array<{ content: string; source: string; sessionId: string }> = []
+
+      if (this._hasFTS5) {
+        const stmt = this.db.prepare(`
+          SELECT f.content, f.source, f.session_id
+          FROM fts_memory_fts f
+          JOIN sessions s ON f.session_id = s.session_id
+          WHERE s.project_id = ?
+          ORDER BY rank
+          LIMIT ?
+        `)
+        stmt.bind([projectId, limit])
+        while (stmt.step()) {
+          const row = stmt.getAsObject() as Record<string, unknown>
+          results.push({
+            content: String(row.content || ""),
+            source: String(row.source || ""),
+            sessionId: String(row.session_id || ""),
+          })
+        }
+        stmt.free()
+      } else {
+        const stmt = this.db.prepare(`
+          SELECT m.content, m.source, m.session_id
+          FROM fts_memory m
+          JOIN sessions s ON m.session_id = s.session_id
+          WHERE s.project_id = ?
+          LIMIT ?
+        `)
+        stmt.bind([projectId, limit])
+        while (stmt.step()) {
+          const row = stmt.getAsObject() as Record<string, unknown>
+          results.push({
+            content: String(row.content || ""),
+            source: String(row.source || ""),
+            sessionId: String(row.session_id || ""),
+          })
+        }
+        stmt.free()
+      }
+
+      return results
+    } catch {
+      return []
+    }
+  }
+
   /** 跨 session 记忆搜索 — FTS5（直接查询 fts_memory_fts，不依赖 JOIN） */
   private async searchMemoryFTS5(query: string, limit = 3): Promise<string> {
     if (!this.db) return ""

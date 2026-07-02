@@ -133,6 +133,8 @@ export interface ElectronAPI {
 
   memory: {
     search: (query: string, type?: string, limit?: number) => Promise<Array<{ id: string; content: string; tags: string[] }>>;
+    searchByProject: (query: string, projectId: string, limit?: number) => Promise<Array<{ content: string; source: string; sessionId: string }>>;
+    getGraphData: () => Promise<{ entities: Array<{ id: string; name: string; type: string; description?: string }>; relationships: Array<{ source: string; target: string; relation: string }> }>;
     status: () => Promise<{ ready: boolean; count: number }>;
   };
 }

@@ -219,6 +219,23 @@ async function routeRequest(
       return
     }
 
+    // ── Memory search by project ──
+    case "/api/memory/search-by-project": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as any
+      const result = await handleMemorySearchByProject(body.query, body.projectId, body.limit)
+      jsonResponse(res, 200, result)
+      return
+    }
+
+    // ── Graph data from Dream ──
+    case "/api/memory/graph": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      const result = handleGetGraphData()
+      jsonResponse(res, 200, result)
+      return
+    }
+
     // ── Memory status ──
     case "/api/memory/status": {
       const status = handleMemoryStatus()

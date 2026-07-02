@@ -54,7 +54,7 @@ export const toolMetadata: Record<string, ToolMeta> = {
 }
 
 export function isToolParallel(name: string): boolean {
-  return toolMetadata[name]?.supportsParallel ?? false
+  return toolMetadata[name]?.supportsParallel ?? true
 }
 
 export function getToolsByCategory(category: ToolCategory): string[] {

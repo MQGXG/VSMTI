@@ -5,7 +5,7 @@ import { IterationBudget } from "../task/budget"
 import type { LLMMessage } from "../llm/client"
 import { estimateTokens } from "../shared/message-utils"
 import { pluginHooks } from "../shared/plugin-hooks"
-import { PermissionSet, type PermissionRule } from "../system/permission"
+import { PermissionSet, type PermissionRule, defaultPermissions } from "../system/permission"
 import { MemoryManager } from "../memory/manager"
 import { BuiltinMemoryProvider } from "../memory/builtin-provider"
 import { appendMessage, loadSession } from "../session/store"
@@ -44,12 +44,14 @@ export interface AgentConfig {
   maxSteps?: number
   maxContextTokens?: number
   permissions?: PermissionSet
+  hardPermission?: PermissionRule[]
   mode?: AgentMode
   toolAllowlist?: string[]
   onPermissionSave?: (rules: PermissionRule[]) => void
   goalDescription?: string
   judgeModel?: string
   judgeProvider?: string
+  fallbacks?: Array<{ provider: string; model: string; apiKey: string; apiUrl: string }>
   maxMode?: boolean
   maxModeCandidates?: number
   judgeModelConfig?: LLMTurnConfig
@@ -223,6 +225,8 @@ export class Agent {
     await this.contextManager.initialize(config.sessionID, config.workspace)
     this.goalJudge.bindSession(config.sessionID)
 
+    pluginHooks.emit("session_start", { sessionID: config.sessionID, workspace: config.workspace })
+
     const { enrichedUser, memoryPrompt } = await this.contextManager.prepareContext(userMessage, config.sessionID)
 
     if (config.goalDescription) {
@@ -284,7 +288,7 @@ export class Agent {
           }
           if (m.role === "tool") {
             if (!m.toolCallId) {
-              restored.push({ role: "tool", content: m.content })
+              restored.push({ role: "tool", content: [{ type: "tool-result" as const, toolCallId: "unknown", toolName: "unknown", output: m.content }] })
               continue
             }
             const lastAssistant = [...restored].reverse().find(r => r.role === "assistant")
@@ -292,7 +296,7 @@ export class Agent {
               lastAssistant.content += `\n\n[Tool result: ${m.content.slice(0, 500)}]`
               continue
             }
-            restored.push({ role: "tool", content: m.content, tool_call_id: m.toolCallId })
+            restored.push({ role: "tool", content: [{ type: "tool-result" as const, toolCallId: m.toolCallId, toolName: "unknown", output: m.content }], tool_call_id: m.toolCallId })
             continue
           }
           restored.push({ role: "user", content: m.content })
@@ -312,6 +316,8 @@ export class Agent {
       content: userMessage,
       timestamp: new Date().toISOString(),
     })
+
+    pluginHooks.emit("user_prompt_submit", { sessionID: config.sessionID, message: userMessage })
 
     const goalPrompt = this.goalJudge.toSystemPrompt()
     const modeSuffix = getModeSystemPromptSuffix(config.mode || "assistant")
@@ -405,6 +411,7 @@ export class Agent {
           permissions: config.permissions,
           onPermissionSave: config.onPermissionSave,
           autoAcceptPermissions: config.autoAcceptPermissions,
+          fallbacks: config.fallbacks,
         },
         deps: {
           registry: this.registry,
@@ -477,9 +484,27 @@ export class Agent {
       const ptResult = yield* processTurn(turnInput)
       messages = ptResult.messages
 
+      if (ptResult.signal === "context_overflow") {
+        yield { type: "thinking" as const, text: "⚠️ Context too long, performing emergency compaction..." }
+        const compacted = await this.contextManager.reactiveCompact(messages)
+        if (compacted.length < messages.length) {
+          messages.length = 0
+          messages.push(...compacted)
+          yield { type: "thinking" as const, text: "🔄 Emergency compaction complete, retrying..." }
+          continue
+        }
+        yield { type: "error" as const, message: "Context overflow: compaction failed to reduce size" }
+        return
+      }
+
       if (!ptResult.text && ptResult.toolCalls.length === 0) {
         if (this.stateMachine.aborted) {
           yield { type: "finish", reason: "stopped" }
+        }
+        // LLM 返回错误（如 400）时，text 和 toolCalls 都为空，应终止循环
+        if (ptResult.signal === "stop") {
+          yield { type: "finish", reason: "error" }
+          return
         }
         return
       }
@@ -596,6 +621,7 @@ export class Agent {
       }
     }
 
+    pluginHooks.emit("session_end", { sessionID: config.sessionID, workspace: config.workspace })
     await this.contextManager.shutdown()
     this.memoryManager.shutdown().catch(() => {})
     yield { type: "finish", reason: "length" }

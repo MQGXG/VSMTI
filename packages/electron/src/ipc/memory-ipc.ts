@@ -12,6 +12,16 @@ export function registerMemoryIPC(): void {
     }
   })
 
+  ipcMain.handle("memory:searchByProject", async (_, query: string, projectId: string, limit?: number) => {
+    const sm = getServerManager()
+    if (!sm || !sm.running) return []
+    try {
+      return await sm.request("POST", "/api/memory/search-by-project", { query, projectId, limit })
+    } catch {
+      return []
+    }
+  })
+
   ipcMain.handle("memory:status", async () => {
     const sm = getServerManager()
     if (!sm || !sm.running) return { available: false, provider: "none" }
@@ -19,6 +29,16 @@ export function registerMemoryIPC(): void {
       return await sm.request("GET", "/api/memory/status")
     } catch {
       return { available: false, provider: "none", error: "Sidecar unavailable" }
+    }
+  })
+
+  ipcMain.handle("memory:getGraphData", async () => {
+    const sm = getServerManager()
+    if (!sm || !sm.running) return { entities: [], relationships: [] }
+    try {
+      return await sm.request("GET", "/api/memory/graph")
+    } catch {
+      return { entities: [], relationships: [] }
     }
   })
 }

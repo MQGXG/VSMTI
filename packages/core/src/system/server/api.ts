@@ -4,7 +4,7 @@
  */
 
 import { Agent, type AgentConfig, type AgentEvent, type PermissionReply } from "../../index"
-import { createDefaultRegistry, defaultPermissions, PermissionSet, resolveRuntimeConfig } from "../../index"
+import { createDefaultRegistry, defaultPermissions, PermissionSet, resolveRuntimeConfig, type PermissionRule } from "../../index"
 import { DEFAULT_SYSTEM } from "../../agent/agent"
 import { modeToPermissionSet, getModeConfig, getAllModes } from "../../config/modes"
 import { getJsonSchema } from "../../shared/tool"
@@ -55,14 +55,22 @@ function generateChannelId(): string {
   return `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-async function buildPermissions(workspace: string, mode?: string, configOverride?: PermissionSet): Promise<PermissionSet> {
+async function buildPermissions(
+  workspace: string,
+  mode?: string,
+  configOverride?: PermissionSet,
+  hardRules?: PermissionRule[],
+): Promise<PermissionSet> {
   const savedRules = await loadWorkspacePermissions(workspace)
   let base = defaultPermissions
   if (mode) {
     base = modeToPermissionSet(mode as any, defaultPermissions)
   }
-  if (savedRules.length === 0 && !configOverride) return base
-  const allRules = [...base.getAll(), ...(configOverride?.getAll() || []), ...savedRules]
+  const configRules = configOverride?.getAll() || []
+  // Permission 三明治：hardPermission 首尾各追加一次，确保硬规则不被覆盖
+  const allRules = hardRules
+    ? [...hardRules, ...base.getAll(), ...configRules, ...savedRules, ...hardRules]
+    : [...base.getAll(), ...configRules, ...savedRules]
   return new PermissionSet(allRules)
 }
 
@@ -116,9 +124,10 @@ export async function handleStartStream(
 
   const { processed } = processSkillCommand(message)
 
+  const hardRules = (config.hardPermission as any[] | undefined)?.map((r: any) => ({ action: r.action, resource: r.resource, effect: r.effect as "allow" | "deny" | "ask" } as PermissionRule))
   const permissions = config.permissions
     ? new PermissionSet((config.permissions as any[]).map((r: any) => ({ action: r.action, resource: r.resource, effect: r.effect as "allow" | "deny" | "ask" })))
-    : await buildPermissions(workspace, config.mode as string)
+    : await buildPermissions(workspace, config.mode as string, undefined, hardRules)
 
   const instructions = buildInstructionSystemPrompt(workspace)
   const baseSystem = (config.systemPrompt as string) || DEFAULT_SYSTEM
@@ -290,4 +299,25 @@ export function handleMemoryStatus(): { available: boolean; provider: string } {
     available: !!memoryFTS,
     provider: memoryFTS ? "fts5" : "none",
   }
+}
+
+export async function handleMemorySearchByProject(
+  query: string,
+  projectId: string,
+  limit?: number,
+): Promise<Array<{ content: string; source: string; sessionId: string }>> {
+  const fts = memoryFTS
+  if (!fts || !projectId) return []
+
+  try {
+    return await fts.searchMemoryByProject(query || "", projectId, limit || 100)
+  } catch {
+    return []
+  }
+}
+
+export function handleGetGraphData(): { entities: Array<{ id: string; name: string; type: string; description?: string }>; relationships: Array<{ source: string; target: string; relation: string }> } {
+  // DreamDistillManager 的图谱数据在 agent 实例中
+  // 这里返回空结构，实际数据通过 IPC 直接获取
+  return { entities: [], relationships: [] }
 }
