@@ -5,7 +5,8 @@ import { Sidebar } from "@mira/ui/sidebar/Sidebar";
 import { NewProjectDialog } from "@mira/ui/sidebar/NewProjectDialog";
 import { EditProjectDialog } from "@mira/ui/sidebar/EditProjectDialog";
 import { SettingsDialog } from "@mira/ui/sidebar/SettingsDialog";
-import { Menu, Plus, Settings } from "lucide-react";
+import { Menu, Plus, Settings, Network } from "lucide-react";
+import { GraphPanel } from "@mira/ui/memory/GraphPanel";
 
 interface Project {
   project_id: string;
@@ -22,6 +23,7 @@ export function App() {
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [graphOpen, setGraphOpen] = useState(false);
 
   const loadProjects = useCallback(async () => {
     try {
@@ -158,6 +160,10 @@ export function App() {
 
         <div className="w-px h-5" style={{ background: "var(--border)" }} />
 
+        <button onClick={() => setGraphOpen(true)} className="btn-ghost" title="知识图谱">
+          <Network className="w-4 h-4" />
+        </button>
+
         <button onClick={() => setSettingsOpen(true)} className="btn-ghost" title="设置">
           <Settings className="w-4 h-4" />
         </button>
@@ -180,6 +186,7 @@ export function App() {
       </main>
 
       {settingsOpen && createPortal(<SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />, document.body)}
+      {graphOpen && <GraphPanel open={graphOpen} onClose={() => setGraphOpen(false)} projectId={activeProject} projectName={projects.find(p => p.project_id === activeProject)?.name} />}
       <NewProjectDialog open={newProjectOpen} onClose={() => setNewProjectOpen(false)} onCreate={handleOpenProject} />
       <EditProjectDialog project={editingProject} open={!!editingProject} onClose={() => setEditingProject(null)} onSave={handleEditProject} onDelete={handleDeleteProject} />
     </div>

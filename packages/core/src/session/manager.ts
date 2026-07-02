@@ -68,6 +68,20 @@ export async function listSessions(projectId?: string): Promise<SessionInfo[]> {
     projectId ? [projectId] : [],
   )
   if (rows.length === 0) return []
+
+  // 统计每个会话的消息数
+  const countMap = new Map<string, number>()
+  try {
+    const countRows = db.exec(
+      "SELECT session_id, COUNT(*) as cnt FROM messages GROUP BY session_id"
+    )
+    if (countRows.length > 0) {
+      for (const row of countRows[0].values) {
+        countMap.set(String(row[0]), Number(row[1]))
+      }
+    }
+  } catch { /* messages 表可能不存在 */ }
+
   return rows[0].values.map((row) => {
     const [session_id, project_id, title, workspace, _created, updated_at] = row as string[]
     return {
@@ -76,7 +90,7 @@ export async function listSessions(projectId?: string): Promise<SessionInfo[]> {
       title: title || "",
       kind: "session" as SessionInfo["kind"],
       workspace_path: workspace || "",
-      message_count: 0,
+      message_count: countMap.get(session_id) || 0,
       updated_at: updated_at || "",
     }
   })

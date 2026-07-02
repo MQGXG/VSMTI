@@ -1,7 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { MessageSquarePlus, Settings, Trash2, MessageSquare, Search, X, FileText, Plus, Network } from "lucide-react";
-import { GraphPanel } from "../memory/GraphPanel";
-import { SettingsDialog } from "./SettingsDialog";
+import { MessageSquarePlus, Trash2, MessageSquare, Search, X, FileText, Plus } from "lucide-react";
 import { SessionService, type SessionInfo } from "../services/session.service";
 import { ProjectService, type ProjectInfo } from "../services/project.service";
 import { Input } from "../components/ui/input";
@@ -56,8 +54,6 @@ function getTimeGroup(iso: string): string {
 
 function SidebarContent({ activeProject, activeSession, projects, onProjectChange, onSessionChange, onNewSession, onOpenProject, onEditProject, onDeleteProject }: Props) {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [graphOpen, setGraphOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[] | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; project: ProjectInfo } | null>(null);
@@ -241,20 +237,6 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
         })}
       </div>
 
-      <div className="p-3 border-t border-standard space-y-1">
-        <button onClick={() => setGraphOpen(true)} className="flex items-center gap-2.5 sidebar-item rounded-lg px-3 py-2 text-sm transition-all">
-          <Network className="w-4 h-4" />
-          知识图谱
-        </button>
-        <button onClick={() => setSettingsOpen(true)} className="flex items-center gap-2.5 sidebar-item rounded-lg px-3 py-2 text-sm transition-all">
-          <Settings className="w-4 h-4" />
-          设置
-          <span className="ml-auto text-[10px] text-tertiary">Ctrl+,</span>
-        </button>
-      </div>
-
-      {settingsOpen && <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />}
-      {graphOpen && <GraphPanel open={graphOpen} onClose={() => setGraphOpen(false)} projectId={activeProject} projectName={project?.name} />}
     </div>
   );
 }
