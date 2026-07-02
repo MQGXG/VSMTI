@@ -19,7 +19,7 @@ function getEnabledModels(): ModelOption[] {
   const providers = loadProviders();
   const options: ModelOption[] = [];
   for (const p of providers) { if (!p.enabled) continue; for (const m of p.models) { if (!m.enabled) continue; options.push({ label: `${p.displayName || p.name} · ${m.name}`, value: m.id, provider: p.id.startsWith("custom-") ? "custom" : p.id }); } }
-  return options.length > 0 ? options : [DEFAULT_MODEL];
+  return options;
 }
 
 export interface ModelOption { label: string; value: string; provider: string; }
@@ -58,9 +58,9 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
       <div className="relative" ref={modelRef}>
         <button onClick={() => setModelOpen(!modelOpen)}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all"
-          style={{ color: "var(--fg-secondary)", background: "var(--bg-secondary)" }}>
+          style={{ color: availableModels.length > 0 ? "var(--fg-secondary)" : "var(--fg-tertiary)", background: "var(--bg-secondary)" }}>
           <Brain className="w-3.5 h-3.5" />
-          <span className="max-w-[140px] truncate">{selectedModel.label}</span>
+          <span className="max-w-[140px] truncate">{availableModels.length > 0 ? selectedModel.label : "请配置模型"}</span>
           <ChevronDown className={`w-3 h-3 transition-transform ${modelOpen ? "rotate-180" : ""}`} />
         </button>
         {modelOpen && (
