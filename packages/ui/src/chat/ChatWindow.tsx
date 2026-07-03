@@ -19,6 +19,9 @@ import { ThinkingBlock } from "./ThinkingBlock";
 import { ProgressBar } from "./ProgressBar";
 import { loadSettings } from "../sidebar/provider-data";
 import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { AnimatedAvatar, type AvatarState } from "../components/assistant-ui/animated-avatar";
+import "../components/assistant-ui/animated-avatar.css";
+import { Live2DAvatar } from "../components/assistant-ui/live2d-avatar";
 import { VoiceInput } from "./VoiceInput";
 import { ToolCallView } from "./ToolCallView";
 import type { MiraRuntimeContext } from "./MiraRuntimeProvider";
@@ -31,7 +34,7 @@ function WelcomeScreen({ onSuggest }: { onSuggest: (text: string) => void }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-full px-4 py-16">
       <div className="mb-8">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect width="48" height="48" rx="14" fill="var(--fg)"/><text x="24" y="30" textAnchor="middle" fill="var(--accent-fg)" fontSize="22" fontWeight="700" fontFamily="system-ui">M</text></svg>
+        <Live2DAvatar state="idle" size={120} />
       </div>
       <h1 className="text-2xl font-semibold mb-2" style={{ color: "var(--fg)" }}>Mira</h1>
       <p className="text-sm mb-10" style={{ color: "var(--fg-tertiary)" }}>有什么可以帮助你的？</p>
@@ -163,13 +166,18 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
               {({ message }) => {
                 const orig = ctx.messages.find((m: any) => m.id === message.id);
                 const isUser = message.role === "user";
+                const avatarState: AvatarState = !isUser
+                  ? ctx.isRunning && message.id === ctx.messages[ctx.messages.length - 1]?.id
+                    ? "speaking"
+                    : orig?.toolCalls?.length ? "idle" : "idle"
+                  : "idle";
                 return (
                   <MessagePrimitive.Root className="group mb-5 animate-message">
                     {orig?.thinking && settings.showReasoning !== false && <ThinkingBlock text={orig.thinking} />}
                     <div className={`flex w-full gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
                       {!isUser && (
                         <div className="shrink-0 mt-1">
-                          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="var(--bg-tertiary)"/><text x="14" y="18" textAnchor="middle" fill="var(--fg-secondary)" fontSize="11" fontWeight="600" fontFamily="system-ui">M</text></svg>
+                          <AnimatedAvatar state={avatarState} size={28} />
                         </div>
                       )}
                       <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-[calc(100%-44px)]`}>

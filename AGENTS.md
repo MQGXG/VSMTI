@@ -16,6 +16,8 @@ Mira 是一个全能 AI 助手桌面应用，基于 **Electron + TypeScript Agen
 | 向量记忆 | Transformers.js 本地 ONNX 推理（零外部依赖） |
 | 代码智能 | LSP (Language Server Protocol) |
 | 协议扩展 | MCP (Model Context Protocol) |
+| 3D 图谱 | react-force-graph-3d + three.js |
+| 动态头像 | easy-live2d + pixi.js (Live2D Cubism SDK) |
 | 构建 | electron-builder（便携模式，目标电脑无需安装任何运行时） |
 
 ## 目录结构
@@ -210,7 +212,7 @@ mira/
 │           │       ├── ToolGenericView.tsx
 │           │       └── tool-fold.ts
 │           ├── components/          # 组件
-│           │   ├── assistant-ui/    #   shadcn 风格组件
+│           │   ├── assistant-ui/    #   assistant-ui 扩展组件
 │           │   │   ├── markdown-text.tsx
 │           │   │   ├── reasoning.tsx
 │           │   │   ├── tool-fallback.tsx
@@ -218,11 +220,18 @@ mira/
 │           │   │   ├── diff-viewer.tsx
 │           │   │   ├── message-timing.tsx
 │           │   │   ├── context-display.tsx
-│           │   │   └── tooltip-icon-button.tsx
-│           │   └── ui/              #   基础 UI 组件
+│           │   │   ├── tooltip-icon-button.tsx
+│           │   │   ├── animated-avatar.tsx   # CSS 动画头像
+│           │   │   ├── animated-avatar.css   # 头像动画样式
+│           │   │   └── live2d-avatar.tsx     # Live2D 动态头像
+│           │   └── ui/              #   shadcn 基础 UI 组件
 │           │       ├── button.tsx
 │           │       ├── collapsible.tsx
 │           │       └── tooltip.tsx
+│           ├── memory/              #   知识图谱
+│           │   ├── MemoryGraph.tsx  #     3D 力导向图谱组件
+│           │   ├── GraphPanel.tsx   #     图谱全屏面板
+│           │   └── graph-data.ts    #     实体/关系提取引擎
 │           ├── sidebar/             # 侧边栏
 │           │   ├── Sidebar.tsx
 │           │   ├── ProjectBar.tsx
@@ -249,10 +258,18 @@ mira/
 │       │   ├── main.ts              # Electron 入口
 │       │   ├── lib/                 # 工具库
 │       │   └── styles/              # 全局样式
-│       ├── index.html               # HTML 模板
+│       ├── index.html               # HTML 模板（CSP 配置）
 │       ├── electron.vite.config.ts  # Vite 构建配置
 │       └── electron-builder.yml     # 打包配置
 │
+├── public/                          # Vite 静态资源（根目录）
+│   ├── Core/                        #   Live2D Cubism Core
+│   │   └── live2dcubismcore.min.js  #     Cubism 运行时
+│   └── models/                      #   Live2D 模型文件
+│       └── hiyori/                  #     示例模型
+│           ├── Hiyori.model3.json   #       模型配置
+│           ├── Hiyori.moc3          #       编译后模型
+│           └── textures/            #       贴图文件
 ├── data/                            # 运行时数据 (SQLite)
 ├── memory/                          # 会话记忆 JSON
 ├── vector-memory/                   # 向量记忆存储
