@@ -7,6 +7,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin({ exclude: ["@mira/core", "@modelcontextprotocol/sdk", "effect", "zod", "docx"] })],
     build: {
       outDir: "dist-electron",
+      emptyOutDir: false,
       rollupOptions: {
         input: { main: resolve(__dirname, "packages/electron/src/main/index.ts") },
       },
@@ -24,6 +25,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       outDir: "dist-electron",
+      emptyOutDir: false,
       rollupOptions: {
         input: { preload: resolve(__dirname, "packages/electron/src/preload/index.ts") },
       },

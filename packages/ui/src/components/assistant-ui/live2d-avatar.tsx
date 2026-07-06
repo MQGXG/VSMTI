@@ -74,12 +74,28 @@ export function Live2DAvatar({
           return
         }
 
+        // Cubism Core 5 兼容补丁：drawables.renderOrders → drawables.drawOrders
+        const Core = (window as any).Live2DCubismCore
+        if (Core?.Model?.fromMoc) {
+          const originalFromMoc = Core.Model.fromMoc
+          Core.Model.fromMoc = function (...args: any[]) {
+            const model = originalFromMoc.apply(this, args)
+            if (model?.drawables && !('renderOrders' in model.drawables)) {
+              Object.defineProperty(model.drawables, 'renderOrders', {
+                get: () => model.drawables.drawOrders,
+                configurable: true,
+              })
+            }
+            return model
+          }
+        }
+
         const { Application, Ticker } = await import("pixi.js")
         const { Config, Live2DSprite } = await import("easy-live2d")
 
         Config.MotionGroupIdle = "Idle"
         Config.MouseFollow = true
-        Config.CubismLoggingLevel = 0
+        Config.CubismLoggingLevel = 3
 
         const app = new Application()
         await app.init({
@@ -108,6 +124,7 @@ export function Live2DAvatar({
       } catch (err) {
         if (destroyed) return
         const msg = err instanceof Error ? err.message : String(err)
+        console.error("[Live2D] Failed to initialize:", err)
         setError(msg)
         onError?.(msg)
       }
@@ -162,9 +179,10 @@ export function Live2DAvatar({
 
   if (error) {
     return (
-      <div className={cn("flex items-center justify-center rounded-full bg-elevated", className)}
+      <div className={cn("flex flex-col items-center justify-center rounded-full bg-elevated", className)}
         style={{ width: size, height: size }}>
         <span className="text-tertiary text-xs">⚠️</span>
+        <span className="text-tertiary text-[9px] mt-1 break-all px-2 text-center">{error}</span>
       </div>
     )
   }
