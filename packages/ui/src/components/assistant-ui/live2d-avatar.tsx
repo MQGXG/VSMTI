@@ -103,6 +103,7 @@ export function Live2DAvatar({
           height: size,
           backgroundAlpha: 0,
           antialias: true,
+          autoDensity: true,
           resolution: Math.max(window.devicePixelRatio || 1, 1),
         })
 
@@ -116,7 +117,12 @@ export function Live2DAvatar({
         app.stage.addChild(sprite as any)
         spriteRef.current = sprite
 
-        await sprite.ready
+        await Promise.race([
+          sprite.ready,
+          new Promise<void>((_, reject) =>
+            setTimeout(() => reject(new Error("sprite.ready timeout (10s)")), 10000)
+          ),
+        ])
         if (destroyed) return
 
         setLoaded(true)

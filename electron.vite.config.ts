@@ -36,7 +36,10 @@ export default defineConfig({
     build: {
       outDir: "dist",
       rollupOptions: {
-        input: { index: resolve(__dirname, "index.html") },
+        input: {
+          index: resolve(__dirname, "index.html"),
+          pet: resolve(__dirname, "apps/desktop/pet.html"),
+        },
       },
     },
     plugins: [react()],

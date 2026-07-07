@@ -79,3 +79,39 @@ import { Live2DAvatar } from "../components/assistant-ui/live2d-avatar"
 | thinking | Think | 思考中，点头/摇头 |
 | speaking | Talk | 说话时嘴部动画 |
 | error | Error | 出错提示 |
+
+## 桌宠 (Desktop Pet)
+
+Mira 支持独立的 Live2D 桌宠窗口，基于 Pixi.js + easy-live2d 实现。
+
+### 硬件要求
+
+**必须硬件 GPU 加速。** Cubism Core 6 在软件渲染器（`WebKit WebGL`）下不能正常渲染。
+
+已知阻塞 GPU 检测的软件驱动：
+- 向日葵 (OrayIddDriver Device)
+- GameViewer Virtual Display Adapter
+- 远程桌面 (RDP) 虚拟显示适配器
+
+**解决**：设备管理器 → 显示适配器 → 卸载上述虚拟设备 → 重启应用。
+
+### 技术栈
+
+- **Pixi.js 8** + **easy-live2d 0.4.4**
+- `preference: "webgl"` 强制 WebGL（easy-live2d 不支持 WebGPU）
+- `Ticker.shared` 自动管理渲染循环
+- 模型路径：`/models/hiyori/Hiyori.model3.json`
+
+### 文件结构
+
+```
+packages/electron/src/
+├── live2d-pet/pet-manager.ts    # 透明置顶窗口管理
+├── ipc/live2d-ipc.ts            # 桌宠开关 IPC
+└── main/index.ts                # GPU 强制参数 + 退出清理
+
+apps/desktop/src/pet/
+├── PetApp.tsx                   # 主组件：Live2D + 对话
+├── SpeechBubble.tsx             # 漫画风格气泡
+└── ChatInput.tsx                # 输入框
+```

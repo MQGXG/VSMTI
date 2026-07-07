@@ -155,6 +155,10 @@ const electronAPI = {
       ipcRenderer.invoke("memory:search", query, type, limit),
     status: () => ipcRenderer.invoke("memory:status"),
   },
+
+  live2d: {
+    toggle: (enabled: boolean) => ipcRenderer.invoke("live2d:toggle", enabled),
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

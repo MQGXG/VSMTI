@@ -28,7 +28,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function findVitePort(): Promise<number> {
+export async function findVitePort(): Promise<number> {
   // 等待 Vite 启动完成，最多重试 5 次
   for (let attempt = 0; attempt < 5; attempt++) {
     for (let port = 5173; port <= 5180; port++) {

@@ -81,6 +81,31 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
           </label>
         </div>
       ))}
+
+      <div className="p-4 rounded-xl bg-surface-secondary border border-standard">
+        <div className="text-sm mb-3 text-primary">Live2D 桌宠</div>
+        <div className="space-y-3">
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <div className="text-sm text-primary">启用桌宠</div>
+              <div className="text-xs mt-0.5 text-secondary">在桌面显示 Live2D 角色，支持直接对话</div>
+            </div>
+            <Switch checked={settings.live2dPet}
+              onCheckedChange={(v) => {
+                onUpdate({ live2dPet: v })
+                window.electronAPI?.live2d?.toggle(v)
+              }} />
+          </label>
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <div className="text-sm text-primary">关闭主窗口时关闭桌宠</div>
+              <div className="text-xs mt-0.5 text-secondary">关闭主应用窗口时同时关闭桌宠窗口</div>
+            </div>
+            <Switch checked={settings.closePetWithApp}
+              onCheckedChange={(v) => onUpdate({ closePetWithApp: v })} />
+          </label>
+        </div>
+      </div>
     </div>
   );
 }

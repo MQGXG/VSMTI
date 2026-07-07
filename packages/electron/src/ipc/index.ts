@@ -9,6 +9,7 @@ import { registerComposeIPC } from "./compose-ipc"
 import { registerSkillIPC } from "./skill-ipc"
 import { registerQuestionIPC } from "./question-ipc"
 import { registerMemoryIPC } from "./memory-ipc"
+import { registerLive2dIPC } from "./live2d-ipc"
 import { setupDefaultHooks } from "@mira/core/shared/hooks-setup"
 import { cronScheduler } from "@mira/core/background/cron"
 
@@ -30,5 +31,6 @@ export function registerAgentIPCHandlers(): void {
   registerSkillIPC()
   registerQuestionIPC()
   registerMemoryIPC()
+  registerLive2dIPC()
 }
 

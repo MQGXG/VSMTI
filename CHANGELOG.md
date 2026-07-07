@@ -1,5 +1,15 @@
 # 更新日志
 
+## [Unreleased]
+
+### 新增
+- Live2D 桌宠功能：独立透明置顶窗口，支持 Live2D 角色显示和直接对话
+  - Pixi.js 8 + easy-live2d 0.4.4 渲染
+  - Electron BrowserWindow (transparent/frame:false/alwaysOnTop)
+  - 漫画风格对话气泡 + 流式 Agent 回复
+  - 设置页开关控制 + 窗口位置记忆
+  - GPU 强制参数（`ignore-gpu-blocklist` + `use-angle=d3d11`）
+
 ## [1.0.0] - 2026-06-15
 
 ### 新增

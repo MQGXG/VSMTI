@@ -6,6 +6,15 @@ import { startSidecar, stopSidecar } from "../ipc/sidecar-bridge";
 import { initLogger, patchConsole, getLogFilePath } from "../utils/logger";
 import { injectShellEnv } from "../utils/shell-env";
 import { initPlatformPaths } from "@mira/core";
+import { destroyPetWindow } from "../live2d-pet/pet-manager";
+
+// 强制 GPU 加速 — 虚拟显卡驱动可能阻挡 Intel 核显检测
+app.commandLine.appendSwitch("disable-gpu-sandbox");
+app.commandLine.appendSwitch("ignore-gpu-blocklist");
+app.commandLine.appendSwitch("enable-webgl");
+app.commandLine.appendSwitch("use-gl", "angle");
+app.commandLine.appendSwitch("use-angle", "d3d11");
+app.commandLine.appendSwitch("disable-direct-composition");
 
 async function initializeApp() {
   initPlatformPaths({
@@ -43,5 +52,6 @@ app.whenReady().then(initializeApp);
 
 app.on("before-quit", async () => {
   globalShortcut.unregisterAll();
+  destroyPetWindow();
   await stopSidecar();
 });

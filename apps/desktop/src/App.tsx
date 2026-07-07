@@ -59,6 +59,16 @@ export function App() {
   }, [activeProject]);
 
   useEffect(() => { loadProjects(); const timer = setInterval(loadProjects, 15000); return () => clearInterval(timer); }, [loadProjects]);
+
+  // 启动时检查桌宠设置
+  useEffect(() => {
+    try {
+      const s = JSON.parse(localStorage.getItem("settings") || "{}");
+      if (s.live2dPet) {
+        window.electronAPI.live2d.toggle(true);
+      }
+    } catch { /* ignore */ }
+  }, []);
   useEffect(() => { if (!activeProject && projects.length > 0) setActiveProject(projects[0].project_id); }, [projects, activeProject]);
 
   // 恢复上次活跃会话
