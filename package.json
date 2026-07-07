@@ -33,7 +33,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "docx": "^9.7.1",
-    "easy-live2d": "^0.4.4",
     "effect": "^3.21.4",
     "lucide-react": "^0.400.0",
     "mermaid": "^11.15.0",
@@ -45,6 +44,7 @@
     "tailwind-merge": "^3.6.0",
     "three": "^0.185.1",
     "three-spritetext": "^1.10.0",
+    "untitled-pixi-live2d-engine": "^1.2.2",
     "zod": "^4.4.3"
   },
   "optionalDependencies": {

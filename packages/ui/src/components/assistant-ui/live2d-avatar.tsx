@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Live2DAvatar — 基于 easy-live2d 的动态头像
+ * Live2DAvatar — 基于 untitled-pixi-live2d-engine 的动态头像
  * 支持状态切换：idle / thinking / speaking / error
  *
  * 依赖：
- *   - easy-live2d（npm 包）
+ *   - untitled-pixi-live2d-engine（npm 包）
  *   - pixi.js（npm 包）
  *   - live2dcubismcore.js（public/Core/）
  *   - 模型文件（public/models/）
@@ -74,35 +74,15 @@ export function Live2DAvatar({
           return
         }
 
-        // Cubism Core 5 兼容补丁：drawables.renderOrders → drawables.drawOrders
-        const Core = (window as any).Live2DCubismCore
-        if (Core?.Model?.fromMoc) {
-          const originalFromMoc = Core.Model.fromMoc
-          Core.Model.fromMoc = function (...args: any[]) {
-            const model = originalFromMoc.apply(this, args)
-            if (model?.drawables && !('renderOrders' in model.drawables)) {
-              Object.defineProperty(model.drawables, 'renderOrders', {
-                get: () => model.drawables.drawOrders,
-                configurable: true,
-              })
-            }
-            return model
-          }
-        }
-
-        const { Application, Ticker } = await import("pixi.js")
-        const { Config, Live2DSprite } = await import("easy-live2d")
-
-        Config.MotionGroupIdle = "Idle"
-        Config.MouseFollow = true
-        Config.CubismLoggingLevel = 3
+        const { Application, extensions } = await import("pixi.js")
+        const { Live2DModel, Live2DPlugin } = await import("untitled-pixi-live2d-engine/cubism")
+        extensions.add(Live2DPlugin)
 
         const app = new Application()
         await app.init({
           width: size,
           height: size,
           backgroundAlpha: 0,
-          antialias: true,
           autoDensity: true,
           resolution: Math.max(window.devicePixelRatio || 1, 1),
         })
@@ -112,18 +92,10 @@ export function Live2DAvatar({
         containerRef.current!.appendChild(app.canvas as HTMLCanvasElement)
         appRef.current = app
 
-        const sprite = new Live2DSprite({ modelPath, ticker: Ticker.shared })
-        sprite.width = size
-        app.stage.addChild(sprite as any)
-        spriteRef.current = sprite
-
-        await Promise.race([
-          sprite.ready,
-          new Promise<void>((_, reject) =>
-            setTimeout(() => reject(new Error("sprite.ready timeout (10s)")), 10000)
-          ),
-        ])
-        if (destroyed) return
+        const model = await Live2DModel.from(modelPath)
+        model.width = size
+        app.stage.addChild(model)
+        spriteRef.current = model
 
         setLoaded(true)
         onReady?.()
@@ -150,33 +122,18 @@ export function Live2DAvatar({
 
   // 状态切换 → 播放对应动作
   useEffect(() => {
-    if (!spriteRef.current || !loaded) return
-
-    const sprite = spriteRef.current
-    const motion = STATE_MOTION_MAP[state]
+    const model = spriteRef.current
+    if (!model || !loaded) return
 
     try {
-      // 通过参数模拟不同状态（Hiyori 模型只有 Idle 和 TapBody）
-      // idle: 正常待机
-      // thinking: 微微晃动（用 Idle 的不同编号）
-      // speaking: 嘴巴参数模拟说话
-      // error: 触发 TapBody 动作
-
       if (state === "speaking") {
-        // 模拟说话：嘴巴参数
-        sprite.setParameterValueById("ParamMouthOpenY", 0.8)
-        setTimeout(() => sprite.setParameterValueById("ParamMouthOpenY", 0), 200)
+        model.setParameterValueById?.("ParamMouthOpenY", 0.8)
+        setTimeout(() => model.setParameterValueById?.("ParamMouthOpenY", 0), 200)
       } else if (state === "thinking") {
-        // 思考：头部微倾
-        sprite.setParameterValueById("ParamAngleX", 10)
-        setTimeout(() => sprite.setParameterValueById("ParamAngleX", 0), 1000)
+        model.setParameterValueById?.("ParamAngleX", 10)
+        setTimeout(() => model.setParameterValueById?.("ParamAngleX", 0), 1000)
       } else if (state === "error") {
-        // 错误：触发 TapBody
-        sprite.startMotion({
-          group: "TapBody",
-          no: 0,
-          priority: 3 as any, // Priority.Force
-        })
+        model.motion?.("TapBody", 0)
       }
     } catch (err) {
       console.warn("[Live2D] Motion failed:", err)

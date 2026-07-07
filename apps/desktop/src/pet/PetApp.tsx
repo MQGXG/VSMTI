@@ -17,6 +17,12 @@ interface Message {
 
 let msgCounter = 0
 
+function getModels(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem("pet_models") || '{"hiyori":"/models/hiyori/Hiyori.model3.json"}')
+  } catch { return { hiyori: "/models/hiyori/Hiyori.model3.json" } }
+}
+
 export function PetApp() {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasWrapRef = useRef<HTMLDivElement>(null)
@@ -24,9 +30,13 @@ export function PetApp() {
   const [streaming, setStreaming] = useState(false)
   const [live2dStatus, setLive2dStatus] = useState<string>("loading")
   const [live2dError, setLive2dError] = useState<string | null>(null)
+  const [currentModel, setCurrentModel] = useState(0)
   const sessionRef = useRef<string | null>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
   const streamCleanupRef = useRef<(() => void) | null>(null)
+  const modelRef = useRef<any>(null)
+  const appRef = useRef<any>(null)
+  const loadModelRef = useRef<any>(null)
 
   const addMsg = useCallback((role: "user" | "assistant", content: string) => {
     const id = ++msgCounter + ""
@@ -66,81 +76,115 @@ export function PetApp() {
           if (!loaded) { setLive2dError("Cubism Core load failed"); setLive2dStatus("error"); return }
         }
 
-        const Core = (window as any).Live2DCubismCore
-        if (Core?.Model?.fromMoc) {
-          const orig = Core.Model.fromMoc
-          Core.Model.fromMoc = function (...args: any[]) {
-            const model = orig.apply(this, args)
-            if (model?.drawables && !("renderOrders" in model.drawables)) {
-              Object.defineProperty(model.drawables, "renderOrders", {
-                get: () => model.drawables.drawOrders, configurable: true,
-              })
-            }
-            return model
-          }
-        }
-
         setLive2dStatus("importing...")
-        const { Application, Ticker } = await import("pixi.js")
-        const { Config, Live2DSprite } = await import("easy-live2d")
-        Config.MotionGroupIdle = "Idle"
+        const { Application, extensions } = await import("pixi.js")
+        const { Live2DModel, Live2DPlugin } = await import("untitled-pixi-live2d-engine/cubism")
+        extensions.add(Live2DPlugin)
 
         setLive2dStatus("creating canvas...")
-        const canvas = document.createElement("canvas")
-        canvas.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%"
-        wrap.appendChild(canvas)
-
-        const rect = wrap.getBoundingClientRect()
-        const initW = Math.max(Math.round(rect.width), 100)
-        const initH = Math.max(Math.round(rect.height), 100)
-
         const app = new Application()
         await app.init({
-          canvas,
           backgroundAlpha: 0,
           autoDensity: true,
           resolution: Math.max(window.devicePixelRatio || 1, 1),
-          width: initW,
-          height: initH,
           resizeTo: wrap,
           preference: "webgl",
         })
+        app.canvas.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%"
+        wrap.appendChild(app.canvas)
         if (destroyed) { app.destroy(true); return }
 
         setLive2dStatus("loading model...")
-        const sprite = new Live2DSprite({
-          modelPath: "/models/hiyori/Hiyori.model3.json",
-          ticker: Ticker.shared,
-        })
-        app.stage.addChild(sprite)
+        appRef.current = app
 
-        sprite.anchor.set(0.5)
+        let ro: ResizeObserver | null = null
+        let onWheel: ((e: WheelEvent) => void) | null = null
 
-        const fitSize = () => {
-          const cw = canvas.clientWidth
-          const ch = canvas.clientHeight
-          if (cw <= 0 || ch <= 0) return
-          sprite.width = cw * 0.85
-          sprite.height = ch * 0.85
-          sprite.x = cw / 2
-          sprite.y = ch / 2
-        }
-        fitSize()
+        const loadLive2DModel = async (modelKey?: string) => {
+          const models = getModels()
+          const key = modelKey ?? localStorage.getItem("pet_model") ?? "hiyori"
+          const path = models[key] ?? Object.values(models)[0]!
+          setLive2dStatus(`loading ${key}...`)
+          const m = await Live2DModel.from(path)
+          modelRef.current?.destroy()
+          modelRef.current = m
+          app.stage.addChild(m)
+          m.anchor.set(0.5)
 
-        sprite.onLive2D("ready", () => {
-          if (destroyed) return
-          fitSize()
+          const fit = () => {
+            const cw = app.canvas.clientWidth
+            const ch = app.canvas.clientHeight
+            if (cw <= 0 || ch <= 0) return
+            const bounds = m.getLocalBounds()
+            const modelSize = Math.max(bounds.width, bounds.height)
+            if (modelSize > 0) m.scale.set(Math.min(cw, ch) * 1.2 / modelSize)
+            m.position.set(cw / 2, ch / 2)
+          }
+          fit()
+
+          ro?.disconnect()
+          if (onWheel) app.canvas.removeEventListener("wheel", onWheel)
+          app.stage.off("pointermove")
+          app.stage.off("pointerup")
+          app.stage.off("pointerupoutside")
+
+          ro = new ResizeObserver(() => {
+            const cw = app.canvas.clientWidth
+            const ch = app.canvas.clientHeight
+            if (cw <= 0 || ch <= 0) return
+            const bounds = m.getLocalBounds()
+            const modelSize = Math.max(bounds.width, bounds.height)
+            if (modelSize > 0) m.scale.set(Math.min(cw, ch) * 1.2 / modelSize)
+            m.position.set(cw / 2, ch / 2)
+          })
+          ro.observe(wrap)
+
+          onWheel = (e: WheelEvent) => {
+            e.preventDefault()
+            const zoom = e.deltaY > 0 ? 0.9 : 1.1
+            m.scale.set(m.scale.x * zoom)
+          }
+          app.canvas.addEventListener("wheel", onWheel, { passive: false })
+
+          app.stage.eventMode = "static"
+          let dragging = false
+          let dragOffset = { x: 0, y: 0 }
+
+          app.stage.on("pointermove", (e: any) => {
+            const pos = e.global
+            if (dragging) m.position.set(pos.x - dragOffset.x, pos.y - dragOffset.y)
+            m.focus?.(m.toLocal(pos).x, m.toLocal(pos).y)
+          })
+
+          m.eventMode = "static"
+          m.cursor = "pointer"
+          m.on("pointerdown", (e: any) => {
+            dragging = true
+            const pos = e.global
+            dragOffset = { x: pos.x - m.position.x, y: pos.y - m.position.y }
+          })
+
+          app.stage.on("pointerup", () => { dragging = false })
+          app.stage.on("pointerupoutside", () => { dragging = false })
+
+          loadModelRef.current = loadLive2DModel
           setLive2dStatus("ready")
-        })
-
-        const ro = new ResizeObserver(() => {
-          fitSize()
-        })
-        ro.observe(wrap)
-
+        }
+        loadModelRef.current = loadLive2DModel
+        await loadLive2DModel()
+        const onStorage = (e: StorageEvent) => {
+          if (e.key === "pet_model") loadLive2DModel(e.newValue ?? undefined)
+        }
+        window.addEventListener("storage", onStorage)
+        const origCleanup = cleanupRef.current
         cleanupRef.current = () => {
-          ro.disconnect()
-          sprite.destroy()
+          window.removeEventListener("storage", onStorage)
+          if (onWheel) app.canvas.removeEventListener("wheel", onWheel)
+          app.stage.off("pointermove")
+          app.stage.off("pointerup")
+          app.stage.off("pointerupoutside")
+          ro?.disconnect()
+          modelRef.current?.destroy()
           app.destroy(true, { children: true, texture: true })
         }
 
@@ -208,9 +252,15 @@ export function PetApp() {
       ref={containerRef}
       style={{
         width: "100%", height: "100%", display: "flex", flexDirection: "column",
-        WebkitAppRegion: "drag" as any, userSelect: "none",
       }}
     >
+      <div style={{
+        height: 32, WebkitAppRegion: "drag" as any, cursor: "grab", flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        background: "rgba(20,20,30,0.5)",
+      }}>
+        <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)" }} />
+      </div>
       <div
         ref={canvasWrapRef}
         style={{
