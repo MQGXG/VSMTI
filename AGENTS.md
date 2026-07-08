@@ -16,6 +16,7 @@ Mira 是一个全能 AI 助手桌面应用，基于 **Electron + TypeScript Agen
 | 向量记忆 | Transformers.js 本地 ONNX 推理（零外部依赖） |
 | 代码智能 | LSP (Language Server Protocol) |
 | 协议扩展 | MCP (Model Context Protocol) |
+| HTML 转换 | Turndown（HTML → Markdown 专业转换） |
 | 3D 图谱 | react-force-graph-3d + three.js |
 | 动态头像 | untitled-pixi-live2d-engine + pixi.js v8 (Live2D Cubism SDK 5-r.4) |
 | 构建 | electron-builder（便携模式，目标电脑无需安装任何运行时） |
@@ -117,7 +118,9 @@ mira/
 │   │       ├── orchestrate/         # 编排模块
 │   │       │   ├── goal-judge.ts    #   Goal 完成度验证
 │   │       │   ├── goal-manager.ts  #   Goal 管理
-│   │       │   ├── subagent.ts      #   子 Agent 管理
+│   │       │   ├── subagent.ts      #   子 Agent 管理（Actor 模型）
+│   │       │   ├── actor-gate.ts    #   任务完成门控（TaskGate）
+│   │       │   ├── actor-protocol.ts #   标准化返回协议
 │   │       │   ├── delegate.ts      #   任务委派执行
 │   │       │   ├── team-bus.ts      #   团队通信总线
 │   │       │   ├── execution.ts     #   工具编排执行（并行/串行）
@@ -137,10 +140,11 @@ mira/
 │   │       │   ├── skill-commands.ts#   Slash 命令
 │   │       │   └── skill-tools.ts   #   Skill 工具
 │   │       ├── tools/               # 工具层（7 个子目录，38 个工具）
-│   │       │   ├── index.ts         #   导出 22+ 工具
-│   │       │   ├── core/            #   核心工具（read/write/edit/list/grep/glob/git/code-search/search-history/create-docx/bash-security）
+│   │       │   ├── index.ts         #   导出所有工具
+│   │       │   ├── core/            #   核心工具（read/write/edit/list/grep/glob/git/code-search/search-history/create-docx/apply-patch/bash-security）
 │   │       │   ├── execution/       #   执行工具（bash/code-exec/image-gen）
 │   │       │   ├── knowledge/       #   知识工具（web-search/web-browse/web-fetch/data-analysis/memory）
+│   │       │   ├── knowledge/       #   安全工具（ssrf-util/cache-util/playwright-shared）
 │   │       │   ├── orchestrate/     #   编排工具（agent-tools/delegate-task/team-tool/task-tool/cron-tool/worktree-tool/workflow-tool）
 │   │       │   ├── infra/           #   基础设施（lsp-tool）
 │   │       │   ├── interaction/     #   交互工具（question）
@@ -341,9 +345,9 @@ mira/
 
 | 分类 | 工具 | 说明 |
 |------|------|------|
-| **core** | read_file | 读取文件内容 |
-| | write_file | 创建/覆盖文件 |
-| | edit_file | 编辑文件指定部分 |
+| **core** | read_file | 读取文件内容（魔数检测 + 字节精确截断 + 编码检测） |
+| | write_file | 创建/覆盖文件（BOM 保留 + stale 检测 + 写入锁） |
+| | edit_file | 编辑文件指定部分（9 种匹配策略 + LSP 增强回退） |
 | | list_files | 列出目录内容 |
 | | grep | 正则内容搜索 |
 | | glob | 文件名模式匹配 |
@@ -351,19 +355,19 @@ mira/
 | | git_status | Git 状态 |
 | | git_diff | Git 差异 |
 | | git_log | Git 提交历史 |
-| **knowledge** | web_search | 网络搜索 |
-| | web_browse | 网页浏览（Playwright） |
-| | web_fetch | URL 内容获取 |
+| **knowledge** | web_search | 网络搜索（Exa/Parallel MCP + DuckDuckGo 免费降级 + TTL 缓存） |
+| | web_browse | 网页浏览（Playwright，支持 navigate/click/type/scroll/back/extract/**capture**） |
+| | web_fetch | URL 内容获取（Turndown + SSRF 防护 + TTL 缓存） |
 | | data_analysis | 数据分析 |
 | | memory_search | 记忆搜索 |
 | | memory_recall | 记忆召回 |
-| **execution** | bash | Shell 命令执行 |
+| **execution** | bash | Shell 命令执行（支持 PowerShell/CMD/Unix sh） |
 | | code_exec | 代码执行 |
-| | image_gen | AI 图片生成 |
+| | image_generate | AI 图片生成 |
 | | git_commit | Git 提交 |
 | **orchestrate** | delegate_task | 任务委派给子 Agent |
 | | team_tool | 团队协作工具 |
-| | task_planner | 任务规划 |
+| | plan_task | 任务规划 |
 | | cron_tool | 定时任务调度 |
 | | worktree_tool | Git Worktree 管理 |
 | | workflow_run | Dynamic Workflow 执行 |
@@ -373,12 +377,13 @@ mira/
 | **infra** | lsp_definition | 跳转到定义 |
 | | lsp_references | 查找引用 |
 | | lsp_hover | 悬停信息 |
-| **infra** | create_mcp | 创建 MCP 服务器 |
+| | create_mcp | 创建 MCP 服务器 |
 | **skill** | skills_list | 列出可用 Skill |
 | | skill_view | 查看 Skill 详情 |
 | **interaction** | question | 向用户提问 |
-| **document** | create-docx | Word 文档生成 |
-| **search** | search-history | 历史记录搜索 |
+| **document** | create_docx | Word 文档生成 |
+| | apply_patch | 多文件批量编辑（4 层模糊匹配 + ChangeContext 锚点） |
+| **search** | search_history | 历史记录搜索 |
 
 ## LLM Provider 支持
 
@@ -415,13 +420,41 @@ mira/
 代码级编排：主 Agent 生成 JS 脚本，通过 `agent()` / `parallel()` / `pipeline()` 协调子 Agent。
 
 ### Subagent 管理
-最大并行 5 个子 Agent，支持委派、团队通信、任务追踪。
+基于 Actor 模型的子 Agent 系统，支持以下功能：
+
+| 特性 | 说明 |
+|------|------|
+| **调度模式** | `subagent`（共享会话）和 `peer`（独立工作目录） |
+| **注册表持久化** | SQLite `actor_registry` 表，进程重启后自动恢复孤儿 Actor |
+| **任务门控** | TaskGate 验证子 Agent 是否真正完成任务，最多 2 次自动重试，失败自动降级 |
+| **标准化返回协议** | 子 Agent 按 `**Status**` / `**Summary**` 头块输出结构化结果 |
+| **上下文继承** | 三种模式：`none`（只传 prompt）、`state`（注入 checkpoint 摘要）、`full`（共享前缀缓存） |
+| **ReAct 循环** | preStop 循环（结果不符合预期时最多 3 轮自动补跑） + postStop 循环（完成后的跟进工作） |
+| **粘滞检测** | 每分钟扫描，5 分钟无活动的子 Agent 自动标记为 `stuck` |
+| **并发控制** | 最大并行 5（可配置），最大嵌套深度 8，总生命周期上限 100 |
+| **状态机** | pending → running → completing → completed / failed / cancelled / orphaned / stuck |
+| **通信总线** | 子 Agent 通过 `team-bus` 发送通知和结果给父 Agent |
 
 ### MCP（Model Context Protocol）
 支持 MCP 服务器扩展工具能力。
 
 ### LSP（Language Server Protocol）
 代码智能：定义跳转、引用查找、悬停信息。
+
+## 聊天模块（Part 消息体系）
+
+消息以 Part 数组结构存储，每个 Part 有独立类型和渲染方式：
+
+| Part 类型 | 渲染组件 | 说明 |
+|-----------|---------|------|
+| `text` | MarkdownText（Streamdown） | 流式 Markdown 渲染，Shiki 代码高亮 |
+| `thinking` | ThinkingBlock | AI 推理过程折叠面板 |
+| `tool-call` | ToolCallView → 按工具名路由 | 自动路由到 ToolReadView/ToolShellView/ToolSearchView/ToolDiffView |
+| `file` | 图片/文件内嵌 | 附件展示 |
+| `diff-summary` | ToolDiffSummary | 回合级文件变更汇总（+N / -M） |
+| `compaction` | 分割线 | 上下文压缩标记 |
+
+连续 `read_file`/`glob`/`grep`/`list_files` 工具调用自动聚合为 **ContextToolGroup** 折叠面板。
 
 ## assistant-ui 组件集成
 
@@ -435,6 +468,7 @@ mira/
 | Markdown | `@assistant-ui/react-streamdown` — Streamdown（Shiki + Mermaid 内置） |
 | Voice | `WebSpeechSynthesisAdapter`（TTS）、`WebSpeechDictationAdapter`（STT） |
 | Files | `AttachmentAdapter` — 自定义文件上传 |
+| Queue | `createMessageQueue` — 运行时允许排队发消息 |
 | shadcn 组件 | ToolFallback、ToolGroup、Reasoning、DiffViewer、MessageTiming、ContextDisplay |
 
 未使用内置 `<Thread />` 组件，而是用 Primitives 自行拼装以满足定制需求（Skill 补全/ModelSelector/WelcomeScreen）。
@@ -454,7 +488,7 @@ mira/
 | `agent.compose.*` | 组合模式全流程 |
 | `agent.onEvent` | 监听 Agent 流式事件 |
 | `config.*` | 配置读写（全局 JSON + 项目 JSON + 环境变量） |
-| `ts.*` | 项目/会话 CRUD、消息搜索 |
+| `ts.*` | 项目/会话 CRUD、消息搜索、快照恢复 |
 | `memory.*` | 记忆搜索与状态查询 |
 | `encryptApiKey` / `decryptApiKey` / `isEncryptionAvailable` | API Key 加密存储（Electron safeStorage） |
 | `platform` | 当前平台标识 |
@@ -471,9 +505,10 @@ SQLite (sql.js WASM) 表结构：
 |----|------|------|
 | projects | project_id, name, workspace_path, created_at | 项目 |
 | sessions | session_id, project_id, title, workspace, created_at, updated_at | 会话 |
-| messages | id, session_id, role, content, timestamp, tool_call_id | 消息历史 |
+| messages | id, session_id, role, content, timestamp, tool_call_id, retry_count | 消息历史 |
 | permissions | workspace, action, resource, effect | 权限规则 |
 | goals | session_id, id, description, created_at, status, satisfied_at, timeout_ms, evaluations_json | Goal 追踪 |
+| actor_registry | actor_id, session_id, parent_actor_id, mode, status, description, context_mode, agent, result, error, turn_count, time_created, time_updated, time_completed, lifecycle | 子 Agent 注册表 |
 
 ## 开发指南
 

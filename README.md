@@ -9,10 +9,11 @@
 | 桌面壳 | Electron 31 + electron-vite |
 | 前端 | React 18 + TypeScript 5 + Tailwind CSS + @assistant-ui/react |
 | Agent Core | TypeScript（纯 TS 实现，零 Python 依赖） |
-| 数据库 | SQLite (sql.js WASM) |
+| 数据库 | SQLite (sql.js WASM，防抖持久化) |
 | 向量记忆 | Transformers.js 本地 ONNX 推理 |
 | 代码智能 | LSP (Language Server Protocol) |
 | 协议扩展 | MCP (Model Context Protocol) |
+| HTML 转换 | Turndown（HTML → Markdown 专业转换） |
 | 构建 | electron-builder |
 
 ## 快速开始
@@ -81,11 +82,13 @@ mira/
 - Goal Judge（任务完成度验证）
 - Max Mode（并行采样选优）
 - Dynamic Workflow（代码级编排）
-- Subagent 管理（最大并行 5 个）
+- Subagent 管理（最大并行 5 个，支持 Actor 模型/任务门控/ReAct 循环/粘滞检测）
 - MCP 协议支持（扩展工具能力）
 - LSP 代码智能（定义跳转 / 引用查找 / 悬停信息）
 - Skill 系统（Slash 命令 + 动态加载）
 - API Key 加密存储（Electron safeStorage）
+- 浏览器自动化（Playwright 截图/点击/输入，支持 SPA 页面）
+- 文件快照回退（每次编辑前自动快照，支持一键恢复）
 - 便携打包，目标电脑无需安装任何运行时
 
 ## 开发指南

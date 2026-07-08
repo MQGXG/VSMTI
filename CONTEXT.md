@@ -48,11 +48,24 @@ packages/
 | tool_result | 更新 ToolCall 状态 | 显示工具执行结果 |
 | permission_request | 显示权限弹窗 | 需要用户审批 |
 | thinking | 显示思考过程 | Agent 内部推理 |
-| finish | 完成 | 响应结束 |
+| finish | 完成 | 响应结束，携带真实 token usage |
 | error | 显示错误 | 不可恢复的错误 |
 | goal_status | 显示 Goal 状态 | 任务完成度验证 |
 | context_rebuild | 显示重建通知 | 上下文窗口重建 |
+| retry | 显示重试标记 | LLM 调用失败自动重试 |
 | subagent_status | 显示子 Agent 状态 | 子 Agent 生命周期 |
+
+## Token 统计
+
+每条消息完成后从 LLM API 获取真实 token 使用量，存入 SQLite `messages.retry_count` 字段：
+
+| 字段 | 来源 | 说明 |
+|------|------|------|
+| promptTokens | LLM API response.usage | 输入 token 数 |
+| completionTokens | LLM API response.usage | 输出 token 数 |
+| totalTokens | LLM API response.usage | 总 token 数 |
+| cacheReadTokens | Anthropic/OpenAI usage | 缓存命中 token |
+| retryCount | 前端 tracking | 重试次数 |
 
 ## LLM Provider 支持
 
@@ -82,7 +95,8 @@ packages/
 - Distill：发现重复工作流，打包为可复用 skill/subagent
 
 ### Subagent
-最大并行 5 个子 Agent，支持委派、团队通信、任务追踪。
+基于 Actor 模型的子 Agent 系统，支持 subagent（共享会话）和 peer（独立工作目录）两种模式。
+SQLite 注册表持久化，TaskGate 任务完成验证，标准化返回协议，ReAct 循环，粘滞检测。
 
 ### MCP
 Model Context Protocol，支持 MCP 服务器扩展工具能力。
@@ -114,9 +128,10 @@ npx playwright install chromium
 
 ## 下一步优化方向
 
-1. 会话搜索/分组功能
+1. 会话标题自动生成（已完成，根据首条消息内容生成）
 2. 模型列表自动获取（拉取供应商可用模型）
-3. CI/CD 自动构建流程
-4. 代码块语法高亮增强
-5. 记忆系统增强（Dream/Distill 自动触发）
-6. Workflow 可视化编辑器
+3. Exa/Parallel 搜索 API 的配置 UI
+4. TUI 终端界面（ink + TUI 模式）
+5. CLI 入口（`mira run "..."` 模式）
+6. 记忆系统增强（Dream/Distill 自动触发）
+7. Workflow 可视化编辑器
