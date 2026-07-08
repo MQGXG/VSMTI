@@ -39,11 +39,10 @@ mira/
 │   │   └── src/
 │   │       ├── agent.ts             # Agent 核心循环
 │   │       ├── llm/                 # LLM 分层架构（协议/Provider/路由）
-│   │       ├── tools/               # 32 个工具
+│   │       ├── tools/               # 38 个工具
 │   │       ├── memory/              # 四层记忆系统
 │   │       ├── skill/               # Skill 系统
-│   │       ├── permission.ts        # 声明式权限
-│   │       ├── modes.ts             # Agent 模式（可扩展）
+│   │       ├── permission/          # 声明式权限
 │   │       └── ...                  # 配置/数据库/会话管理等
 │   │
 │   ├── electron/                    # @mira/electron — Electron 主进程
@@ -76,7 +75,7 @@ mira/
 - 本地文件拖拽分析
 - 多模型切换（OpenAI / Anthropic / DeepSeek / Ollama / Groq / Gemini 等 10+ Provider）
 - 5 种 Agent 模式（助手 / 专家 / 执行 / 安全 / 规划）+ 自定义 Agent
-- 32 个内置工具（文件操作 / 代码执行 / 网页搜索 / Git / 数据分析 / 记忆 / 工作流等）
+- 38 个内置工具（文件操作 / 代码执行 / 网页搜索 / Git / 数据分析 / 记忆 / 工作流等）
 - 声明式权限系统（通配符匹配 + 模式叠加 + 运行时审批）
 - 四层记忆系统（Session → Project → Global → History）
 - Goal Judge（任务完成度验证）

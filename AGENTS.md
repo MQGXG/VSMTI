@@ -17,7 +17,7 @@ Mira 是一个全能 AI 助手桌面应用，基于 **Electron + TypeScript Agen
 | 代码智能 | LSP (Language Server Protocol) |
 | 协议扩展 | MCP (Model Context Protocol) |
 | 3D 图谱 | react-force-graph-3d + three.js |
-| 动态头像 | easy-live2d + pixi.js (Live2D Cubism SDK) |
+| 动态头像 | untitled-pixi-live2d-engine + pixi.js v8 (Live2D Cubism SDK 5-r.4) |
 | 构建 | electron-builder（便携模式，目标电脑无需安装任何运行时） |
 
 ## 目录结构
@@ -38,7 +38,6 @@ mira/
 │   │       │   ├── turn-processor.ts#   单回合工具调用编排
 │   │       │   ├── turn.ts          #   回合配置
 │   │       │   ├── max-mode.ts      #   并行采样选优
-│   │       │   ├── pipeline.ts      #   执行管线
 │   │       │   ├── utils.ts         #   Doom Loop 检测
 │   │       │   ├── fork-cache.ts    #   分支缓存
 │   │       │   ├── text-ngram.ts    #   文本 N-gram 分析
@@ -137,7 +136,7 @@ mira/
 │   │       │   ├── skill-loader.ts  #   动态加载
 │   │       │   ├── skill-commands.ts#   Slash 命令
 │   │       │   └── skill-tools.ts   #   Skill 工具
-│   │       ├── tools/               # 工具层（7 个子目录，32+ 工具文件）
+│   │       ├── tools/               # 工具层（7 个子目录，38 个工具）
 │   │       │   ├── index.ts         #   导出 22+ 工具
 │   │       │   ├── core/            #   核心工具（read/write/edit/list/grep/glob/git/code-search/search-history/create-docx/bash-security）
 │   │       │   ├── execution/       #   执行工具（bash/code-exec/image-gen）
@@ -164,20 +163,24 @@ mira/
 │   │           ├── llm-sdk.test.ts
 │   │           ├── message-utils.test.ts
 │   │           ├── permission-loop.test.ts
-│   │           └── benchmark.test.ts
+│   │           ├── benchmark.test.ts
+│   │           ├── compaction.test.ts
+│   │           ├── failover.test.ts
+│   │           └── plugin-hooks.test.ts
 │   │
 │   ├── electron/                    # @mira/electron — Electron 主进程
 │   │   └── src/
 │   │       ├── index.ts             # 主进程入口
 │   │       ├── main/                # 应用入口
 │   │       ├── preload/index.ts     # 预加载脚本 (contextBridge)
-│   │       ├── ipc/                 # IPC 通信层（13 个模块）
+│   │       ├── ipc/                 # IPC 通信层（14 个模块）
 │   │       │   ├── index.ts         #   统一导出
 │   │       │   ├── handlers.ts      #   统一注册
 │   │       │   ├── compose-ipc.ts   #   组合模式
 │   │       │   ├── config-ipc.ts    #   配置读写
 │   │       │   ├── dream-ipc.ts     #   Dream/Distill
 │   │       │   ├── goal-ipc.ts      #   Goal 管理
+│   │       │   ├── live2d-ipc.ts    #   Live2D 头像控制
 │   │       │   ├── memory-ipc.ts    #   记忆操作
 │   │       │   ├── question-ipc.ts  #   用户交互
 │   │       │   ├── session-ipc.ts   #   会话/项目 CRUD
@@ -196,8 +199,10 @@ mira/
 │           │   ├── MiraRuntimeProvider.tsx # 运行时状态
 │           │   ├── ModelSelector.tsx #  模型/模式选择
 │           │   ├── PermissionDialog.tsx # 权限审批弹窗
+│           │   ├── ProgressBar.tsx  #   进度条
 │           │   ├── QuestionDialog.tsx #  用户交互弹窗
 │           │   ├── ThinkingBlock.tsx #  思考过程展示
+│           │   ├── MiraLogo.tsx     #   Mira 标识
 │           │   ├── VoiceInput.tsx   #   语音输入
 │           │   ├── ToolCallView.tsx #   工具调用展示
 │           │   ├── ToolPalette.tsx  #   工具面板
@@ -223,10 +228,17 @@ mira/
 │           │   │   ├── tooltip-icon-button.tsx
 │           │   │   ├── animated-avatar.tsx   # CSS 动画头像
 │           │   │   ├── animated-avatar.css   # 头像动画样式
-│           │   │   └── live2d-avatar.tsx     # Live2D 动态头像
-│           │   └── ui/              #   shadcn 基础 UI 组件
+│           │   │   └── live2d-avatar.tsx     # Live2D 动态头像（untitled-pixi-live2d-engine）
+│           │   └── ui/              #   shadcn 基础 UI 组件（10 个）
 │           │       ├── button.tsx
 │           │       ├── collapsible.tsx
+│           │       ├── dialog.tsx
+│           │       ├── dropdown-menu.tsx
+│           │       ├── input.tsx
+│           │       ├── Modal.tsx
+│           │       ├── select.tsx
+│           │       ├── switch.tsx
+│           │       ├── tabs.tsx
 │           │       └── tooltip.tsx
 │           ├── memory/              #   知识图谱
 │           │   ├── MemoryGraph.tsx  #     3D 力导向图谱组件
@@ -235,8 +247,10 @@ mira/
 │           ├── sidebar/             # 侧边栏
 │           │   ├── Sidebar.tsx
 │           │   ├── ProjectBar.tsx
-│           │   ├── SettingsDialog.tsx
+│           │   ├── SettingsDialog/      #   设置弹窗（含4个子组件）
+│           │   ├── ConfigSourceIndicator.tsx
 │           │   ├── ModelManager.tsx
+│           │   ├── provider-data.ts
 │           │   ├── ProviderConfigPanel.tsx
 │           │   ├── ThemeSelector.tsx
 │           │   ├── NewProjectDialog.tsx
@@ -323,7 +337,7 @@ mira/
 
 支持通过 `~/.config/mira/agents/` 和 `{project}/.mira/agents/` 目录加载自定义 Agent JSON 配置。
 
-## 工具清单（32 个）
+## 工具清单（38 个）
 
 | 分类 | 工具 | 说明 |
 |------|------|------|
@@ -333,6 +347,7 @@ mira/
 | | list_files | 列出目录内容 |
 | | grep | 正则内容搜索 |
 | | glob | 文件名模式匹配 |
+| | code_search | 代码语义搜索 |
 | | git_status | Git 状态 |
 | | git_diff | Git 差异 |
 | | git_log | Git 提交历史 |
@@ -358,6 +373,9 @@ mira/
 | **infra** | lsp_definition | 跳转到定义 |
 | | lsp_references | 查找引用 |
 | | lsp_hover | 悬停信息 |
+| **infra** | create_mcp | 创建 MCP 服务器 |
+| **skill** | skills_list | 列出可用 Skill |
+| | skill_view | 查看 Skill 详情 |
 | **interaction** | question | 向用户提问 |
 | **document** | create-docx | Word 文档生成 |
 | **search** | search-history | 历史记录搜索 |

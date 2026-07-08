@@ -25,9 +25,9 @@
 │  │  llm/             LLM 分层架构                           │  │
 │  │    schema/        消息/事件/错误类型                      │  │
 │  │    protocols/     OpenAI/Anthropic/Gemini 等 5 种协议    │  │
-│  │    providers/     14 个 Provider 配置                    │  │
+│  │    providers/     12 个 Provider 配置                    │  │
 │  │    route/         路由客户端                             │  │
-│  │  tools/           32 个工具（7 分类）                     │  │
+│  │  tools/           38 个工具（8 分类）                     │  │
 │  │  memory/          五层记忆系统                           │  │
 │  │  system/          数据库/权限/注册表/日志/服务            │  │
 │  │    permission/    声明式权限系统（gate/store/approval）   │  │
@@ -202,16 +202,17 @@ export const myTool = make({
 })
 ```
 
-32 个工具通过 `system/registry.ts` + `system/registry-init.ts` 注册，分为 7 类：
+38 个工具通过 `system/registry.ts` + `system/registry-init.ts` 注册，分为 8 类：
 
 | 分类 | 工具 | 说明 |
 |------|------|------|
 | **core** | read/write/edit/list/grep/glob/git(bash/status/diff/log/commit)/code-search/search-history/create-docx/bash-security | 文件、搜索、Git、文档 |
 | **knowledge** | web-search/web-browse/web-fetch/data-analysis/memory-search/memory-recall | 网络、数据、记忆 |
 | **execution** | bash/code-exec/image-gen | Shell、代码、图片 |
-| **orchestrate** | agent-tools/delegate-task/team-tool/task-tool/cron-tool/worktree-tool/workflow-tool | 子 Agent、任务、调度 |
-| **infra** | lsp-definition/lsp-references/lsp-hover | 代码智能 |
+| **orchestrate** | agent-tools/delegate-task/team-tool/task-tool/cron-tool/worktree-tool/workflow-tool/spawn-agent/wait-agents/list-subagents | 子 Agent、任务、调度 |
+| **infra** | lsp-definition/lsp-references/lsp-hover/create-mcp | 代码智能 |
 | **interaction** | question | 用户交互 |
+| **skill** | skills-list/skill-view | Skill 系统 |
 | **shared** | tool-loader/tool-meta/tool-output-store | 工具元数据/输出 |
 
 - 并行执行声明
@@ -354,6 +355,7 @@ SubagentManager
 | config-ipc.ts | 配置读写 |
 | dream-ipc.ts | Dream/Distill 操作 |
 | goal-ipc.ts | Goal 管理 |
+| live2d-ipc.ts | Live2D 头像控制 |
 | memory-ipc.ts | 记忆操作 |
 | question-ipc.ts | 用户交互 |
 | session-ipc.ts | 会话/项目 CRUD |

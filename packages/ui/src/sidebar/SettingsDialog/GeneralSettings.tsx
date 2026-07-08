@@ -2,6 +2,8 @@ import { useState } from "react"
 import { ThemeSelector } from "../ThemeSelector";
 import { Switch } from "../../components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
 
 interface Props {
   settings: Record<string, any>;
@@ -146,28 +148,24 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
               <div className="flex gap-2 items-end">
                 <div className="flex-1">
                   <label className="text-xs mb-1 block text-secondary">添加模型</label>
-                  <input placeholder="名称（如 my-model）" value={newKey}
-                    onChange={(e) => setNewKey(e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs rounded-md border border-standard bg-surface"
-                  />
+                  <Input placeholder="名称（如 my-model）" value={newKey}
+                    onChange={(e) => setNewKey(e.target.value)} className="h-8 text-xs" />
                 </div>
                 <div className="flex-1">
-                  <input placeholder="路径（如 /models/xxx/model3.json）" value={newPath}
-                    onChange={(e) => setNewPath(e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs rounded-md border border-standard bg-surface"
-                  />
+                  <Input placeholder="路径（如 /models/xxx/model3.json）" value={newPath}
+                    onChange={(e) => setNewPath(e.target.value)} className="h-8 text-xs" />
                 </div>
-                <button onClick={() => { add(newKey, newPath); setNewKey(""); setNewPath("") }}
-                  className="px-3 py-1.5 text-xs rounded-md bg-primary text-white shrink-0">
+                <Button size="sm" onClick={() => { add(newKey, newPath); setNewKey(""); setNewPath("") }}>
                   添加
-                </button>
+                </Button>
               </div>
               {Object.keys(models).length > 1 && (
                 <div className="text-xs text-tertiary space-y-1">
                   {Object.keys(models).filter(k => k !== "hiyori").map(k => (
                     <div key={k} className="flex items-center justify-between">
                       <span>{k}</span>
-                      <button onClick={() => remove(k)} className="text-red-400 hover:text-red-300">删除</button>
+                      <Button variant="ghost" size="sm" onClick={() => remove(k)}
+                        className="text-red-400 hover:text-red-300 !h-auto !px-1 !text-xs">删除</Button>
                     </div>
                   ))}
                 </div>
