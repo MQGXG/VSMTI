@@ -43,6 +43,9 @@ export default defineConfig({
       },
     },
     plugins: [react()],
+    optimizeDeps: {
+      include: ["diff", "parse-diff"],
+    },
     resolve: {
       alias: {
         "@mira/core": resolve(__dirname, "packages/core/src"),

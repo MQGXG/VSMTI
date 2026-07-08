@@ -33,6 +33,7 @@ export const OpenAICompatibleChatProtocol: Protocol = {
       model: request.model,
       messages: serializeMessages(request.messages),
       stream: true,
+      stream_options: { include_usage: true },
     }
     if (request.tools && request.tools.length > 0) {
       body.tools = request.tools.map((t) => ({

@@ -3,21 +3,27 @@ import * as path from "path"
 import { z } from "zod"
 import { make, type Content } from "../../shared/tool"
 import { getSnapshotManager } from "../../session/snapshot"
+import { realPath, contains } from "./path-util"
+import { invalidateFileState, getFileState, isFileChanged } from "./file-state-cache"
 
-async function realPath(p: string): Promise<string> {
-  try { return await fs.realpath(p) } catch { return p }
+/** 进程级文件写入锁 — 同一文件串行写入 */
+const writeLocks = new Map<string, Promise<void>>()
+
+function withFileLock<T>(filePath: string, fn: () => Promise<T>): Promise<T> {
+  const prev = writeLocks.get(filePath) || Promise.resolve()
+  const next = prev.then(fn, fn)
+  writeLocks.set(filePath, next.then(() => {}, () => {}))
+  return next
 }
 
-function contains(root: string, target: string): boolean {
-  const rel = path.relative(root, target)
-  return !rel.startsWith("..") && !path.isAbsolute(rel)
-}
+const BOM = "\uFEFF"
+function hasBom(text: string): boolean { return text.startsWith(BOM) }
 
 export const writeFileTool = make({
   name: "write_file",
-  description: "Create a new file or completely replace file content. Creates parent directories automatically. Use for new files or full rewrites. Use when: creating new files, saving generated code, writing config files, completely replacing file content.",
+  description: "Create a new file or completely replace file content. Creates parent directories automatically. Safeguards: stale-content detection (refuses to overwrite if file changed externally since read), process-level write lock, BOM preservation. Use for new files or full rewrites.",
   inputSchema: z.object({
-    path: z.string().describe("File path (absolute or relative)"),
+    path: z.string().describe("File path (absolute or relative to workspace)"),
     content: z.string().describe("Content to write"),
   }),
   outputSchema: z.string(),
@@ -36,24 +42,65 @@ export const writeFileTool = make({
 
     // 快照：写入前捕获文件状态
     const snapshotMgr = getSnapshotManager(ctx.workspace)
-    await snapshotMgr.capture([resolved], `write_file: ${input.path}`)
+    const snapshotId = await snapshotMgr.capture([resolved], `write_file: ${input.path}`)
 
-    await fs.mkdir(path.dirname(resolved), { recursive: true })
+    return withFileLock(resolved, async () => {
+      await fs.mkdir(path.dirname(resolved), { recursive: true })
 
-    // BOM 检测：如果原文件有 BOM，保留；否则按内容决定
-    let content = input.content
-    try {
-      const existing = await fs.readFile(resolved, "utf-8")
-      if (existing.startsWith("\uFEFF") && !content.startsWith("\uFEFF")) {
-        content = "\uFEFF" + content
+      // BOM 保留：检测原文件 BOM，新内容保留
+      let content = input.content
+      let existingContent = ""
+      try {
+        const raw = await fs.readFile(resolved, "utf-8")
+        existingContent = raw
+        if (hasBom(raw) && !hasBom(content)) {
+          content = BOM + content
+        }
+      } catch {
+        // 新文件
       }
-    } catch {
-      // 文件不存在，忽略
-    }
 
-    await fs.writeFile(resolved, content, "utf-8")
-    return { success: true, output: `Wrote ${content.length} bytes to ${resolved}` }
+      // Stale 检测：文件被缓存标记为已变更则拒绝写入
+      if (existingContent) {
+        try {
+          const stat = await fs.stat(resolved)
+          if (isFileChanged(resolved, stat.mtimeMs)) {
+            return {
+              success: false,
+              error: `File ${input.path} has been modified externally since it was last read. Read it again before writing.`,
+            }
+          }
+        } catch {
+          // 文件已不存在，忽略
+        }
+      }
+
+      // 额外 stale 检测：内容级对比（解决 Windows mtime 抖动）
+      if (existingContent) {
+        try {
+          const currentRaw = await fs.readFile(resolved, "utf-8")
+          if (currentRaw !== existingContent) {
+            return {
+              success: false,
+              error: `File ${input.path} content changed externally. Read it again before writing.`,
+            }
+          }
+        } catch {}
+      }
+
+      await fs.writeFile(resolved, content, "utf-8")
+
+      // 清除缓存，下次 Read 重新读取
+      invalidateFileState(resolved)
+
+      // LSP 通知（写后刷新诊断）
+      if (ctx.workspace) {
+        import("../../lsp/manager").then(({ lspManager }) => {
+          lspManager.touchFile(ctx.workspace, resolved).catch(() => {})
+        }).catch(() => {})
+      }
+
+      return { success: true, output: `Wrote ${Buffer.byteLength(content, "utf-8")} bytes to ${resolved}`, metadata: { snapshotId } }
+    })
   },
 })
-
-

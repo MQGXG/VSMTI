@@ -1,23 +1,16 @@
 /**
- * Agent 子代理工具 — 让 Agent 可以 spawn 子 Agent 做并行任务
- * 参考 MiMo actor.ts 的 spawn/wait 模式
- *
- * 三个工具：
- * - spawn_agent: 启动一个或多个子 Agent
- * - wait_agents: 等待子 Agent 完成
- * - list_subagents: 查看所有活跃子 Agent
+ * Agent 子代理工具
+ * 支持 spawn/wait/list/cancel/status 操作
+ * 集成：注册表持久化、任务门控、标准化返回协议、上下文继承
  */
 
 import { z } from "zod"
 import { make } from "../../shared/tool"
 import { SubagentManager } from "../../orchestrate/subagent"
-import type { SubagentInfo } from "../../orchestrate/subagent"
-
+import type { SubagentInfo, ContextMode } from "../../orchestrate/subagent"
 import type { AgentConfig } from "../../agent/agent"
 
-/** 模块级单例，由 server/api.ts 或 electron/ipc 初始化时注入 */
 let manager: SubagentManager | null = null
-/** 父 Agent 的配置，子 Agent 继承使用 */
 let parentConfig: Partial<AgentConfig> | null = null
 
 export function setSubagentManager(m: SubagentManager): void {
@@ -28,12 +21,10 @@ export function getSubagentManager(): SubagentManager | null {
   return manager
 }
 
-/** 设置父 Agent 配置，子 Agent 继承 model/apiKey/apiUrl/provider */
 export function setParentConfig(config: Partial<AgentConfig>): void {
   parentConfig = { ...config }
 }
 
-/** 获取可供子 Agent 使用的配置（继承父配置 + 合理默认值） */
 export function getChildConfig(overrides?: { model?: string; sessionID?: string }): AgentConfig {
   const base: AgentConfig = {
     sessionID: overrides?.sessionID || parentConfig?.sessionID || "",
@@ -53,14 +44,23 @@ export function getChildConfig(overrides?: { model?: string; sessionID?: string 
 
 export const spawnAgentTool = make({
   name: "spawn_agent",
-  description: "启动一个或多个子 Agent 执行独立子任务。子 Agent 拥有独立会话和执行预算，适合并行处理文件分析、代码搜索、文档查阅等耗时任务。使用 wait_agents 获取结果。",
+  description: `启动一个或多个子 Agent 执行独立子任务。支持三种上下文继承模式：
+- none: 只传 prompt（默认）
+- state: 注入父会话的 checkpoint 摘要
+- full: 共享父会话的前缀缓存
+
+子 Agent 必须按以下格式输出结果：
+**Status**: success | partial | failed | blocked
+**Summary**: <一句话概括>`,
   inputSchema: z.object({
     tasks: z.array(z.object({
-      description: z.string().describe("子任务描述 — 清晰说明要做什么以及如何判断完成"),
-      prompt: z.string().optional().describe("额外的提示/上下文，传递给子 Agent"),
-      model: z.string().optional().describe("子 Agent 使用的模型（默认继承父 Agent）"),
-    })).min(1).max(5).describe("任务列表（可同时启动多个）"),
-    wait: z.boolean().optional().describe("是否等待全部完成再返回（默认 false，异步启动）"),
+      description: z.string().describe("子任务描述"),
+      prompt: z.string().optional().describe("额外提示/上下文"),
+      context: z.enum(["none", "state", "full"] as const).optional().default("none").describe("上下文继承模式"),
+      mode: z.enum(["subagent", "peer"] as const).optional().default("subagent").describe("subagent: 共享会话; peer: 独立会话"),
+      model: z.string().optional().describe("子 Agent 模型（默认继承父 Agent）"),
+    })).min(1).max(5),
+    wait: z.boolean().optional().describe("是否等待全部完成再返回（默认 false）"),
     timeout: z.number().optional().describe("等待超时（秒，默认 300）"),
   }),
   outputSchema: z.string(),
@@ -77,11 +77,22 @@ export const spawnAgentTool = make({
       })
 
       const spawned = mgr.spawnMany(
-        input.tasks.map((t) => ({
-          description: t.description,
-          config: { ...childConfig, sessionID: `${childConfig.sessionID}-${Date.now().toString(36)}` },
-          options: { prompt: t.prompt || t.description },
-        })),
+        input.tasks.map((t) => {
+          // 注册任务到门控
+          mgr.getGate().registerTask("pending", t.description)
+
+          // context=full 时传递父上下文
+          const options: any = { prompt: t.prompt || t.description, context: t.context || "none", mode: t.mode || "subagent" }
+          if (t.context === "full") {
+            options.parentContext = (parentConfig as any)?.parentContext || []
+          }
+
+          return {
+            description: t.description,
+            config: { ...childConfig, sessionID: `${childConfig.sessionID}-${Date.now().toString(36)}` },
+            options,
+          }
+        }),
       )
 
       const lines = spawned.map((s) => `- ${s.id}: ${s.description} [${s.status}]`).join("\n")
@@ -89,18 +100,16 @@ export const spawnAgentTool = make({
       if (input.wait) {
         const ids = spawned.map((s) => s.id)
         const results = await mgr.waitAll(ids, (input.timeout || 300) * 1000)
-        const summary = results.map((r) =>
-          `  ${r.id}: ${r.status === "completed" ? "✅ 完成" : r.status === "failed" ? "❌ 失败" : "⏳ 进行中"}\n  ${(r.result || r.error || "").slice(0, 500)}`
-        ).join("\n\n")
-        return {
-          success: true,
-          output: `已启动 ${spawned.length} 个子 Agent 并等待完成：\n\n${summary}`,
-        }
+        const summary = results.map((r) => {
+          const statusIcon = r.status === "completed" ? "✅" : r.status === "failed" ? "❌" : "⏳"
+          return `  ${r.id}: ${statusIcon} ${r.status}\n  ${(r.result || r.error || "").slice(0, 500)}`
+        }).join("\n\n")
+        return { success: true, output: `已启动 ${spawned.length} 个子 Agent 并等待完成：\n\n${summary}` }
       }
 
       return {
         success: true,
-        output: `已启动 ${spawned.length} 个子 Agent（后台执行）：\n\n${lines}\n\n使用 wait_agents 检查进度或等待结果。`,
+        output: `已启动 ${spawned.length} 个子 Agent（后台执行）：\n\n${lines}\n\n使用 wait_agents 检查进度或获取结果。`,
       }
     } catch (err) {
       return { success: false, error: `spawn_agent 失败: ${err instanceof Error ? err.message : String(err)}` }
@@ -112,10 +121,10 @@ export const spawnAgentTool = make({
 
 export const waitAgentsTool = make({
   name: "wait_agents",
-  description: "等待一个或多个子 Agent 完成执行并获取结果。支持等待全部完成或任意一个先完成。",
+  description: "等待一个或多个子 Agent 完成并获取结果。支持等待全部或任意一个先完成。",
   inputSchema: z.object({
-    agent_ids: z.array(z.string()).min(1).max(10).describe("要等待的子 Agent ID 列表（用 spawn_agent 返回的 ID）"),
-    mode: z.enum(["all", "any"]).optional().describe("等待模式：'all' 等待全部（默认），'any' 任意一个完成即返回"),
+    agent_ids: z.array(z.string()).min(1).max(10).describe("子 Agent ID 列表"),
+    mode: z.enum(["all", "any"]).optional().describe("'all' 等待全部（默认），'any' 任意一个即返回"),
     timeout: z.number().optional().describe("超时（秒，默认 300）"),
   }),
   outputSchema: z.string(),
@@ -127,8 +136,7 @@ export const waitAgentsTool = make({
 
     try {
       const timeoutMs = (input.timeout || 300) * 1000
-
-      const results: SubagentInfo[] = input.mode === "any"
+      const results = input.mode === "any"
         ? [await mgr.waitAny(input.agent_ids, timeoutMs)].filter((x): x is SubagentInfo => x !== null)
         : await mgr.waitAll(input.agent_ids, timeoutMs)
 
@@ -161,10 +169,10 @@ export const waitAgentsTool = make({
 
 export const listSubagentsTool = make({
   name: "list_subagents",
-  description: "列出所有活跃的子 Agent，查看其状态和描述。可用于检查后台任务的进度。",
+  description: "列出所有活跃或指定状态的子 Agent。可用于检查后台任务的进度。",
   inputSchema: z.object({
-    status: z.enum(["running", "pending", "completed", "failed", "cancelled"]).optional().describe("按状态筛选（不传则列出所有）"),
-    parent_id: z.string().optional().describe("按父 ID 筛选"),
+    status: z.enum(["running", "pending", "completed", "failed", "cancelled", "orphaned"]).optional().describe("按状态筛选"),
+    parent_id: z.string().optional().describe("按父 Actor ID 筛选"),
   }),
   outputSchema: z.string(),
   permission: "read",
@@ -174,7 +182,7 @@ export const listSubagentsTool = make({
     if (!mgr) return { success: false, error: "Subagent system not initialized" }
 
     try {
-      const filter: { parentId?: string; status?: any } = {}
+      const filter: Record<string, any> = {}
       if (input.parent_id) filter.parentId = input.parent_id
       if (input.status) filter.status = input.status
 
@@ -187,7 +195,7 @@ export const listSubagentsTool = make({
       }
 
       const lines = agents.map((a) => {
-        const icon = { pending: "○", running: "●", completing: "◐", completed: "✓", failed: "✗", cancelled: "⊘" }[a.status]
+        const icon = { pending: "○", running: "●", completing: "◐", completed: "✓", failed: "✗", cancelled: "⊘", orphaned: "?" }[a.status]
         return `${icon} ${a.id}: ${a.description.slice(0, 80)} [${a.status}]`
       })
 
@@ -197,5 +205,3 @@ export const listSubagentsTool = make({
     }
   },
 })
-
-

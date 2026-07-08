@@ -30,12 +30,32 @@ const SCHEMA = `
     id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL,
     role TEXT NOT NULL, content TEXT NOT NULL,
     timestamp TEXT DEFAULT (datetime('now')), tool_call_id TEXT,
+    retry_count INTEGER DEFAULT 0,
     FOREIGN KEY (session_id) REFERENCES sessions(session_id)
   );
+  -- 迁移：兼容旧表（如果 retry_count 列不存在则添加）
+  -- SQLite 不支持 IF NOT EXISTS for ALTER TABLE, 使用 try-catch 方式
   CREATE TABLE IF NOT EXISTS permissions (
     workspace TEXT NOT NULL, action TEXT NOT NULL,
     resource TEXT DEFAULT '*', effect TEXT NOT NULL,
     PRIMARY KEY (workspace, action, resource)
+  );
+  CREATE TABLE IF NOT EXISTS actor_registry (
+    actor_id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    parent_actor_id TEXT,
+    mode TEXT NOT NULL DEFAULT 'subagent',
+    status TEXT NOT NULL DEFAULT 'pending',
+    description TEXT,
+    context_mode TEXT DEFAULT 'none',
+    agent TEXT,
+    result TEXT,
+    error TEXT,
+    turn_count INTEGER DEFAULT 0,
+    time_created TEXT DEFAULT (datetime('now')),
+    time_updated TEXT DEFAULT (datetime('now')),
+    time_completed TEXT,
+    lifecycle TEXT DEFAULT 'ephemeral'
   );
   CREATE TABLE IF NOT EXISTS goals (
     session_id TEXT NOT NULL, id TEXT NOT NULL,
@@ -61,6 +81,9 @@ async function createDb(): Promise<SqliteDb> {
   const newDb = new _SQL.Database(buffer)
   newDb.run("PRAGMA journal_mode=WAL")
   newDb.run(SCHEMA)
+  // 迁移：为旧表添加 retry_count 列（如果不存在）
+  try { newDb.run("ALTER TABLE messages ADD COLUMN retry_count INTEGER DEFAULT 0") } catch { /* 列已存在 */ }
+  try { newDb.run("ALTER TABLE actor_registry ADD COLUMN context_mode TEXT DEFAULT 'none'") } catch { /* 列已存在或表刚创建 */ }
   return newDb
 }
 

@@ -51,6 +51,8 @@ export interface TurnProcessorResult {
   signal: TurnSignal
   messages: LLMMessage[]
   toolResults: Array<{ id: string; result: ToolResult }>
+  usage?: { promptTokens: number; completionTokens: number; totalTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }
+  retryCount?: number
 }
 
 export interface DirectToolInput {
@@ -233,6 +235,8 @@ export async function* processTurn(
   let text = ""
   let llmFailed = false
   const toolResults: Array<{ id: string; result: ToolResult }> = []
+  let turnUsage: TurnProcessorResult["usage"] = undefined
+  let retryCount = 0
 
   const directInput: DirectToolInput = {
     messages,
@@ -387,15 +391,19 @@ export async function* processTurn(
           toolDoneQueue.push({ id: event.toolCall.id, result })
         }
       }
+    } else if (event.type === "retry") {
+      retryCount = event.attempt
+      yield { type: "retry" as const, attempt: event.attempt, error: event.error }
     } else if (event.type === "error") {
       const errMsg = (event.error?.message || "").toLowerCase()
       if (errMsg.includes("prompt_too_long") || errMsg.includes("context_length_exceeded") || errMsg.includes("too many tokens")) {
-        return { text, toolCalls: toolCallList, signal: "context_overflow" as TurnSignal, messages, toolResults }
+        return { text, toolCalls: toolCallList, signal: "context_overflow" as TurnSignal, messages, toolResults, usage: turnUsage, retryCount }
       }
       llmFailed = true
       yield { type: "error" as const, message: event.error?.message || "LLM stream error" }
       break
     } else if (event.type === "done") {
+      turnUsage = event.usage
       break
     }
   }
@@ -417,7 +425,7 @@ export async function* processTurn(
   }
 
   if (llmFailed) {
-    return { text, toolCalls: toolCallList, signal: "stop" as TurnSignal, messages, toolResults }
+    return { text, toolCalls: toolCallList, signal: "stop" as TurnSignal, messages, toolResults, usage: turnUsage, retryCount }
   }
 
   if (toolCallList.length > 0) {
@@ -446,7 +454,7 @@ export async function* processTurn(
     }
   }
 
-  return { text, toolCalls: toolCallList, signal: "continue" as TurnSignal, messages, toolResults }
+  return { text, toolCalls: toolCallList, signal: "continue" as TurnSignal, messages, toolResults, usage: turnUsage, retryCount }
 }
 
 

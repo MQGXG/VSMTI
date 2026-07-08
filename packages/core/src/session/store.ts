@@ -5,6 +5,7 @@ export interface StoredMessage {
   content: string
   timestamp: string
   toolCallId?: string
+  retryCount?: number
 }
 
 export interface StoredSession {
@@ -34,8 +35,8 @@ export async function appendMessage(sessionID: string, message: StoredMessage): 
     && Number(db.exec("SELECT COUNT(*) FROM messages WHERE session_id = ? AND role = 'user'", [sessionID])[0]?.values[0] || 0) === 0
 
   runWrite(
-    "INSERT INTO messages (session_id, role, content, timestamp, tool_call_id) VALUES (?, ?, ?, ?, ?)",
-    [sessionID, message.role, message.content, message.timestamp, message.toolCallId || null],
+    "INSERT INTO messages (session_id, role, content, timestamp, tool_call_id, retry_count) VALUES (?, ?, ?, ?, ?, ?)",
+    [sessionID, message.role, message.content, message.timestamp, message.toolCallId || null, message.retryCount || 0],
   )
 
   runWrite("UPDATE sessions SET updated_at = ? WHERE session_id = ?", [new Date().toISOString(), sessionID])

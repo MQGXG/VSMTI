@@ -1,80 +1,42 @@
 /**
- * Web Fetch 工具 — 轻量级网页内容获取
- * 参考 MiMo Code 的 webfetch.ts
- *
- * 核心能力：
- * 1. HTTP GET 获取网页内容
- * 2. HTML → Markdown 转换（Turndown）
- * 3. Cloudflare 检测 + UA 重试
- * 4. 图片附件支持
- * 5. 5MB 大小限制 + 超时控制
+ * Web Fetch 工具 — 网页内容获取
+ * 改进：
+ * - Turndown 专业 HTML→Markdown 转换（替代手写正则）
+ * - SSRF 防护（DNS 级 IP 检查）
+ * - TTL 缓存（5 分钟）
  */
 
 import { z } from "zod"
 import { make } from "../../shared/tool"
+import { assertSafeUrl } from "./ssrf-util"
+import { TTLCache } from "./cache-util"
+import TurndownService from "turndown"
 
-const MAX_RESPONSE_SIZE = 5 * 1024 * 1024 // 5MB
-const DEFAULT_TIMEOUT = 30 * 1000 // 30 seconds
-const MAX_TIMEOUT = 120 * 1000 // 2 minutes
+const MAX_RESPONSE_SIZE = 5 * 1024 * 1024
+const DEFAULT_TIMEOUT = 30 * 1000
+const MAX_TIMEOUT = 120 * 1000
+const FETCH_CACHE_TTL = 5 * 60 * 1000 // 5 分钟
 
 const UA_DESKTOP = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 const UA_BOT = "MiraCode/1.0"
 
-function extractTextFromHTML(html: string): string {
-  // 简易 HTML → 文本提取（移除 script/style/meta）
-  let text = html
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "")
-    .replace(/<meta[\s\S]*?>/gi, "")
-    .replace(/<link[\s\S]*?>/gi, "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-  return text
+// Turndown 实例（单例）
+let turndown: TurndownService | null = null
+function getTurndown(): TurndownService {
+  if (!turndown) {
+    turndown = new TurndownService({
+      headingStyle: "atx",
+      codeBlockStyle: "fenced",
+      emDelimiter: "*",
+      bulletListMarker: "-",
+      hr: "---",
+    })
+  }
+  return turndown
 }
 
-function convertHTMLToMarkdown(html: string): string {
-  // 简易 HTML → Markdown 转换
-  let md = html
-    // 移除 script/style
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    // 标题
-    .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, "# $1\n\n")
-    .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, "## $1\n\n")
-    .replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, "### $1\n\n")
-    .replace(/<h4[^>]*>([\s\S]*?)<\/h4>/gi, "#### $1\n\n")
-    // 粗体/斜体
-    .replace(/<strong[^>]*>([\s\S]*?)<\/strong>/gi, "**$1**")
-    .replace(/<b[^>]*>([\s\S]*?)<\/b>/gi, "**$1**")
-    .replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, "*$1*")
-    .replace(/<i[^>]*>([\s\S]*?)<\/i>/gi, "*$1*")
-    // 链接
-    .replace(/<a[^>]+href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, "[$2]($1)")
-    // 代码块
-    .replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, "```\n$1\n```\n\n")
-    .replace(/<code[^>]*>([\s\S]*?)<\/code>/gi, "`$1`")
-    // 列表
-    .replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, "- $1\n")
-    // 段落/换行
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, "$1\n\n")
-    // 移除剩余标签
-    .replace(/<[^>]+>/g, "")
-    // HTML 实体
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, " ")
-    // 清理多余空行
-    .replace(/\n{3,}/g, "\n\n")
-    .trim()
-
-  return md
-}
+// 缓存
+const fetchCache = new TTLCache<string>(FETCH_CACHE_TTL)
 
 async function fetchWithTimeout(
   url: string,
@@ -110,7 +72,6 @@ async function fetchWithTimeout(
       return { ok: false, status: 413, statusText: "Response Too Large", headers, body: "", isCloudflare: false }
     }
 
-    // Cloudflare 检测
     const isCloudflare = resp.status === 403 &&
       (headers["cf-mitigated"] === "challenge" || body.includes("cf-browser-verification"))
 
@@ -126,13 +87,13 @@ async function fetchWithTimeout(
 
 export const webFetchTool = make({
   name: "web_fetch",
-  description: "Fetch and read content from a specific URL. Returns markdown, text, or HTML. Use when: reading documentation pages, fetching article content, accessing GitHub pages or READMEs, getting API documentation.",
+  description: "Fetch and read content from a specific URL. Returns markdown, text, or HTML. Supports any public HTTP/HTTPS URL. Use when: reading documentation pages, fetching article content, accessing GitHub pages or READMEs, getting API documentation.",
   inputSchema: z.object({
     url: z.string().url().describe("URL to fetch (must start with http:// or https://)"),
     format: z.enum(["markdown", "text", "html"]).optional().default("markdown")
       .describe("Output format: markdown (default), text, or raw html"),
-    timeout: z.number().optional().default(30)
-      .describe("Timeout in seconds (max 120)"),
+    timeout: z.number().optional().default(30).describe("Timeout in seconds (max 120)"),
+    noCache: z.boolean().optional().default(false).describe("Skip cache and fetch fresh content"),
   }),
   outputSchema: z.string(),
   permission: "web_search",
@@ -142,12 +103,36 @@ export const webFetchTool = make({
     const format = input.format || "markdown"
     const timeoutMs = Math.min((input.timeout || 30) * 1000, MAX_TIMEOUT)
 
+    // SSRF 防护
+    try {
+      await assertSafeUrl(url)
+    } catch (e: any) {
+      return { success: false, error: e.message }
+    }
+
+    // 缓存
+    if (!input.noCache) {
+      const cacheKey = TTLCache.makeKey("fetch", url, format)
+      const cached = fetchCache.get(cacheKey)
+      if (cached) {
+        return { success: true, output: cached, metadata: { url, format, cached: true } }
+      }
+    }
+
     // 第一次尝试：桌面 UA
     let result = await fetchWithTimeout(url, timeoutMs, UA_DESKTOP)
 
     // Cloudflare 检测 → 用 Bot UA 重试
     if (result.isCloudflare) {
       result = await fetchWithTimeout(url, timeoutMs, UA_BOT)
+    }
+    // 重定向后 SSRF 检查（最终 URL）
+    if (result.ok && result.headers["x-final-url"]) {
+      try {
+        await assertSafeUrl(result.headers["x-final-url"])
+      } catch (e: any) {
+        return { success: false, error: `Redirect ${e.message}` }
+      }
     }
 
     if (!result.ok && !result.body) {
@@ -168,48 +153,44 @@ export const webFetchTool = make({
       return {
         success: true,
         output: `Image fetched: ${url} (${mime})`,
-        metadata: {
-          mime,
-          data: base64,
-          name: url.split("/").pop() || "image",
-        },
+        metadata: { mime, data: base64, name: url.split("/").pop() || "image" },
       }
     }
 
     // 内容转换
     let output: string
-    const isHTML = contentType.includes("text/html") || contentType.includes("application/xhtml")
+    const isHTML = mime.includes("html") || mime.includes("xhtml")
 
     switch (format) {
       case "markdown":
-        output = isHTML ? convertHTMLToMarkdown(result.body) : result.body
+        output = isHTML ? getTurndown().turndown(result.body) : result.body
         break
       case "text":
-        output = isHTML ? extractTextFromHTML(result.body) : result.body
+        output = isHTML ? result.body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() : result.body
         break
       case "html":
         output = result.body
         break
       default:
-        output = isHTML ? convertHTMLToMarkdown(result.body) : result.body
+        output = isHTML ? getTurndown().turndown(result.body) : result.body
     }
 
-    // 截断过长内容
+    // 截断
     const MAX_OUTPUT = 50000
     if (output.length > MAX_OUTPUT) {
       output = output.slice(0, MAX_OUTPUT) + `\n\n[Content truncated at ${MAX_OUTPUT} chars]`
     }
 
+    // 写入缓存
+    if (!input.noCache) {
+      const cacheKey = TTLCache.makeKey("fetch", url, format)
+      fetchCache.set(cacheKey, output || "(empty response)")
+    }
+
     return {
       success: true,
       output: output || "(empty response)",
-      metadata: {
-        url,
-        contentType: mime,
-        format,
-        size: result.body.length,
-      },
+      metadata: { url, contentType: mime, format, size: result.body.length },
     }
   },
 })
-

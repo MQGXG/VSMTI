@@ -1,5 +1,5 @@
 import { ipcMain } from "electron"
-import { listProjects, createProject, updateProject, deleteProjectById, createSession, listSessions, getSessionMessages, deleteSessionById, searchMessages } from "@mira/core/session/manager"
+import { listProjects, createProject, updateProject, deleteProjectById, createSession, listSessions, getSessionMessages, deleteSessionById, searchMessages, updateSession, restoreSnapshot } from "@mira/core/session/manager"
 
 export function registerSessionIPC(): void {
   ipcMain.handle("ts:listProjects", () => listProjects())
@@ -11,5 +11,7 @@ export function registerSessionIPC(): void {
   ipcMain.handle("ts:getSessionMessages", (_, sessionId: string) => getSessionMessages(sessionId))
   ipcMain.handle("ts:deleteSession", (_, sessionId: string) => deleteSessionById(sessionId))
   ipcMain.handle("ts:searchMessages", (_, query: string) => searchMessages(query))
+  ipcMain.handle("ts:updateSession", (_, sessionId: string, data: { title?: string }) => updateSession(sessionId, data))
+  ipcMain.handle("ts:restoreSnapshot", (_, snapshotId: string, workspace: string) => restoreSnapshot(snapshotId, workspace))
 }
 

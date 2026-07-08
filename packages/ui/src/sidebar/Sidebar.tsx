@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { MessageSquarePlus, Trash2, MessageSquare, Search, X, FileText, Plus } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { MessageSquarePlus, Trash2, MessageSquare, Search, X, FileText, Plus, Check, Pencil } from "lucide-react";
 import { SessionService, type SessionInfo } from "../services/session.service";
 import { ProjectService, type ProjectInfo } from "../services/project.service";
 import { Input } from "../components/ui/input";
@@ -52,6 +52,76 @@ function getTimeGroup(iso: string): string {
   return "30天内";
 }
 
+/** 排序：刚更新（1分钟内）的会话置顶，其余按时间降序 */
+function sortSessions(sessions: SessionInfo[]): SessionInfo[] {
+  const ONE_MINUTE = 60 * 1000;
+  const now = Date.now();
+  return [...sessions].sort((a, b) => {
+    const aTime = new Date(a.updated_at || 0).getTime();
+    const bTime = new Date(b.updated_at || 0).getTime();
+    const aRecent = now - aTime < ONE_MINUTE;
+    const bRecent = now - bTime < ONE_MINUTE;
+    if (aRecent && !bRecent) return -1;
+    if (!aRecent && bRecent) return 1;
+    return bTime - aTime;
+  });
+}
+
+function SessionTitle({ session, onRename, onSessionChange }: {
+  session: SessionInfo;
+  onRename: (id: string, title: string) => void;
+  onSessionChange: (id: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(session.title || "新会话");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      setValue(session.title || "新会话");
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  function save() {
+    const trimmed = value.trim();
+    if (trimmed && trimmed !== (session.title || "新会话")) {
+      onRename(session.session_id, trimmed);
+    }
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+          onBlur={save}
+          className="flex-1 text-xs font-medium bg-transparent outline-none border-b border-current min-w-0"
+          style={{ color: "var(--fg)" }}
+        />
+        <button onMouseDown={(e) => { e.preventDefault(); save(); }} className="p-0.5 shrink-0">
+          <Check className="w-3 h-3" style={{ color: "var(--success)" }} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="text-xs font-medium truncate cursor-text"
+      style={{ color: "var(--fg)" }}
+      onDoubleClick={(e) => { e.stopPropagation(); setEditing(true); }}
+    >
+      {session.title || "新会话"}
+    </div>
+  );
+}
+
 function SidebarContent({ activeProject, activeSession, projects, onProjectChange, onSessionChange, onNewSession, onOpenProject, onEditProject, onDeleteProject }: Props) {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -81,9 +151,22 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
     return () => window.removeEventListener("keydown", h);
   }, [onNewSession]);
 
+  /** 内联重命名会话 */
+  const handleRename = async (sessionId: string, title: string) => {
+    try {
+      await SessionService.update(sessionId, { title });
+      loadSessions();
+    } catch { /* ignore */ }
+  };
+
+  /** 按时间分组 + 排序优化 */
   const groupedSessions = useMemo(() => {
     const groups: Record<string, SessionInfo[]> = { "今天": [], "昨天": [], "7天内": [], "30天内": [], "其他": [] };
     sessions.forEach((s) => { const g = getTimeGroup(s.updated_at); if (groups[g]) groups[g].push(s); });
+    // 每个组内排序：刚更新的置顶，其余按时间降序
+    for (const key of Object.keys(groups)) {
+      groups[key] = sortSessions(groups[key]);
+    }
     return groups;
   }, [sessions]);
 
@@ -210,7 +293,7 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
                 {group}
                 <span className="ml-auto font-normal" style={{ color: "var(--fg-quaternary)" }}>{groupSessions.length}</span>
               </button>
-              {isExpanded && groupSessions.sort((a, b) => new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime()).map((session) => {
+              {isExpanded && groupSessions.map((session) => {
                 const isActive = activeSession === session.session_id;
                 return (
                   <div key={session.session_id} className={`group flex items-center rounded-lg text-sm ${isActive ? "active sidebar-item" : "sidebar-item"}`}>
@@ -220,7 +303,7 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
                           {session.kind === "task" ? <FileText className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-medium truncate">{session.title || "新会话"}</div>
+                          <SessionTitle session={session} onRename={handleRename} onSessionChange={onSessionChange} />
                           <div className="text-[10px] mt-0.5" style={{ color: "var(--fg-tertiary)" }}>{session.message_count || 0} 条 · {formatTime(session.updated_at)}</div>
                         </div>
                       </div>

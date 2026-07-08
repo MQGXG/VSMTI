@@ -7,6 +7,13 @@ interface OpenAIChunk {
     delta?: { content?: string; tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }> }
     finish_reason?: string
   }>
+  usage?: {
+    prompt_tokens?: number
+    completion_tokens?: number
+    total_tokens?: number
+    prompt_tokens_details?: { cached_tokens?: number }
+    completion_tokens_details?: { reasoning_tokens?: number }
+  }
 }
 
 interface OpenAIMessage {
@@ -58,9 +65,27 @@ export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
 
 export function deserializeChunk(chunk: OpenAIChunk): LLMEvent | null {
   const delta = chunk.choices?.[0]?.delta
+  const finishReason = chunk.choices?.[0]?.finish_reason as FinishReason | undefined
+  let usage: LLMEvent extends { type: "finish"; usage?: infer U } ? U : undefined = undefined
+
+  // 提取 usage（如果存在）
+  if (chunk.usage) {
+    usage = {
+      promptTokens: chunk.usage.prompt_tokens || 0,
+      completionTokens: chunk.usage.completion_tokens || 0,
+      totalTokens: chunk.usage.total_tokens || 0,
+      cacheReadTokens: chunk.usage.prompt_tokens_details?.cached_tokens,
+      cacheWriteTokens: undefined,
+    } as any
+  }
+
   if (!delta) {
-    if (chunk.choices?.[0]?.finish_reason) {
-      return { type: "finish", reason: chunk.choices[0].finish_reason as FinishReason || "stop" }
+    if (finishReason) {
+      return { type: "finish", reason: finishReason, usage } as LLMEvent
+    }
+    // usage-only chunk（stream_options 启用时的最终 usage 块）
+    if (usage) {
+      return { type: "finish", reason: "stop", usage } as LLMEvent
     }
     return null
   }
@@ -79,6 +104,11 @@ export function deserializeChunk(chunk: OpenAIChunk): LLMEvent | null {
     }
   }
 
+  // delta = {} 空对象，但有 finish_reason 或 usage
+  if (finishReason || usage) {
+    return { type: "finish", reason: finishReason || "stop", usage } as LLMEvent
+  }
+
   return null
 }
 
@@ -94,6 +124,7 @@ export const OpenAIChatProtocol: Protocol = {
       model: request.model,
       messages: serializeMessages(request.messages),
       stream: true,
+      stream_options: { include_usage: true },
     }
     if (request.tools && request.tools.length > 0) {
       body.tools = request.tools.map((t) => ({

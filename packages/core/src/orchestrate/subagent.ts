@@ -2,14 +2,22 @@ import { randomUUID } from "crypto"
 import { Agent } from "../agent/agent"
 import type { AgentConfig, AgentEvent } from "../agent/agent"
 import type { ToolRegistry } from "../system/registry"
+import { getDbAsync, runWrite } from "../system/database"
 import type { LLMMessage } from "../llm/client"
 import { logError } from "../system/logger"
 import { sendMessage } from "./team-bus"
+import { injectReturnFormat } from "./actor-protocol"
+import { TaskGate } from "./actor-gate"
+import * as fs from "fs/promises"
+import * as path from "path"
 
-export type SubagentStatus = "pending" | "running" | "completing" | "completed" | "failed" | "cancelled"
+export type SubagentStatus = "pending" | "running" | "completing" | "completed" | "failed" | "cancelled" | "orphaned" | "stuck"
+export type ContextMode = "none" | "state" | "full"
+export type AgentMode = "subagent" | "peer"
 
 export interface SubagentInfo {
   id: string
+  sessionId: string
   parentId: string | null
   description: string
   status: SubagentStatus
@@ -18,9 +26,12 @@ export interface SubagentInfo {
   completedAt: string | null
   result: string | null
   error: string | null
+  contextMode: ContextMode
+  turnCount: number
+  mode: AgentMode
 }
 
-export type SubagentEventType = "created" | "started" | "completing" | "completed" | "failed" | "cancelled"
+export type SubagentEventType = "created" | "started" | "completing" | "completed" | "failed" | "cancelled" | "stuck"
 
 export interface SubagentEvent {
   type: SubagentEventType
@@ -36,31 +47,101 @@ interface SubagentSession {
   abortController: AbortController
   events: AgentEvent[]
   promise: Promise<SubagentInfo> | null
-  onEvent?: (event: SubagentEvent) => void
+  lastActivity: number
+  preStopCount: number
+  postStopCount: number
+  peerWorkspace?: string
 }
+
+/** 并发配置 */
+const MAX_PARALLEL = Number(process.env.MIRA_MAX_PARALLEL_AGENTS) || 5
+const MAX_DEPTH = Number(process.env.MIRA_MAX_AGENT_DEPTH) || 8
+const MAX_LIFECYCLE = Number(process.env.MIRA_MAX_LIFECYCLE_AGENTS) || 100
+const STUCK_TIMEOUT_MS = 5 * 60 * 1000 // 5 分钟
+const STUCK_CHECK_INTERVAL_MS = 60 * 1000 // 每分钟扫描
+const REACT_MAX_ROUNDS = 3
 
 export class SubagentManager {
   private sessions = new Map<string, SubagentSession>()
   private registry: ToolRegistry
   private onEventCallback: ((event: SubagentEvent) => void) | null = null
-  private maxParallel = 5
+  private maxParallel = MAX_PARALLEL
   private pendingQueue: Array<() => void> = []
+  private gate = new TaskGate()
+  private stuckTimer: ReturnType<typeof setInterval> | null = null
 
   constructor(registry: ToolRegistry, options?: { maxParallel?: number }) {
     this.registry = registry
     if (options?.maxParallel) this.maxParallel = options.maxParallel
+    this.recoverOrphans()
+    this.startStuckDetection()
   }
 
-  setMaxParallel(limit: number): void {
-    this.maxParallel = Math.max(1, limit)
+  /** 启动粘滞检测 */
+  private startStuckDetection(): void {
+    if (this.stuckTimer) return
+    this.stuckTimer = setInterval(() => {
+      const now = Date.now()
+      for (const [id, session] of this.sessions) {
+        if (session.info.status === "running" && now - session.lastActivity > STUCK_TIMEOUT_MS) {
+          session.info.status = "stuck"
+          session.info.error = "No activity for 5 minutes"
+          session.info.completedAt = new Date().toISOString()
+          this.persistActor(session.info).catch(() => {})
+          this.emitEvent("stuck", id)
+          logError(`[SubagentManager] Subagent ${id} stuck (no activity for 5min)`)
+        }
+      }
+    }, STUCK_CHECK_INTERVAL_MS)
   }
 
-  /** 当前活跃（running）的数量 */
+  /** 停止粘滞检测 */
+  private stopStuckDetection(): void {
+    if (this.stuckTimer) { clearInterval(this.stuckTimer); this.stuckTimer = null }
+  }
+
+  private async getDb() { return getDbAsync() }
+
+  private async persistActor(info: SubagentInfo): Promise<void> {
+    runWrite(
+      `INSERT OR REPLACE INTO actor_registry
+       (actor_id, session_id, parent_actor_id, mode, status, description, context_mode, result, error, turn_count, time_created, time_updated, time_completed, lifecycle)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        info.id, info.sessionId, info.parentId || null, info.mode, info.status,
+        info.description, info.contextMode, info.result, info.error, info.turnCount,
+        info.createdAt, new Date().toISOString(), info.completedAt, info.mode === "peer" ? "persistent" : "ephemeral",
+      ],
+    )
+  }
+
+  private async recoverOrphans(): Promise<void> {
+    try {
+      runWrite(
+        "UPDATE actor_registry SET status = 'orphaned', time_updated = datetime('now') WHERE status IN ('pending', 'running', 'completing')",
+      )
+    } catch { /* 首次运行无表 */ }
+  }
+
   get activeCount(): number {
     return Array.from(this.sessions.values()).filter(s => s.info.status === "running").length
   }
 
-  private async acquireSlot(): Promise<void> {
+  private getDepth(actorId: string): number {
+    let depth = 0
+    let current = actorId
+    while (true) {
+      const session = this.sessions.get(current)
+      if (!session?.info.parentId) break
+      current = session.info.parentId
+      depth++
+    }
+    return depth
+  }
+
+  private async acquireSlot(depth: number): Promise<void> {
+    if (depth > MAX_DEPTH) throw new Error(`Agent nesting depth exceeds max (${MAX_DEPTH})`)
+    if (this.sessions.size >= MAX_LIFECYCLE) throw new Error(`Total agent count exceeds max (${MAX_LIFECYCLE})`)
     while (this.activeCount >= this.maxParallel) {
       await new Promise<void>(resolve => this.pendingQueue.push(resolve))
     }
@@ -71,12 +152,12 @@ export class SubagentManager {
     next?.()
   }
 
-  onEvent(callback: (event: SubagentEvent) => void): void {
-    this.onEventCallback = callback
-  }
+  onEvent(callback: (event: SubagentEvent) => void): void { this.onEventCallback = callback }
+  getGate(): TaskGate { return this.gate }
 
   /**
-   * 创建并运行子智能体，支持共享父上下文
+   * 启动子 Agent
+   * @param mode "subagent" — 共享父会话；"peer" — 独立会话+工作目录
    */
   spawn(
     description: string,
@@ -85,13 +166,18 @@ export class SubagentManager {
       parentId?: string
       prompt?: string
       model?: string
+      context?: ContextMode
       parentContext?: LLMMessage[]
+      mode?: AgentMode
     }
   ): SubagentInfo {
+    const contextMode = options?.context || "none"
+    const mode = options?.mode || "subagent"
     const id = `sub-${Date.now().toString(36)}-${randomUUID().slice(0, 6)}`
 
     const info: SubagentInfo = {
       id,
+      sessionId: config.sessionID,
       parentId: options?.parentId || null,
       description,
       status: "pending",
@@ -100,186 +186,297 @@ export class SubagentManager {
       completedAt: null,
       result: null,
       error: null,
+      contextMode,
+      turnCount: 0,
+      mode,
     }
 
     const agent = new Agent(this.registry, config.apiKey, config.apiUrl, config.workspace)
     const abortController = new AbortController()
 
     const session: SubagentSession = {
-      info,
-      agent,
-      abortController,
-      events: [],
-      promise: null,
+      info, agent, abortController, events: [], promise: null,
+      lastActivity: Date.now(), preStopCount: 0, postStopCount: 0,
     }
-
     this.sessions.set(id, session)
+    this.persistActor(info).catch(() => {})
     this.emitEvent("created", id)
 
+    const depth = this.getDepth(id)
     const parentContext = options?.parentContext || []
-    this.acquireSlot().then(() => {
-      session.promise = this.runSubagent(session, config, options?.prompt || description, id, parentContext)
+
+    this.acquireSlot(depth).then(async () => {
+      // Peer 模式：创建独立工作目录
+      if (mode === "peer" && config.workspace) {
+        const peerDir = path.join(config.workspace, ".mira", "peers", id)
+        await fs.mkdir(peerDir, { recursive: true }).catch(() => {})
+        session.peerWorkspace = peerDir
+      }
+
+      session.promise = this.runSubagent(session, config, options?.prompt || description, id, parentContext, depth)
+        .then((result) => {
+          if (result.status === "completed" && result.result) {
+            const decision = this.gate.decide(id, result.result)
+            if (decision.status === "success") return result
+            if (decision.status === "partial" && decision.feedback) {
+              return this.retryWithFeedback(session, config, id, decision.feedback, parentContext, depth)
+            }
+            result.status = decision.status === "blocked" ? "failed" : "completed"
+          }
+          return result
+        })
         .catch((err) => {
-          info.status = "failed"
-          info.error = String(err)
+          info.status = "failed"; info.error = String(err)
           info.completedAt = new Date().toISOString()
+          this.persistActor(info).catch(() => {})
           this.emitEvent("failed", id)
           logError(`[SubagentManager] Subagent ${id} failed`, err)
           return info
         })
-        .finally(() => this.releaseSlot())
+        .finally(() => {
+          // Peer 模式清理
+          if (session.peerWorkspace) {
+            fs.rm(session.peerWorkspace, { recursive: true, force: true }).catch(() => {})
+          }
+          this.releaseSlot()
+        })
     })
 
     return info
   }
 
-  /**
-   * 等待子智能体完成
-   */
+  /** 门控反馈后重新运行 */
+  private async retryWithFeedback(
+    session: SubagentSession, config: AgentConfig, id: string,
+    feedback: string, parentContext: LLMMessage[], depth: number,
+  ): Promise<SubagentInfo> {
+    return this.runSubagent(session, config, feedback, id, parentContext, depth)
+  }
+
+  /** 运行子 Agent（含 ReAct preStop 循环） */
+  private async runSubagent(
+    session: SubagentSession, config: AgentConfig,
+    prompt: string, id: string, parentContext: LLMMessage[], depth: number,
+  ): Promise<SubagentInfo> {
+    const { info, agent, abortController } = session
+
+    info.status = "running"
+    info.startedAt = new Date().toISOString()
+    session.lastActivity = Date.now()
+    this.persistActor(info).catch(() => {})
+    this.emitEvent("started", id)
+
+    // 注入标准化返回协议
+    let finalPrompt = injectReturnFormat(prompt)
+
+    try {
+      let finalText = ""
+      const events: AgentEvent[] = []
+
+      for await (const event of agent.run(finalPrompt, parentContext, {
+        ...config,
+        sessionID: `${config.sessionID}-${info.id}`,
+        agent: info.id,
+      })) {
+        session.lastActivity = Date.now()
+
+        if (abortController.signal.aborted) {
+          info.status = "cancelled"
+          info.completedAt = new Date().toISOString()
+          this.persistActor(info).catch(() => {})
+          this.emitEvent("cancelled", id)
+          return info
+        }
+
+        events.push(event)
+        if (event.type === "content") finalText += event.text
+        else if (event.type === "error") {
+          info.status = "failed"; info.error = event.message
+          info.completedAt = new Date().toISOString()
+          this.persistActor(info).catch(() => {})
+          try { if (info.parentId) sendMessage(info.id, info.parentId, "notification", `[子 Agent 失败] ${info.description}\n\n${event.message}`) } catch {}
+          this.emitEvent("failed", id)
+          return info
+        } else if (event.type === "finish") {
+          info.status = "completing"
+          this.emitEvent("completing", id)
+        }
+      }
+
+      info.result = finalText
+      info.turnCount++
+      session.events = events
+
+      // ── ReAct preStop 循环（最多 3 轮）──
+      if (info.status === "completing" && session.preStopCount < REACT_MAX_ROUNDS) {
+        session.preStopCount++
+        // 检查是否需要额外轮次
+        const needsExtraRound = this.checkPreStopHook(info, finalText)
+        if (needsExtraRound) {
+          finalPrompt = `继续上一轮工作。\n\n已完成: ${finalText.slice(0, 500)}\n\n请根据任务描述继续完成未完成的部分。`
+          info.turnCount++
+          this.persistActor(info).catch(() => {})
+          // 重新进入循环
+          for await (const event of agent.run(finalPrompt, parentContext, {
+            ...config,
+            sessionID: `${config.sessionID}-${info.id}`,
+            agent: info.id,
+          })) {
+            session.lastActivity = Date.now()
+            if (abortController.signal.aborted) {
+              info.status = "cancelled"; info.completedAt = new Date().toISOString()
+              this.persistActor(info).catch(() => {}); this.emitEvent("cancelled", id)
+              return info
+            }
+            events.push(event)
+            if (event.type === "content") finalText += event.text
+            else if (event.type === "error") {
+              info.status = "failed"; info.error = event.message
+              info.completedAt = new Date().toISOString()
+              this.persistActor(info).catch(() => {}); this.emitEvent("failed", id)
+              return info
+            }
+          }
+          info.result = finalText
+          info.turnCount++
+        }
+      }
+
+      // ── 完成 ──
+      info.status = "completed"
+      info.completedAt = new Date().toISOString()
+      this.persistActor(info).catch(() => {})
+      try {
+        if (info.parentId) sendMessage(info.id, info.parentId, "result",
+          `[子 Agent 完成] ${info.description}\n\n${(finalText || "").slice(0, 2000)}`)
+      } catch {}
+
+      this.emitEvent("completed", id)
+
+      // ── ReAct postStop 循环（最多 3 轮）──
+      if (session.postStopCount < REACT_MAX_ROUNDS) {
+        session.postStopCount++
+        await this.runPostStopHook(session, config, id, finalText, parentContext, depth)
+      }
+
+      return info
+    } catch (err) {
+      info.status = "failed"; info.error = String(err)
+      info.completedAt = new Date().toISOString()
+      this.persistActor(info).catch(() => {})
+      this.emitEvent("failed", id)
+      throw err
+    }
+  }
+
+  /** preStop hook：检查是否需要额外轮次 */
+  private checkPreStopHook(info: SubagentInfo, text: string): boolean {
+    // 如果结果为空或者太短（<50 字符），说明可能没完成任务
+    if (!text || text.trim().length < 50) return true
+    // 如果结果中没有 Status 头，也需要继续
+    if (!text.includes("**Status**")) return true
+    return false
+  }
+
+  /** postStop hook：执行完成后的跟进工作 */
+  private async runPostStopHook(
+    session: SubagentSession, config: AgentConfig, id: string,
+    result: string, parentContext: LLMMessage[], depth: number,
+  ): Promise<void> {
+    // 默认 postStop：将结果写入 peer 工作目录（如果是 peer 模式）
+    if (session.peerWorkspace && result) {
+      try {
+        const statusPath = path.join(session.peerWorkspace, "RESULT.md")
+        await fs.writeFile(statusPath, result, "utf-8")
+      } catch {}
+    }
+  }
+
   async wait(id: string, timeoutMs = 300000): Promise<SubagentInfo> {
     const session = this.sessions.get(id)
     if (!session) throw new Error(`Subagent not found: ${id}`)
     if (!session.promise) throw new Error(`Subagent ${id} not started`)
-
     const result = await Promise.race([
       session.promise,
       new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
     ])
-
     if (result === null) {
       session.info.status = "cancelled"
       session.abortController.abort()
+      this.persistActor(session.info).catch(() => {})
       this.emitEvent("cancelled", id)
       return session.info
     }
-
     return result
   }
 
-  /**
-   * 取消子智能体
-   */
   cancel(id: string): boolean {
     const session = this.sessions.get(id)
     if (!session) return false
-
     session.abortController.abort()
     session.info.status = "cancelled"
     session.info.completedAt = new Date().toISOString()
+    this.persistActor(session.info).catch(() => {})
     this.emitEvent("cancelled", id)
-
     this.cancelAllByParent(id)
-
+    this.gate.cleanup(id)
     return true
   }
 
-  /**
-   * 获取子智能体信息
-   */
-  getInfo(id: string): SubagentInfo | null {
-    return this.sessions.get(id)?.info || null
-  }
+  getInfo(id: string): SubagentInfo | null { return this.sessions.get(id)?.info || null }
+  getEvents(id: string): AgentEvent[] { return this.sessions.get(id)?.events || [] }
 
-  /**
-   * 获取子智能体的事件列表
-   */
-  getEvents(id: string): AgentEvent[] {
-    return this.sessions.get(id)?.events || []
-  }
-
-  /**
-   * 列出所有子智能体
-   */
   list(filter?: { parentId?: string; status?: SubagentStatus }): SubagentInfo[] {
     let infos = Array.from(this.sessions.values()).map(s => s.info)
-    if (filter?.parentId) {
-      infos = infos.filter(i => i.parentId === filter.parentId)
-    }
-    if (filter?.status) {
-      infos = infos.filter(i => i.status === filter.status)
-    }
+    if (filter?.parentId) infos = infos.filter(i => i.parentId === filter.parentId)
+    if (filter?.status) infos = infos.filter(i => i.status === filter.status)
     return infos
   }
 
-  /**
-   * 列出活跃子智能体
-   */
   listActive(): SubagentInfo[] {
-    return this.list({ status: "running" })
-      .concat(this.list({ status: "pending" }))
-      .concat(this.list({ status: "completing" }))
+    return [...this.list({ status: "running" }), ...this.list({ status: "pending" }), ...this.list({ status: "completing" })]
   }
 
-  /**
-   * 列出特定父节点下的所有子智能体（递归）
-   */
   listByParent(parentId: string): SubagentInfo[] {
     const result: SubagentInfo[] = []
     const directChildren = this.list({ parentId })
     result.push(...directChildren)
-
-    for (const child of directChildren) {
-      const descendants = this.listByParent(child.id)
-      result.push(...descendants)
-    }
-
+    for (const child of directChildren) result.push(...this.listByParent(child.id))
     return result
   }
 
-  /**
-   * 取消特定父节点下的所有子智能体
-   */
   cancelAllByParent(parentId: string): void {
-    const children = this.list({ parentId })
-    for (const child of children) {
-      if (child.status === "running" || child.status === "pending" || child.status === "completing") {
-        this.cancel(child.id)
-      }
+    for (const child of this.list({ parentId })) {
+      if (["running", "pending", "completing"].includes(child.status)) this.cancel(child.id)
     }
   }
 
   cancelAll(): void {
     for (const [id, session] of this.sessions) {
-      if (session.info.status === "running" || session.info.status === "pending" || session.info.status === "completing") {
-        this.cancel(id)
-      }
+      if (["running", "pending", "completing"].includes(session.info.status)) this.cancel(id)
     }
   }
 
-  /**
-   * 批量启动多个子 Agent
-   */
-  spawnMany(
-    tasks: Array<{ description: string; config: AgentConfig; options?: { parentId?: string; prompt?: string; model?: string; parentContext?: LLMMessage[] } }>,
-  ): SubagentInfo[] {
+  spawnMany(tasks: Array<{
+    description: string; config: AgentConfig
+    options?: { parentId?: string; prompt?: string; model?: string; context?: ContextMode; parentContext?: LLMMessage[]; mode?: AgentMode }
+  }>): SubagentInfo[] {
     return tasks.map((t) => this.spawn(t.description, t.config, t.options))
   }
 
-  /**
-   * 批量等待多个子 Agent 完成
-   */
   async waitAll(ids: string[], timeoutMs = 300000): Promise<SubagentInfo[]> {
-    const results = await Promise.all(
-      ids.map((id) =>
-        this.wait(id, timeoutMs).catch(() => {
-          const info = this.getInfo(id)
-          return info || { id, parentId: null, description: "unknown", status: "failed" as const, createdAt: "", startedAt: null, completedAt: null, result: null, error: "timeout" }
-        }),
-      ),
-    )
-    return results
+    return Promise.all(ids.map((id) =>
+      this.wait(id, timeoutMs).catch(() => this.getInfo(id) || {
+        id, sessionId: "", parentId: null, description: "unknown",
+        status: "failed" as SubagentStatus, createdAt: "", startedAt: null,
+        completedAt: null, result: null, error: "timeout",
+        contextMode: "none" as ContextMode, turnCount: 0, mode: "subagent" as AgentMode,
+      }),
+    ))
   }
 
-  /**
-   * 竞速等待：任意一个子 Agent 完成时立即返回
-   */
   async waitAny(ids: string[], timeoutMs = 300000): Promise<SubagentInfo | null> {
-    const results = await Promise.race(
-      ids.map((id) =>
-        this.wait(id, timeoutMs).catch(() => null as SubagentInfo | null),
-      ),
-    )
-    return results
+    return Promise.race(ids.map((id) => this.wait(id, timeoutMs).catch(() => null as SubagentInfo | null)))
   }
 
   toText(): string {
@@ -294,22 +491,11 @@ export class SubagentManager {
         children.set(info.parentId, list)
       }
     }
-
     const printTree = (info: SubagentInfo, indent = 0) => {
-      const statusIcon = {
-        pending: "○",
-        running: "●",
-        completing: "◐",
-        completed: "✓",
-        failed: "✗",
-        cancelled: "⊘",
-      }[info.status]
-      const prefix = "  ".repeat(indent)
-      lines.push(`${prefix}${statusIcon} ${info.id}: ${info.description} [${info.status}]`)
-      const kids = children.get(info.id) || []
-      for (const kid of kids) printTree(kid, indent + 1)
+      const icon = { pending: "○", running: "●", completing: "◐", completed: "✓", failed: "✗", cancelled: "⊘", orphaned: "?", stuck: "⚠" }[info.status]
+      lines.push(`${"  ".repeat(indent)}${icon} ${info.id}: ${info.description} [${info.status}]`)
+      for (const kid of children.get(info.id) || []) printTree(kid, indent + 1)
     }
-
     for (const root of roots) printTree(root)
     return lines.join("\n")
   }
@@ -317,10 +503,13 @@ export class SubagentManager {
   toSystemPrompt(): string {
     const active = this.listActive()
     if (active.length === 0) return ""
-    return [
-      `[Active subagents]`,
-      ...active.map(s => `- ${s.id}: ${s.description} (${s.status})`),
-    ].join("\n")
+    return [`[Active subagents]`, ...active.map(s => `- ${s.id}: ${s.description} (${s.status})`)].join("\n")
+  }
+
+  /** 释放资源 */
+  dispose(): void {
+    this.stopStuckDetection()
+    this.cancelAll()
   }
 
   private emitEvent(type: SubagentEventType, subagentId: string): void {
@@ -329,80 +518,4 @@ export class SubagentManager {
     if (!session) return
     this.onEventCallback({ type, subagentId, timestamp: new Date().toISOString(), info: session.info })
   }
-
-  private async runSubagent(
-    session: SubagentSession,
-    config: AgentConfig,
-    prompt: string,
-    id: string,
-    parentContext: LLMMessage[],
-  ): Promise<SubagentInfo> {
-    const { info, agent, abortController } = session
-
-    info.status = "running"
-    info.startedAt = new Date().toISOString()
-    this.emitEvent("started", id)
-
-    try {
-      const events: AgentEvent[] = []
-      let finalText = ""
-
-      for await (const event of agent.run(prompt, parentContext, {
-        ...config,
-        sessionID: `${config.sessionID}-${info.id}`,
-        agent: info.id,
-      })) {
-        if (abortController.signal.aborted) {
-          info.status = "cancelled"
-          info.completedAt = new Date().toISOString()
-          this.emitEvent("cancelled", id)
-          return info
-        }
-
-        events.push(event)
-
-        if (event.type === "content") {
-          finalText += event.text
-        } else if (event.type === "error") {
-          info.status = "failed"
-          info.error = event.message
-          info.completedAt = new Date().toISOString()
-          try {
-            if (info.parentId) {
-              sendMessage(info.id, info.parentId, "notification", `[子 Agent 失败] ${info.description}\n\n${event.message}`)
-            }
-          } catch { /* 忽略 */ }
-          this.emitEvent("failed", id)
-          return info
-        } else if (event.type === "finish") {
-          info.status = "completing"
-          this.emitEvent("completing", id)
-        }
-      }
-
-      info.status = "completed"
-      info.result = finalText
-      info.completedAt = new Date().toISOString()
-      session.events = events
-
-      // 自动发送结果通知给父 Agent（通过 team_bus）
-      try {
-        if (info.parentId) {
-          const summary = (finalText || "").slice(0, 2000)
-          sendMessage(info.id, info.parentId, "result", `[子 Agent 完成] ${info.description}\n\n${summary}`)
-        }
-      } catch { /* 通知失败不阻塞 */ }
-
-      this.emitEvent("completed", id)
-      return info
-    } catch (err) {
-      info.status = "failed"
-      info.error = String(err)
-      info.completedAt = new Date().toISOString()
-      this.emitEvent("failed", id)
-      throw err
-    }
-  }
 }
-
-

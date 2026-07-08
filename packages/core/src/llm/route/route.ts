@@ -60,6 +60,8 @@ function makeStream(
     const decoder = new TextDecoder()
     let buffer = ""
 
+    let finishYielded = false
+
     try {
       while (true) {
         const { done, value } = await reader.read()
@@ -73,20 +75,27 @@ function makeStream(
           if (line.startsWith("data: ")) {
             const data = line.slice(6).trim()
             if (data === "[DONE]") {
-              yield { type: "finish", reason: "stop" }
+              if (!finishYielded) {
+                yield { type: "finish", reason: "stop" }
+              }
               return
             }
             try {
               const parsed = JSON.parse(data)
               const event = protocol.deserializeEvent(parsed)
-              if (event) yield event
+              if (event) {
+                if (event.type === "finish") finishYielded = true
+                yield event
+              }
             } catch {
               // skip unparseable chunks
             }
           }
         }
       }
-      yield { type: "finish", reason: "stop" }
+      if (!finishYielded) {
+        yield { type: "finish", reason: "stop" }
+      }
     } catch (err: any) {
       if (err.name === "AbortError") {
         yield { type: "error", message: "Request timed out" }

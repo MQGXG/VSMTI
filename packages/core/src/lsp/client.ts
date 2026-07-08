@@ -110,6 +110,20 @@ export class LSPClient {
     })
   }
 
+  /** 获取文档符号列表 */
+  async documentSymbols(uri: string): Promise<any> {
+    return this.request("textDocument/documentSymbol", {
+      textDocument: { uri },
+    })
+  }
+
+  /** 查询 semantic tokens（用于代码结构分析） */
+  async semanticTokens(uri: string): Promise<any> {
+    return this.request("textDocument/semanticTokens/full", {
+      textDocument: { uri },
+    })
+  }
+
   /** 停止 */
   stop(): void {
     if (!this.process) return

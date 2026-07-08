@@ -370,7 +370,7 @@ export class Agent {
 
     while (budget.consume()) {
       if (this.stateMachine.aborted) {
-        yield { type: "finish", reason: "stopped" }
+        yield { type: "finish", reason: "stopped" as const }
         return
       }
 
@@ -499,11 +499,11 @@ export class Agent {
 
       if (!ptResult.text && ptResult.toolCalls.length === 0) {
         if (this.stateMachine.aborted) {
-          yield { type: "finish", reason: "stopped" }
+          yield { type: "finish", reason: "stopped", usage: ptResult.usage }
         }
         // LLM 返回错误（如 400）时，text 和 toolCalls 都为空，应终止循环
         if (ptResult.signal === "stop") {
-          yield { type: "finish", reason: "error" }
+          yield { type: "finish", reason: "error", usage: ptResult.usage }
           return
         }
         return
@@ -520,6 +520,7 @@ export class Agent {
           role: "assistant",
           content,
           timestamp: new Date().toISOString(),
+          retryCount: ptResult.retryCount || 0,
         })
       }
 
@@ -580,7 +581,7 @@ export class Agent {
             messages.push({ role: "user", content: String(stopMessage) })
             continue
           }
-          yield { type: "finish", reason: "stop" }
+          yield { type: "finish", reason: "stop", usage: ptResult.usage }
         }
         return
       }

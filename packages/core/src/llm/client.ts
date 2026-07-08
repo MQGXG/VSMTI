@@ -21,7 +21,8 @@ export interface SDKConfig {
 export type LLMStreamEvent =
   | { type: "delta"; delta: string }
   | { type: "tool_call"; toolCall: { id: string; name: string; arguments: string; index: number } }
-  | { type: "done" }
+  | { type: "done"; usage?: { promptTokens: number; completionTokens: number; totalTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number } }
+  | { type: "retry"; attempt: number; error: string }
   | { type: "error"; error: { message: string } }
 
 export type LLMToolSet = Record<string, { description: string; inputSchema: z.ZodType; parameters?: z.ZodType }>
@@ -78,6 +79,7 @@ async function* withRetry(
   let lastError: Error | undefined
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     if (attempt > 0) {
+      yield { type: "retry", attempt, error: lastError?.message || "Unknown error" }
       const delay = baseDelay * Math.pow(2, attempt - 1)
       await new Promise((r) => setTimeout(r, delay))
     }
@@ -142,7 +144,13 @@ export function createLLMClient(config: SDKConfig): LLMClient {
             if (currentToolId && currentToolName) {
               yield { type: "tool_call", toolCall: { id: currentToolId, name: currentToolName, arguments: accumulatedArgs || "{}", index: 0 } }
             }
-            yield { type: "done" }
+            yield { type: "done", usage: event.usage ? {
+              promptTokens: event.usage.promptTokens,
+              completionTokens: event.usage.completionTokens,
+              totalTokens: event.usage.totalTokens,
+              cacheReadTokens: event.usage.cacheReadTokens,
+              cacheWriteTokens: event.usage.cacheWriteTokens,
+            } : undefined }
             break
           case "error":
             yield { type: "error", error: { message: event.message } }

@@ -17,8 +17,9 @@ import { MessageTiming } from "../components/assistant-ui/message-timing";
 import { ContextDisplay } from "../components/assistant-ui/context-display";
 import { ThinkingBlock } from "./ThinkingBlock";
 import { ProgressBar } from "./ProgressBar";
+import { RenderMessageParts, findDiffSummary } from "./ToolCallView";
 import { loadSettings } from "../sidebar/provider-data";
-import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight, ListOrdered } from "lucide-react";
 import { AnimatedAvatar, type AvatarState } from "../components/assistant-ui/animated-avatar";
 import "../components/assistant-ui/animated-avatar.css";
 import { Live2DAvatar } from "../components/assistant-ui/live2d-avatar";
@@ -166,14 +167,19 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
               {({ message }) => {
                 const orig = ctx.messages.find((m: any) => m.id === message.id);
                 const isUser = message.role === "user";
+                const isLast = ctx.isRunning && message.id === ctx.messages[ctx.messages.length - 1]?.id;
                 const avatarState: AvatarState = !isUser
-                  ? ctx.isRunning && message.id === ctx.messages[ctx.messages.length - 1]?.id
-                    ? "speaking"
-                    : orig?.toolCalls?.length ? "idle" : "idle"
+                  ? isLast ? "speaking" : "idle"
                   : "idle";
+                const thinkingParts = orig?.parts.filter((p: any) => p.type === "thinking") || [];
+                const hasToolCalls = orig?.parts.some((p: any) => p.type === "tool-call");
+                const diffSummaryPart = orig ? findDiffSummary(orig) : null;
+                const hasCustomParts = hasToolCalls || diffSummaryPart;
                 return (
                   <MessagePrimitive.Root className="group mb-5 animate-message">
-                    {orig?.thinking && settings.showReasoning !== false && <ThinkingBlock text={orig.thinking} />}
+                    {thinkingParts.length > 0 && settings.showReasoning !== false && thinkingParts.map((p: any, i: number) => (
+                      <ThinkingBlock key={i} text={p.text || ""} />
+                    ))}
                     <div className={`flex w-full gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
                       {!isUser && (
                         <div className="shrink-0 mt-1">
@@ -192,11 +198,9 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                             <MessagePrimitive.Parts>
                               {({ part }) => { if (part.type === "text") return <MarkdownText />; return null; }}
                             </MessagePrimitive.Parts>
-                            {orig?.toolCalls && orig.toolCalls.length > 0 && (
+                            {hasCustomParts && orig && (
                               <div className="mt-2 space-y-1.5">
-                                {orig.toolCalls.map((tc) => (
-                                  <ToolCallView key={tc.toolCallId} info={tc} />
-                                ))}
+                                <RenderMessageParts message={orig} />
                               </div>
                             )}
                             <SelectionToolbarPrimitive.Root>
@@ -253,36 +257,60 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                     </ComposerPrimitive.QuoteDismiss>
                   </ComposerPrimitive.Quote>
                   <div className="flex items-center gap-2">
-                  <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="添加附件">
+                   <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="添加附件">
                     <Paperclip className="w-4 h-4" />
                   </button>
-                  <VoiceInput onTranscript={(text) => {
-                    const ta = textareaRef.current;
-                    if (ta) { ta.value = ta.value + text; ta.dispatchEvent(new Event("input", { bubbles: true })); }
-                  }} disabled={ctx.isRunning} />
+                  <ComposerPrimitive.Dictate asChild>
+                    <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="语音输入">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                      </svg>
+                    </button>
+                  </ComposerPrimitive.Dictate>
+                  <ComposerPrimitive.DictationTranscript className="text-xs px-2 py-1 rounded" style={{ background: "var(--bg-secondary)", color: "var(--fg-secondary)" }} />
+                  <ComposerPrimitive.Queue>
+                    <button className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono"
+                      style={{ background: "rgba(6,182,212,0.1)", color: "var(--accent)" }}>
+                      <ListOrdered className="w-3 h-3" />
+                      <span>排队中</span>
+                    </button>
+                  </ComposerPrimitive.Queue>
                   <ComposerPrimitive.Input ref={textareaRef} onKeyDown={handleKeyDown}
                     onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)}
                     placeholder="输入消息..." rows={1}
                     className="input-field min-h-[24px] max-h-[200px]" />
-                  {ctx.isRunning ? (
-                    <ComposerPrimitive.Cancel asChild>
-                      <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0, background: "rgba(239,68,68,0.08)", color: "var(--error)" }}>
-                        <Square className="w-3.5 h-3.5" fill="currentColor" />
-                      </button>
-                    </ComposerPrimitive.Cancel>
-                  ) : (
-                    <ComposerPrimitive.Send asChild>
-                      <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0, color: composerIsEmpty ? "var(--fg-tertiary)" : "var(--fg)" }}>
-                        <Send className="w-4 h-4" />
-                      </button>
-                    </ComposerPrimitive.Send>
-                  )}
+                  <ComposerPrimitive.Cancel asChild>
+                    <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0, background: "rgba(239,68,68,0.08)", color: "var(--error)" }}>
+                      <Square className="w-3.5 h-3.5" fill="currentColor" />
+                    </button>
+                  </ComposerPrimitive.Cancel>
+                  <ComposerPrimitive.Send asChild>
+                    <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0, color: composerIsEmpty ? "var(--fg-tertiary)" : "var(--fg)" }}>
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </ComposerPrimitive.Send>
                 </div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <ModelSelector selectedModel={selectedModel} onModelChange={onModelChange} agentMode={agentMode} onModeChange={onModeChange} />
-                  <ContextDisplay />
+                  <div className="flex items-center gap-2">
+                    {ctx.isRunning && ctx.liveTiming && (
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono"
+                        style={{ background: "rgba(6,182,212,0.08)", color: "var(--accent)" }}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                        <span>{ctx.liveTiming.tokenCount} tok</span>
+                        {ctx.liveTiming.firstTokenTime && (
+                          <span>
+                            {((ctx.liveTiming.tokenCount / (Date.now() - ctx.liveTiming.streamStartTime)) * 1000).toFixed(1)} t/s
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <ContextDisplay />
+                  </div>
                 </div>
 
                 {goalCondition && (

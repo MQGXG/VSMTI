@@ -16,6 +16,7 @@ export interface SessionMessage {
   id: number
   role: string
   content: string
+  retryCount?: number
 }
 
 export interface SearchResult {
@@ -44,5 +45,9 @@ export const SessionService = {
 
   async search(query: string): Promise<SearchResult[]> {
     return window.electronAPI.ts.searchMessages(query)
+  },
+
+  async update(sessionId: string, data: { title?: string }): Promise<void> {
+    return window.electronAPI.ts.updateSession(sessionId, data)
   },
 }

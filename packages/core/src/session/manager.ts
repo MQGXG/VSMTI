@@ -96,11 +96,11 @@ export async function listSessions(projectId?: string): Promise<SessionInfo[]> {
   })
 }
 
-export async function getSessionMessages(sessionId: string): Promise<Array<{ role: string; content: string; id: number }>> {
+export async function getSessionMessages(sessionId: string): Promise<Array<{ role: string; content: string; id: number; retryCount?: number }>> {
   reloadDatabase()
   const stored = await loadSession(sessionId)
   if (!stored) return []
-  return stored.messages.map((m, i) => ({ id: i, role: m.role, content: m.content }))
+  return stored.messages.map((m, i) => ({ id: i, role: m.role, content: m.content, retryCount: (m as any).retryCount || 0 }))
 }
 
 export async function updateProject(projectId: string, data: { name?: string; workspace_path?: string }): Promise<void> {
@@ -112,6 +112,24 @@ export async function updateProject(projectId: string, data: { name?: string; wo
   if (updates.length === 0) return
   params.push(projectId)
   runWrite(`UPDATE projects SET ${updates.join(", ")} WHERE project_id = ?`, params)
+}
+
+export async function restoreSnapshot(snapshotId: string, workspace: string): Promise<string[]> {
+  const { getSnapshotManager } = await import("./snapshot")
+  const mgr = getSnapshotManager(workspace)
+  return mgr.restore(snapshotId)
+}
+
+export async function updateSession(sessionId: string, data: { title?: string }): Promise<void> {
+  const db = await getDbAsync()
+  const updates: string[] = []
+  const params: string[] = []
+  if (data.title !== undefined) { updates.push("title = ?"); params.push(data.title) }
+  if (updates.length === 0) return
+  updates.push("updated_at = ?")
+  params.push(new Date().toISOString())
+  params.push(sessionId)
+  runWrite(`UPDATE sessions SET ${updates.join(", ")} WHERE session_id = ?`, params)
 }
 
 export async function deleteProjectById(projectId: string): Promise<void> {

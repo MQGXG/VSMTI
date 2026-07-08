@@ -50,6 +50,7 @@
     "docx": "^9.7.1",
     "effect": "^3.21.4",
     "sql.js": "^1.14.1",
+    "turndown": "^7.2.4",
     "zod": "^4.4.3"
   },
   "optionalDependencies": {

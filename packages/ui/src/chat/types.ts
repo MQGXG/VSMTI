@@ -1,18 +1,11 @@
+export type ToolCallStatus = "running" | "done" | "error";
+
 export interface ToolCallInfo {
   toolCallId: string;
   name: string;
   args: Record<string, unknown>;
-  argsText?: string;
   result?: string;
-  status: "running" | "done" | "error";
-}
-
-export interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  toolCalls?: ToolCallInfo[];
-  dbId?: number;
+  status: ToolCallStatus;
 }
 
 export type AgentMode = "assistant" | "expert" | "action" | "safe" | "plan";

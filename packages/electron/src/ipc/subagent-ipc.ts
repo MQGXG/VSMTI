@@ -70,7 +70,7 @@ export function registerSubagentIPC(): void {
   })
 
   ipcMain.handle("subagent:setMaxParallel", (_, limit: number) => {
-    subagentManager.setMaxParallel(limit)
+    // 并发限制通过环境变量 MIRA_MAX_PARALLEL_AGENTS 配置
     return true
   })
 

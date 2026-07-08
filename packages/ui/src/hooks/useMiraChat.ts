@@ -1,16 +1,18 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { getProviderById, loadSettings as getSettings } from "../sidebar/provider-data";
-import type { MiraMessage } from "../chat/mira-runtime";
 import {
   createMiraMessage,
-  updateMiraMessageContent,
-  addToolCallToMessage,
+  appendText,
+  appendThinking,
+  addToolCall,
+  updateToolCall,
+  addCompaction,
+  addDiffSummary,
 } from "../chat/mira-runtime";
+import type { MiraMessage } from "../chat/mira-runtime";
 import type { AgentEvent, ToolResult } from "../services/agent.service";
 import type { ModelOption } from "../chat/ModelSelector";
 import type { AgentMode } from "../chat/types";
-import { AgentService } from "../services/agent.service";
-import { SessionService } from "../services/session.service";
 
 interface UseMiraChatOptions {
   sessionId: string;
@@ -23,6 +25,13 @@ interface UseMiraChatOptions {
 interface UseMiraChatReturn {
   messages: MiraMessage[];
   isRunning: boolean;
+  liveTiming: {
+    streamStartTime: number;
+    firstTokenTime?: number;
+    tokenCount: number;
+    chunkCount: number;
+    toolCallCount: number;
+  } | null;
   permissionReq: {
     tool_name: string;
     args: Record<string, unknown>;
@@ -61,6 +70,13 @@ interface StreamEventContext {
     options: string[];
     request_id: string;
   } | null>>;
+  setLiveTiming: React.Dispatch<React.SetStateAction<{
+    streamStartTime: number;
+    firstTokenTime?: number;
+    tokenCount: number;
+    chunkCount: number;
+    toolCallCount: number;
+  } | null>>;
   timingRef: React.MutableRefObject<{
     streamStartTime: number;
     firstTokenTime?: number;
@@ -87,15 +103,9 @@ function createContentBuffer(
     setMessages((prev) => {
       const last = prev[prev.length - 1];
       if (last?.role === "assistant" && last.id === assistantId) {
-        return [
-          ...prev.slice(0, -1),
-          updateMiraMessageContent(last, last.content + text),
-        ];
+        return [...prev.slice(0, -1), appendText(last, text)];
       }
-      return [
-        ...prev,
-        createMiraMessage("assistant", text, assistantId),
-      ];
+      return [...prev, createMiraMessage("assistant", text, assistantId)];
     });
   }
 
@@ -114,7 +124,6 @@ function createContentBuffer(
   };
 }
 
-/** 每个流对应一个 ContentBuffer */
 const contentBuffers = new Map<string, ReturnType<typeof createContentBuffer>>();
 
 function handleStreamEvent(
@@ -123,7 +132,7 @@ function handleStreamEvent(
   assistantId: string,
   ctx: StreamEventContext
 ): void {
-  const { setMessages, setIsRunning, clearCurrentChannel, setPermissionReq, setQuestionReq, timingRef } = ctx;
+  const { setMessages, setIsRunning, clearCurrentChannel, setPermissionReq, setQuestionReq, setLiveTiming, timingRef } = ctx;
 
   if (event.type === "content") {
     const t = timingRef.current;
@@ -131,6 +140,7 @@ function handleStreamEvent(
       if (!t.firstTokenTime) t.firstTokenTime = Date.now();
       t.tokenCount += event.text.split(/\s+/).filter(Boolean).length;
       t.chunkCount++;
+      setLiveTiming({ ...t });
     }
     let buf = contentBuffers.get(channel);
     if (!buf) {
@@ -141,70 +151,36 @@ function handleStreamEvent(
   } else if (event.type === "tool_start") {
     contentBuffers.get(channel)?.flush();
     const t = timingRef.current;
-    if (t) t.toolCallCount++;
+    if (t) {
+      t.toolCallCount++;
+      setLiveTiming({ ...t });
+    }
     setMessages((prev) => {
       const last = prev[prev.length - 1];
       if (last?.role === "assistant" && last.id === assistantId) {
-        const toolCall = {
-          toolCallId: event.id,
-          name: event.name,
-          args: event.args,
-          status: "running" as const,
-        };
-        return [
-          ...prev.slice(0, -1),
-          addToolCallToMessage(last, toolCall),
-        ];
+        return [...prev.slice(0, -1), addToolCall(last, event.id, event.name, event.args)];
       }
-      const newMsg = createMiraMessage("assistant", "", assistantId);
-      const toolCall = {
-        toolCallId: event.id,
-        name: event.name,
-        args: event.args,
-        status: "running" as const,
-      };
-      return [...prev, addToolCallToMessage(newMsg, toolCall)];
+      const newMsg = createMiraMessage("assistant", [], assistantId);
+      return [...prev, addToolCall(newMsg, event.id, event.name, event.args)];
     });
   } else if (event.type === "thinking") {
     contentBuffers.get(channel)?.flush();
     setMessages((prev) => {
       const last = prev[prev.length - 1];
       if (last?.role === "assistant" && last.id === assistantId) {
-        return [
-          ...prev.slice(0, -1),
-          {
-            ...last,
-            thinking: (last.thinking || "") + event.text,
-          },
-        ];
+        return [...prev.slice(0, -1), appendThinking(last, event.text)];
       }
       return prev;
     });
   } else if (event.type === "tool_result") {
     contentBuffers.get(channel)?.flush();
+    const status = event.result.success ? "done" as const : "error" as const;
+    const resultText = event.result.output || event.result.error || "";
+    const snapshotId = (event.result as any).metadata?.snapshotId as string | undefined;
     setMessages((prev) => {
       const last = prev[prev.length - 1];
       if (last?.role === "assistant" && last.id === assistantId) {
-        return [
-          ...prev.slice(0, -1),
-          {
-            ...last,
-            toolCalls: last.toolCalls?.map((tc) =>
-              tc.toolCallId === event.id
-                ? {
-                    ...tc,
-                    status: event.result.success
-                      ? ("done" as const)
-                      : ("error" as const),
-                    result:
-                      event.result.output ||
-                      event.result.error ||
-                      "",
-                  }
-                : tc
-            ),
-          },
-        ];
+        return [...prev.slice(0, -1), updateToolCall(last, event.id, status, resultText, snapshotId)];
       }
       return prev;
     });
@@ -242,20 +218,53 @@ function handleStreamEvent(
     else if (lower.includes("500") || lower.includes("502") || lower.includes("503")) hint = "服务端暂时不可用，请稍后重试";
     setMessages((prev) => [
       ...prev,
-      createMiraMessage(
-        "assistant",
-        `⚠️ ${cleanMsg || raw}${hint ? `\n\n💡 ${hint}` : ""}`
-      ),
+      createMiraMessage("assistant", `⚠️ ${cleanMsg || raw}${hint ? `\n\n💡 ${hint}` : ""}`),
     ]);
     contentBuffers.get(channel)?.flush();
     contentBuffers.delete(channel);
+    setLiveTiming(null);
     setIsRunning(false);
     clearCurrentChannel();
+  } else if (event.type === "retry") {
+    contentBuffers.get(channel)?.flush();
+    const attempt = event.attempt as number;
+    const errMsg = event.error as string;
+    ctx.setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.id === assistantId) {
+        const retryMark = `🔄 重试 #${attempt}: ${errMsg.length > 60 ? errMsg.slice(0, 60) + "..." : errMsg}`;
+        return [
+          ...prev.slice(0, -1),
+          { ...last, parts: [...last.parts, { type: "text" as const, text: retryMark }], retryCount: attempt },
+        ];
+      }
+      return prev;
+    });
   } else if (event.type === "finish") {
+    // 第一条消息完成后自动生成会话标题
+    if (channel && !channel.startsWith("offline-")) {
+      ctx.setMessages((prev) => {
+        const isFirstTurn = prev.length <= 2;
+        if (isFirstTurn) {
+          const userText = prev.find((m: any) => m.role === "user")?.parts?.[0]?.text || "";
+          if (userText) {
+            const title = userText.replace(/[\n\r]/g, " ").trim().slice(0, 50);
+            import("../services/session.service").then(({ SessionService }) => {
+              SessionService.update(channel, { title }).catch(() => {});
+            }).catch(() => {});
+          }
+        }
+        return prev;
+      });
+    }
+
     const t = timingRef.current;
+    const usage = event.usage as { promptTokens?: number; completionTokens?: number; totalTokens?: number } | undefined;
     if (t) {
       const now = Date.now();
       const totalTime = now - t.streamStartTime;
+      // 真实 token 数（来自 LLM API），如果存在则覆盖估算值
+      const realTokenCount = usage?.totalTokens || t.tokenCount;
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant" && last.id === assistantId) {
@@ -267,9 +276,11 @@ function handleStreamEvent(
                 streamStartTime: t.streamStartTime,
                 firstTokenTime: t.firstTokenTime,
                 totalStreamTime: totalTime,
-                tokenCount: t.tokenCount,
+                tokenCount: realTokenCount,
+                promptTokens: usage?.promptTokens,
+                completionTokens: usage?.completionTokens,
                 tokensPerSecond: totalTime > 0
-                  ? Math.round((t.tokenCount / totalTime) * 1000 * 10) / 10
+                  ? Math.round((realTokenCount / totalTime) * 1000 * 10) / 10
                   : undefined,
                 totalChunks: t.chunkCount,
                 toolCallCount: t.toolCallCount,
@@ -280,14 +291,27 @@ function handleStreamEvent(
         return prev;
       });
       timingRef.current = null;
+      setLiveTiming(null);
     }
     contentBuffers.get(channel)?.flush();
     contentBuffers.delete(channel);
     setIsRunning(false);
     clearCurrentChannel();
     AgentService.stopStream(channel);
+  } else if (event.type === "context_rebuild") {
+    contentBuffers.get(channel)?.flush();
+    ctx.setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant") {
+        return [...prev.slice(0, -1), addCompaction(last, event.reason as string, event.tokensBefore as number, event.tokensAfter as number)];
+      }
+      return prev;
+    });
   }
 }
+
+// 延迟导入避免循环依赖
+let AgentService: any;
 
 export function useMiraChat({
   sessionId,
@@ -298,6 +322,13 @@ export function useMiraChat({
 }: UseMiraChatOptions): UseMiraChatReturn {
   const [messages, setMessages] = useState<MiraMessage[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [liveTiming, setLiveTiming] = useState<{
+    streamStartTime: number;
+    firstTokenTime?: number;
+    tokenCount: number;
+    chunkCount: number;
+    toolCallCount: number;
+  } | null>(null);
   const [permissionReq, setPermissionReq] = useState<{
     tool_name: string;
     args: Record<string, unknown>;
@@ -321,6 +352,14 @@ export function useMiraChat({
     chunkCount: number;
     toolCallCount: number;
   } | null>(null);
+  const agentServiceRef = useRef<any>(null);
+
+  useEffect(() => {
+    import("../services/agent.service").then((mod) => {
+      AgentService = mod.AgentService;
+      agentServiceRef.current = mod.AgentService;
+    });
+  }, []);
 
   function getOfflineSessionId(): string {
     if (offlineSessionIdRef.current) return offlineSessionIdRef.current;
@@ -341,17 +380,21 @@ export function useMiraChat({
       return;
     }
     try {
+      const { SessionService } = await import("../services/session.service");
       const tsMsgs = await SessionService.getMessages(sessionId);
       if (tsMsgs && tsMsgs.length > 0) {
         const formattedMessages: MiraMessage[] = tsMsgs
           .filter((msg: any) => msg.role !== "tool")
           .map((msg: any) => ({
-          id: crypto.randomUUID(),
-          dbId: msg.id,
-          role: msg.role,
-          content: typeof msg.content === "string" ? msg.content : String(msg.content || ""),
-          createdAt: msg.timestamp ? new Date(msg.timestamp) : undefined,
-        }));
+            id: crypto.randomUUID(),
+            dbId: msg.id,
+            role: msg.role,
+            parts: typeof msg.content === "string" && msg.content
+              ? [{ type: "text" as const, text: msg.content }]
+              : [],
+            createdAt: msg.timestamp ? new Date(msg.timestamp) : undefined,
+            retryCount: msg.retryCount || 0,
+          }));
         setMessages(formattedMessages);
       } else {
         setMessages([]);
@@ -369,7 +412,7 @@ export function useMiraChat({
     return () => {
       if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
       const ch = currentChannelRef.current;
-      if (ch) AgentService.stopStream(ch);
+      if (ch && agentServiceRef.current) agentServiceRef.current.stopStream(ch);
     };
   }, []);
 
@@ -377,13 +420,16 @@ export function useMiraChat({
     async (content: string) => {
       if (!content || isRunning) return;
 
+      const svc = agentServiceRef.current;
+      if (!svc) return;
+
       const effectiveContent = goalCondition
         ? `[Goal: ${goalCondition}]\n\n${content}`
         : content;
 
       const userMsg = createMiraMessage("user", effectiveContent);
       const assistantId = crypto.randomUUID();
-      const assistantMsg = createMiraMessage("assistant", "", assistantId);
+      const assistantMsg = createMiraMessage("assistant", [], assistantId);
 
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
       setIsRunning(true);
@@ -402,10 +448,7 @@ export function useMiraChat({
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantId
-                ? updateMiraMessageContent(
-                    m,
-                    "⚠️ 未配置 API Key。请点击右上角 ⚙️ 设置，配置 Provider 的 API Key 后重试。"
-                  )
+                ? { ...m, parts: [{ type: "text", text: "⚠️ 未配置 API Key。请点击右上角 ⚙️ 设置，配置 Provider 的 API Key 后重试。" }] }
                 : m
             )
           );
@@ -416,7 +459,7 @@ export function useMiraChat({
         if (apiKey || provider) {
           const workspace =
             window.electronAPI.platform === "win32" ? "C:\\" : "/";
-          const settings = getSettings()
+          const settings = getSettings();
           const config = {
             sessionID: sessionId || getOfflineSessionId(),
             workspace,
@@ -436,7 +479,6 @@ export function useMiraChat({
 
           const actualSessionId = sessionId || getOfflineSessionId();
 
-          // 首次对话自动创建会话（如果尚未创建）
           if (!sessionId) {
             try {
               const projects = await window.electronAPI.ts.listProjects();
@@ -448,10 +490,10 @@ export function useMiraChat({
                   if (onSessionChange) onSessionChange(session.session_id);
                 }
               }
-            } catch { /* 静默，继续使用 offline session */ }
+            } catch { /* 静默 */ }
           }
 
-          const channel = await AgentService.startStream(
+          const channel = await svc.startStream(
             config.sessionID,
             effectiveContent,
             config
@@ -465,8 +507,10 @@ export function useMiraChat({
             chunkCount: 0,
             toolCallCount: 0,
           };
+          const timingData = timingRef.current;
+          setLiveTiming(timingData);
 
-          const cleanup = AgentService.onEvent(
+          const cleanup = svc.onEvent(
             channel,
             (event: AgentEvent) => {
               handleStreamEvent(event, channel, assistantId, {
@@ -475,6 +519,7 @@ export function useMiraChat({
                 clearCurrentChannel: () => { currentChannelRef.current = null; },
                 setPermissionReq,
                 setQuestionReq,
+                setLiveTiming,
                 timingRef,
               });
               if (event.type === "finish") {
@@ -486,24 +531,24 @@ export function useMiraChat({
         }
 
         // 无 API Key → 关键词路由
-        const tools = await AgentService.listTools().catch(() => []);
+        const tools = await svc.listTools().catch(() => []);
         if (tools.length > 0) {
           const { routeToolMessage } = await import("../chat/tool-router");
           const toolRoute = routeToolMessage(content, tools);
           if (toolRoute) {
-            const result = await AgentService.executeTool(
-              toolRoute.name,
-              toolRoute.args
-            );
+            const result = await svc.executeTool(toolRoute.name, toolRoute.args);
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
-                  ? updateMiraMessageContent(
-                      m,
-                      result.success
-                        ? `✅ **${toolRoute.name}** 执行成功\n\n${result.output}`
-                        : `❌ **${toolRoute.name}** 执行失败\n\n${result.error || "未知错误"}`
-                    )
+                  ? {
+                      ...m,
+                      parts: [{
+                        type: "text",
+                        text: result.success
+                          ? `✅ **${toolRoute.name}** 执行成功\n\n${result.output}`
+                          : `❌ **${toolRoute.name}** 执行失败\n\n${result.error || "未知错误"}`,
+                      }],
+                    }
                   : m
               )
             );
@@ -515,10 +560,10 @@ export function useMiraChat({
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
-              ? updateMiraMessageContent(
-                  m,
-                  "未识别到工具命令。请使用 🔧 工具面板手动执行，或在设置中配置 API Key 启用 AI 对话。"
-                )
+              ? {
+                  ...m,
+                  parts: [{ type: "text", text: "未识别到工具命令。请使用 🔧 工具面板手动执行，或在设置中配置 API Key 启用 AI 对话。" }],
+                }
               : m
           )
         );
@@ -527,10 +572,10 @@ export function useMiraChat({
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
-              ? updateMiraMessageContent(
-                  m,
-                  `⚠️ 发送失败：${err?.message || String(err)}`
-                )
+              ? {
+                  ...m,
+                  parts: [{ type: "text", text: `⚠️ 发送失败：${err?.message || String(err)}` }],
+                }
               : m
           )
         );
@@ -548,7 +593,8 @@ export function useMiraChat({
       setMessages((prev) => {
         const idx = prev.findIndex(m => m.id === assistantMsgId);
         if (idx > 0 && prev[idx - 1]?.role === "user") {
-          userContent = prev[idx - 1].content;
+          const userPart = prev[idx - 1].parts.find(p => p.type === "text");
+          userContent = userPart?.text || "";
           return prev.filter((_, i) => i !== idx - 1 && i !== idx);
         }
         return prev;
@@ -563,8 +609,8 @@ export function useMiraChat({
   const stopStream = useCallback(() => {
     setIsRunning(false);
     const ch = currentChannelRef.current;
-    if (ch) {
-      AgentService.stopStream(ch);
+    if (ch && agentServiceRef.current) {
+      agentServiceRef.current.stopStream(ch);
       currentChannelRef.current = null;
     }
   }, []);
@@ -574,8 +620,8 @@ export function useMiraChat({
       const req = permissionReq;
       if (!req) return;
       setPermissionReq(null);
-      if (req.channel) {
-        await AgentService.replyPermission(
+      if (req.channel && agentServiceRef.current) {
+        await agentServiceRef.current.replyPermission(
           req.channel,
           req.request_id,
           approved === "always" ? "always" : approved ? "allow" : "deny"
@@ -590,9 +636,9 @@ export function useMiraChat({
     if (!req) return;
     const id = req.request_id;
     setQuestionReq(null);
-    if (id) {
+    if (id && agentServiceRef.current) {
       try {
-        await AgentService.answerQuestion(id, answer);
+        await agentServiceRef.current.answerQuestion(id, answer);
       } catch (err) {
         console.error("Failed to answer question:", err);
       }
@@ -614,6 +660,7 @@ export function useMiraChat({
   return {
     messages,
     isRunning,
+    liveTiming,
     permissionReq,
     questionReq,
     sendMessage,

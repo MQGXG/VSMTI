@@ -1,88 +1,156 @@
 import type { ThreadMessageLike } from "@assistant-ui/react";
-import type { Message, ToolCallInfo } from "./types";
+import type { MiraMessage, MiraPart, MessageTiming } from "./types-message";
 
-export interface MessageTiming {
-  streamStartTime: number;
-  firstTokenTime?: number;
-  totalStreamTime?: number;
-  tokenCount?: number;
-  tokensPerSecond?: number;
-  totalChunks: number;
-  toolCallCount: number;
-}
+export type { MiraMessage, MiraPart, MessageTiming };
+export type { ToolCallInfo, AgentMode } from "./types";
+export type { DiffFileEntry } from "./types-message";
 
-export interface MiraMessage extends Message {
-  createdAt?: Date;
-  toolCallParts?: ToolCallPart[];
-  timing?: MessageTiming;
-  thinking?: string;
-}
+/** 默认导出 MiraMessage 给其他模块引用 */
+export type { MiraMessage as default } from "./types-message";
 
-export interface ToolCallPart {
-  type: "tool-call";
-  toolCallId: string;
-  toolName: string;
-  args: Record<string, unknown>;
-  status: "running" | "complete" | "error";
-  result?: string;
-}
-
+/** 将 MiraMessage 转换为 assistant-ui 的 ThreadMessageLike */
 export function convertMessage(message: MiraMessage): ThreadMessageLike {
-  const parts: ThreadMessageLike["content"] = [];
+  const content: ThreadMessageLike["content"] = [];
 
-  const text = typeof message.content === "string" ? message.content : String(message.content || "");
-  if (text) {
-    parts.push({ type: "text", text });
-  }
-
-  if (message.toolCalls && message.toolCalls.length > 0) {
-    for (const tc of message.toolCalls) {
-      parts.push({
-        type: "tool-call" as const,
-        toolCallId: tc.toolCallId,
-        toolName: tc.name,
-        args: tc.args,
+  for (const part of message.parts) {
+    if (part.type === "text" && part.text) {
+      content.push({ type: "text", text: part.text });
+    } else if (part.type === "tool-call") {
+      content.push({
+        type: "tool-call",
+        toolCallId: part.toolCallId!,
+        toolName: part.toolName!,
+        args: part.args || {},
       });
     }
   }
 
   return {
     role: message.role,
-    content: parts.length > 0 ? parts : "",
+    content: content.length > 0 ? content : "",
     id: message.id,
     createdAt: message.createdAt,
-    metadata: message.timing
-      ? { timing: message.timing, custom: {} }
-      : undefined,
+    metadata: message.timing ? { timing: message.timing, custom: {} } : undefined,
   };
 }
 
+/** 创建新消息 */
 export function createMiraMessage(
   role: "user" | "assistant",
-  content: string,
+  partsOrText?: MiraPart[] | string,
   id?: string
 ): MiraMessage {
+  let parts: MiraPart[] = [];
+  if (Array.isArray(partsOrText)) {
+    parts = partsOrText;
+  } else if (typeof partsOrText === "string" && partsOrText) {
+    parts = [{ type: "text", text: partsOrText }];
+  }
   return {
     id: id || crypto.randomUUID(),
     role,
-    content,
+    parts,
     createdAt: new Date(),
   };
 }
 
-export function updateMiraMessageContent(
+/** 向消息追加文本（合并到最后一个 text part，或新增） */
+export function appendText(
   message: MiraMessage,
-  newContent: string
+  text: string
 ): MiraMessage {
-  return { ...message, content: newContent };
+  const parts = [...message.parts];
+  const last = parts[parts.length - 1];
+  if (last?.type === "text") {
+    parts[parts.length - 1] = { ...last, text: (last.text || "") + text };
+  } else {
+    parts.push({ type: "text", text });
+  }
+  return { ...message, parts };
 }
 
-export function addToolCallToMessage(
+/** 向消息追加 thinking part */
+export function appendThinking(
   message: MiraMessage,
-  toolCall: ToolCallInfo
+  text: string
+): MiraMessage {
+  const parts = [...message.parts];
+  const last = parts[parts.length - 1];
+  if (last?.type === "thinking") {
+    parts[parts.length - 1] = { ...last, text: (last.text || "") + text };
+  } else {
+    parts.push({ type: "thinking", text });
+  }
+  return { ...message, parts };
+}
+
+/** 添加 tool-call part */
+export function addToolCall(
+  message: MiraMessage,
+  toolCallId: string,
+  toolName: string,
+  args: Record<string, unknown>
 ): MiraMessage {
   return {
     ...message,
-    toolCalls: [...(message.toolCalls || []), toolCall],
+    parts: [
+      ...message.parts,
+      {
+        type: "tool-call",
+        toolCallId,
+        toolName,
+        args,
+        status: "running",
+      },
+    ],
+  };
+}
+
+/** 更新 tool-call part 结果 */
+export function updateToolCall(
+  message: MiraMessage,
+  toolCallId: string,
+  status: "done" | "error",
+  result: string,
+  snapshotId?: string
+): MiraMessage {
+  return {
+    ...message,
+    parts: message.parts.map((p) =>
+      p.type === "tool-call" && p.toolCallId === toolCallId
+        ? { ...p, status, result, snapshotId: snapshotId || p.snapshotId }
+        : p
+    ),
+  };
+}
+
+/** 添加 compaction part — 上下文压缩标记 */
+export function addCompaction(
+  message: MiraMessage,
+  reason: string,
+  tokensBefore: number,
+  tokensAfter: number
+): MiraMessage {
+  const label = reason === "checkpoint_rebuild" ? "Checkpoint restored"
+    : reason === "proactive_rebuild" ? "Proactive checkpoint"
+    : reason === "llm_summary" ? "Context compressed"
+    : "Context compacted";
+  return {
+    ...message,
+    parts: [
+      ...message.parts,
+      { type: "compaction", text: label, compaction: { reason, tokensBefore, tokensAfter } },
+    ],
+  };
+}
+
+/** 添加 diff-summary part */
+export function addDiffSummary(
+  message: MiraMessage,
+  files: import("./types-message").DiffFileEntry[]
+): MiraMessage {
+  return {
+    ...message,
+    parts: [...message.parts, { type: "diff-summary", files }],
   };
 }

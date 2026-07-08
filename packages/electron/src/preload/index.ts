@@ -38,7 +38,9 @@ const electronAPI = {
     listSessions: (projectId?: string) => ipcRenderer.invoke("ts:listSessions", projectId),
     getSessionMessages: (sessionId: string) => ipcRenderer.invoke("ts:getSessionMessages", sessionId),
     deleteSession: (sessionId: string) => ipcRenderer.invoke("ts:deleteSession", sessionId),
+    updateSession: (sessionId: string, data: { title?: string }) => ipcRenderer.invoke("ts:updateSession", sessionId, data),
     searchMessages: (query: string) => ipcRenderer.invoke("ts:searchMessages", query),
+    restoreSnapshot: (snapshotId: string, workspace: string) => ipcRenderer.invoke("ts:restoreSnapshot", snapshotId, workspace),
   },
 
   // TypeScript Agent Core IPC
