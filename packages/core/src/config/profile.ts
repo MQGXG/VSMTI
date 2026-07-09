@@ -103,8 +103,8 @@ export function createDefaultRegistry(): AgentProfileRegistry {
     maxIterations: 10,
     systemPromptSuffix: "You are a helpful assistant. Use tools to provide accurate, up-to-date answers.",
     permissionRules: [
-      { action: "bash", resource: "*", effect: "deny" },
-      { action: "code_exec", resource: "*", effect: "deny" },
+      { action: "bash", resource: "*", effect: "ask" },
+      { action: "code_exec", resource: "*", effect: "ask" },
     ],
   })
 
@@ -115,7 +115,7 @@ export function createDefaultRegistry(): AgentProfileRegistry {
     maxIterations: 25,
     systemPromptSuffix: "You are a domain expert. Use tools for research, analysis, and verification.",
     permissionRules: [
-      { action: "bash", resource: "*", effect: "deny" },
+      { action: "bash", resource: "*", effect: "ask" },
     ],
   })
 

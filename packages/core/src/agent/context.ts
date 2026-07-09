@@ -32,6 +32,18 @@ export function buildToolContext(config: AgentRunConfig): ToolContext {
 export async function buildSystemMessage(config: AgentRunConfig, memoryPrompt?: string, defaultSystem?: string): Promise<string> {
   const base = config.systemPrompt || defaultSystem || "You are a helpful AI assistant."
   const parts = [base]
+
+  // 注入当前环境信息（参考项目标准做法）
+  const envParts: string[] = [
+    "<env>",
+    `  Working directory: ${config.workspace || "unknown"}`,
+    `  Platform: ${process.platform}`,
+    `  Today's date: ${new Date().toDateString()}`,
+    `  Current time: ${new Date().toLocaleTimeString("zh-CN", { hour12: false })}`,
+    "</env>",
+  ]
+  parts.push(envParts.join("\n"))
+
   if (memoryPrompt) parts.push(memoryPrompt)
 
   if (config.workspace !== _cachedWs || config.currentFile !== _cachedFile) {

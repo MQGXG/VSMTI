@@ -156,12 +156,15 @@ async function routeRequest(
         return
       }
 
-      // SSE headers
+      const channel = `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
+      // 立即发送 SSE headers + channel 事件，不等待 Agent 初始化
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
       })
+      res.write(`event: channel\ndata: ${JSON.stringify({ channel })}\n\n`)
 
       const ctx: APIContext = {
         writeEvent: (data: unknown) => {
@@ -177,10 +180,10 @@ async function routeRequest(
         },
       }
 
-      const channel = await handleStartStream(sessionId, message, config, ctx)
-
-      // 发送 channel id 供后续 permission reply 使用
-      res.write(`event: channel\ndata: ${JSON.stringify({ channel })}\n\n`)
+      // 后台初始化 Agent，不阻塞 SSE 通道建立
+      handleStartStream(sessionId, message, config, ctx, channel).catch((err) => {
+        try { res.write(`event: error\ndata: ${JSON.stringify({ type: "error", message: String(err) })}\n\n`) } catch {}
+      })
       return
     }
 

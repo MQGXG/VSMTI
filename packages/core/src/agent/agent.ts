@@ -1,11 +1,9 @@
 import { ToolRegistry } from "../system/registry"
-import type { ToolContext, ToolResult } from "../shared/tool"
 import type { AgentEvent } from "../types"
-import { IterationBudget } from "../task/budget"
 import type { LLMMessage } from "../llm/client"
 import { estimateTokens } from "../shared/message-utils"
 import { pluginHooks } from "../shared/plugin-hooks"
-import { PermissionSet, type PermissionRule, defaultPermissions } from "../system/permission"
+import type { PermissionSet, PermissionRule } from "../system/permission"
 import { MemoryManager } from "../memory/manager"
 import { BuiltinMemoryProvider } from "../memory/builtin-provider"
 import { appendMessage, loadSession } from "../session/store"
@@ -13,7 +11,6 @@ import { VectorMemoryProvider } from "../memory/vector-provider"
 import { FileMemoryProvider } from "../memory/file-memory-provider"
 import { FTSMemoryProvider } from "../memory/fts-memory-provider"
 import { CheckpointProvider } from "../memory/checkpoint-provider"
-import { evaluateToolCalls, extractResources } from "../system/permission/gate"
 import { setFTSProvider } from "../tools/knowledge/memory"
 import { ToolOrchestrator } from "../orchestrate/execution"
 import { AgentStateMachine } from "./state-machine"
@@ -23,11 +20,13 @@ import { DreamDistillManager } from "../orchestrate/dream"
 import { ContextManager } from "../session/context"
 import { GoalJudge } from "../orchestrate/goal-judge"
 import type { LLMTurnConfig } from "./turn"
-import { runMaxMode, type MaxModeConfig } from "./max-mode"
-import { processTurn, executeCollectedTools } from "./turn-processor"
-import { detectDoomLoop } from "./utils"
+import { getModeMaxIterations, getModeSystemPromptSuffix } from "../config/modes"
 import type { AgentMode } from "../config/modes"
-import { getModeMaxIterations, getModeSystemPromptSuffix, modeSystemPrompt } from "../config/modes"
+
+import { classifyStep, isTerminal, isRecovery } from "./turn-classifier"
+import { runTurn, runMaxModeTurn, type TurnRunnerInput } from "./turn-runner"
+import { runStopHooks, registerStopHook, autoDreamHook, memoryPromoteHook } from "./stop-hooks"
+import { PendingInputQueue } from "./input-queue"
 
 export type PermissionReply = "allow" | "deny" | "always"
 
@@ -167,8 +166,22 @@ export class Agent {
   private contextManager: ContextManager
   private goalJudge: GoalJudge
 
+  /** VectorMemoryProvider 惰性初始化，避免构造函数中网络阻塞 */
+  private _vectorProvider: VectorMemoryProvider | null = null
+
+  /** 文本 N-gram 缓冲区 — 用于分类器的 text-repeat 检测 */
+  private ngramBuffer: string[] = []
+
   get aborted(): boolean { return this.stateMachine.aborted }
   abort(): void { this.stateMachine.stop() }
+
+  private ensureVectorProvider(): VectorMemoryProvider {
+    if (!this._vectorProvider) {
+      this._vectorProvider = new VectorMemoryProvider()
+      this.memoryManager.addProvider(this._vectorProvider)
+    }
+    return this._vectorProvider
+  }
 
   constructor(private registry: ToolRegistry, apiKey?: string, apiUrl?: string, workspace?: string) {
     this.orchestrator = new ToolOrchestrator(registry)
@@ -179,7 +192,7 @@ export class Agent {
     const ftsProvider = new FTSMemoryProvider()
     this.memoryManager.addProvider(new BuiltinMemoryProvider())
     this.memoryManager.addProvider(this.checkpointProvider)
-    this.memoryManager.addProvider(new VectorMemoryProvider())
+    // VectorMemoryProvider 改为惰性初始化，不在构造函数中阻塞
     if (workspace) {
       this.memoryManager.addProvider(new FileMemoryProvider())
       this.memoryManager.addProvider(ftsProvider)
@@ -187,11 +200,14 @@ export class Agent {
     this.checkpointProvider.setFTSProvider(ftsProvider)
     setFTSProvider(ftsProvider)
 
-    // 注册 pre_llm hook：每轮 LLM 调用前注入相关记忆
     pluginHooks.on("pre_llm", async (messages: LLMMessage[], config: AgentConfig) => {
       if (!config.sessionID || !config.workspace) return messages
       return this.contextManager.injectMemories(messages, config.sessionID)
     })
+
+    // 注册默认 stop hooks
+    registerStopHook(autoDreamHook)
+    registerStopHook(memoryPromoteHook)
   }
 
   getGoalJudge(): GoalJudge { return this.goalJudge }
@@ -248,7 +264,7 @@ export class Agent {
       }
     }
 
-    if (this.dreamDistillManager && this.contextManager.shouldAutoDream()) {
+    if (this.dreamDistillManager && (this.contextManager as any).shouldAutoDream?.()) {
       try {
         this.dreamDistillManager.setLLMConfig({
           apiKey: config.apiKey,
@@ -258,9 +274,10 @@ export class Agent {
         })
         await this.dreamDistillManager.autoDream()
         yield { type: "thinking", text: "🧠 Memory consolidated from recent session" }
-      } catch { /* Dream 失败不阻塞主流程 */ }
+      } catch { /* 不阻塞 */ }
     }
 
+    /* ── 会话恢复逻辑（同原版） ── */
     if (history.length === 0) {
       const stored = await loadSession(config.sessionID)
       if (stored && stored.messages.length > 0) {
@@ -329,23 +346,23 @@ export class Agent {
 
     let messages: LLMMessage[] = [
       { role: "system", content: systemContent },
-      ...history.map((m: Record<string, unknown>) => {
+      ...history.map((m: any) => {
         const role = String(m.role || "user") as LLMMessage["role"]
         const content = m.content as LLMMessage["content"]
         if (role === "assistant" && m.tool_calls && typeof content === "string") {
-          const oldTc = (m.tool_calls || []) as Array<Record<string, unknown>>
+          const oldTc = (m.tool_calls || [])
           return {
             role: "assistant" as const,
             content: [
-              { type: "text", text: content },
-              ...oldTc.map((tc) => ({
+              { type: "text" as const, text: content },
+              ...oldTc.map((tc: any) => ({
                 type: "tool-call" as const,
                 toolCallId: String(tc.id || tc.toolCallId || ""),
-                toolName: String((tc.function as Record<string, unknown>)?.name || tc.toolName || ""),
-                args: typeof (tc.function as Record<string, unknown>)?.arguments === "string" ? JSON.parse((tc.function as Record<string, unknown>).arguments as string) : ((tc.args as Record<string, unknown>) || {}),
+                toolName: String(tc.function?.name || tc.toolName || ""),
+                args: typeof tc.function?.arguments === "string" ? JSON.parse(tc.function.arguments) : (tc.args || {}),
               })),
             ],
-          }
+          } as LLMMessage
         }
         const msg: LLMMessage = { role, content }
         if (m.tool_call_id) msg.tool_call_id = String(m.tool_call_id)
@@ -355,7 +372,7 @@ export class Agent {
     ]
 
     const modeMaxSteps = getModeMaxIterations(config.mode || "assistant")
-    const budget = new IterationBudget(config.maxSteps || modeMaxSteps || 10)
+    const maxSteps = config.maxSteps || modeMaxSteps || 10
     const llmConfig: LLMTurnConfig = {
       provider: config.provider || "openai",
       model: config.model,
@@ -365,269 +382,297 @@ export class Agent {
       options: config.options,
     }
 
-    // Doom loop 追踪：记录所有轮次的工具调用
-    const allToolCalls: Array<{ name: string; args: string }> = []
+    /* ════════════════════════════════════════════════
+       两层循环 — 外层消费输入队列，内层分类驱动推理
+       
+       设计来源：
+       - OpenCode: 外层 while 消费 steer/queue，内层 while 处理连续回合
+       - MiMo-Code: 每轮内层循环先分类再执行
+       - Claude Code: 显式退出类型
+       ════════════════════════════════════════════════ */
 
-    while (budget.consume()) {
-      if (this.stateMachine.aborted) {
-        yield { type: "finish", reason: "stopped" as const }
-        return
+    const inputQueue = new PendingInputQueue()
+    inputQueue.push({ message: userMessage, type: "user" })
+
+    // 外层循环：消费输入队列
+    while (inputQueue.hasPending()) {
+      const currentInput = inputQueue.next()!
+
+      // 第一条输入使用已构建的 enrichedUser，后续输入追加到消息列表
+      const isFirstInput = currentInput.message === userMessage
+      if (!isFirstInput) {
+        messages.push({ role: "user", content: currentInput.message })
+        await appendMessage(config.sessionID, {
+          role: "user",
+          content: currentInput.message,
+          timestamp: new Date().toISOString(),
+        })
       }
 
-      const tokensBefore = estimateTokens(messages)
+      let step = 0
+      let hasLastAssistant = false
 
-      const { messages: rebuiltMessages, didRebuild, reason } = await this.contextManager.checkAndRebuild(messages, config.sessionID)
-      if (didRebuild) {
-        messages = rebuiltMessages
-        const tokensAfter = estimateTokens(messages)
+      // 内层循环：单条输入的多轮推理-行动周期
+      while (true) {
+        step++
 
-        if (reason === "checkpoint_rebuild" || reason === "llm_summary" || reason === "proactive_rebuild") {
-          const text = reason === "checkpoint_rebuild" ? "Context reconstructed from checkpoint"
-            : reason === "proactive_rebuild" ? "Proactive checkpoint — preserving conversation context"
-            : "Context compacted via summary"
-          yield { type: "thinking" as const, text: `🔄 ${text}` }
-        }
-
-        const rebuildEvent: AgentEvent = {
-          type: "context_rebuild" as const,
-          reason,
-          tokensBefore,
-          tokensAfter,
-        }
-        yield rebuildEvent
-      }
-
-      messages = await pluginHooks.emitWaterfall("pre_llm", messages, config)
-
-      // ── LLM 调用 — processTurn（流式 + 同步工具执行）或 runMaxMode ──
-      const turnInput = {
-        messages,
-        tools: toolSet,
-        sessionID: config.sessionID,
-        workspace: config.workspace,
-        config: {
-          ...llmConfig,
-          maxContextTokens: config.maxContextTokens,
-          permissions: config.permissions,
-          onPermissionSave: config.onPermissionSave,
-          autoAcceptPermissions: config.autoAcceptPermissions,
-          fallbacks: config.fallbacks,
-        },
-        deps: {
-          registry: this.registry,
-          stateMachine: this.stateMachine,
-          approvalStore: this.approvalStore,
-          orchestrator: this.orchestrator,
-        },
-        ctx,
-      }
-
-      const maxModeResult = config.maxMode
-        ? yield* runMaxMode({
-            messages,
-            tools: toolSet,
-            config: {
-              n: config.maxModeCandidates || 3,
-              candidateConfig: llmConfig,
-              judgeConfig: config.judgeModelConfig,
-            },
+        // ── 第 1 步：分类上一步结果（仅当存在上一条 Assistant 消息）──
+        if (hasLastAssistant) {
+          const stepAction = classifyStep(messages, {
+            step,
+            maxSteps,
+            ngramBuffer: this.ngramBuffer,
+            activeGoal: this.goalJudge.getActiveGoal(),
+            toolErrorCount: 0,
+            toolCallCount: (messages.filter(m => Array.isArray(m.content) && m.content.some((p: any) => p.type === "tool-call"))).length,
           })
-        : null
 
-      if (config.maxMode) {
-        const maxResult = maxModeResult!
-        if (!maxResult.text && (!maxResult.toolCalls || maxResult.toolCalls.length === 0)) {
-          if (this.stateMachine.aborted) yield { type: "finish", reason: "stopped" }
-          return
-        }
-        const turnText = maxResult.text
-        const toolCallsArray = (maxResult.toolCalls || [])
-          .filter((tc: any) => tc.id && tc.name)
-          .map((tc: any) => ({
-            id: tc.id,
-            type: "function" as const,
-            function: { name: tc.name, arguments: tc.arguments },
-          }))
-
-        messages.push({
-          role: "assistant",
-          content: [
-            { type: "text", text: turnText },
-            ...toolCallsArray.map((tc) => ({
-              type: "tool-call" as const,
-              toolCallId: tc.id,
-              toolName: tc.function.name,
-              args: JSON.parse(tc.function.arguments),
-            })),
-          ],
-        })
-
-        await appendMessage(config.sessionID, {
-          role: "assistant",
-          content: turnText || JSON.stringify({ text: turnText, tool_calls: toolCallsArray.map(tc => ({ id: tc.id, name: tc.function.name, args: tc.function.arguments })) }),
-          timestamp: new Date().toISOString(),
-        })
-
-        if (toolCallsArray.length > 0) {
-          yield* executeCollectedTools(
-            toolCallsArray.map(tc => ({ id: tc.id, name: tc.function.name, arguments: tc.function.arguments })),
-            turnText,
-            { messages, sessionID: config.sessionID, workspace: config.workspace, permissions: config.permissions, onPermissionSave: config.onPermissionSave, autoAcceptPermissions: config.autoAcceptPermissions, deps: { registry: this.registry, stateMachine: this.stateMachine, approvalStore: this.approvalStore, orchestrator: this.orchestrator }, ctx },
-          )
-        }
-
-        await this.contextManager.syncTurn(userMessage, turnText, config.sessionID)
-        this.dreamDistillManager.recordTurn(userMessage, turnText)
-        continue
-      }
-
-      const ptResult = yield* processTurn(turnInput)
-      messages = ptResult.messages
-
-      if (ptResult.signal === "context_overflow") {
-        yield { type: "thinking" as const, text: "⚠️ Context too long, performing emergency compaction..." }
-        const compacted = await this.contextManager.reactiveCompact(messages)
-        if (compacted.length < messages.length) {
-          messages.length = 0
-          messages.push(...compacted)
-          yield { type: "thinking" as const, text: "🔄 Emergency compaction complete, retrying..." }
-          continue
-        }
-        yield { type: "error" as const, message: "Context overflow: compaction failed to reduce size" }
-        return
-      }
-
-      if (!ptResult.text && ptResult.toolCalls.length === 0) {
-        if (this.stateMachine.aborted) {
-          yield { type: "finish", reason: "stopped", usage: ptResult.usage }
-        }
-        // LLM 返回错误（如 400）时，text 和 toolCalls 都为空，应终止循环
-        if (ptResult.signal === "stop") {
-          yield { type: "finish", reason: "error", usage: ptResult.usage }
-          return
-        }
-        return
-      }
-
-      if (ptResult.text || ptResult.toolCalls.length > 0) {
-        const content = ptResult.toolCalls.length > 0
-          ? JSON.stringify({
-              text: ptResult.text || "",
-              tool_calls: ptResult.toolCalls.map(tc => ({ id: tc.id, name: tc.name, args: tc.arguments })),
-            })
-          : (ptResult.text || "")
-        await appendMessage(config.sessionID, {
-          role: "assistant",
-          content,
-          timestamp: new Date().toISOString(),
-          retryCount: ptResult.retryCount || 0,
-        })
-      }
-
-      // ── Doom Loop 检测 ──
-      for (const tc of ptResult.toolCalls) {
-        allToolCalls.push({ name: tc.name, args: tc.arguments })
-      }
-      if (ptResult.toolCalls.length > 0) {
-        const lastCall = ptResult.toolCalls[ptResult.toolCalls.length - 1]
-        if (detectDoomLoop(
-          { name: lastCall.name, args: lastCall.arguments },
-          allToolCalls.slice(0, -1),
-        )) {
-          const { id, waitForReply } = this.stateMachine.createPermissionRequest()
-          yield {
-            type: "permission_request" as const,
-            id,
-            action: "doom_loop",
-            resources: [`${lastCall.name}(${lastCall.arguments.slice(0, 100)})`],
-            toolCall: { id: lastCall.id, name: lastCall.name, input: {} },
-          }
-          const allowed = await waitForReply()
-          if (!allowed) {
-            yield { type: "thinking" as const, text: "⛔ Doom loop blocked by user" }
-            yield { type: "finish", reason: "doom_loop_blocked" }
-            return
-          }
-          allToolCalls.length = 0
-        }
-      }
-
-      if (ptResult.toolCalls.length === 0) {
-        const activeGoal = this.goalJudge.getActiveGoal()
-        if (activeGoal) {
-          const quickCheck = this.goalJudge.quickCheck(activeGoal, messages)
-          if (quickCheck && quickCheck.satisfied) {
-            activeGoal.status = "satisfied"
-            const goalEvent: AgentEvent = { type: "goal_status", goalId: activeGoal.id, description: activeGoal.description, status: "satisfied", reasoning: quickCheck.reasoning }
-            yield goalEvent
-            const finishEvent: AgentEvent = { type: "finish", reason: "goal_satisfied" }
-            yield finishEvent
-            return
-          }
-          const evaluation = await this.goalJudge.evaluate(activeGoal, messages)
-          const gsEvent: AgentEvent = { type: "goal_status", goalId: activeGoal.id, description: activeGoal.description, status: evaluation.satisfied ? "satisfied" : "still_active", reasoning: evaluation.reasoning }
-          yield gsEvent
-          if (evaluation.satisfied) {
-            yield { type: "finish", reason: "goal_satisfied" }
-          } else {
-            budget.resetRemaining(3)
-            yield { type: "thinking", text: `🎯 Goal still active: ${evaluation.reasoning}` }
-          }
-        }
-
-        if (!this.goalJudge.getActiveGoal()) {
-          const stopMessage = await pluginHooks.triggerUntil("stop", messages, config)
-          if (stopMessage) {
-            messages.push({ role: "user", content: String(stopMessage) })
+          if (isTerminal(stepAction)) break
+          if (isRecovery(stepAction)) {
+            yield { type: "thinking", text: getNudgeMessage(stepAction) }
+            messages.push({ role: "user", content: stepAction.nudge })
             continue
           }
-          yield { type: "finish", reason: "stop", usage: ptResult.usage }
         }
-        return
-      }
 
-      // 持久化工具结果到会话历史
-      for (const tr of ptResult.toolResults) {
-        const tc = ptResult.toolCalls.find(t => t.id === tr.id)
-        if (tc) {
+        // ── 第 2 步：回合前检查 ──
+        if (this.stateMachine.aborted) {
+          yield { type: "finish", reason: "stopped" as const }
+          return
+        }
+
+        const tokensBefore = estimateTokens(messages)
+        const { messages: rebuiltMessages, didRebuild, reason } = await this.contextManager.checkAndRebuild(messages, config.sessionID)
+        if (didRebuild) {
+          messages = rebuiltMessages
+          const tokensAfter = estimateTokens(messages)
+          if (reason === "checkpoint_rebuild" || reason === "llm_summary" || reason === "proactive_rebuild") {
+            const text = reason === "checkpoint_rebuild" ? "Context reconstructed from checkpoint"
+              : reason === "proactive_rebuild" ? "Proactive checkpoint — preserving conversation context"
+              : "Context compacted via summary"
+            yield { type: "thinking" as const, text: `🔄 ${text}` }
+          }
+          yield { type: "context_rebuild" as const, reason, tokensBefore, tokensAfter }
+        }
+
+        messages = await pluginHooks.emitWaterfall("pre_llm", messages, config)
+
+        // ── Doom loop 检测 ──
+        const allToolCalls: Array<{ name: string; args: string }> = []
+        for (const m of messages) {
+          if (Array.isArray(m.content)) {
+            for (const p of m.content) {
+              if (p.type === "tool-call") {
+                allToolCalls.push({ name: p.toolName, args: JSON.stringify(p.args) })
+              }
+            }
+          }
+        }
+
+        // ── 第 3 步：执行 LLM 回合 ──
+        const turnInput: TurnRunnerInput = {
+          messages,
+          tools: toolSet,
+          sessionID: config.sessionID,
+          workspace: config.workspace,
+          config: {
+            ...llmConfig,
+            maxContextTokens: config.maxContextTokens,
+            permissions: config.permissions,
+            onPermissionSave: config.onPermissionSave,
+            autoAcceptPermissions: config.autoAcceptPermissions,
+            fallbacks: config.fallbacks,
+          },
+          deps: {
+            registry: this.registry,
+            stateMachine: this.stateMachine,
+            approvalStore: this.approvalStore,
+            orchestrator: this.orchestrator,
+          },
+          ctx,
+        }
+
+        const turnOutput = config.maxMode
+          ? yield* runMaxModeTurn({
+              ...turnInput,
+              maxModeConfig: {
+                n: config.maxModeCandidates || 3,
+                candidateConfig: llmConfig,
+                judgeConfig: config.judgeModelConfig,
+              },
+            })
+          : yield* runTurn(turnInput)
+
+        messages = turnOutput.messages
+
+        // ── 第 4 步：处理 LLM 信号 ──
+        if (turnOutput.signal === "context_overflow") {
+          yield { type: "thinking" as const, text: "⚠️ Context too long, performing emergency compaction..." }
+          const compacted = await this.contextManager.reactiveCompact(messages)
+          if (compacted.length < messages.length) {
+            messages.length = 0
+            messages.push(...compacted)
+            yield { type: "thinking" as const, text: "🔄 Emergency compaction complete, retrying..." }
+            continue
+          }
+          yield { type: "error" as const, message: "Context overflow: compaction failed to reduce size" }
+          return
+        }
+
+        if (turnOutput.signal === "stop") {
+          if (this.stateMachine.aborted) {
+            yield { type: "finish", reason: "stopped", usage: turnOutput.usage }
+          } else {
+            yield { type: "finish", reason: "error", usage: turnOutput.usage }
+          }
+          return
+        }
+
+        if (!turnOutput.text && turnOutput.toolCalls.length === 0) {
+          if (this.stateMachine.aborted) {
+            yield { type: "finish", reason: "stopped", usage: turnOutput.usage }
+          }
+          return
+        }
+
+        // ── Doom loop 检测（工具调用级别） ──
+        if (turnOutput.toolCalls.length > 0) {
+          for (const tc of turnOutput.toolCalls) {
+            allToolCalls.push({ name: tc.name, args: tc.arguments })
+          }
+          const lastCall = turnOutput.toolCalls[turnOutput.toolCalls.length - 1]
+          const { detectDoomLoop } = await import("./utils")
+          if (detectDoomLoop(
+            { name: lastCall.name, args: lastCall.arguments },
+            allToolCalls.slice(0, -1),
+          )) {
+            const { id, waitForReply } = this.stateMachine.createPermissionRequest()
+            yield {
+              type: "permission_request" as const,
+              id,
+              action: "doom_loop",
+              resources: [`${lastCall.name}(${lastCall.arguments.slice(0, 100)})`],
+              toolCall: { id: lastCall.id, name: lastCall.name, input: {} },
+            }
+            const allowed = await waitForReply()
+            if (!allowed) {
+              yield { type: "thinking" as const, text: "⛔ Doom loop blocked by user" }
+              yield { type: "finish", reason: "doom_loop_blocked" }
+              return
+            }
+          }
+        }
+
+        // ── Goal Judge 检查（无工具调用时） ──
+        if (turnOutput.toolCalls.length === 0) {
+          const activeGoal = this.goalJudge.getActiveGoal()
+          if (activeGoal) {
+            const quickCheck = this.goalJudge.quickCheck(activeGoal, messages)
+            if (quickCheck && quickCheck.satisfied) {
+              activeGoal.status = "satisfied"
+              yield { type: "goal_status", goalId: activeGoal.id, description: activeGoal.description, status: "satisfied", reasoning: quickCheck.reasoning }
+              yield { type: "finish", reason: "goal_satisfied" }
+              return
+            }
+            const evaluation = await this.goalJudge.evaluate(activeGoal, messages)
+            yield { type: "goal_status", goalId: activeGoal.id, description: activeGoal.description, status: evaluation.satisfied ? "satisfied" : "still_active", reasoning: evaluation.reasoning }
+            if (evaluation.satisfied) {
+              yield { type: "finish", reason: "goal_satisfied" }
+              return
+            }
+            yield { type: "thinking", text: `🎯 Goal still active: ${evaluation.reasoning}` }
+            continue
+          }
+
+          if (!this.goalJudge.getActiveGoal()) {
+            const stopMessage = await pluginHooks.triggerUntil("stop", messages, config)
+            if (stopMessage) {
+              messages.push({ role: "user", content: String(stopMessage) })
+              continue
+            }
+            yield { type: "finish", reason: "stop", usage: turnOutput.usage }
+          }
+          return
+        }
+
+        // ── 持久化 Assistant 消息 ──
+        if (turnOutput.text || turnOutput.toolCalls.length > 0) {
+          const content = turnOutput.toolCalls.length > 0
+            ? JSON.stringify({
+                text: turnOutput.text || "",
+                tool_calls: turnOutput.toolCalls.map(tc => ({ id: tc.id, name: tc.name, args: tc.arguments })),
+              })
+            : (turnOutput.text || "")
           await appendMessage(config.sessionID, {
-            role: "tool",
-            content: tr.result.output || tr.result.error || "",
+            role: "assistant",
+            content,
             timestamp: new Date().toISOString(),
-            toolCallId: tc.id,
+            retryCount: turnOutput.retryCount || 0,
           })
         }
+
+        // ── 回合后上下文检查 ──
+        const { messages: postToolMessages, didRebuild: postToolRebuild, reason: postToolReason } =
+          await this.contextManager.checkAndRebuild(messages, config.sessionID)
+        if (postToolRebuild) {
+          messages = postToolMessages
+          yield { type: "thinking" as const, text: `🔄 Context compacted after tool execution` }
+          yield { type: "context_rebuild", reason: postToolReason, tokensBefore: 0, tokensAfter: 0 }
+        }
+
+        // ── 回合同步 ──
+        const currentUserText = currentInput.message
+        await this.contextManager.syncTurn(currentUserText, turnOutput.text, config.sessionID)
+        await this.memoryManager.promoteMemories(config.sessionID)
+        this.dreamDistillManager.recordTurn(currentUserText, turnOutput.text)
+
+        // ── 更新 N-gram 缓冲区 ──
+        if (turnOutput.text) {
+          this.ngramBuffer.push(turnOutput.text)
+          if (this.ngramBuffer.length > 20) this.ngramBuffer.shift()
+        }
+
+        // ── LLM 配置绑定 ──
+        if (config.apiKey && !this.checkpointProvider.hasLLMConfig) {
+          this.contextManager.setLLMConfig({
+            apiKey: config.apiKey,
+            apiUrl: config.apiUrl,
+            model: config.model,
+            provider: config.provider || "openai",
+          })
+        }
+
+        hasLastAssistant = true
+        // 继续内层循环
       }
 
-      const { messages: postToolMessages, didRebuild: postToolRebuild, reason: postToolReason } =
-        await this.contextManager.checkAndRebuild(messages, config.sessionID)
-      if (postToolRebuild) {
-        messages = postToolMessages
-        yield { type: "thinking" as const, text: `🔄 Context compacted after tool execution` }
-        const postRebuildEvent: AgentEvent = { type: "context_rebuild", reason: postToolReason, tokensBefore: 0, tokensAfter: 0 }
-        yield postRebuildEvent
-      }
+      /* ── Stop hooks（每条输入退出后执行） ── */
+      const stopResult = await runStopHooks({
+        sessionID: config.sessionID,
+        workspace: config.workspace,
+        messages,
+        contextManager: this.contextManager,
+        memoryManager: this.memoryManager,
+        dreamDistillManager: this.dreamDistillManager,
+      })
 
-      await this.contextManager.syncTurn(userMessage, ptResult.text, config.sessionID)
-      await this.memoryManager.promoteMemories(config.sessionID)
-      this.dreamDistillManager.recordTurn(userMessage, ptResult.text)
-
-      if (config.apiKey && !this.checkpointProvider.hasLLMConfig) {
-        this.contextManager.setLLMConfig({
-          apiKey: config.apiKey,
-          apiUrl: config.apiUrl,
-          model: config.model,
-          provider: config.provider || "openai",
-        })
+      // Stop hook 的附加消息推回队列
+      if (stopResult.additionalMessages.length > 0) {
+        inputQueue.pushMany(
+          stopResult.additionalMessages.map(msg => ({ message: msg, type: "steer" as const }))
+        )
       }
     }
 
+    /* ── 全部输入处理完毕 ── */
     pluginHooks.emit("session_end", { sessionID: config.sessionID, workspace: config.workspace })
     await this.contextManager.shutdown()
     this.memoryManager.shutdown().catch(() => {})
     yield { type: "finish", reason: "length" }
   }
 }
+
+/* ── 辅助函数 ── */
 
 function hasToolCalls(content: string | any[]): boolean {
   if (Array.isArray(content)) return content.some((p) => p.type === "tool-call")
@@ -640,11 +685,13 @@ function tryParseAssistantPayload(content: string): { text: string; tool_calls: 
     if (parsed && typeof parsed === "object" && Array.isArray(parsed.tool_calls)) {
       return { text: parsed.text || "", tool_calls: parsed.tool_calls }
     }
-  } catch { /* JSON parse fallback */ }
+  } catch { /* json parse fallback */ }
   return null
 }
 
-
-
-
-
+function getNudgeMessage(action: { type: string; nudge?: string; reason?: string }): string {
+  if (action.type === "retry") return "🔄 正在修正回答..."
+  if (action.type === "text-repeat") return "🔁 检测到重复输出，正在尝试不同方式..."
+  if (action.type === "auto-continue") return `⏩ 自动续跑中 (${(action as any).reason || ""})...`
+  return "⏳ 处理中..."
+}

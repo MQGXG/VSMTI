@@ -97,8 +97,8 @@ export async function handleStartStream(
   message: string,
   config: Record<string, unknown>,
   ctx: APIContext,
-): Promise<string> {
-  const channel = generateChannelId()
+  channel: string,
+): Promise<void> {
   const workspace = (config.workspace as string) || process.cwd()
 
   await taskTracker.initialize(sessionId)
@@ -174,8 +174,6 @@ export async function handleStartStream(
 
   // 在后台运行 Agent 并通过 ctx 推送事件
   runAgentInBackground(session, sessionId, processed, effectiveConfig, ctx)
-
-  return channel
 }
 
 async function runAgentInBackground(
