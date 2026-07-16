@@ -25,6 +25,7 @@ import { searchHistoryTool } from "../tools/core/search-history"
 import { spawnAgentTool, waitAgentsTool, listSubagentsTool } from "../tools/orchestrate/agent-tools"
 import { workflowRunTool } from "../tools/orchestrate/workflow-tool"
 import { applyPatchTool } from "../tools/core/apply-patch"
+import { todoTool } from "../tools/core/todo-tool"
 import type { MCPServerConfig } from "../mcp/index"
 
 export function createDefaultRegistry(): ToolRegistry {
@@ -67,6 +68,7 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(listSubagentsTool)
   registry.register(workflowRunTool)
   registry.register(applyPatchTool)
+  registry.register(todoTool)
   return registry
 }
 

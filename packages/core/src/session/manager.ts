@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto"
 import { loadSession, listSessions as sqliteListSessions } from "../session/store"
 import { getDbAsync, runWrite, reloadDatabase } from "../system/database"
 import { getPlatformPaths } from "../config/paths"
@@ -43,7 +42,7 @@ export async function listProjects(): Promise<ProjectInfo[]> {
 }
 
 export async function createSession(projectId: string, title?: string): Promise<SessionInfo> {
-  const sessionId = `ses_${Date.now().toString(36)}_${randomUUID().slice(0, 8)}`
+  const sessionId = `ses_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`
   const now = new Date().toISOString()
   const projects = await listProjects()
   const project = projects.find((p) => p.project_id === projectId)
@@ -141,6 +140,29 @@ export async function deleteProjectById(projectId: string): Promise<void> {
 
 export async function searchMessages(query: string): Promise<Array<{ session_id: string; session_title: string; message: { role: string; content: string; timestamp: string }; context: string }>> {
   if (!query.trim()) return []
+  const db = await getDbAsync()
+
+  // 优先使用 FTS5 全文搜索
+  try {
+    const ftsResult = db.exec(
+      `SELECT fts.session_id, fts.role, fts.content, s.title
+       FROM messages_fts fts
+       JOIN sessions s ON s.session_id = fts.session_id
+       WHERE messages_fts MATCH ?
+       ORDER BY rank LIMIT 50`,
+      [query],
+    )
+    if (ftsResult.length > 0 && ftsResult[0].values.length > 0) {
+      return ftsResult[0].values.map(row => ({
+        session_id: row[0] as string,
+        session_title: row[3] as string,
+        message: { role: row[1] as string, content: (row[2] as string).slice(0, 300), timestamp: "" },
+        context: (row[2] as string).slice(0, 100),
+      }))
+    }
+  } catch { /* FTS5 不可用，回退到 LIKE */ }
+
+  // LIKE 回退
   const q = query.toLowerCase()
   const allSessions = await sqliteListSessions()
   const results: Array<{ session_id: string; session_title: string; message: { role: string; content: string; timestamp: string }; context: string }> = []
@@ -198,5 +220,3 @@ export async function deleteSessionById(sessionId: string): Promise<void> {
     }
   } catch { /* FTS 清理失败不阻塞 */ }
 }
-
-

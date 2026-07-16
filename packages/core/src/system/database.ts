@@ -65,6 +65,39 @@ const SCHEMA = `
     evaluations_json TEXT DEFAULT '[]',
     PRIMARY KEY (session_id, id)
   );
+  -- 事件溯源表（Event Sourcing）
+  CREATE TABLE IF NOT EXISTS session_events (
+    seq INTEGER NOT NULL,
+    session_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    payload TEXT NOT NULL DEFAULT '{}',
+    timestamp TEXT DEFAULT (datetime('now')),
+    version INTEGER DEFAULT 1,
+    PRIMARY KEY (session_id, seq)
+  );
+  CREATE INDEX IF NOT EXISTS idx_events_session ON session_events(session_id, seq);
+  CREATE TABLE IF NOT EXISTS event_snapshots (
+    snapshot_id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    up_to_seq INTEGER NOT NULL,
+    messages_json TEXT NOT NULL DEFAULT '[]',
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_snapshots_session ON event_snapshots(session_id, up_to_seq);
+  -- Todo 表
+  CREATE TABLE IF NOT EXISTS todos (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    priority INTEGER DEFAULT 0,
+    parent_id TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    completed_at TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_todos_session ON todos(session_id, status);
 `
 
 async function createDb(): Promise<SqliteDb> {
@@ -81,6 +114,10 @@ async function createDb(): Promise<SqliteDb> {
   const newDb = new _SQL.Database(buffer)
   newDb.run("PRAGMA journal_mode=WAL")
   newDb.run(SCHEMA)
+  // FTS5 全文搜索（sql.js WASM 可能不支持，静默失败）
+  try {
+    newDb.run(`CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(session_id, role, content)`)
+  } catch { /* FTS5 不可用，搜索将使用 LIKE 回退 */ }
   // 迁移：为旧表添加 retry_count 列（如果不存在）
   try { newDb.run("ALTER TABLE messages ADD COLUMN retry_count INTEGER DEFAULT 0") } catch { /* 列已存在 */ }
   try { newDb.run("ALTER TABLE actor_registry ADD COLUMN context_mode TEXT DEFAULT 'none'") } catch { /* 列已存在或表刚创建 */ }

@@ -14,7 +14,8 @@ import { CheckpointProvider } from "../memory/checkpoint-provider"
 import { setFTSProvider } from "../tools/knowledge/memory"
 import { ToolOrchestrator } from "../orchestrate/execution"
 import { AgentStateMachine } from "./state-machine"
-import { buildToolContext, buildSystemMessage } from "./context"
+import { buildToolContext, buildSystemMessage, createSourceManager, prepareSourceManagerContext } from "./context"
+import type { SourceManager } from "../session/context-source"
 import { ApprovalStore } from "../system/permission/approval-store"
 import { DreamDistillManager } from "../orchestrate/dream"
 import { ContextManager } from "../session/context"
@@ -166,6 +167,16 @@ export class Agent {
   private contextManager: ContextManager
   private goalJudge: GoalJudge
 
+  /** System Context Sources — 增量式系统上下文管理 */
+  private sourceManager: SourceManager | null = null
+  private sourceManagerSources: {
+    memory: import("../session/context-source").MemorySource
+    code: import("../session/context-source").CodeSource
+    goal: import("../session/context-source").GoalSource
+    mode: import("../session/context-source").ModeSource
+    knowledge: import("../session/context-source").KnowledgeSource
+  } | null = null
+
   /** VectorMemoryProvider 惰性初始化，避免构造函数中网络阻塞 */
   private _vectorProvider: VectorMemoryProvider | null = null
 
@@ -212,6 +223,7 @@ export class Agent {
 
   getGoalJudge(): GoalJudge { return this.goalJudge }
   getContextManager(): ContextManager { return this.contextManager }
+  getSourceManager(): SourceManager | null { return this.sourceManager }
   getFTSProvider(): any { return (this.memoryManager as any).getFTSProvider() }
 
   replyPermission(id: string, reply: PermissionReply): void {
@@ -240,6 +252,13 @@ export class Agent {
 
     await this.contextManager.initialize(config.sessionID, config.workspace)
     this.goalJudge.bindSession(config.sessionID)
+
+    // 初始化 SourceManager（如果 workspace 可用）
+    if (config.workspace) {
+      const { sourceManager, sources } = createSourceManager(config.workspace)
+      this.sourceManager = sourceManager
+      this.sourceManagerSources = sources
+    }
 
     pluginHooks.emit("session_start", { sessionID: config.sessionID, workspace: config.workspace })
 
@@ -337,12 +356,34 @@ export class Agent {
     pluginHooks.emit("user_prompt_submit", { sessionID: config.sessionID, message: userMessage })
 
     const goalPrompt = this.goalJudge.toSystemPrompt()
-    const modeSuffix = getModeSystemPromptSuffix(config.mode || "assistant")
-    const baseSystem = await buildSystemMessage(config, memoryPrompt, DEFAULT_SYSTEM)
-    const systemWithMode = modeSuffix ? `${baseSystem}\n\n[MODE: ${config.mode}]\n${modeSuffix}` : baseSystem
-    const systemContent = goalPrompt
-      ? `${systemWithMode}\n\n${goalPrompt}`
-      : systemWithMode
+
+    // 优先使用 SourceManager 构建系统提示（增量式）
+    let systemContent: string
+    if (this.sourceManager && this.sourceManagerSources) {
+      // 设置动态 Source 内容
+      await prepareSourceManagerContext(
+        this.sourceManager,
+        this.sourceManagerSources,
+        config,
+        memoryPrompt,
+        goalPrompt,
+      )
+      systemContent = await this.sourceManager.build({
+        sessionID: config.sessionID,
+        workspace: config.workspace,
+        mode: config.mode,
+        customSystemPrompt: config.systemPrompt || DEFAULT_SYSTEM,
+        currentFile: config.currentFile,
+      })
+    } else {
+      // 向后兼容：使用旧路径
+      const modeSuffix = getModeSystemPromptSuffix(config.mode || "assistant")
+      const baseSystem = await buildSystemMessage(config, memoryPrompt, DEFAULT_SYSTEM)
+      const systemWithMode = modeSuffix ? `${baseSystem}\n\n[MODE: ${config.mode}]\n${modeSuffix}` : baseSystem
+      systemContent = goalPrompt
+        ? `${systemWithMode}\n\n${goalPrompt}`
+        : systemWithMode
+    }
 
     let messages: LLMMessage[] = [
       { role: "system", content: systemContent },

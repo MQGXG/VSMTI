@@ -1,9 +1,11 @@
 /**
  * Snapshot 文件快照系统 — 参考 OpenCode/Codex 的 snapshot 机制
  * 在工具执行前捕获文件状态，支持按步骤回滚
+ * 支持磁盘持久化，进程重启后可恢复
  */
 
 import * as fs from "fs/promises"
+import * as fsSync from "fs"
 import * as path from "path"
 
 interface FileSnapshot {
@@ -19,13 +21,24 @@ interface Snapshot {
   description?: string
 }
 
+/** 磁盘存储格式 */
+interface SnapshotDiskEntry {
+  id: string
+  timestamp: number
+  files: Record<string, { path: string; content: string | null; timestamp: number }>
+  description?: string
+}
+
 export class SnapshotManager {
   private snapshots: Snapshot[] = []
   private maxSnapshots = 50
   private snapshotDir: string
+  private snapshotFile: string
 
   constructor(workspace: string) {
     this.snapshotDir = path.join(workspace, ".mira", "snapshots")
+    this.snapshotFile = path.join(this.snapshotDir, "snapshots.json")
+    this.loadFromDisk()
   }
 
   /**
@@ -67,6 +80,7 @@ export class SnapshotManager {
       this.snapshots.shift()
     }
 
+    this.saveToDisk()
     return id
   }
 
@@ -125,6 +139,7 @@ export class SnapshotManager {
     const idx = this.snapshots.findIndex(s => s.id === snapshotId)
     if (idx >= 0) {
       this.snapshots.splice(idx, 1)
+      this.saveToDisk()
       return true
     }
     return false
@@ -135,6 +150,7 @@ export class SnapshotManager {
    */
   clear(): void {
     this.snapshots = []
+    this.saveToDisk()
   }
 
   /**
@@ -163,14 +179,58 @@ export class SnapshotManager {
 
     return changes
   }
+
+  /**
+   * 清理 7 天前的过期快照
+   */
+  cleanup(): void {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
+    const before = this.snapshots.length
+    this.snapshots = this.snapshots.filter(s => s.timestamp > cutoff)
+    if (this.snapshots.length < before) {
+      this.saveToDisk()
+    }
+  }
+
+  // ── 磁盘持久化 ──────────────────────────────────────
+
+  private saveToDisk(): void {
+    try {
+      fsSync.mkdirSync(this.snapshotDir, { recursive: true })
+      const data: SnapshotDiskEntry[] = this.snapshots.map(s => ({
+        id: s.id,
+        timestamp: s.timestamp,
+        files: Object.fromEntries(s.files),
+        description: s.description,
+      }))
+      fsSync.writeFileSync(this.snapshotFile, JSON.stringify(data, null, 2), "utf-8")
+    } catch { /* 持久化失败不阻塞主流程 */ }
+  }
+
+  private loadFromDisk(): void {
+    try {
+      if (!fsSync.existsSync(this.snapshotFile)) return
+      const raw = fsSync.readFileSync(this.snapshotFile, "utf-8")
+      const data: SnapshotDiskEntry[] = JSON.parse(raw)
+      this.snapshots = data.map(s => ({
+        id: s.id,
+        timestamp: s.timestamp,
+        files: new Map(Object.entries(s.files).map(([k, v]) => [k, v as FileSnapshot])),
+        description: s.description,
+      }))
+    } catch { /* 加载失败静默 */ }
+  }
 }
 
-// 全局快照管理器实例
-let globalSnapshotManager: SnapshotManager | null = null
+// ── Per-workspace 实例管理 ──────────────────────────────
+
+const snapshotManagers = new Map<string, SnapshotManager>()
 
 export function getSnapshotManager(workspace: string): SnapshotManager {
-  if (!globalSnapshotManager) {
-    globalSnapshotManager = new SnapshotManager(workspace)
+  let mgr = snapshotManagers.get(workspace)
+  if (!mgr) {
+    mgr = new SnapshotManager(workspace)
+    snapshotManagers.set(workspace, mgr)
   }
-  return globalSnapshotManager
+  return mgr
 }

@@ -1,4 +1,6 @@
 import { getDbAsync, runWrite } from "../system/database"
+import { getEventStore } from "./event-store"
+import { createMessageEvent } from "./event-types"
 
 export interface StoredMessage {
   role: "user" | "assistant" | "tool"
@@ -18,6 +20,18 @@ export interface StoredSession {
 }
 
 export async function appendMessage(sessionID: string, message: StoredMessage): Promise<void> {
+  // 1. 写入事件层（异步，失败不阻塞）
+  try {
+    const eventStore = getEventStore()
+    await eventStore.append(createMessageEvent(sessionID, {
+      role: message.role,
+      content: message.content,
+      toolCallId: message.toolCallId,
+      retryCount: message.retryCount,
+    }))
+  } catch { /* 事件层失败不阻塞主流程 */ }
+
+  // 2. 写入旧 messages 表（保持兼容）
   const db = await getDbAsync()
 
   const existing = db.exec("SELECT title FROM sessions WHERE session_id = ?", [sessionID])
@@ -30,7 +44,6 @@ export async function appendMessage(sessionID: string, message: StoredMessage): 
     )
   }
 
-  // 第一条用户消息 → 更新会话标题（在 INSERT 之前判断）
   const isFirstUserMessage = message.role === "user" && message.content.trim()
     && Number(db.exec("SELECT COUNT(*) FROM messages WHERE session_id = ? AND role = 'user'", [sessionID])[0]?.values[0] || 0) === 0
 
@@ -38,6 +51,12 @@ export async function appendMessage(sessionID: string, message: StoredMessage): 
     "INSERT INTO messages (session_id, role, content, timestamp, tool_call_id, retry_count) VALUES (?, ?, ?, ?, ?, ?)",
     [sessionID, message.role, message.content, message.timestamp, message.toolCallId || null, message.retryCount || 0],
   )
+
+  // 同步 FTS5 索引（FTS5 不可用时静默）
+  try {
+    runWrite("INSERT INTO messages_fts(session_id, role, content) VALUES (?, ?, ?)",
+      [sessionID, message.role, message.content])
+  } catch { /* FTS5 不可用 */ }
 
   runWrite("UPDATE sessions SET updated_at = ? WHERE session_id = ?", [new Date().toISOString(), sessionID])
 
@@ -138,4 +157,3 @@ export async function messageCount(sessionID: string): Promise<number> {
     return 0
   }
 }
-

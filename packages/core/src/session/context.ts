@@ -4,6 +4,7 @@ import { needsContextRebuild, rebuildContextFromCheckpoint, truncateToBudget, es
 import type { LLMMessage, ContentPart, ToolResultPart } from "../llm/schema/messages"
 import { compactMessages, type CompactLevel } from "./compaction"
 import { createLLMClient } from "../llm/client"
+import { IncrementalSummarizer } from "./structured-summary"
 import * as fs from "fs"
 import * as path from "path"
 
@@ -54,6 +55,7 @@ export class ContextManager {
   private lastRebuildAt: string | null = null
   private llmConfig: { apiKey: string; apiUrl: string; model: string; provider: string } | null = null
   private workspace = ""
+  private summarizer = new IncrementalSummarizer()
 
   constructor(
     checkpointProvider: CheckpointProvider,
@@ -68,6 +70,7 @@ export class ContextManager {
   setLLMConfig(config: { apiKey: string; apiUrl: string; model: string; provider: string }): void {
     this.llmConfig = config
     this.checkpointProvider.setLLMConfig(config)
+    this.summarizer.setLLMConfig(config)
   }
 
   getStats(): ContextStats {
@@ -378,12 +381,19 @@ export class ContextManager {
     return changed ? messages : messages
   }
 
-  // ── L4: LLM 摘要 ──────────────────────────────────────────
+  // ── L4: LLM 结构化摘要 ────────────────────────────────────
   private async compactHistory(messages: LLMMessage[]): Promise<LLMMessage[]> {
     this.writeTranscript(messages)
-    const summary = await this.summarizeHistory(messages)
-    return [{ role: "user" as const, content: `[Compacted]\n\n${summary}` }]
+
+    // 使用 IncrementalSummarizer 生成结构化摘要
+    const summary = await this.summarizer.update(messages)
+    const summaryText = this.summarizer.formatSummary(summary)
+
+    return [{ role: "user" as const, content: `[Compacted]\n\n${summaryText}` }]
   }
+
+  /** 暴露结构化摘要给外部（如 CheckpointProvider） */
+  getStructuredSummary() { return this.summarizer.getCurrentSummary() }
 
   private writeTranscript(messages: LLMMessage[]): void {
     try {
@@ -445,6 +455,14 @@ export class ContextManager {
   // ── 应急压缩 ──────────────────────────────────────────────
   async reactiveCompact(messages: LLMMessage[]): Promise<LLMMessage[]> {
     this.writeTranscript(messages)
+
+    // 优先使用 Structured Summary 的溢出压缩
+    const summary = this.summarizer.getCurrentSummary()
+    if (summary) {
+      return this.summarizer.overflowCompact(messages, summary, this.config.maxContextTokens)
+    }
+
+    // fallback 到旧路径
     const tailStart = Math.max(0, messages.length - 5)
 
     let tailStartAdj = tailStart
@@ -458,9 +476,9 @@ export class ContextManager {
       }
     }
 
-    const summary = await this.summarizeHistory(messages.slice(0, tailStartAdj))
+    const legacySummary = await this.summarizeHistory(messages.slice(0, tailStartAdj))
     return [
-      { role: "user" as const, content: `[Reactive compact]\n\n${summary}` },
+      { role: "user" as const, content: `[Reactive compact]\n\n${legacySummary}` },
       ...messages.slice(tailStartAdj),
     ]
   }
