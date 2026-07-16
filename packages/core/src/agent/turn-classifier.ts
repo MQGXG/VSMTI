@@ -1,3 +1,4 @@
+import type { LLMMessage } from "../llm/client"
 import { detectTextNgramRepeat } from "./utils"
 
 /**
@@ -20,10 +21,23 @@ export type ContinueAction =
   | { type: "retry"; nudge: string }                          // 无效输出，注入 nudge 后重试
   | { type: "text-repeat"; level: 1 | 2 | 3; nudge: string } // 文本重复，3 级逐步升级
   | { type: "auto-continue"; reason: "length" | "too-short"; nudge: string } // 自动续跑
+  | { type: "tool-suggest"; toolName?: string; reason: string; nudge: string } // 建议 LLM 使用工具
   | { type: "continue" }                                      // 正常继续（有工具调用）
 
 /** 分类器的返回类型：要么终止，要么继续 */
 export type StepDecision = TerminalReason | ContinueAction
+
+export const MAX_STEPS_WARNING = `⚠️ 这是你的最后一轮回答。
+
+请在本次回复中完成以下工作：
+1. 总结已经完成的工作和进展
+2. 列出未完成或遗留的事项
+3. 给出后续建议或下一步方向
+
+注意：本次过后工具将不可用，请直接回复文本。`
+
+export const MAX_STEPS_REACHED = `⛔ 已达到最大步数上限。
+请直接回复文本总结，不得再进行任何工具调用。`
 
 /** 判断是否为终止原因 */
 export function isTerminal(action: StepDecision): action is TerminalReason {
@@ -32,7 +46,7 @@ export function isTerminal(action: StepDecision): action is TerminalReason {
 
 /** 判断是否为恢复动作（需要注入 nudge 后继续） */
 export function isRecovery(action: StepDecision): action is ContinueAction & { nudge: string } {
-  return action.type === "retry" || action.type === "text-repeat" || action.type === "auto-continue"
+  return action.type === "retry" || action.type === "text-repeat" || action.type === "auto-continue" || action.type === "tool-suggest"
 }
 
 /** 判断是否为正常继续 */
@@ -47,6 +61,7 @@ export interface ClassifyContext {
   activeGoal: any | null
   toolErrorCount: number
   toolCallCount: number
+  userIntent?: "requires_tool" | "chat_only"
 }
 
 interface AssistantInfo {
@@ -59,7 +74,7 @@ interface AssistantInfo {
   finishReason?: string
 }
 
-function getLastAssistant(messages: any[]): AssistantInfo {
+function getLastAssistant(messages: LLMMessage[]): AssistantInfo {
   let text = ""
   let hasToolCalls = false
   let hasError = false
@@ -79,7 +94,7 @@ function getLastAssistant(messages: any[]): AssistantInfo {
         if (part.type === "tool-call") hasToolCalls = true
       }
     }
-    hasError = !!m.error
+    hasError = !!(m as any).error
     hasFiltered = (m as any).finish === "content-filter"
     finishReason = (m as any).finish
     break
@@ -96,6 +111,18 @@ function getLastAssistant(messages: any[]): AssistantInfo {
   }
 }
 
+const REFUSAL_PATTERNS = [
+  /不.*需要.*(调用|使用).*工具/i,
+  /no tools? (needed|required)/i,
+  /this (doesn't|does not) require (any )?tools/i,
+  /i (don't|do not) need (to use|any) tools/i,
+  /just (回答|reply|tell|explain)/i,
+]
+
+function isToolRefusal(text: string): boolean {
+  return REFUSAL_PATTERNS.some(p => p.test(text))
+}
+
 /**
  * 分类检查顺序（优先级从高到低）：
  * 1. max-turns    → Terminal: 步数超限
@@ -104,10 +131,11 @@ function getLastAssistant(messages: any[]): AssistantInfo {
  * 4. text-repeat  → Continue: N-gram 检测，3 级恢复
  * 5. retry        → Continue: 空输出/纯推理，给一次机会
  * 6. auto-continue→ Continue: finish="length" / 输出太短
- * 7. continue     → Continue: 有工具调用
- * 8. completed    → Terminal: 无工具调用 + 有输出
+ * 7. tool-suggest → Continue: LLM 拒绝调工具但需要工具
+ * 8. continue     → Continue: 有工具调用
+ * 9. completed    → Terminal: 无工具调用 + 有输出
  */
-export function classifyStep(messages: any[], ctx: ClassifyContext): StepDecision {
+export function classifyStep(messages: LLMMessage[], ctx: ClassifyContext): StepDecision {
   const assistant = getLastAssistant(messages)
 
   if (ctx.step >= ctx.maxSteps) return { type: "max-turns" }
@@ -130,8 +158,8 @@ export function classifyStep(messages: any[], ctx: ClassifyContext): StepDecisio
   }
 
   if (!assistant.hasToolCalls) {
-    if (ctx.activeGoal) {
-      return { type: "continue" }
+    if (assistant.textLength > 0 && isToolRefusal(assistant.text) && ctx.userIntent === "requires_tool") {
+      return { type: "tool-suggest", reason: "refusal", nudge: "当前任务可能需要使用工具来完成，请考虑使用合适的工具。" }
     }
     if (assistant.textLength < 50) {
       return { type: "auto-continue", reason: "too-short", nudge: "请继续" }

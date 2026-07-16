@@ -45,6 +45,7 @@ export interface ContextStats {
 }
 
 export class ContextManager {
+  // ─── 私有状态 ─────────────────────────────────
   private checkpointProvider: CheckpointProvider
   private memoryManager: MemoryManager
   private config: Required<ContextConfig>
@@ -57,6 +58,7 @@ export class ContextManager {
   private workspace = ""
   private summarizer = new IncrementalSummarizer()
 
+  // ─── 构造 & 初始化 ─────────────────────────────
   constructor(
     checkpointProvider: CheckpointProvider,
     memoryManager: MemoryManager,
@@ -172,6 +174,7 @@ export class ContextManager {
   }
 
   // ── 压缩管线入口 ────────────────────────────────────────────
+  // ─── 压缩管道 ─────────────────────────────────
   async compactPipeline(
     messages: LLMMessage[],
     sessionID: string,
@@ -453,6 +456,7 @@ export class ContextManager {
   }
 
   // ── 应急压缩 ──────────────────────────────────────────────
+  // ─── 紧急压缩 ─────────────────────────────────
   async reactiveCompact(messages: LLMMessage[]): Promise<LLMMessage[]> {
     this.writeTranscript(messages)
 
@@ -483,7 +487,7 @@ export class ContextManager {
     ]
   }
 
-  // ── 向后兼容的 checkAndRebuild ─────────────────────────────
+  // ─── 外部接口 ─────────────────────────────────
   async checkAndRebuild(
     messages: LLMMessage[],
     sessionID: string,

@@ -33,6 +33,8 @@ export type Content =
   | { type: "text"; text: string }
   | { type: "file"; data: string; mime: string; name?: string }
 
+import type { ToolCategory } from "../tools/shared/tool-meta"
+
 export interface ToolDef<Input = unknown, Output = unknown> {
   name: string
   description: string
@@ -43,6 +45,14 @@ export interface ToolDef<Input = unknown, Output = unknown> {
   permission?: string
   /** 工具级输出截断上限（字符数），默认 50000 */
   maxOutputLength?: number
+  /** 只读工具（不会修改任何状态） */
+  isReadOnly?: boolean
+  /** 是否支持并行执行（覆盖 tool-meta 全局配置） */
+  isConcurrencySafe?: boolean
+  /** 单次执行超时（毫秒） */
+  timeout?: number
+  /** 工具分类 */
+  category?: ToolCategory
 }
 
 export interface ToolCall {
@@ -93,6 +103,10 @@ export function make<Input, Output>(
     toModelOutput?(input: Input, output: Output): Content[]
     permission?: string
     maxOutputLength?: number
+    isReadOnly?: boolean
+    isConcurrencySafe?: boolean
+    timeout?: number
+    category?: ToolCategory
   }
 ): ToolDef<Input, Output> {
   const def: ToolDef<Input, Output> = {
@@ -104,6 +118,10 @@ export function make<Input, Output>(
     toModelOutput: config.toModelOutput,
     permission: config.permission,
     maxOutputLength: config.maxOutputLength,
+    isReadOnly: config.isReadOnly,
+    isConcurrencySafe: config.isConcurrencySafe,
+    timeout: config.timeout,
+    category: config.category,
   }
 
   const jsonschema = zodToJsonSchemaConverter(config.inputSchema)

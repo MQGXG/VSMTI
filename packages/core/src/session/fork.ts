@@ -156,12 +156,6 @@ export class SessionForkManager {
   }
 }
 
-// 全局实例
-let globalForkManager: SessionForkManager | null = null
-
-export function getSessionForkManager(): SessionForkManager {
-  if (!globalForkManager) {
-    globalForkManager = new SessionForkManager()
-  }
-  return globalForkManager
+export function createSessionForkManager(): SessionForkManager {
+  return new SessionForkManager()
 }

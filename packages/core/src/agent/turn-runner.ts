@@ -343,6 +343,14 @@ export async function* runTurn(
     return false
   }
 
+  // ── 权限待处理队列（"ask" 的工具暂存，流结束后统一处理） ──
+  interface PendingPermTool {
+    toolCall: { id: string; name: string; arguments: string }
+    permissionAction: string
+    resources: string[]
+  }
+  const pendingPermissions: PendingPermTool[] = []
+
   // ── 流式事件处理循环 ──
   for await (const event of stream) {
     while (toolDoneQueue.length > 0) {
@@ -375,24 +383,7 @@ export async function* runTurn(
         const def = deps.registry.get(event.toolCall.name)
         const permissionAction = def?.permission || event.toolCall.name
         const resources = extractResources(args)
-
-        const { id: permId, waitForReply } = deps.stateMachine.createPermissionRequest(
-          config.onPermissionSave
-            ? () => config.onPermissionSave?.([{ action: permissionAction, resource: "*", effect: "allow" as const }])
-            : undefined,
-        )
-        yield { type: "permission_request", id: permId, action: permissionAction, resources, toolCall: { id: event.toolCall.id, name: event.toolCall.name, input: args } }
-        const allowed = await waitForReply()
-
-        if (allowed) {
-          deps.approvalStore.record(permissionAction, resources, "allow", 86400_000, input.workspace)
-          startToolExecution(event.toolCall)
-        } else {
-          deps.approvalStore.record(permissionAction, resources, "deny", 300_000, input.workspace)
-          const result = { success: false, error: `Permission denied: ${event.toolCall.name}` } as ToolResult
-          toolResults.push({ id: event.toolCall.id, result })
-          toolDoneQueue.push({ id: event.toolCall.id, result })
-        }
+        pendingPermissions.push({ toolCall: event.toolCall, permissionAction, resources })
       }
     } else if (event.type === "retry") {
       retryCount = event.attempt
@@ -408,6 +399,27 @@ export async function* runTurn(
     } else if (event.type === "done") {
       turnUsage = event.usage
       break
+    }
+  }
+
+  // ── 流结束后统一处理权限队列（不阻塞 LLM 流） ──
+  for (const pp of pendingPermissions) {
+    const { id: permId, waitForReply } = deps.stateMachine.createPermissionRequest(
+      config.onPermissionSave
+        ? () => config.onPermissionSave?.([{ action: pp.permissionAction, resource: "*", effect: "allow" as const }])
+        : undefined,
+    )
+    yield { type: "permission_request", id: permId, action: pp.permissionAction, resources: pp.resources, toolCall: { id: pp.toolCall.id, name: pp.toolCall.name, input: JSON.parse(pp.toolCall.arguments) } }
+    const allowed = await waitForReply()
+
+    if (allowed) {
+      deps.approvalStore.record(pp.permissionAction, pp.resources, "allow", 86400_000, input.workspace)
+      startToolExecution(pp.toolCall)
+    } else {
+      deps.approvalStore.record(pp.permissionAction, pp.resources, "deny", 300_000, input.workspace)
+      const result = { success: false, error: `Permission denied: ${pp.toolCall.name}` } as ToolResult
+      toolResults.push({ id: pp.toolCall.id, result })
+      toolDoneQueue.push({ id: pp.toolCall.id, result })
     }
   }
 

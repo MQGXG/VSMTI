@@ -96,6 +96,8 @@ export { ForkCacheManager } from "./agent/fork-cache"
 export { SystemContextManager } from "./agent/system-context"
 export { TextNgramMonitor } from "./agent/text-ngram"
 export { searchTools, getRecommendedTools, shouldLoadTool } from "./tools/shared/tool-loader"
+export { ProviderCatalog } from "./llm/provider-catalog"
+export type { ProviderDef, ModelDef } from "./llm/provider-catalog"
 
 
 

@@ -42,3 +42,20 @@ export async function buildSavedPermissionSet(workspace: string): Promise<Permis
   const savedRules = await loadWorkspacePermissions(workspace)
   return new PermissionSet(savedRules)
 }
+
+/** 导出工作区权限规则为 JSON 字符串 */
+export async function exportPermissions(workspace: string): Promise<string> {
+  const rules = await loadWorkspacePermissions(workspace)
+  return JSON.stringify(rules, null, 2)
+}
+
+/** 从 JSON 字符串导入权限规则到工作区 */
+export async function importPermissions(workspace: string, json: string): Promise<number> {
+  const rules = PermissionSet.importRules(json).getRules()
+  let count = 0
+  for (const rule of rules) {
+    await saveWorkspacePermission(workspace, rule)
+    count++
+  }
+  return count
+}

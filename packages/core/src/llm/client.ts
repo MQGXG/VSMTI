@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { createProvider } from "./providers"
+import { ProviderCatalog } from "./provider-catalog"
 import { LLMError } from "./schema/errors"
 import type { LLMMessage } from "./schema/messages"
 import { getToolResultOutput } from "./schema/messages"
@@ -103,7 +103,7 @@ async function* withRetry(
 }
 
 export function createLLMClient(config: SDKConfig): LLMClient {
-  const provider = createProvider(
+  const provider = ProviderCatalog.createRoute(
     config.provider,
     config.apiKey,
     config.apiUrl,

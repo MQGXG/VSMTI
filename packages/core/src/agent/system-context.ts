@@ -196,12 +196,6 @@ export class SystemContextManager {
   }
 }
 
-// 全局实例
-let globalContextManager: SystemContextManager | null = null
-
-export function getSystemContextManager(workspace: string): SystemContextManager {
-  if (!globalContextManager) {
-    globalContextManager = new SystemContextManager(workspace)
-  }
-  return globalContextManager
+export function createSystemContextManager(workspace: string): SystemContextManager {
+  return new SystemContextManager(workspace)
 }

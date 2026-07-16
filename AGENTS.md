@@ -33,8 +33,10 @@ mira/
 │   │       ├── compose-mode.ts      # 组合模式
 │   │       ├── agent/               # Agent 核心子模块
 │   │       │   ├── index.ts
-│   │       │   ├── agent.ts         #   Agent 核心循环
-│   │       │   ├── context.ts       #   系统提示构建
+│   │       │   ├── agent.ts         #   Agent 核心循环（~500行）
+│   │       │   ├── constants.ts     #   AgentConfig + DEFAULT_SYSTEM
+│   │       │   ├── session-restore.ts#  会话恢复逻辑
+│   │       │   ├── context.ts       #   系统提示构建 + SourceManager
 │   │       │   ├── state-machine.ts #   生命周期状态机
 │   │       │   ├── turn-processor.ts#   单回合工具调用编排
 │   │       │   ├── turn.ts          #   回合配置
@@ -49,6 +51,8 @@ mira/
 │   │       │   ├── client.ts        #   LLM 客户端
 │   │       │   ├── cache-policy.ts  #   缓存策略
 │   │       │   ├── tool-runtime.ts  #   工具运行时
+│   │       │   ├── provider-policy.ts#  Provider 策略引擎
+│   │       │   ├── provider-chain.ts#   Provider Failover Chain
 │   │       │   ├── schema/          #   消息/事件/错误类型
 │   │       │   │   ├── index.ts
 │   │       │   │   ├── messages.ts  #     LLMMessage 类型
@@ -79,7 +83,9 @@ mira/
 │   │       │   ├── database.ts      #   SQLite (sql.js)
 │   │       │   ├── instruction.ts   #   指令上下文
 │   │       │   ├── logger.ts        #   日志系统
-│   │       │   ├── registry.ts      #   工具注册表
+│   │       │   ├── registry.ts      #   工具注册表（核心 ~120行）
+│   │       │   ├── tool-materializer.ts# 物化 + JSON Schema 转换
+│   │       │   ├── mcp-plugin-registry.ts# MCP/Plugin 生命周期管理
 │   │       │   ├── registry-init.ts #   注册表初始化
 │   │       │   ├── server-manager.ts#   服务器管理器
 │   │       │   ├── permission/      #   权限子模块
@@ -98,7 +104,12 @@ mira/
 │   │       │   ├── context.ts       #   上下文窗口管理（checkpoint/rebuild）
 │   │       │   ├── compaction.ts    #   上下文压缩
 │   │       │   ├── fork.ts          #   会话分支
-│   │       │   └── snapshot.ts      #   会话快照
+│   │       │   ├── snapshot.ts      #   会话快照（磁盘持久化）
+│   │       │   ├── context-source.ts#   系统上下文 Source 管理
+│   │       │   ├── structured-summary.ts# 结构化摘要
+│   │       │   ├── event-store.ts   #   事件存储（Event Sourcing）
+│   │       │   ├── event-types.ts   #   事件类型定义
+│   │       │   └── projector.ts     #   事件投影为消息
 │   │       ├── memory/              # 记忆系统
 │   │       │   ├── manager.ts       #   记忆管理器
 │   │       │   ├── types.ts         #   记忆类型定义
@@ -341,7 +352,7 @@ mira/
 
 支持通过 `~/.config/mira/agents/` 和 `{project}/.mira/agents/` 目录加载自定义 Agent JSON 配置。
 
-## 工具清单（38 个）
+## 工具清单（39 个）
 
 | 分类 | 工具 | 说明 |
 |------|------|------|
@@ -355,6 +366,7 @@ mira/
 | | git_status | Git 状态 |
 | | git_diff | Git 差异 |
 | | git_log | Git 提交历史 |
+| | todo_write | Todo 任务管理（创建/更新/列表/完成/删除） |
 | **knowledge** | web_search | 网络搜索（Exa/Parallel MCP + DuckDuckGo 免费降级 + TTL 缓存） |
 | | web_browse | 网页浏览（Playwright，支持 navigate/click/type/scroll/back/extract/**capture**） |
 | | web_fetch | URL 内容获取（Turndown + SSRF 防护 + TTL 缓存） |

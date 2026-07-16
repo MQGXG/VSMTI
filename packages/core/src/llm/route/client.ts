@@ -1,3 +1,25 @@
+const SENSITIVE_KEYS = new Set(["apiKey", "api_key", "authorization", "x-api-key", "token", "password", "secret"])
+
+function sanitizeSensitiveFields(obj: unknown): unknown {
+  if (Array.isArray(obj)) return obj.map(sanitizeSensitiveFields)
+  if (obj && typeof obj === "object") {
+    const result: Record<string, unknown> = {}
+    for (const [key, val] of Object.entries(obj)) {
+      result[key] = SENSITIVE_KEYS.has(key.toLowerCase()) ? "***REDACTED***" : sanitizeSensitiveFields(val)
+    }
+    return result
+  }
+  return obj
+}
+
+function sanitizeBody(body: string): string {
+  try {
+    return JSON.stringify(sanitizeSensitiveFields(JSON.parse(body)), null, 2)
+  } catch {
+    return body.slice(0, 500)
+  }
+}
+
 interface RouteConfig {
   baseUrl: string
   apiKey: string
@@ -49,11 +71,9 @@ class RouteClient {
 
     if (!response.ok) {
       const errorText = await response.text()
-      const fullBody = typeof body === "object" ? JSON.stringify(body, null, 2) : String(body)
-      console.error(`[RouteClient] HTTP ${response.status} from ${url}:
-  Response: ${errorText}
-  Full Body:
-${fullBody.slice(0, 5000)}`)
+      console.error(`[RouteClient] HTTP ${response.status} from ${url}: ${errorText.slice(0, 500)}`)
+      const sanitized = sanitizeBody(typeof body === "object" ? JSON.stringify(body) : String(body))
+      console.debug(`[RouteClient] Request body (sanitized): ${sanitized.slice(0, 2000)}`)
       throw new Error(`HTTP ${response.status}: ${errorText.slice(0, 1000)}`)
     }
 

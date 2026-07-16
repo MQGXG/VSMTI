@@ -26,6 +26,7 @@ const electronAPI = {
   config: {
     get: (workspace?: string) => ipcRenderer.invoke("config:get", workspace),
     save: (config: Record<string, unknown>) => ipcRenderer.invoke("config:save", config),
+    getProviderCatalog: () => ipcRenderer.invoke("config:getProviderCatalog"),
   },
 
   // TS Core 会话/项目

@@ -137,6 +137,7 @@ function connectAndGetChannel(
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       pendingStreams.delete(id)
+      console.error(`[Sidecar] SSE channel timeout for stream #${id} after 15s`)
       reject(new Error("SSE channel timeout"))
     }, 15_000)
 
@@ -167,6 +168,7 @@ function connectAndGetChannel(
         }
       },
       (err) => {
+        console.error(`[Sidecar] connectSSE error for stream #${id}: ${err.message}`)
         onError(err)
         const pending = pendingStreams.get(id)
         if (pending) {
@@ -202,6 +204,7 @@ export function registerSidecarIPCHandlers(): void {
   ipcMain.handle("agent:startStream", async (event, sessionId: string, message: string, config: Record<string, unknown>) => {
     const window = BrowserWindow.fromWebContents(event.sender)
     if (!window) throw new Error("Cannot get sender window")
+    console.log(`[Sidecar] startStream called, sm.running=${sm?.running}, port=${sm?.port}`)
 
     let streamChannel = ""
     let channel = ""

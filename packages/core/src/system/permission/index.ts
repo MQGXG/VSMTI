@@ -169,6 +169,31 @@ export class PermissionSet {
   static merge(...rulesets: PermissionRule[][]): PermissionSet {
     return new PermissionSet(rulesets.flat())
   }
+
+  /** 获取所有规则（用于 UI 展示） */
+  getRules(): PermissionRule[] {
+    return [...this.rules]
+  }
+
+  /** 导出规则为 JSON */
+  exportRules(): string {
+    return JSON.stringify(this.rules, null, 2)
+  }
+
+  /** 从 JSON 导入规则 */
+  static importRules(json: string): PermissionSet {
+    try {
+      const rules = JSON.parse(json)
+      if (!Array.isArray(rules)) return new PermissionSet([])
+      const validRules = rules.filter((r: any) =>
+        r && typeof r.action === "string" && typeof r.resource === "string" &&
+        ["allow", "deny", "ask"].includes(r.effect)
+      )
+      return new PermissionSet(validRules)
+    } catch {
+      return new PermissionSet([])
+    }
+  }
 }
 
 const basePermissionRules: PermissionRule[] = [

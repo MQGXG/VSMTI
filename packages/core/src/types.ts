@@ -8,16 +8,40 @@ export interface TokenUsage {
   cacheWriteTokens?: number
 }
 
+export type FinishReason = "stop" | "length" | "tool-calls" | "error" | "content-filtered" | "unknown"
+
+export type EventType =
+  | "content" | "tool_start" | "tool_result"
+  | "permission_request" | "question" | "error" | "finish"
+  | "thinking" | "goal_status" | "context_rebuild" | "retry" | "subagent_status"
+
+export interface BaseAgentEvent {
+  timestamp?: string
+}
+
+export interface ContentEvent extends BaseAgentEvent { type: "content"; text: string }
+export interface ToolStartEvent extends BaseAgentEvent { type: "tool_start"; id: string; name: string; args: Record<string, unknown> }
+export interface ToolResultEvent extends BaseAgentEvent { type: "tool_result"; id: string; name: string; result: { success: boolean; output?: string; error?: string; metadata?: Record<string, unknown> } }
+export interface PermissionRequestEvent extends BaseAgentEvent { type: "permission_request"; id: string; action: string; resources: string[]; toolCall: ToolCall }
+export interface QuestionEvent extends BaseAgentEvent { type: "question"; id: string; question: string; options?: string[] }
+export interface ErrorEvent extends BaseAgentEvent { type: "error"; message: string }
+export interface FinishEvent extends BaseAgentEvent { type: "finish"; reason: string; usage?: TokenUsage }
+export interface ThinkingEvent extends BaseAgentEvent { type: "thinking"; text: string }
+export interface GoalStatusEvent extends BaseAgentEvent { type: "goal_status"; goalId: string; description: string; status: string; reasoning?: string }
+export interface ContextRebuildEvent extends BaseAgentEvent { type: "context_rebuild"; reason: string; tokensBefore: number; tokensAfter: number }
+export interface RetryEvent extends BaseAgentEvent { type: "retry"; attempt: number; error: string }
+export interface SubagentStatusEvent extends BaseAgentEvent { type: "subagent_status"; subagentId: string; status: string; description: string }
+
 export type AgentEvent =
-  | { type: 'content'; text: string }
-  | { type: 'tool_start'; id: string; name: string; args: Record<string, unknown> }
-  | { type: 'tool_result'; id: string; name: string; result: { success: boolean; output?: string; error?: string; metadata?: Record<string, unknown> } }
-  | { type: 'permission_request'; id: string; action: string; resources: string[]; toolCall: ToolCall }
-  | { type: 'question'; id: string; question: string; options?: string[] }
-  | { type: 'error'; message: string }
-  | { type: 'finish'; reason: string; usage?: TokenUsage }
-  | { type: 'thinking'; text: string }
-  | { type: 'goal_status'; goalId: string; description: string; status: string; reasoning?: string }
-  | { type: 'context_rebuild'; reason: string; tokensBefore: number; tokensAfter: number }
-  | { type: 'retry'; attempt: number; error: string }
-  | { type: 'subagent_status'; subagentId: string; status: string; description: string }
+  | ContentEvent
+  | ToolStartEvent
+  | ToolResultEvent
+  | PermissionRequestEvent
+  | QuestionEvent
+  | ErrorEvent
+  | FinishEvent
+  | ThinkingEvent
+  | GoalStatusEvent
+  | ContextRebuildEvent
+  | RetryEvent
+  | SubagentStatusEvent

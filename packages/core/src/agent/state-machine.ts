@@ -2,17 +2,50 @@ export type PermissionReply = "allow" | "deny" | "always"
 
 export type AgentState = "idle" | "running" | "waiting_permission" | "stopped" | "done"
 
+interface StateTransition {
+  from: AgentState[]
+  to: AgentState
+  guard?: () => boolean
+}
+
+const TRANSITIONS: StateTransition[] = [
+  { from: ["idle"],                                                to: "running" },
+  { from: ["idle", "running", "waiting_permission", "stopped"],   to: "stopped" },
+  { from: ["running"],                                             to: "waiting_permission" },
+  { from: ["waiting_permission"],                                  to: "running" },
+  { from: ["running", "waiting_permission"],                       to: "done" },
+]
+
+type StateChangeListener = (prev: AgentState, next: AgentState) => void
+
 export class AgentStateMachine {
   private _state: AgentState = "idle"
-  private _aborted = false
+  private _finalized = false
+  private listeners = new Set<StateChangeListener>()
 
   get state(): AgentState { return this._state }
-  get aborted(): boolean { return this._aborted }
+  get aborted(): boolean { return this._state === "stopped" }
 
-  start(): void { this._state = "running" }
-  waitPermission(): void { this._state = "waiting_permission" }
-  stop(): void { this._state = "stopped"; this._aborted = true }
-  finish(): void { this._state = "done" }
+  subscribe(listener: StateChangeListener): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  private transitionTo(next: AgentState): boolean {
+    const rule = TRANSITIONS.find(t => t.to === next && t.from.includes(this._state))
+    if (!rule) throw new Error(`Invalid state transition: ${this._state} → ${next}`)
+    if (rule.guard && !rule.guard()) return false
+    const prev = this._state
+    this._state = next
+    if (next === "stopped" || next === "done") this._finalized = true
+    for (const fn of this.listeners) fn(prev, next)
+    return true
+  }
+
+  start(): void { this.transitionTo("running") }
+  waitPermission(): void { this.transitionTo("waiting_permission") }
+  stop(): void { this.transitionTo("stopped") }
+  finish(): void { this.transitionTo("done") }
 
   private pendingPermissions = new Map<string, {
     resolve: (allow: boolean) => void

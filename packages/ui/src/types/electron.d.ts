@@ -32,6 +32,10 @@ export interface ElectronAPI {
   config: {
     get: (workspace?: string) => Promise<{ provider: string; model: string; apiUrl: string; mode: string; apiKeyFrom: "env" | "file" | "none" }>;
     save: (config: Record<string, unknown>) => Promise<void>;
+    getProviderCatalog: () => Promise<Array<{
+      id: string; label: string; website?: string; defaultBaseUrl: string; authType: string
+      models: Array<{ id: string; label?: string; context?: number }>
+    }>>;
   };
 
   // TS Core 会话/项目管理

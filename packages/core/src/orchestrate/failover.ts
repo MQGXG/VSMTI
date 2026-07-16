@@ -44,33 +44,31 @@ export class FallbackClient {
     for (let i = this.currentProviderIndex; i < configs.length; i++) {
       const config = configs[i]
       this.currentProviderIndex = i
+      let shouldRetry = false
 
       try {
         const client = createLLMClient(config)
-        const stream = client.stream(request)
+        const innerStream = client.stream(request)
 
-        for await (const event of stream) {
+        for await (const event of innerStream) {
           if (event.type === "error") {
             this.lastError = event.error?.message || "Unknown error"
-            // 检查是否需要降级
-            if (this.shouldFallback(this.lastError)) {
-              if (i < configs.length - 1) {
-                this.fallbackUsed = true
-                yield {
-                  type: "delta",
-                  delta: `\n\n[⚠️ ${config.provider} 出错，切换到 ${configs[i + 1].provider} 重试...]\n\n`,
-                }
-                break // 跳出当前 stream，外层 for 循环会进入下一个 provider
+            if (this.shouldFallback(this.lastError) && i < configs.length - 1) {
+              this.fallbackUsed = true
+              shouldRetry = true
+              yield {
+                type: "delta",
+                delta: `\n\n[⚠️ ${config.provider} 出错，切换到 ${configs[i + 1].provider} 重试...]\n\n`,
               }
-              yield event
-              return
+              break
             }
             yield event
             return
           }
           yield event
         }
-        return // 成功完成，不继续尝试 fallback
+        if (shouldRetry) continue
+        return
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
         this.lastError = msg

@@ -12,7 +12,9 @@ export interface ProviderConfig {
   baseUrl?: string
   headers?: Record<string, string>
   options?: Record<string, unknown>
-  models?: Record<string, { name?: string; enabled?: boolean }>
+  enabled?: boolean
+  models?: Record<string, { name?: string; enabled?: boolean; context?: number }>
+  customModels?: Array<{ id: string; name?: string; context?: number }>
 }
 
 export interface MiraConfig {

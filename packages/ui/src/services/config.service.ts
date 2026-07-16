@@ -19,6 +19,13 @@ export const ConfigService = {
     return window.electronAPI.config.save(config)
   },
 
+  async getProviderCatalog(): Promise<Array<{
+    id: string; label: string; website?: string; defaultBaseUrl: string; authType: string
+    models: Array<{ id: string; label?: string; context?: number }>
+  }>> {
+    return window.electronAPI.config.getProviderCatalog()
+  },
+
   async encryptApiKey(text: string): Promise<string> {
     return window.electronAPI.encryptApiKey(text)
   },
