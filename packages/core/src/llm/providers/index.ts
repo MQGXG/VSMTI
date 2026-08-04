@@ -1,4 +1,4 @@
-import type { RouteInstance } from "../route/route"
+import type { RouteInstance } from "../route/types"
 
 export type ProviderType = string
 export type ProviderInstance = RouteInstance

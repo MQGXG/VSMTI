@@ -5,10 +5,13 @@
 
 import type { ToolDef } from "../../shared/tool"
 import { getDbAsync, runWrite } from "../../system/database"
+import { z } from "zod"
 
 export const todoTool: ToolDef = {
   name: "todo_write",
   description: "Create, update, list, complete, or delete todo items for task tracking. Use this to manage your task list during a session.",
+  inputSchema: z.record(z.string(), z.unknown()),
+  outputSchema: z.any(),
   parameters: {
     type: "object",
     properties: {

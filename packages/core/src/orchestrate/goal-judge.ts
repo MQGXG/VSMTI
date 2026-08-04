@@ -79,7 +79,7 @@ export class GoalJudge {
         status: row[3] as Goal["status"],
         satisfiedAt: row[4],
         timeoutMs: row[5] || 0,
-        evaluations: row[6] ? JSON.parse(row[6]) : [],
+        evaluations: row[6] ? JSON.parse(String(row[6])) : [],
       }))
 
       this.goalCounter = this.goals.length

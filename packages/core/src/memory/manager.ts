@@ -1,4 +1,4 @@
-import { MemoryProvider } from "./types"
+import type { MemoryProvider } from "./types"
 import type { BuiltinMemoryProvider } from "./builtin-provider"
 import type { FileMemoryProvider } from "./file-memory-provider"
 import type { FTSMemoryProvider } from "./fts-memory-provider"

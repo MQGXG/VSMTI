@@ -8,7 +8,7 @@
  * 3. 执行耗时追踪
  */
 
-import { z } from "zod"
+import type { z } from "zod"
 import { zodToJsonSchema as zodToJsonSchemaConverter } from "./zod-converter"
 
 export interface ToolContext {
@@ -43,6 +43,8 @@ export interface ToolDef<Input = unknown, Output = unknown> {
   execute(input: Input, ctx: ToolContext): Promise<ToolResult>
   toModelOutput?(input: Input, output: Output): Content[]
   permission?: string
+  /** 兼容旧格式：直接提供 JSON Schema（而非 inputSchema），仅供未迁移工具使用 */
+  parameters?: Record<string, unknown>
   /** 工具级输出截断上限（字符数），默认 50000 */
   maxOutputLength?: number
   /** 只读工具（不会修改任何状态） */
@@ -145,15 +147,18 @@ export function getJsonSchema(def: ToolDef): Record<string, unknown> {
     }
     return cached
   }
-  if ("inputSchema" in def && typeof (def as any).inputSchema?.toJSONSchema === "function") {
-    try {
-      const raw = (def as any).inputSchema.toJSONSchema()
-      const cleaned: Record<string, unknown> = { type: raw.type || "object" }
-      if (raw.properties) cleaned.properties = raw.properties
-      if (raw.required) cleaned.required = raw.required
-      if (raw.items) cleaned.items = raw.items
-      return cleaned
-    } catch { /* JSON Schema 直接传递不转换 */ }
+  if ("inputSchema" in def) {
+    const ischema = def.inputSchema as unknown as { toJSONSchema?: () => Record<string, unknown> }
+    if (typeof ischema?.toJSONSchema === "function") {
+      try {
+        const raw = ischema.toJSONSchema()
+        const cleaned: Record<string, unknown> = { type: raw.type || "object" }
+        if (raw.properties) cleaned.properties = raw.properties
+        if (raw.required) cleaned.required = raw.required
+        if (raw.items) cleaned.items = raw.items
+        return cleaned
+      } catch { /* JSON Schema 直接传递不转换 */ }
+    }
   }
   if ("parameters" in def) {
     const p = (def as any).parameters as Record<string, unknown>
@@ -192,7 +197,9 @@ export async function settle(
 
   const schema = getJsonSchema(def)
   const coercedInput = coerceToolArgs(def.name, call.input, schema)
-  const parseResult = def.inputSchema.safeParse(coercedInput)
+  const parseResult = def.inputSchema
+    ? def.inputSchema.safeParse(coercedInput)
+    : { success: true as const, data: coercedInput }
   if (!parseResult.success) {
     // 参数校验失败 = 可恢复错误，LLM 可以修正参数重试
     return {
@@ -217,7 +224,7 @@ export async function settle(
       truncated = true
     }
 
-    const parsed = def.outputSchema.parse(output)
+    const parsed = def.outputSchema ? def.outputSchema.parse(output) : output
     const content = def.toModelOutput
       ? def.toModelOutput(parseResult.data, parsed)
       : [{ type: "text" as const, text: output || result.error || "" }]
@@ -309,7 +316,8 @@ function coerceValue(value: string, expected: string | string[]): unknown {
 }
 
 export function coerceToolArgs(name: string, args: Record<string, unknown>, schema: Record<string, unknown>): Record<string, unknown> {
-  const props = (schema.properties || {}) as Record<string, any>
+  interface SchemaProperty { type?: string | string[] }
+  const props = (schema.properties || {}) as Record<string, SchemaProperty>
   const out = { ...args }
   for (const [key, value] of Object.entries(out)) {
     if (typeof value !== 'string') continue

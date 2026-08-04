@@ -3,7 +3,7 @@
  */
 
 import { useRef, useCallback, useMemo, useState, useEffect } from "react"
-import type { GraphData, GraphNode } from "./graph-data"
+import type { GraphData, GraphNode, GraphLink } from "./graph-data"
 import { buildGraphFromKnowledgeStore, buildGraphFromMemories } from "./graph-data"
 
 // 动态导入 react-force-graph-3d（避免 SSR 问题）
@@ -103,7 +103,7 @@ export function MemoryGraph({
     })
   }, [])
 
-  const handleNodeClick = useCallback((node: any) => {
+  const handleNodeClick = useCallback((node: GraphNode) => {
     const graphNode: GraphNode = {
       id: node.id,
       label: node.label,
@@ -121,12 +121,12 @@ export function MemoryGraph({
     width: dimensions.width,
     height: dimensions.height,
     backgroundColor: "rgba(0,0,0,0)",
-    nodeLabel: (node: any) => `<div style="background:rgba(15,15,15,0.95);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);font-size:13px;max-width:280px"><b style="color:${node.color};font-size:14px">${node.label}</b><br/><span style="color:#9ca3af;font-size:11px">${node.type === "project" ? "项目" : node.type}</span>${node.description ? `<br/><span style="color:#6b7280;max-width:240px;display:block;margin-top:4px;font-size:11px;line-height:1.4">${node.description.slice(0, 150)}</span>` : ""}</div>`,
-    nodeColor: (node: any) => node.color,
-    nodeVal: (node: any) => node.id === "root" ? 20 : node.size,
+    nodeLabel: (node: GraphNode) => `<div style="background:rgba(15,15,15,0.95);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);font-size:13px;max-width:280px"><b style="color:${node.color};font-size:14px">${node.label}</b><br/><span style="color:#9ca3af;font-size:11px">${node.type === "project" ? "项目" : node.type}</span>${node.description ? `<br/><span style="color:#6b7280;max-width:240px;display:block;margin-top:4px;font-size:11px;line-height:1.4">${node.description.slice(0, 150)}</span>` : ""}</div>`,
+    nodeColor: (node: GraphNode) => node.color,
+    nodeVal: (node: GraphNode) => node.id === "root" ? 20 : node.size,
     nodeOpacity: 1,
     nodeRelSize: 4,
-    linkColor: (link: any) => {
+    linkColor: (link: GraphLink) => {
       const colors: Record<string, string> = {
         depends_on: "rgba(239,68,68,0.4)",
         contains: "rgba(255,255,255,0.1)",
@@ -143,10 +143,10 @@ export function MemoryGraph({
       }
       return colors[link.relation] || "rgba(255,255,255,0.1)"
     },
-    linkWidth: (link: any) => link.strength > 0.4 ? 1.2 : 0.5,
-    linkDirectionalParticles: (link: any) => link.strength > 0.3 ? 2 : 1,
+    linkWidth: (link: GraphLink) => link.strength > 0.4 ? 1.2 : 0.5,
+    linkDirectionalParticles: (link: GraphLink) => link.strength > 0.3 ? 2 : 1,
     linkDirectionalParticleWidth: 1,
-    linkDirectionalParticleColor: (link: any) => {
+    linkDirectionalParticleColor: (link: GraphLink) => {
       const colors: Record<string, string> = {
         depends_on: "rgba(239,68,68,0.6)",
         contains: "rgba(255,255,255,0.3)",
@@ -156,17 +156,12 @@ export function MemoryGraph({
       }
       return colors[link.relation] || "rgba(255,255,255,0.3)"
     },
-    linkLabel: (link: any) => `<div style="background:rgba(20,20,20,0.9);padding:3px 8px;border-radius:4px;font-size:11px;border:1px solid rgba(255,255,255,0.1)">${link.relation.replace(/_/g, " ")}</div>`,
+    linkLabel: (link: GraphLink) => `<div style="background:rgba(20,20,20,0.9);padding:3px 8px;border-radius:4px;font-size:11px;border:1px solid rgba(255,255,255,0.1)">${link.relation.replace(/_/g, " ")}</div>`,
     onNodeClick: handleNodeClick,
-    onNodeHover: (node: any) => { containerRef.current && (containerRef.current.style.cursor = node ? "pointer" : "default") },
+    onNodeHover: (node: GraphNode | null) => { if (containerRef.current) containerRef.current.style.cursor = node ? "pointer" : "default" },
     d3VelocityDecay: 0.3,
     warmupTicks: 100,
     cooldownTicks: 150,
-    nodeLabel: (node: any) => `<div style="background:rgba(15,15,15,0.95);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);font-size:13px;max-width:280px"><b style="color:${node.color};font-size:14px">${node.label}</b><br/><span style="color:#9ca3af;font-size:11px">${node.type === "project" ? "项目" : node.type}</span>${node.description ? `<br/><span style="color:#6b7280;max-width:240px;display:block;margin-top:4px;font-size:11px;line-height:1.4">${node.description.slice(0, 150)}</span>` : ""}</div>`,
-    nodeColor: (node: any) => node.color,
-    nodeVal: (node: any) => node.id === "root" ? 20 : node.size,
-    nodeOpacity: 1,
-    nodeRelSize: 4,
   }), [graphData, dimensions, handleNodeClick])
 
   if (!loaded) {

@@ -130,7 +130,7 @@ export function ProjectBar({ projects, activeProject, onProjectChange, onOpenPro
           <div style={{ borderTop: '1px solid var(--border)' }} />
           <button
             onClick={() => {
-              const hidden = JSON.parse(localStorage.getItem("hidden_projects") || "[]");
+              const hidden = JSON.parse(localStorage.getItem("hidden_projects") || "[]") as string[];
               hidden.push(contextMenu.project.project_id);
               localStorage.setItem("hidden_projects", JSON.stringify(hidden));
               setContextMenu(null);

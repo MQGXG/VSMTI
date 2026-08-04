@@ -110,7 +110,7 @@ export class ForkCacheManager {
    */
   getStats(): CacheStats & { size: number; entries: number } {
     let hits = 0
-    let misses = 0
+    const misses = 0
 
     for (const entry of this.cache.values()) {
       hits += entry.hitCount

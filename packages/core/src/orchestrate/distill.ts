@@ -37,14 +37,17 @@ Respond in JSON format:
 function parseDistillResponse(text: string): { workflows: DistillWorkflow[]; summary: string } {
   try {
     const cleaned = text.replace(/```(?:json)?\n?/g, "").trim()
-    const parsed = JSON.parse(cleaned)
+    const parsed = JSON.parse(cleaned) as {
+      workflows?: Array<{ name?: string; description?: string; confidence?: number; type?: string; steps?: string[]; examples?: string[] }>
+      summary?: string
+    }
     return {
-      workflows: (parsed.workflows || []).map((w: any, i: number) => ({
+      workflows: (parsed.workflows || []).map((w, i) => ({
         id: `wf_${Date.now().toString(36)}_${i}`,
         name: w.name || "",
         description: w.description || "",
         confidence: w.confidence || 0,
-        type: w.type || "skill",
+        type: (w.type || "skill") as DistillWorkflow["type"],
         steps: w.steps || [],
         examples: w.examples || [],
       })),

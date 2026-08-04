@@ -29,7 +29,7 @@ export const workflowRunTool = make({
 
   async execute(input, ctx) {
     try {
-      const result = await workflowEngine.execute(input.workflow as WorkflowDefinition, {
+      const result = await workflowEngine.execute(input.workflow, {
         signal: ctx.signal,
       })
 

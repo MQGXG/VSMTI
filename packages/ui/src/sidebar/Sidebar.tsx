@@ -262,7 +262,7 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
           {searchResults.length === 0 ? <p className="text-xs py-6 text-center" style={{ color: "var(--fg-tertiary)" }}>未找到匹配内容</p> : (
             <div className="max-h-48 overflow-y-auto scrollbar-custom">
               {searchResults.map((r, i) => (
-                <button key={i} onClick={() => { onSessionChange(r.session_id); setSearchResults(null); setSearchQuery(""); }}
+                <button key={i} onClick={() => { onSessionChange(String(r.session_id)); setSearchResults(null); setSearchQuery(""); }}
                   className="w-full text-left px-3 py-2.5 transition-colors hover:bg-black/3 dark:hover:bg-white/3" style={{ borderBottom: i < searchResults.length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
                   <div className="flex items-center gap-2 text-xs"><MessageSquare className="w-3 h-3 shrink-0" style={{ color: "var(--fg-tertiary)" }} /><span className="font-medium truncate" style={{ color: "var(--fg)" }}>{r.session_title}</span></div>
                   <p className="text-[11px] line-clamp-2 mt-1 ml-5" style={{ color: "var(--fg-tertiary)" }}>{r.message.content}</p>

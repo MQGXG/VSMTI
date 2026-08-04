@@ -17,7 +17,7 @@ const COLORS = [
 
 function getColorFromStorage(projectId: string): string {
   try {
-    const colorMap = JSON.parse(localStorage.getItem("project_colors") || "{}")
+    const colorMap = JSON.parse(localStorage.getItem("project_colors") || "{}") as Record<string, string>
     return colorMap[projectId] || COLORS[Math.floor(Math.random() * COLORS.length)]
   } catch {
     return COLORS[0]
@@ -26,7 +26,7 @@ function getColorFromStorage(projectId: string): string {
 
 function setColorToStorage(projectId: string, color: string): void {
   try {
-    const colorMap = JSON.parse(localStorage.getItem("project_colors") || "{}")
+    const colorMap = JSON.parse(localStorage.getItem("project_colors") || "{}") as Record<string, string>
     colorMap[projectId] = color
     localStorage.setItem("project_colors", JSON.stringify(colorMap))
   } catch { /* ignore */ }
@@ -34,7 +34,7 @@ function setColorToStorage(projectId: string, color: string): void {
 
 function getHiddenProjects(): string[] {
   try {
-    return JSON.parse(localStorage.getItem("hidden_projects") || "[]")
+    return JSON.parse(localStorage.getItem("hidden_projects") || "[]") as string[]
   } catch {
     return []
   }

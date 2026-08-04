@@ -6,19 +6,40 @@ import { spawn, type ChildProcess } from "child_process"
 
 let msgId = 1
 
+/** LSP JSON-RPC 响应消息（按需字段，来自语言服务器） */
+interface LSPResponseMessage {
+  id?: number
+  error?: { message: string }
+  result?: unknown
+}
+
+/** 定位结果 — 兼容 Location / LocationLink 两种返回 */
+export interface LSPLocationResult {
+  uri?: string
+  targetUri?: string
+  range?: { start: { line: number; character: number }; end: { line: number; character: number } }
+  targetSelectionRange?: { start: { line: number; character: number }; end: { line: number; character: number } }
+}
+
+/** 悬停信息 — contents 可能是 string 或 MarkedString[] 或 MarkedString */
+export interface LSPHoverResult {
+  contents?: string | Array<string | { value?: string }> | { value?: string }
+  range?: { start: { line: number; character: number }; end: { line: number; character: number } }
+}
+
 export class LSPClient {
   private process: ChildProcess | null = null
-  private pending = new Map<number, { resolve: (v: any) => void; reject: (e: Error) => void }>()
+  private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>()
   private buffer = Buffer.alloc(0)
   private contentLength = -1
-  private _capabilities: any = null
+  private _capabilities: Record<string, unknown> | null = null
   private serverName: string
 
   constructor(serverName: string) {
     this.serverName = serverName
   }
 
-  get capabilities(): any { return this._capabilities }
+  get capabilities(): Record<string, unknown> | null { return this._capabilities }
   get isRunning(): boolean { return this.process !== null && !this.process.killed }
 
   /** 启动语言服务器 */
@@ -69,7 +90,7 @@ export class LSPClient {
         },
       },
     })
-    this._capabilities = result?.capabilities
+    this._capabilities = (result?.capabilities as Record<string, unknown> | undefined) ?? null
     this.notify("initialized", {})
   }
 
@@ -86,39 +107,39 @@ export class LSPClient {
   }
 
   /** 查询定义 */
-  async goToDefinition(uri: string, line: number, character: number): Promise<any> {
-    return this.request("textDocument/definition", {
+  async goToDefinition(uri: string, line: number, character: number): Promise<LSPLocationResult | LSPLocationResult[] | null> {
+    return (await this.request("textDocument/definition", {
       textDocument: { uri },
       position: { line, character },
-    })
+    })) as LSPLocationResult | LSPLocationResult[] | null
   }
 
   /** 查询引用 */
-  async findReferences(uri: string, line: number, character: number): Promise<any> {
-    return this.request("textDocument/references", {
+  async findReferences(uri: string, line: number, character: number): Promise<LSPLocationResult | LSPLocationResult[] | null> {
+    return (await this.request("textDocument/references", {
       textDocument: { uri },
       position: { line, character },
       context: { includeDeclaration: true },
-    })
+    })) as LSPLocationResult | LSPLocationResult[] | null
   }
 
   /** 查询悬停信息 */
-  async hover(uri: string, line: number, character: number): Promise<any> {
-    return this.request("textDocument/hover", {
+  async hover(uri: string, line: number, character: number): Promise<LSPHoverResult | null> {
+    return (await this.request("textDocument/hover", {
       textDocument: { uri },
       position: { line, character },
-    })
+    })) as LSPHoverResult | null
   }
 
   /** 获取文档符号列表 */
-  async documentSymbols(uri: string): Promise<any> {
+  async documentSymbols(uri: string): Promise<unknown> {
     return this.request("textDocument/documentSymbol", {
       textDocument: { uri },
     })
   }
 
   /** 查询 semantic tokens（用于代码结构分析） */
-  async semanticTokens(uri: string): Promise<any> {
+  async semanticTokens(uri: string): Promise<unknown> {
     return this.request("textDocument/semanticTokens/full", {
       textDocument: { uri },
     })
@@ -170,7 +191,7 @@ export class LSPClient {
 
   private processMessage(body: string): void {
     try {
-      const msg = JSON.parse(body)
+      const msg = JSON.parse(body) as LSPResponseMessage
       if (msg.id !== undefined && this.pending.has(msg.id)) {
         const { resolve, reject } = this.pending.get(msg.id)!
         this.pending.delete(msg.id)

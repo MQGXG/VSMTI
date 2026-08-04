@@ -23,10 +23,10 @@ const WIN_DEVICE_RE = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/i
 export function windowsPath(p: string): string {
   if (process.platform !== "win32") return p
   return p
-    .replace(/^\/([a-zA-Z]):(?:\/|$)/, (_, d) => `${d.toUpperCase()}:/`)
-    .replace(/^\/([a-zA-Z])(?:\/|$)/, (_, d) => `${d.toUpperCase()}:/`)
-    .replace(/^\/cygdrive\/([a-zA-Z])(?:\/|$)/, (_, d) => `${d.toUpperCase()}:/`)
-    .replace(/^\/mnt\/([a-zA-Z])(?:\/|$)/, (_, d) => `${d.toUpperCase()}:/`)
+    .replace(/^\/([a-zA-Z]):(?:\/|$)/, (_, d: string) => `${d.toUpperCase()}:/`)
+    .replace(/^\/([a-zA-Z])(?:\/|$)/, (_, d: string) => `${d.toUpperCase()}:/`)
+    .replace(/^\/cygdrive\/([a-zA-Z])(?:\/|$)/, (_, d: string) => `${d.toUpperCase()}:/`)
+    .replace(/^\/mnt\/([a-zA-Z])(?:\/|$)/, (_, d: string) => `${d.toUpperCase()}:/`)
 }
 
 /** 获取真实路径（含符号链接解析） */

@@ -45,15 +45,18 @@ export const fileAttachmentAdapter: AttachmentAdapter = {
   async send(attachment) {
     const isImage = attachment.type === "image";
     const contentText = (attachment as any).text || "";
+    const attachmentUrl = (attachment as any).url as string | undefined;
 
     return {
       ...attachment,
       status: { type: "complete" },
       content: isImage
-        ? [{ type: "image" as const, image: attachment.url || "" }]
+        ? [{ type: "image" as const, image: attachmentUrl || "" }]
         : [{ type: "text" as const, text: contentText }],
     };
   },
+
+  async remove() {},
 };
 
 /**

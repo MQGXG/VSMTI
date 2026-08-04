@@ -23,6 +23,8 @@ export interface AgentConfig {
   hardPermission?: import("../system/permission").PermissionRule[]
   mode?: AgentMode
   toolAllowlist?: string[]
+  agent?: string
+  currentFile?: string
   onPermissionSave?: (rules: import("../system/permission").PermissionRule[]) => void
   goalDescription?: string
   judgeModel?: string

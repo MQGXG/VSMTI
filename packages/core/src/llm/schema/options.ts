@@ -1,4 +1,5 @@
 export interface GenerationOptions {
+  [key: string]: unknown
   maxTokens?: number
   temperature?: number
   topP?: number

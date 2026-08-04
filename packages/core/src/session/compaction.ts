@@ -6,13 +6,18 @@
  * L4: compact_history - LLM 摘要压缩
  */
 
-import { getToolResultOutput } from "../llm/schema/messages"
+import { getToolResultOutput, type ToolResultOutput } from "../llm/schema/messages"
 
 export type CompactLevel = "none" | "l1_snip" | "l2_micro" | "l3_auto"
 
+type ContentPart =
+  | { type: "text"; text: string }
+  | { type: "tool-result"; output: ToolResultOutput }
+  | { type: "tool-call"; toolCallId: string; toolName: string; args: Record<string, unknown> }
+
 interface Message {
   role: "system" | "user" | "assistant" | "tool"
-  content: string | any[]
+  content: string | ContentPart[]
   tool_call_id?: string
 }
 

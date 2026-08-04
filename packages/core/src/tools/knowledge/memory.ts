@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { make } from "../../shared/tool"
+import type { FTSMemoryProvider } from "../../memory/fts-memory-provider"
 
 /**
  * Agent 记忆工具 — Agent 可主动调用 memory_search 和 memory_recall
@@ -7,13 +8,13 @@ import { make } from "../../shared/tool"
  */
 
 /** 模块级单例，由 agent.ts 初始化时注入 */
-let ftsProvider: any = null
+let ftsProvider: FTSMemoryProvider | null = null
 
-export function setFTSProvider(p: any): void {
+export function setFTSProvider(p: FTSMemoryProvider): void {
   ftsProvider = p
 }
 
-function getFTS() {
+function getFTS(): FTSMemoryProvider | null {
   return ftsProvider
 }
 

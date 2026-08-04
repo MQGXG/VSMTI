@@ -48,7 +48,9 @@ export interface ElectronAPI {
     listSessions: (projectId?: string) => Promise<Array<{ session_id: string; title: string; kind: string; workspace_path: string; message_count: number; updated_at: string }>>;
     getSessionMessages: (sessionId: string) => Promise<Array<{ id: number; role: string; content: string }>>;
     deleteSession: (sessionId: string) => Promise<void>;
+    updateSession: (sessionId: string, data: { title?: string }) => Promise<void>;
     searchMessages: (query: string) => Promise<Array<{ session_id: string; session_title: string; message: { role: string; content: string; timestamp: string }; context: string }>>;
+    restoreSnapshot: (snapshotId: string, workspace: string) => Promise<string[]>;
   };
 
   // TypeScript Agent Core
@@ -60,6 +62,12 @@ export interface ElectronAPI {
 
     /** 列出可用 Skill */
     listSkills: () => Promise<Array<{ name: string; description: string; category: string | null }>>;
+
+    /** Question — Agent 向用户提问 */
+    question: {
+      answer: (questionId: string, answer: string) => Promise<boolean>;
+      listPending: () => Promise<Array<{ id: string; question: string; options?: string[] }>>;
+    };
 
     /** Task Tracker */
     task: {
@@ -87,7 +95,7 @@ export interface ElectronAPI {
 
     /** Goal Manager */
     goal: {
-      set: (description: string) => Promise<{ id: string; description: string; status: string }>;
+      set: (description: string, timeoutMs?: number) => Promise<{ id: string; description: string; status: string }>;
       getActive: () => Promise<{ id: string; description: string; status: string } | null>;
       list: () => Promise<Array<{ id: string; description: string; status: string }>>;
       cancel: () => Promise<boolean>;
@@ -131,6 +139,8 @@ export interface ElectronAPI {
     replyPermission: (channel: string, requestId: string, reply: "allow" | "deny" | "always") => Promise<void>;
     /** 停止 Agent 流 */
     stopStream: (channel: string) => Promise<void>;
+    /** 用 LLM 生成会话追问建议 */
+    suggestFollowUps: (sessionId: string) => Promise<{ suggestions: string[] }>;
     /** 监听 Agent 事件 */
     onEvent: (channel: string, callback: (event: any) => void) => () => void;
   };
@@ -140,6 +150,11 @@ export interface ElectronAPI {
     searchByProject: (query: string, projectId: string, limit?: number) => Promise<Array<{ content: string; source: string; sessionId: string }>>;
     getGraphData: () => Promise<{ entities: Array<{ id: string; name: string; type: string; description?: string }>; relationships: Array<{ source: string; target: string; relation: string }> }>;
     status: () => Promise<{ ready: boolean; count: number }>;
+  };
+
+  /** Live2D 桌宠 */
+  live2d: {
+    toggle: (enabled: boolean) => Promise<void>;
   };
 }
 

@@ -1,7 +1,8 @@
+import type { LucideIcon} from "lucide-react";
 import {
   FileText, Terminal, Globe, Code2, Search, GitBranch,
   Database, Image as ImageIcon, FileEdit, Braces, MessageSquare,
-  Clock, Workflow, Users, UserPlus, ListTodo, LucideIcon,
+  Clock, Workflow, Users, UserPlus, ListTodo
 } from "lucide-react";
 
 const toolIconMap: Record<string, LucideIcon> = {

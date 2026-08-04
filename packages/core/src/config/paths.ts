@@ -3,7 +3,7 @@ export interface PlatformPaths {
   home: string
 }
 
-let currentPaths: PlatformPaths = {
+const currentPaths: PlatformPaths = {
   userData: process.cwd(),
   home: process.env.HOME || process.env.USERPROFILE || "/tmp",
 }

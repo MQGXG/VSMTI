@@ -40,19 +40,19 @@ export function patchConsole(): void {
   const originalError = console.error;
   const originalWarn = console.warn;
 
-  console.log = (...args: any[]) => {
+  console.log = (...args: unknown[]) => {
     const msg = args.map((a) => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
     logToFile("INFO", msg);
     originalLog(...args);
   };
 
-  console.error = (...args: any[]) => {
+  console.error = (...args: unknown[]) => {
     const msg = args.map((a) => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
     logToFile("ERROR", msg);
     originalError(...args);
   };
 
-  console.warn = (...args: any[]) => {
+  console.warn = (...args: unknown[]) => {
     const msg = args.map((a) => (typeof a === "string" ? a : JSON.stringify(a))).join(" ");
     logToFile("WARN", msg);
     originalWarn(...args);

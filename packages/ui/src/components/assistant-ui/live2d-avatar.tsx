@@ -13,6 +13,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { cn } from "../../lib/utils"
+import type { Application } from "pixi.js"
 
 export type AvatarState = "idle" | "thinking" | "speaking" | "error"
 
@@ -23,6 +24,13 @@ interface Live2DAvatarProps {
   className?: string
   onReady?: () => void
   onError?: (error: string) => void
+}
+
+/** Live2D 模型最小接口（引擎 API 动态导入，仅暴露本组件用到的成员） */
+interface Live2DModelLike {
+  width: number
+  setParameterValueById?: (id: string, value: number) => void
+  motion?: (group: string, no: number) => void
 }
 
 // 状态 → 动作组映射（Hiyori 模型只有 Idle 和 TapBody）
@@ -42,8 +50,8 @@ export function Live2DAvatar({
   onError,
 }: Live2DAvatarProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const spriteRef = useRef<any>(null)
-  const appRef = useRef<any>(null)
+  const spriteRef = useRef<Live2DModelLike | null>(null)
+  const appRef = useRef<Application | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -89,7 +97,7 @@ export function Live2DAvatar({
 
         if (destroyed) { app.destroy(true); return }
 
-        containerRef.current!.appendChild(app.canvas as HTMLCanvasElement)
+        containerRef.current!.appendChild(app.canvas)
         appRef.current = app
 
         const model = await Live2DModel.from(modelPath)

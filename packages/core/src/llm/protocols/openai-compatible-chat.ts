@@ -5,11 +5,28 @@
  */
 
 import { serializeMessages, deserializeChunk, getFinishReason } from "./openai-chat"
+import type { OpenAIChunk } from "./openai-chat"
 import type { LLMMessage, LLMEvent } from "../schema"
 
 export { serializeMessages, deserializeChunk, getFinishReason }
 
-export function createCompatibleBody(messages: LLMMessage[], tools?: any[], options?: any) {
+interface OpenAIResponse {
+  choices?: Array<{
+    message?: {
+      content?: string
+      tool_calls?: Array<{
+        id: string
+        function: { name: string; arguments: string }
+      }>
+    }
+  }>
+}
+
+export function createCompatibleBody(
+  messages: LLMMessage[],
+  tools?: Array<{ name: string; description: string; parameters?: unknown }>,
+  options?: Record<string, unknown>,
+) {
   return {
     messages: serializeMessages(messages),
     tools: tools?.map((t) => ({
@@ -52,12 +69,12 @@ export const OpenAICompatibleChatProtocol: Protocol = {
     return body
   },
   deserializeEvent(data) {
-    return deserializeChunk(data as any)
+    return deserializeChunk(data as OpenAIChunk)
   },
   parseResponse(data) {
-    const choice = (data as any)?.choices?.[0]
+    const choice = (data as OpenAIResponse)?.choices?.[0]
     const content = choice?.message?.content || ""
-    const toolCalls = (choice?.message?.tool_calls || []).map((tc: any) => ({
+    const toolCalls = (choice?.message?.tool_calls || []).map((tc) => ({
       id: tc.id,
       name: tc.function.name,
       args: tc.function.arguments,

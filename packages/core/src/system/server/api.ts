@@ -18,6 +18,9 @@ import { logError } from "../logger"
 import { taskTracker } from "../../task/tracker"
 import { setParentConfig } from "../../tools/orchestrate/agent-tools"
 import { setFTSProvider } from "../../tools/knowledge/memory"
+import { loadSession } from "../../session/store"
+import type { LLMMessage } from "../../llm/client"
+import { generateFollowUpSuggestions } from "../../llm/follow-up"
 
 // ── 初始化 ──────────────────────────────────────────
 
@@ -64,7 +67,7 @@ async function buildPermissions(
   const savedRules = await loadWorkspacePermissions(workspace)
   let base = defaultPermissions
   if (mode) {
-    base = modeToPermissionSet(mode as any, defaultPermissions)
+    base = modeToPermissionSet(mode, defaultPermissions)
   }
   const configRules = configOverride?.getAll() || []
   // Permission 三明治：hardPermission 首尾各追加一次，确保硬规则不被覆盖
@@ -124,7 +127,7 @@ export async function handleStartStream(
 
   const { processed } = processSkillCommand(message)
 
-  const hardRules = (config.hardPermission as any[] | undefined)?.map((r: any) => ({ action: r.action, resource: r.resource, effect: r.effect as "allow" | "deny" | "ask" } as PermissionRule))
+  const hardRules = (config.hardPermission as any[] | undefined)?.map((r: any) => ({ action: r.action, resource: r.resource, effect: r.effect as "allow" | "deny" | "ask" }))
   const permissions = config.permissions
     ? new PermissionSet((config.permissions as any[]).map((r: any) => ({ action: r.action, resource: r.resource, effect: r.effect as "allow" | "deny" | "ask" })))
     : await buildPermissions(workspace, config.mode as string, undefined, hardRules)
@@ -135,7 +138,7 @@ export async function handleStartStream(
     ? `[指令上下文]\n${instructions}\n\n[Agent 基础指令]\n${baseSystem}`
     : baseSystem
 
-  const modeConfig = config.mode ? getModeConfig(config.mode as any) : null
+  const modeConfig = config.mode ? getModeConfig(config.mode as string) : null
 
   const effectiveConfig: AgentConfig = {
     sessionID: sessionId,
@@ -189,9 +192,9 @@ async function runAgentInBackground(
       ctx.writeEvent(evt)
     }
   } catch (e) {
-    ctx.writeEvent({ type: "error", message: String(e) } as AgentEvent)
+    ctx.writeEvent({ type: "error", message: String(e) })
   } finally {
-    ctx.writeEvent({ type: "finish", reason: "completed" } as AgentEvent)
+    ctx.writeEvent({ type: "finish", reason: "completed" })
     ctx.writeEnd()
     activeSessions.delete(session.channel)
   }
@@ -214,9 +217,9 @@ export function handleStopStream(channel: string): boolean {
 }
 
 export function handleListTools(mode?: string): Array<{ name: string; description: string; parameters: any }> {
-  const modeConfig = mode ? getModeConfig(mode as any) : null
+  const modeConfig = mode ? getModeConfig(mode) : null
   const permissions = mode
-    ? modeToPermissionSet(mode as any, defaultPermissions)
+    ? modeToPermissionSet(mode, defaultPermissions)
     : defaultPermissions
   const materialized = registry.materialize(permissions)
   let toolNames = Object.keys(materialized.definitions)
@@ -264,9 +267,15 @@ export async function handleExecuteBatch(calls: Array<{ name: string; args: Reco
 
 // ── Memory 搜索 ──────────────────────────────────────
 
-let memoryFTS: any = null
+interface FTSProvider {
+  search(query: string): Promise<string>
+  searchMemory(query: string, limit: number): Promise<string>
+  searchMemoryByProject(query: string, projectId: string, limit: number): Promise<Array<{ content: string; source: string; sessionId: string }>>
+}
 
-export function setMemoryFTS(p: any): void {
+let memoryFTS: FTSProvider | null = null
+
+export function setMemoryFTS(p: FTSProvider): void {
   memoryFTS = p
 }
 
@@ -318,4 +327,28 @@ export function handleGetGraphData(): { entities: Array<{ id: string; name: stri
   // DreamDistillManager 的图谱数据在 agent 实例中
   // 这里返回空结构，实际数据通过 IPC 直接获取
   return { entities: [], relationships: [] }
+}
+
+/** 用 LLM 为会话生成追问建议 */
+export async function handleFollowUps(sessionId: string): Promise<{ suggestions: string[] }> {
+  try {
+    const session = await loadSession(sessionId)
+    if (!session || session.messages.length === 0) return { suggestions: [] }
+
+    const cfg = resolveRuntimeConfig({ workspace: session.workspace })
+    const conversation: LLMMessage[] = session.messages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({ role: m.role, content: m.content }))
+
+    const suggestions = await generateFollowUpSuggestions(conversation, {
+      apiKey: cfg.apiKey,
+      apiUrl: cfg.apiUrl,
+      model: cfg.model,
+      provider: cfg.provider || "openai",
+    })
+    return { suggestions }
+  } catch (err) {
+    logError("[API] handleFollowUps 失败", err)
+    return { suggestions: [] }
+  }
 }

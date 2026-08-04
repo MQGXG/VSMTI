@@ -25,6 +25,18 @@ interface AnthropicStreamEvent {
   error?: { message: string }
 }
 
+interface AnthropicResponseBlock {
+  type: string
+  text?: string
+  id?: string
+  name?: string
+  input?: Record<string, unknown>
+}
+
+interface AnthropicParseResponse {
+  content?: AnthropicResponseBlock[]
+}
+
 export function serializeMessages(messages: LLMMessage[]): AnthropicMessage[] {
   const result: AnthropicMessage[] = []
 
@@ -90,7 +102,7 @@ export function deserializeStreamEvent(event: AnthropicStreamEvent): LLMEvent | 
           cacheReadTokens: usage.cache_read_input_tokens,
           cacheWriteTokens: usage.cache_creation_input_tokens,
         } : undefined,
-      } as LLMEvent
+      }
     }
     case "message_stop":
       return { type: "finish", reason: "stop" }
@@ -109,7 +121,7 @@ export const AnthropicMessagesProtocol: Protocol = {
     const body: Record<string, unknown> = {
       model: request.model,
       messages: serializeMessages(request.messages.filter((m) => m.role !== "system")),
-      max_tokens: (request.generation?.maxTokens as number) || 4096,
+      max_tokens: (request.generation?.maxTokens) || 4096,
       stream: true,
     }
     if (system) body.system = system
@@ -128,16 +140,16 @@ export const AnthropicMessagesProtocol: Protocol = {
   },
 
   deserializeEvent(data) {
-    return deserializeStreamEvent(data as AnthropicStreamEvent)
+    return deserializeStreamEvent(data as AnthropicStreamEvent) ?? null
   },
 
   parseResponse(data) {
-    const response = data as any
-    const content = response?.content?.map?.((block: any) => block.text).filter(Boolean).join("") || ""
-    const toolCalls = response?.content?.filter?.((b: any) => b.type === "tool_use").map((tc: any) => ({
-      id: tc.id,
-      name: tc.name,
-      args: JSON.stringify(tc.input),
+    const response = data as AnthropicParseResponse
+    const content = response?.content?.map?.((block) => block.text || "").filter(Boolean).join("") || ""
+    const toolCalls = response?.content?.filter?.((b) => b.type === "tool_use").map((tc) => ({
+      id: String(tc.id ?? ""),
+      name: String(tc.name ?? ""),
+      args: JSON.stringify(tc.input ?? {}),
     })) || []
     return { content, toolCalls }
   },

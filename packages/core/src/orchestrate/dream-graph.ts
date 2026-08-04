@@ -66,7 +66,7 @@ export function mergeGraphData(store: GraphStore, newEntities: GraphEntity[], ne
 
 export function loadGraphStore(graphPath: string): GraphStore {
   try {
-    if (fs.existsSync(graphPath)) return JSON.parse(fs.readFileSync(graphPath, "utf-8"))
+    if (fs.existsSync(graphPath)) return JSON.parse(fs.readFileSync(graphPath, "utf-8")) as GraphStore
   } catch { /* 忽略 */ }
   return { entities: [], relationships: [] }
 }

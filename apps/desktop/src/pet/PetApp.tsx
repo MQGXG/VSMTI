@@ -1,11 +1,27 @@
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { SpeechBubble } from "./SpeechBubble"
 import { ChatInput } from "./ChatInput"
+import { VoiceChatButton, type RealtimeStatus } from "@mira/ui"
 
 declare global {
   interface Window {
     Live2DCubismCore?: any
-    electronAPI: any
+  }
+}
+
+declare module "react" {
+  interface CSSProperties {
+    WebkitAppRegion?: string
+  }
+}
+
+interface PointLike { x: number; y: number }
+type Live2DModelHandle = import("pixi.js").Container & {
+  anchor: { set(x?: number, y?: number): void }
+  focus?(x: number, y: number): void
+  internalModel?: {
+    setParameterValueById(id: string, value: number, weight?: number): void
+    getParameterValueById(id: string): number
   }
 }
 
@@ -19,7 +35,7 @@ let msgCounter = 0
 
 function getModels(): Record<string, string> {
   try {
-    return JSON.parse(localStorage.getItem("pet_models") || '{"hiyori":"/models/hiyori/Hiyori.model3.json"}')
+    return JSON.parse(localStorage.getItem("pet_models") || '{"hiyori":"/models/hiyori/Hiyori.model3.json"}') as Record<string, string>
   } catch { return { hiyori: "/models/hiyori/Hiyori.model3.json" } }
 }
 
@@ -28,15 +44,30 @@ export function PetApp() {
   const canvasWrapRef = useRef<HTMLDivElement>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [streaming, setStreaming] = useState(false)
+  const [voiceStatus, setVoiceStatus] = useState<RealtimeStatus>("idle")
   const [live2dStatus, setLive2dStatus] = useState<string>("loading")
   const [live2dError, setLive2dError] = useState<string | null>(null)
   const [currentModel, setCurrentModel] = useState(0)
   const sessionRef = useRef<string | null>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
   const streamCleanupRef = useRef<(() => void) | null>(null)
-  const modelRef = useRef<any>(null)
+  const modelRef = useRef<Live2DModelHandle | null>(null)
   const appRef = useRef<any>(null)
-  const loadModelRef = useRef<any>(null)
+  const loadModelRef = useRef<((modelKey?: string) => Promise<void>) | null>(null)
+
+  // 口型联动：语音对话聆听/朗读时张嘴，否则闭嘴
+  useEffect(() => {
+    const mouth = voiceStatus === "listening" || voiceStatus === "speaking" ? 0.3 : 0
+    modelRef.current?.internalModel?.setParameterValueById("ParamMouthOpenY", mouth)
+  }, [voiceStatus])
+
+  // 语音对话自动朗读的助手文本：仅在回复完成后提供（避免流式中间态反复朗读）
+  const assistantText = useMemo(() => {
+    if (streaming) return ""
+    const last = messages[messages.length - 1]
+    if (last?.role !== "assistant") return ""
+    return last.content
+  }, [messages, streaming])
 
   const addMsg = useCallback((role: "user" | "assistant", content: string) => {
     const id = ++msgCounter + ""
@@ -103,9 +134,9 @@ export function PetApp() {
         const loadLive2DModel = async (modelKey?: string) => {
           const models = getModels()
           const key = modelKey ?? localStorage.getItem("pet_model") ?? "hiyori"
-          const path = models[key] ?? Object.values(models)[0]!
+          const path = models[key] ?? Object.values(models)[0]
           setLive2dStatus(`loading ${key}...`)
-          const m = await Live2DModel.from(path)
+          const m = await (Live2DModel as unknown as { from(path: string): Promise<Live2DModelHandle> }).from(path)
           modelRef.current?.destroy()
           modelRef.current = m
           app.stage.addChild(m)
@@ -150,7 +181,7 @@ export function PetApp() {
           let dragging = false
           let dragOffset = { x: 0, y: 0 }
 
-          app.stage.on("pointermove", (e: any) => {
+          app.stage.on("pointermove", (e: { global: PointLike }) => {
             const pos = e.global
             if (dragging) m.position.set(pos.x - dragOffset.x, pos.y - dragOffset.y)
             m.focus?.(m.toLocal(pos).x, m.toLocal(pos).y)
@@ -188,9 +219,9 @@ export function PetApp() {
           app.destroy(true, { children: true, texture: true })
         }
 
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("[Pet] Live2D init FAILED:", err)
-        setLive2dError(err.message || String(err))
+        setLive2dError((err instanceof Error ? err.message : String(err)) || String(err))
         setLive2dStatus("error")
       }
     }
@@ -215,7 +246,8 @@ export function PetApp() {
           const projects = await window.electronAPI.ts.listProjects()
           let petProject = projects.find((p: any) => p.name === "Live2D Pet")
           if (!petProject) {
-            petProject = await window.electronAPI.ts.createProject("Live2D Pet", "")
+            const created = await window.electronAPI.ts.createProject("Live2D Pet", "")
+            petProject = { project_id: created.project_id, name: "Live2D Pet", workspace_path: "" }
           }
           const session = await window.electronAPI.ts.createSession(petProject.project_id, "Pet Chat")
           sessionRef.current = session.session_id
@@ -255,7 +287,7 @@ export function PetApp() {
       }}
     >
       <div style={{
-        height: 32, WebkitAppRegion: "drag" as any, cursor: "grab", flexShrink: 0,
+        height: 32, WebkitAppRegion: "drag", cursor: "grab", flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
         background: "rgba(20,20,30,0.5)",
       }}>
@@ -265,7 +297,7 @@ export function PetApp() {
         ref={canvasWrapRef}
         style={{
           flex: 1, position: "relative", minHeight: 100,
-          WebkitAppRegion: "no-drag" as any,
+          WebkitAppRegion: "no-drag",
         }}
       >
         {live2dStatus !== "ready" && (
@@ -284,7 +316,7 @@ export function PetApp() {
       </div>
 
       <div style={{
-        WebkitAppRegion: "no-drag" as any, background: "rgba(20,20,30,0.85)",
+        WebkitAppRegion: "no-drag", background: "rgba(20,20,30,0.85)",
         backdropFilter: "blur(12px)", borderTop: "1px solid rgba(255,255,255,0.08)",
         padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6, maxHeight: "45%",
       }}>
@@ -296,6 +328,12 @@ export function PetApp() {
           ))}
         </div>
         <ChatInput onSend={handleSend} disabled={streaming} />
+        <VoiceChatButton
+          onSendMessage={(text) => { void handleSend(text) }}
+          assistantText={assistantText}
+          onStatusChange={setVoiceStatus}
+          className="self-end"
+        />
       </div>
     </div>
   )

@@ -10,7 +10,7 @@ export type { MiraMessage as default } from "./types-message";
 
 /** 将 MiraMessage 转换为 assistant-ui 的 ThreadMessageLike */
 export function convertMessage(message: MiraMessage): ThreadMessageLike {
-  const content: ThreadMessageLike["content"] = [];
+  const content: Array<Extract<ThreadMessageLike["content"], readonly unknown[]>[number]> = [];
 
   for (const part of message.parts) {
     if (part.type === "text" && part.text) {
@@ -20,7 +20,7 @@ export function convertMessage(message: MiraMessage): ThreadMessageLike {
         type: "tool-call",
         toolCallId: part.toolCallId!,
         toolName: part.toolName!,
-        args: part.args || {},
+        args: part.args as any,
       });
     }
   }

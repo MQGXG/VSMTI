@@ -4,7 +4,8 @@
  * 参考 MiMo-Code 的 spawnLocalServer + Sidecar 架构
  */
 
-import { ChildProcess, spawn } from "child_process"
+import type { ChildProcess} from "child_process";
+import { spawn } from "child_process"
 import * as fs from "fs"
 import * as path from "path"
 import * as http from "http"
@@ -175,7 +176,7 @@ export class ServerManager {
         })
       })
 
-      req.on("error", reject)
+      req.on("error", (err) => { console.error(`[Sidecar] request ${method} ${apiPath} error: ${err.message} (code=${(err as NodeJS.ErrnoException).code})`); reject(err) })
       req.on("timeout", () => {
         req.destroy()
         reject(new Error("Request timed out"))
@@ -208,10 +209,11 @@ export class ServerManager {
       },
     }
 
-    const req = http.request(options, (res) => {
-      let buffer = ""
+      const req = http.request(options, (res) => {
+        console.log(`[Sidecar] connectSSE ${apiPath} -> status ${res.statusCode}`)
+        let buffer = ""
 
-      res.on("data", (chunk: Buffer) => {
+        res.on("data", (chunk: Buffer) => {
         buffer += chunk.toString("utf-8")
         const lines = buffer.split("\n")
         buffer = lines.pop() || ""
@@ -241,7 +243,8 @@ export class ServerManager {
       })
     })
 
-    req.on("error", onError)
+    req.on("error", (err) => { console.error(`[Sidecar] connectSSE ${apiPath} error: ${err.message} (code=${(err as NodeJS.ErrnoException).code})`); onError?.(err) })
+    req.on("close", () => console.log(`[Sidecar] connectSSE ${apiPath} closed`))
     req.write(postData)
     req.end()
 

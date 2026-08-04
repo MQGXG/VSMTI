@@ -35,9 +35,9 @@ export class ToolRuntime {
   }
 }
 
-function extractJsonSchema(schema: any): Record<string, unknown> {
-  if (typeof schema === "object" && schema._def?.typeName) {
+function extractJsonSchema(schema: unknown): Record<string, unknown> {
+  if (typeof schema === "object" && schema !== null && (schema as { _def?: { typeName?: string } })._def?.typeName) {
     return zodToJsonSchema(schema)
   }
-  return schema
+  return schema as Record<string, unknown>
 }

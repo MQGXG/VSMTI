@@ -106,7 +106,7 @@ export class MCPPluginRegistry {
   }
 
   /** 执行插件钩子 */
-  async executePluginHook(hookName: string, ...args: any[]): Promise<any[]> {
+  async executePluginHook(hookName: string, ...args: unknown[]): Promise<unknown[]> {
     if (!this.pluginManager) return []
     return this.pluginManager.executeHook(hookName, ...args)
   }
@@ -150,7 +150,7 @@ export class MCPPluginRegistry {
           if (!entry.endsWith(".ts") && !entry.endsWith(".js")) continue
           const modPath = path.join(fullPath, entry)
           import(modPath).then((mod) => {
-            for (const [key, value] of Object.entries(mod)) {
+            for (const [key, value] of Object.entries(mod as Record<string, unknown>)) {
               if (value && typeof value === "object" && "name" in value && "execute" in value) {
                 this.registerTool(value as ToolDef)
               }

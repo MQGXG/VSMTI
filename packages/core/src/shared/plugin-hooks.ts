@@ -17,14 +17,14 @@ export class PluginHooks {
   }
 
   /** 触发同步钩子 */
-  emit(event: string, ...args: any[]): void {
+  emit(event: string, ...args: unknown[]): void {
     this.hooks.get(event)?.forEach((handler) => {
       try { handler(...args) } catch { /* 单个钩子失败不影响其他 */ }
     })
   }
 
   /** 触发异步钩子（并行） */
-  async emitAsync(event: string, ...args: any[]): Promise<void> {
+  async emitAsync(event: string, ...args: unknown[]): Promise<void> {
     const handlers = this.hooks.get(event)
     if (!handlers) return
     await Promise.all(
@@ -35,7 +35,7 @@ export class PluginHooks {
   }
 
   /** 触发串行异步钩子（按注册顺序） */
-  async emitSerial(event: string, ...args: any[]): Promise<void> {
+  async emitSerial(event: string, ...args: unknown[]): Promise<void> {
     const handlers = this.hooks.get(event)
     if (!handlers) return
     for (const handler of handlers) {
@@ -44,7 +44,7 @@ export class PluginHooks {
   }
 
   /** 触发串行钩子直到有一个返回非 null（阻断模式，如 PreToolUse 权限） */
-  async triggerUntil(event: string, ...args: any[]): Promise<any> {
+  async triggerUntil(event: string, ...args: unknown[]): Promise<any> {
     const handlers = this.hooks.get(event)
     if (!handlers) return null
     for (const handler of handlers) {
@@ -57,7 +57,7 @@ export class PluginHooks {
   }
 
   /** 触发流水线钩子（waterfall），每个 handler 可以修改并传递值给下一个 */
-  async emitWaterfall(event: string, initial: any, ...args: any[]): Promise<any> {
+  async emitWaterfall(event: string, initial: any, ...args: unknown[]): Promise<any> {
     let result = initial
     const handlers = this.hooks.get(event)
     if (!handlers) return result

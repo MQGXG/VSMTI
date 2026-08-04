@@ -215,7 +215,7 @@ export class SnapshotManager {
       this.snapshots = data.map(s => ({
         id: s.id,
         timestamp: s.timestamp,
-        files: new Map(Object.entries(s.files).map(([k, v]) => [k, v as FileSnapshot])),
+        files: new Map(Object.entries(s.files).map(([k, v]) => [k, v])),
         description: s.description,
       }))
     } catch { /* 加载失败静默 */ }

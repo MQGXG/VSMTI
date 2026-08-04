@@ -29,11 +29,11 @@ export function App() {
     try {
       const tsProjects = await window.electronAPI.ts.listProjects();
       if (tsProjects && tsProjects.length > 0) {
-        const colorMap = JSON.parse(localStorage.getItem("project_colors") || "{}");
+        const colorMap = JSON.parse(localStorage.getItem("project_colors") || "{}") as Record<string, string>;
         const hidden = JSON.parse(localStorage.getItem("hidden_projects") || "[]") as string[];
         const mapped: Project[] = tsProjects
-          .filter((p: any) => !hidden.includes(p.project_id))
-          .map((p: any) => ({
+          .filter((p) => !hidden.includes(p.project_id))
+          .map((p) => ({
             project_id: p.project_id,
             name: p.name,
             workspace_path: p.workspace_path,
@@ -192,7 +192,7 @@ export function App() {
       </div>
 
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <ChatWindow sessionId={activeSession} onSessionChange={setActiveSession} />
+        <ChatWindow sessionId={activeSession} onSessionChange={setActiveSession} onNewSession={handleNewSession} />
       </main>
 
       {settingsOpen && createPortal(<SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />, document.body)}

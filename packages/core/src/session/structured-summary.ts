@@ -5,7 +5,7 @@
  * 支持增量更新（仅更新变化的 sections）和溢出触发压缩。
  */
 
-import type { LLMMessage } from "../llm/client"
+import type { LLMMessage, ContentPart, TextPart } from "../llm/schema/messages"
 import { createLLMClient } from "../llm/client"
 
 // ── 类型定义 ────────────────────────────────────────────
@@ -42,8 +42,8 @@ function extractText(msg: LLMMessage): string {
   if (typeof msg.content === "string") return msg.content
   if (Array.isArray(msg.content)) {
     return msg.content
-      .filter((p: any) => p.type === "text")
-      .map((p: any) => p.text || "")
+      .filter((p): p is TextPart => p.type === "text")
+      .map((p) => p.text || "")
       .join("")
   }
   return ""
@@ -54,10 +54,10 @@ function extractFiles(messages: LLMMessage[]): string[] {
   for (const msg of messages) {
     if (!Array.isArray(msg.content)) continue
     for (const part of msg.content) {
-      if (part.type === "tool-call" && (part as any).args) {
-        const args = (part as any).args
-        if (args.path) files.push(args.path)
-        if (args.file_path) files.push(args.file_path)
+      if (part.type === "tool-call" && part.args) {
+        const args = part.args
+        if (typeof args.path === "string" && args.path) files.push(args.path)
+        if (typeof args.file_path === "string" && args.file_path) files.push(args.file_path)
       }
     }
   }
@@ -193,7 +193,7 @@ CONSTRAINTS: <semicolon-separated constraints>`
       const text = typeof result.content === "string"
         ? result.content
         : Array.isArray(result.content)
-          ? (result.content as any[]).filter((p: any) => p.type === "text").map((p: any) => p.text).join("")
+          ? (result.content as unknown as ContentPart[]).filter((p): p is TextPart => p.type === "text").map((p) => p.text).join("")
           : ""
 
       return this.parseStructuredResponse(text, previousSummary)

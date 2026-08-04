@@ -170,7 +170,7 @@ export class ContextManager {
     if (result.level !== "none") {
       this.lastRebuildReason = `budgeted_${result.level}`
     }
-    return result.messages
+    return result.messages as unknown as LLMMessage[]
   }
 
   // ── 压缩管线入口 ────────────────────────────────────────────
@@ -326,7 +326,7 @@ export class ContextManager {
       const part = last.content[i]
       if (part.type === "tool-result") {
         const output = typeof part.output === "string" ? part.output : part.output?.value || ""
-        resultParts.push({ index: i, part: part as ToolResultPart, size: output.length })
+        resultParts.push({ index: i, part: part, size: output.length })
       }
     }
 
@@ -372,7 +372,7 @@ export class ContextManager {
       if (msg.role !== "user" || typeof msg.content === "string") continue
       for (const part of msg.content) {
         if (part.type !== "tool-result") continue
-        const tr = part as ToolResultPart
+        const tr = part
         const output = typeof tr.output === "string" ? tr.output : tr.output?.value || ""
         if (output.length > maxChars) {
           tr.output = output.slice(0, maxChars) + `\n... [truncated ${output.length - maxChars} chars]`
@@ -441,13 +441,13 @@ export class ContextManager {
         model: this.llmConfig.model,
         apiKey: this.llmConfig.apiKey,
         apiUrl: this.llmConfig.apiUrl,
-      } as any)
+      })
 
       const result = await client.complete({ messages: prompt })
       const text = typeof result.content === "string"
         ? result.content
         : Array.isArray(result.content)
-          ? (result.content as any[]).filter((p: any) => p.type === "text").map((p: any) => p.text).join("")
+          ? (result.content as unknown as ContentPart[]).filter((p): p is Extract<ContentPart, { type: "text" }> => p.type === "text").map((p) => p.text).join("")
           : ""
       return text.trim() || "(empty summary)"
     } catch {

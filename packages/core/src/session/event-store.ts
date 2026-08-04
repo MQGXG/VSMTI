@@ -57,7 +57,7 @@ export class EventStore {
       seq: row[0] as number,
       session_id: row[1] as string,
       type: row[2] as EventType,
-      payload: JSON.parse(row[3] as string),
+      payload: JSON.parse(row[3] as string) as unknown,
       timestamp: row[4] as string,
       version: row[5] as number,
     }))
@@ -90,7 +90,7 @@ export class EventStore {
       seq: row[0] as number,
       session_id: row[1] as string,
       type: row[2] as EventType,
-      payload: JSON.parse(row[3] as string),
+      payload: JSON.parse(row[3] as string) as unknown,
       timestamp: row[4] as string,
       version: row[5] as number,
     }))

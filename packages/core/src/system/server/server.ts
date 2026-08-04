@@ -16,9 +16,13 @@ import {
   handleExecuteTool,
   handleExecuteBatch,
   handleMemorySearch,
+  handleMemorySearchByProject,
   handleMemoryStatus,
+  handleGetGraphData,
+  handleFollowUps,
   type APIContext,
 } from "./api"
+import type { PermissionReply } from "../../index"
 
 export interface ServerOptions {
   port: number
@@ -41,6 +45,23 @@ function parseBody(req: http.IncomingMessage): Promise<unknown> {
     })
     req.on("error", reject)
   })
+}
+
+/** Sidecar API 请求体（POST 接口共用字段，全部可选） */
+interface RequestBody {
+  name?: string
+  args?: Record<string, unknown>
+  calls?: Array<{ name: string; args: Record<string, unknown> }>
+  sessionId?: string
+  message?: string
+  config?: Record<string, unknown>
+  channel?: string
+  requestId?: string
+  reply?: PermissionReply
+  query?: string
+  type?: string
+  limit?: number
+  projectId?: string
 }
 
 /** 验证 auth token */
@@ -86,9 +107,10 @@ export function createServer(options: ServerOptions): http.Server {
 
     try {
       await routeRequest(req, res, path, parsedUrl)
-    } catch (err: any) {
-      console.error(`[Sidecar] Error: ${err.message}`)
-      errorResponse(res, 500, err.message || "Internal server error")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error(`[Sidecar] Error: ${message}`)
+      errorResponse(res, 500, message || "Internal server error")
     }
   })
 
@@ -127,8 +149,8 @@ async function routeRequest(
     // ── Execute single tool ──
     case "/api/agent/execute": {
       if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
-      const body = await parseBody(req) as any
-      const result = await handleExecuteTool(body.name, body.args || {})
+      const body = await parseBody(req) as RequestBody
+      const result = await handleExecuteTool(body.name as string, body.args || {})
       jsonResponse(res, 200, result)
       return
     }
@@ -136,7 +158,7 @@ async function routeRequest(
     // ── Execute batch tools ──
     case "/api/agent/execute-batch": {
       if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
-      const body = await parseBody(req) as any
+      const body = await parseBody(req) as RequestBody
       const results = await handleExecuteBatch(body.calls || [])
       jsonResponse(res, 200, results)
       return
@@ -145,7 +167,7 @@ async function routeRequest(
     // ── Start streaming agent (SSE) ──
     case "/api/agent/stream": {
       if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
-      const body = await parseBody(req) as any
+      const body = await parseBody(req) as RequestBody
 
       const sessionId = body.sessionId
       const message = body.message
@@ -161,10 +183,24 @@ async function routeRequest(
       // 立即发送 SSE headers + channel 事件，不等待 Agent 初始化
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-cache, no-transform",
         Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+        "X-Content-Type-Options": "nosniff",
       })
+      // 连接确认事件，客户端可区分"未连接"vs"正常空转"
+      res.write(`event: connected\ndata: {"status":"ok"}\n\n`)
       res.write(`event: channel\ndata: ${JSON.stringify({ channel })}\n\n`)
+
+      // 15 秒心跳 — 防止代理/防火墙/中间层断开空闲的 SSE 连接
+      const heartbeat = setInterval(() => {
+        try {
+          res.write(": heartbeat\n\n")
+        } catch {
+          clearInterval(heartbeat)
+        }
+      }, 15000)
+      req.on("close", () => clearInterval(heartbeat))
 
       const ctx: APIContext = {
         writeEvent: (data: unknown) => {
@@ -182,7 +218,7 @@ async function routeRequest(
 
       // 后台初始化 Agent，不阻塞 SSE 通道建立
       handleStartStream(sessionId, message, config, ctx, channel).catch((err) => {
-        try { res.write(`event: error\ndata: ${JSON.stringify({ type: "error", message: String(err) })}\n\n`) } catch {}
+        try { res.write(`event: error\ndata: ${JSON.stringify({ type: "error", message: String(err) })}\n\n`) } catch { /* 忽略写入失败 */ }
       })
       return
     }
@@ -190,8 +226,8 @@ async function routeRequest(
     // ── Reply permission ──
     case "/api/agent/permission-reply": {
       if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
-      const body = await parseBody(req) as any
-      const ok = handlePermissionReply(body.channel, body.requestId, body.reply)
+      const body = await parseBody(req) as RequestBody
+      const ok = handlePermissionReply(body.channel as string, body.requestId as string, body.reply as PermissionReply)
       if (!ok) {
         errorResponse(res, 404, "Session not found")
         return
@@ -203,8 +239,8 @@ async function routeRequest(
     // ── Stop stream ──
     case "/api/agent/stop": {
       if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
-      const body = await parseBody(req) as any
-      const ok = handleStopStream(body.channel)
+      const body = await parseBody(req) as RequestBody
+      const ok = handleStopStream(body.channel as string)
       if (!ok) {
         errorResponse(res, 404, "Session not found")
         return
@@ -216,8 +252,8 @@ async function routeRequest(
     // ── Memory search ──
     case "/api/memory/search": {
       if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
-      const body = await parseBody(req) as any
-      const result = await handleMemorySearch(body.query, body.type, body.limit)
+      const body = await parseBody(req) as RequestBody
+      const result = await handleMemorySearch(body.query as string, body.type, body.limit)
       jsonResponse(res, 200, result)
       return
     }
@@ -225,8 +261,8 @@ async function routeRequest(
     // ── Memory search by project ──
     case "/api/memory/search-by-project": {
       if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
-      const body = await parseBody(req) as any
-      const result = await handleMemorySearchByProject(body.query, body.projectId, body.limit)
+      const body = await parseBody(req) as RequestBody
+      const result = await handleMemorySearchByProject(body.query as string, body.projectId as string, body.limit)
       jsonResponse(res, 200, result)
       return
     }
@@ -243,6 +279,19 @@ async function routeRequest(
     case "/api/memory/status": {
       const status = handleMemoryStatus()
       jsonResponse(res, 200, status)
+      return
+    }
+
+    // ── Follow-up suggestions (LLM 生成追问) ──
+    case "/api/agent/follow-ups": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      if (!body.sessionId) {
+        errorResponse(res, 400, "sessionId is required")
+        return
+      }
+      const result = await handleFollowUps(body.sessionId)
+      jsonResponse(res, 200, result)
       return
     }
 

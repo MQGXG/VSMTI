@@ -181,8 +181,9 @@ export const webBrowseTool = make({
         default:
           return { success: false, error: `未知操作: ${input.action}` }
       }
-    } catch (e: any) {
-      return { success: false, error: `操作失败: ${e.message.slice(0, 200)}` }
+    } catch (e) {
+      const err = e as { message?: string }
+      return { success: false, error: `操作失败: ${(err.message ?? String(e)).slice(0, 200)}` }
     }
   },
 })

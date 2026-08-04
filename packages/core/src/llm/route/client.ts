@@ -1,6 +1,6 @@
 const SENSITIVE_KEYS = new Set(["apiKey", "api_key", "authorization", "x-api-key", "token", "password", "secret"])
 
-function sanitizeSensitiveFields(obj: unknown): unknown {
+export function sanitizeSensitiveFields(obj: unknown): unknown {
   if (Array.isArray(obj)) return obj.map(sanitizeSensitiveFields)
   if (obj && typeof obj === "object") {
     const result: Record<string, unknown> = {}
@@ -12,7 +12,7 @@ function sanitizeSensitiveFields(obj: unknown): unknown {
   return obj
 }
 
-function sanitizeBody(body: string): string {
+export function sanitizeBody(body: string): string {
   try {
     return JSON.stringify(sanitizeSensitiveFields(JSON.parse(body)), null, 2)
   } catch {
@@ -20,14 +20,14 @@ function sanitizeBody(body: string): string {
   }
 }
 
-interface RouteConfig {
+export interface RouteConfig {
   baseUrl: string
   apiKey: string
   headers?: Record<string, string>
   timeout?: number
 }
 
-class RouteClient {
+export class RouteClient {
   constructor(private config: RouteConfig) {}
 
   getBaseUrl(): string {

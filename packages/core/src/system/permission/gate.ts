@@ -1,4 +1,4 @@
-import { ToolCall } from "../../shared/tool"
+import type { ToolCall } from "../../shared/tool"
 import type { PermissionSet, PermissionRule } from "./index"
 import { checkHardDeny } from "./index"
 import type { ToolRegistry } from "../registry"

@@ -44,6 +44,10 @@ export interface MessageTiming {
   promptTokens?: number;
   /** 真实 completion tokens（来自 LLM API） */
   completionTokens?: number;
+  /** 命中缓存的 prompt tokens（来自 LLM API） */
+  cacheReadTokens?: number;
+  /** 写入缓存的 prompt tokens（来自 LLM API） */
+  cacheWriteTokens?: number;
   tokensPerSecond?: number;
   totalChunks: number;
   toolCallCount: number;

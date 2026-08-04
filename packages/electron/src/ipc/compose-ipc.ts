@@ -1,5 +1,5 @@
 import { ipcMain } from "electron"
-import { ComposeModeManager, type ComposeState } from "@mira/core/compose-mode"
+import { ComposeModeManager, type ComposePhase, type ComposeState } from "@mira/core/compose-mode"
 
 const composeModeManager = new ComposeModeManager()
 
@@ -16,8 +16,8 @@ export function registerComposeIPC(): void {
   ipcMain.handle("compose:advance", () => {
     return composeModeManager.advance()
   })
-  ipcMain.handle("compose:goTo", (_, phase: string) => {
-    return composeModeManager.goTo(phase as any)
+  ipcMain.handle("compose:goTo", (_, phase: ComposePhase) => {
+    return composeModeManager.goTo(phase)
   })
   ipcMain.handle("compose:update", (_, updates: Partial<ComposeState>) => {
     composeModeManager.update(updates)

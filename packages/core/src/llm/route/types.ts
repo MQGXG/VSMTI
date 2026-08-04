@@ -56,7 +56,7 @@ export interface RouteInstance {
     messages: LLMMessage[]
     tools?: Array<{ name: string; description: string; parameters: Record<string, unknown> }>
     generation?: Record<string, unknown>
-  }): Promise<{ content: string; toolCalls: Array<{ id: string; name: string; arguments: string }> }>
+  }): Promise<{ content: string; toolCalls: Array<{ id: string; name: string; args: string }> }>
 
   with(overrides: Partial<{
     endpoint: Partial<Endpoint>

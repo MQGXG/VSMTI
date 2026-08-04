@@ -40,8 +40,8 @@ export function unescapeModelOutput(text: string): string {
     .replace(/\\n/g, "\n")              // 转义的换行
     .replace(/\\t/g, "\t")              // 转义的制表符
     .replace(/\\r/g, "\r")             // 转义的回车
-    .replace(/\\([0-7]{1,3})/g, (_, o) => String.fromCharCode(parseInt(o, 8)))
-    .replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/\\([0-7]{1,3})/g, (_, o: string) => String.fromCharCode(parseInt(o, 8)))
+    .replace(/\\x([0-9a-fA-F]{2})/g, (_, h: string) => String.fromCharCode(parseInt(h, 16)))
 
   // 去除多余的包裹缩进（每个行首多出的空格）
   const lines = result.split("\n")

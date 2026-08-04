@@ -197,7 +197,7 @@ class FeatureFlagManager {
       if (typeof localStorage === "undefined") return
       const saved = localStorage.getItem("feature-flags")
       if (saved) {
-        const data = JSON.parse(saved)
+        const data = JSON.parse(saved) as Record<string, unknown>
         for (const [key, enabled] of Object.entries(data)) {
           const flag = this.flags.get(key)
           if (flag) flag.enabled = enabled as boolean

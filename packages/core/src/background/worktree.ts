@@ -124,7 +124,7 @@ function loadAllWorktrees(): WorktreeInfo[] {
   try {
     const path = getRecordsPath()
     if (fs.existsSync(path)) {
-      return JSON.parse(fs.readFileSync(path, "utf-8"))
+      return JSON.parse(fs.readFileSync(path, "utf-8")) as WorktreeInfo[]
     }
   } catch { /* 静默 */ }
   return []

@@ -19,7 +19,7 @@ interface AnimatedAvatarProps {
 
 function getAvatarSrc(): string {
   try {
-    const settings = JSON.parse(localStorage.getItem("settings") || "{}")
+    const settings = JSON.parse(localStorage.getItem("settings") || "{}") as { avatarPath?: string }
     return settings.avatarPath || ""
   } catch { return "" }
 }

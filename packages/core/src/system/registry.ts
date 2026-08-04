@@ -5,8 +5,9 @@
  * MCP/Plugin 生命周期委托给 MCPPluginRegistry
  */
 
-import { ToolDef, ToolContext, ToolResult, ToolCall, settle } from "../shared/tool"
-import { PermissionSet } from "./permission"
+import type { ToolDef, ToolContext, ToolResult} from "../shared/tool";
+import { ToolCall, settle } from "../shared/tool"
+import type { PermissionSet } from "./permission"
 import { Effect } from "effect"
 import * as ToolEffect from "../shared/tool-effect"
 import { toolMetadata, type ToolCategory } from "../tools/shared/tool-meta"
@@ -87,7 +88,7 @@ export class ToolRegistry {
     const effectDef = this.effectDefs.get(name)
     if (effectDef) {
       try {
-        return await effectDef.execute(ToolEffect.coerceArgs(name, args, effectDef.jsonSchema || {}) as any, ctx as any)
+        return await effectDef.execute(ToolEffect.coerceArgs(name, args, effectDef.jsonSchema || {}), ctx)
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
         return { success: false, error: msg }
@@ -119,7 +120,7 @@ export class ToolRegistry {
     return this.mcpPlugin.getPluginManager()
   }
 
-  async executePluginHook(hookName: string, ...args: any[]): Promise<any[]> {
+  async executePluginHook(hookName: string, ...args: unknown[]): Promise<unknown[]> {
     return this.mcpPlugin.executePluginHook(hookName, ...args)
   }
 

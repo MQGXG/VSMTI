@@ -38,6 +38,14 @@ export async function startSidecar(port = 0): Promise<{ port: number; token: str
   const info = await serverManager.start()
   console.log(`[Sidecar] Core server ready on port ${info.port}`)
 
+  // 诊断：启动后立即自测健康检查，区分"启动即不通" vs "运行中变不通"
+  try {
+    await serverManager.request("GET", "/api/health", undefined, 5_000)
+    console.log("[Sidecar] Startup health check OK")
+  } catch (err) {
+    console.error(`[Sidecar] Startup health check FAILED: ${err instanceof Error ? err.message : String(err)}`)
+  }
+
   startHealthCheck()
   return info
 }
@@ -96,7 +104,7 @@ async function reconnect(): Promise<void> {
     await sm.request("GET", "/api/health", undefined, 5_000)
     console.log("[Sidecar] Reconnected to Core server")
   } catch (err) {
-    console.error(`[Sidecar] Reconnect failed: ${err}`)
+    console.error(`[Sidecar] Reconnect failed: ${String(err)}`)
     // 继续重试
     setTimeout(() => { isReconnecting = false; reconnect() }, RECONNECT_DELAY)
     return
@@ -133,10 +141,12 @@ function connectAndGetChannel(
   onError: (err: Error) => void,
 ): Promise<string> {
   const id = ++pendingStreamId
+  let cleanup: (() => void) | null = null
 
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       pendingStreams.delete(id)
+      cleanup?.() // 清理底层 SSE 连接，避免超时后 socket 泄漏
       console.error(`[Sidecar] SSE channel timeout for stream #${id} after 15s`)
       reject(new Error("SSE channel timeout"))
     }, 15_000)
@@ -152,7 +162,7 @@ function connectAndGetChannel(
           if (pending) {
             clearTimeout(pending.timer)
             pendingStreams.delete(id)
-            pending.resolve(data.channel)
+            pending.resolve((data as { channel: string }).channel)
           }
           return
         }
@@ -178,6 +188,18 @@ function connectAndGetChannel(
         }
       },
     )
+      .then((disconnect) => {
+        cleanup = disconnect
+      })
+      .catch((err: Error) => {
+        // waitForReady 失败等同步错误：立即失败，避免挂到超时
+        const pending = pendingStreams.get(id)
+        if (pending) {
+          clearTimeout(pending.timer)
+          pendingStreams.delete(id)
+          pending.reject(err)
+        }
+      })
   })
 }
 
@@ -188,16 +210,28 @@ export function registerSidecarIPCHandlers(): void {
 
   // ── 工具 / Agent 列表（同步） ─────────────────────
   ipcMain.handle("agent:listTools", async (_, mode?: string) => {
-    return await sm.request("GET", `/api/tools${mode ? `?mode=${mode}` : ""}`)
+    return (await sm.request("GET", `/api/tools${mode ? `?mode=${mode}` : ""}`)) as Array<{
+      name: string
+      description: string
+      parameters: Record<string, unknown>
+    }>
   })
   ipcMain.handle("agent:listAgents", async () => {
-    return await sm.request("GET", "/api/agents")
+    return (await sm.request("GET", "/api/agents")) as Array<Record<string, unknown>>
   })
   ipcMain.handle("agent:executeTool", async (_, toolName: string, args: Record<string, unknown>) => {
-    return await sm.request("POST", "/api/agent/execute", { name: toolName, args })
+    return (await sm.request("POST", "/api/agent/execute", { name: toolName, args })) as {
+      success: boolean
+      output?: string
+      error?: string
+    }
   })
   ipcMain.handle("agent:executeBatch", async (_, calls: Array<{ name: string; args: Record<string, unknown> }>) => {
-    return await sm.request("POST", "/api/agent/execute-batch", { calls })
+    return (await sm.request("POST", "/api/agent/execute-batch", { calls })) as Array<{
+      success: boolean
+      output?: string
+      error?: string
+    }>
   })
 
   // ── 流式 Agent 执行（SSE 代理） ───────────────────
@@ -247,7 +281,7 @@ export function registerSidecarIPCHandlers(): void {
 
   // ── 权限回复 ──────────────────────────────────────
   ipcMain.handle("agent:replyPermission", async (_, channel: string, requestId: string, reply: string) => {
-    return await sm.request("POST", "/api/agent/permission-reply", { channel, requestId, reply })
+    return (await sm.request("POST", "/api/agent/permission-reply", { channel, requestId, reply })) as void
   })
 
   // ── 停止流 ────────────────────────────────────────
@@ -257,7 +291,12 @@ export function registerSidecarIPCHandlers(): void {
       session.destroy()
       sseSessions.delete(channel)
     }
-    return await sm.request("POST", "/api/agent/stop", { channel })
+    return (await sm.request("POST", "/api/agent/stop", { channel })) as void
+  })
+
+  // ── LLM 生成追问建议 ─────────────────────────────
+  ipcMain.handle("agent:suggestFollowUps", async (_, sessionId: string) => {
+    return (await sm.request("POST", "/api/agent/follow-ups", { sessionId })) as { suggestions: string[] }
   })
 
   // ── 清理退出 ──────────────────────────────────────

@@ -14,7 +14,7 @@ interface UseProjectsReturn {
   updateProject: (projectId: string, data: { name?: string; color?: string }) => Promise<void>
   deleteProject: (projectId: string) => Promise<void>
   hideProject: (projectId: string) => void
-  refresh: () => Promise<void>
+  refresh: () => Promise<ProjectInfo[]>
 }
 
 export function useProjects(initialProjectId?: string): UseProjectsReturn {

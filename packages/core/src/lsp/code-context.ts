@@ -5,6 +5,9 @@
  * 不再需要 LLM 主动调用 lsp_definition/lsp_references 等工具
  */
 
+import * as fs from "fs"
+import * as path from "path"
+
 export interface CodeIntel {
   symbols: string[]
   diagnostics: string[]
@@ -48,8 +51,9 @@ export class CodeContext {
   }
 
   private detectLanguages(workspace: string): string[] {
-    const { existsSync, readdirSync } = require("fs")
-    const { join } = require("path")
+    const existsSync = fs.existsSync
+    const readdirSync = fs.readdirSync
+    const join = path.join
 
     const indicators: Record<string, string[]> = {
       typescript: ["tsconfig.json", "*.ts", "*.tsx"],

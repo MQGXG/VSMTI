@@ -8,9 +8,9 @@ function loadProviders(): StoredProvider[] {
   if (typeof window === "undefined") return [];
   try {
     const data = localStorage.getItem("providers_v2");
-    if (data) return JSON.parse(data).map((p: any) => ({ id: p.id, name: p.name, displayName: p.displayName || p.name, enabled: p.enabled, models: p.models?.map((m: any) => ({ id: m.id, name: m.name, enabled: m.enabled !== false })) || [] }));
+    if (data) return (JSON.parse(data) as StoredProvider[]).map((p) => ({ id: p.id, name: p.name, displayName: p.displayName || p.name, enabled: p.enabled, models: p.models?.map((m) => ({ id: m.id, name: m.name, enabled: m.enabled !== false })) || [] }));
     const oldData = localStorage.getItem("providers");
-    if (oldData) return JSON.parse(oldData).map((p: any) => ({ ...p, displayName: p.name, models: p.models?.map((m: any) => ({ id: m.id, name: m.name, enabled: true })) || [] }));
+    if (oldData) return (JSON.parse(oldData) as StoredProvider[]).map((p) => ({ ...p, displayName: p.name, models: p.models?.map((m) => ({ id: m.id, name: m.name, enabled: true })) || [] }));
     return [];
   } catch { return []; }
 }

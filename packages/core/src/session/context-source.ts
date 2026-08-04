@@ -209,16 +209,14 @@ export class EnvSource implements ContextSource {
       "<env>",
       `  Working directory: ${ctx.workspace || "unknown"}`,
       `  Platform: ${process.platform}`,
-      `  Today's date: ${new Date().toDateString()}`,
-      `  Current time: ${new Date().toLocaleTimeString("zh-CN", { hour12: false })}`,
       "</env>",
     ]
     return parts.join("\n")
   }
 
   fingerprint(_ctx: SourceContext): SourceFingerprint {
-    // 环境信息按分钟变化
-    return { hash: `env-${Math.floor(Date.now() / 60000)}`, updatedAt: Date.now() }
+    // 环境信息静态稳定，保证 system 前缀字节不变以命中 prompt cache
+    return { hash: "env-static-v1", updatedAt: Date.now() }
   }
 }
 
@@ -313,7 +311,7 @@ export class CodeSource implements ContextSource {
     try {
       const snapshotPath = path.join(this.workspace || process.cwd(), ".mira", "context-snapshots", `${key}.json`)
       if (!fs.existsSync(snapshotPath)) return null
-      return JSON.parse(fs.readFileSync(snapshotPath, "utf-8"))
+      return JSON.parse(fs.readFileSync(snapshotPath, "utf-8")) as { content: string; fingerprint: SourceFingerprint }
     } catch {
       return null
     }

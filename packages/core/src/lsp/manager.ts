@@ -2,8 +2,9 @@
  * LSP 管理器 — 语言服务器生命周期管理
  */
 
-import { LSPClient } from "./client"
+import { LSPClient, type LSPLocationResult, type LSPHoverResult } from "./client"
 import * as path from "path"
+import * as fs from "fs"
 import { pathToFileURL } from "url"
 
 export interface LSPLocation {
@@ -60,7 +61,7 @@ export class LSPServerManager {
   }
 
   private fileExists(filepath: string): boolean {
-    try { return require("fs").existsSync(filepath) } catch { return false }
+    try { return fs.existsSync(filepath) } catch { return false }
   }
 
   /** 定位符号定义 */
@@ -70,9 +71,9 @@ export class LSPServerManager {
     const result = await client.goToDefinition(uri, line, col)
     if (!result) return []
     const locations = Array.isArray(result) ? result : [result]
-    return locations.map((loc: any) => ({
-      uri: loc.uri || loc.targetUri,
-      range: loc.range || loc.targetSelectionRange,
+    return locations.map((loc: LSPLocationResult) => ({
+      uri: loc.uri || loc.targetUri || "",
+      range: loc.range || loc.targetSelectionRange || { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
     }))
   }
 
@@ -82,17 +83,21 @@ export class LSPServerManager {
     const uri = pathToFileURL(path.resolve(workspace, filePath)).href
     const result = await client.findReferences(uri, line, col)
     if (!result) return []
-    return Array.isArray(result) ? result : [result]
+    const locations = Array.isArray(result) ? result : [result]
+    return locations.map((loc: LSPLocationResult) => ({
+      uri: loc.uri || loc.targetUri || "",
+      range: loc.range || loc.targetSelectionRange || { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+    }))
   }
 
   /** 查询悬停类型信息 */
   async getHoverInfo(workspace: string, filePath: string, line: number, col: number): Promise<LSPHoverInfo | null> {
     const client = await this.ensureServer(workspace)
     const uri = pathToFileURL(path.resolve(workspace, filePath)).href
-    const result = await client.hover(uri, line, col)
+    const result: LSPHoverResult | null = await client.hover(uri, line, col)
     if (!result) return null
     const contents = Array.isArray(result.contents)
-      ? result.contents.map((c: any) => (typeof c === "string" ? c : c.value)).join("\n")
+      ? result.contents.map((c: string | { value?: string }) => (typeof c === "string" ? c : c.value || "")).join("\n")
       : typeof result.contents === "string"
         ? result.contents
         : result.contents?.value || ""
@@ -115,7 +120,7 @@ export class LSPServerManager {
     try {
       const client = await this.ensureServer(workspace)
       const uri = pathToFileURL(path.resolve(workspace, filePath)).href
-      const content = require("fs").readFileSync(path.resolve(workspace, filePath), "utf-8")
+      const content = fs.readFileSync(path.resolve(workspace, filePath), "utf-8")
       client.notify("textDocument/didOpen", {
         textDocument: { uri, languageId: this.detectLanguage(filePath), version: 1, text: content },
       })

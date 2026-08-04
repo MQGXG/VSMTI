@@ -1,6 +1,6 @@
 import { createLLMClient, type LLMToolSet, type LLMMessage } from "../llm/client"
 import type { AgentEvent } from "../types"
-import { ContextManager } from "../session/context"
+import type { ContextManager } from "../session/context"
 
 export interface LLMTurnConfig {
   provider: string

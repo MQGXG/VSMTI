@@ -1,4 +1,4 @@
-import { app, globalShortcut } from "electron";
+import { app, BrowserWindow, globalShortcut } from "electron";
 import { createWindow, showMainWindow } from "../managers/window-manager";
 import { createTray } from "../managers/tray-manager";
 import { registerIPCHandlers } from "../ipc/handlers";
@@ -41,7 +41,6 @@ async function initializeApp() {
   });
 
   app.on("activate", async () => {
-    const { BrowserWindow } = require("electron");
     if (BrowserWindow.getAllWindows().length === 0) {
       await createWindow();
     }

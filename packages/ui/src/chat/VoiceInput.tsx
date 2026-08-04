@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Mic, MicOff, Loader2 } from "lucide-react"
+import { createSTTEngine } from "../services/voice/stt"
+import type { STTEngine } from "../services/voice/types"
 
 interface VoiceInputProps {
   onTranscript: (text: string) => void
@@ -12,11 +14,18 @@ type VoiceStatus = "idle" | "listening" | "processing" | "error"
 export function VoiceInput({ onTranscript, disabled = false, className = "" }: VoiceInputProps) {
   const [status, setStatus] = useState<VoiceStatus>("idle")
   const [error, setError] = useState<string | null>(null)
-  const recognitionRef = useRef<any>(null)
+  const engineRef = useRef<STTEngine | null>(null)
   const statusRef = useRef<VoiceStatus>("idle")
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isSupported = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
+  const engine = useCallback((): STTEngine => {
+    if (!engineRef.current) {
+      // 优先本地（Whisper 离线），不可用时降级 Web Speech
+      const local = createSTTEngine("local")
+      engineRef.current = local.isAvailable() ? local : createSTTEngine("webspeech")
+    }
+    return engineRef.current
+  }, [])
 
   const clearErrorTimer = useCallback(() => {
     if (errorTimerRef.current) {
@@ -28,85 +37,48 @@ export function VoiceInput({ onTranscript, disabled = false, className = "" }: V
   useEffect(() => {
     return () => {
       clearErrorTimer()
-      if (recognitionRef.current) {
-        recognitionRef.current.abort()
-        recognitionRef.current = null
-      }
+      engineRef.current?.stop()
+      engineRef.current = null
     }
   }, [clearErrorTimer])
 
   const startListening = useCallback(() => {
-    if (!isSupported || disabled) return
-
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort() } catch {}
-      recognitionRef.current = null
-    }
+    if (disabled) return
+    const e = engine()
+    if (!e.isAvailable()) { setError("unsupported"); return }
 
     clearErrorTimer()
     setError(null)
     setStatus("listening")
     statusRef.current = "listening"
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    const recognition = new SpeechRecognition()
-
-    recognition.continuous = true
-    recognition.interimResults = true
-    recognition.lang = "zh-CN"
-    recognition.maxAlternatives = 1
-
-    let finalTranscript = ""
-
-    recognition.onresult = (event: any) => {
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript
-        }
-      }
-      if (finalTranscript) {
+    e.start({
+      onResult: (text) => {
         setStatus("processing")
         statusRef.current = "processing"
-        onTranscript(finalTranscript)
-        finalTranscript = ""
-        if (statusRef.current === "processing") {
-          setStatus("listening")
-          statusRef.current = "listening"
-        }
-      }
-    }
-
-    recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error)
-      setError(event.error)
-      setStatus("error")
-      statusRef.current = "error"
-      clearErrorTimer()
-      errorTimerRef.current = setTimeout(() => {
-        setStatus("idle")
-        statusRef.current = "idle"
-      }, 2000)
-    }
-
-    recognition.onend = () => {
-      if (statusRef.current === "listening") {
-        setStatus("idle")
-        statusRef.current = "idle"
-      }
-    }
-
-    recognitionRef.current = recognition
-    recognition.start()
-  }, [isSupported, disabled, onTranscript, clearErrorTimer])
+        onTranscript(text)
+        setStatus("listening")
+        statusRef.current = "listening"
+      },
+      onError: (err) => {
+        console.error("Speech recognition error:", err)
+        setError(err)
+        setStatus("error")
+        statusRef.current = "error"
+        clearErrorTimer()
+        errorTimerRef.current = setTimeout(() => {
+          setStatus("idle")
+          statusRef.current = "idle"
+        }, 2000)
+      },
+    })
+  }, [engine, disabled, onTranscript, clearErrorTimer])
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop() } catch {}
-      recognitionRef.current = null
-    }
+    engine().stop()
     setStatus("idle")
     statusRef.current = "idle"
-  }, [])
+  }, [engine])
 
   const toggleListening = useCallback(() => {
     if (status === "listening") {
@@ -116,6 +88,9 @@ export function VoiceInput({ onTranscript, disabled = false, className = "" }: V
     }
   }, [status, startListening, stopListening])
 
+  const isSupported = typeof window !== "undefined" && (
+    "SpeechRecognition" in window || "webkitSpeechRecognition" in window || !!navigator.mediaDevices
+  )
   if (!isSupported) return null
 
   return (

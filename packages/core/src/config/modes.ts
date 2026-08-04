@@ -1,4 +1,5 @@
-import { PermissionSet, type PermissionRule } from "../system/permission"
+import type { PermissionSet} from "../system/permission";
+import { type PermissionRule } from "../system/permission"
 import type { AgentProfile } from "./profile"
 import { createDefaultRegistry, getGlobalAgentDir, getProjectAgentDir } from "./profile"
 

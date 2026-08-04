@@ -20,10 +20,19 @@ export interface SkillInfo {
   category: string | null
 }
 
-export interface AgentEvent {
-  type: string
-  [key: string]: unknown
-}
+export type AgentEvent =
+  | { type: "content"; text: string }
+  | { type: "tool_start"; id: string; name: string; args: Record<string, unknown> }
+  | { type: "tool_result"; id: string; name: string; result: { success: boolean; output?: string; error?: string; metadata?: Record<string, unknown> } }
+  | { type: "permission_request"; id: string; action: string; resources: string[]; toolCall?: { input: Record<string, unknown> } }
+  | { type: "question"; id: string; question: string; options?: string[] }
+  | { type: "error"; message: string }
+  | { type: "thinking"; text: string }
+  | { type: "finish"; reason: string; usage?: { promptTokens?: number; completionTokens?: number; totalTokens?: number; cacheReadTokens?: number; cacheWriteTokens?: number } }
+  | { type: "retry"; attempt: number; error: string }
+  | { type: "context_rebuild"; reason: string; tokensBefore: number; tokensAfter: number }
+  | { type: "goal_status"; goalId: string; description: string; status: string; reasoning?: string }
+  | { type: "subagent_status"; subagentId: string; status: string; description: string }
 
 export const AgentService = {
   // ─── 工具 ──────────────────────────────────────────────────

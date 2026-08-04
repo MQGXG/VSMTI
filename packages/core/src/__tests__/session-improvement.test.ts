@@ -29,6 +29,7 @@ import { createMessageEvent, createCompactionEvent } from '../session/event-type
 
 import { ScopedToolRegistry } from '../system/tool-scope'
 import type { ToolDef } from '../shared/tool'
+import { z } from 'zod'
 
 import { RunCoordinator } from '../agent/run-coordinator'
 
@@ -47,6 +48,8 @@ function makeToolDef(name: string): ToolDef {
   return {
     name,
     description: `Test tool: ${name}`,
+    inputSchema: z.object({}),
+    outputSchema: z.any(),
     parameters: { type: 'object' as const, properties: {} },
     execute: async () => ({ success: true, output: 'ok' }),
   }
@@ -415,9 +418,9 @@ describe('RunCoordinator', () => {
       userMessage: 'hello',
       config: { sessionID: 's1', workspace: '/w', model: 'gpt-4', apiKey: 'k', apiUrl: 'u' },
       emit: () => {},
-      execute: (async function* () {
+      execute: async function* () {
         yield { type: 'finish' as const, reason: 'length' as const }
-      })(),
+      },
     })
 
     expect(id).toBeTruthy()

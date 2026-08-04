@@ -34,7 +34,7 @@ export function EditProjectDialog({ project, open, onClose, onSave, onDelete }: 
       setName(project.name);
       setSelectedColor(project.color || COLORS[0]);
       // 从 localStorage 读取启动脚本
-      const scripts = JSON.parse(localStorage.getItem("project_scripts") || "{}");
+      const scripts = JSON.parse(localStorage.getItem("project_scripts") || "{}") as Record<string, string>;
       setStartupScript(scripts[project.project_id] || "");
     }
   }, [open, project?.project_id]);

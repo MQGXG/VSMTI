@@ -13,6 +13,8 @@ import { convertMessage, type MiraMessage } from "./mira-runtime";
 import type { ModelOption } from "./ModelSelector";
 import type { AgentMode } from "./types";
 import { fileAttachmentAdapter } from "../lib/attachment-adapter";
+import { generateFollowUpSuggestions } from "./follow-up-suggestions";
+import { loadSettings as getSettings } from "../sidebar/provider-data";
 
 export interface MiraRuntimeContext {
   messages: MiraMessage[];
@@ -70,6 +72,24 @@ export function MiraRuntimeProvider({
     onSessionChange,
   });
 
+  /** LLM 生成的追问建议（回复完成后异步获取；null = 未生成/失败，回退启发式） */
+  const [llmFollowUps, setLlmFollowUps] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    const last = chat.messages[chat.messages.length - 1];
+    setLlmFollowUps(null);
+    if (last?.role !== "assistant" || chat.isRunning || !sessionId) return;
+    // 设置开关：关闭时跳过 LLM 生成，回退启发式
+    if (getSettings().followUpLlm === false) return;
+    let cancelled = false;
+    window.electronAPI.agent.suggestFollowUps(sessionId)
+      .then((r) => {
+        if (!cancelled && r?.suggestions?.length) setLlmFollowUps(r.suggestions);
+      })
+      .catch(() => { /* LLM 生成失败时保持启发式降级 */ });
+    return () => { cancelled = true; };
+  }, [chat.messages.length, chat.isRunning, sessionId]);
+
   /** 发送队列 — 运行时允许排队发消息 */
   const [queue] = useState(() =>
     createMessageQueue({
@@ -123,8 +143,9 @@ export function MiraRuntimeProvider({
     [chat.sendMessage]
   );
 
-  const onCancel = useCallback(async () => {
+  const onCancel = useCallback(() => {
     chat.stopStream();
+    return Promise.resolve();
   }, [chat.stopStream]);
 
   /** 编辑消息后重新发送 */
@@ -180,11 +201,11 @@ export function MiraRuntimeProvider({
   const roles = new Set(["user", "assistant"]);
 
   const convertThreadMessage = useCallback(
-    (message: any, idx: number): ThreadMessageLike => {
+    (message: ThreadMessageLike, idx: number): ThreadMessageLike => {
       const role = roles.has(message.role) ? message.role : "assistant";
       return {
         role,
-        content: Array.isArray(message.content) ? message.content : [{ type: "text" as const, text: String(message.content || "") }],
+        content: Array.isArray(message.content) ? message.content : [{ type: "text" as const, text: (message.content || "") as string }],
         id: message.id,
         createdAt: message.createdAt,
       };
@@ -192,12 +213,27 @@ export function MiraRuntimeProvider({
     []
   );
 
-  const suggestions = useMemo(() => chat.messages.length === 0 ? [
-    { prompt: "帮我写一段代码" },
-    { prompt: "分析这份数据" },
-    { prompt: "搜索一下最新AI新闻" },
-    { prompt: "解释这个技术概念" },
-  ] : undefined, [chat.messages.length]);
+  const suggestions = useMemo(() => {
+    if (chat.messages.length === 0) {
+      return [
+        { prompt: "帮我写一段代码" },
+        { prompt: "分析这份数据" },
+        { prompt: "搜索一下最新AI新闻" },
+        { prompt: "解释这个技术概念" },
+      ];
+    }
+    // 回复后追问建议：优先 LLM 生成，未生成/失败时降级为内容启发式
+    const last = chat.messages[chat.messages.length - 1];
+    if (last?.role !== "assistant") return undefined;
+    if (llmFollowUps && llmFollowUps.length > 0) {
+      return llmFollowUps.map((prompt) => ({ prompt }));
+    }
+    const text = (last.parts || [])
+      .filter((p) => p.type === "text" && p.text)
+      .map((p) => (p as { text: string }).text)
+      .join(" ");
+    return generateFollowUpSuggestions(text).map((prompt) => ({ prompt }));
+  }, [chat.messages.length, llmFollowUps]);
 
   const runtime = useExternalStoreRuntime<ThreadMessageLike>({
     isRunning: chat.isRunning,
@@ -214,6 +250,15 @@ export function MiraRuntimeProvider({
       attachments: fileAttachmentAdapter,
       speech: new WebSpeechSynthesisAdapter(),
       dictation: new WebSpeechDictationAdapter(),
+      feedback: {
+        submit: (feedback) => {
+          try {
+            const store = JSON.parse(localStorage.getItem("mira-feedback") || "{}") as Record<string, string>;
+            store[feedback.message.id] = feedback.type;
+            localStorage.setItem("mira-feedback", JSON.stringify(store));
+          } catch { /* 忽略持久化失败 */ }
+        },
+      },
     },
   });
 

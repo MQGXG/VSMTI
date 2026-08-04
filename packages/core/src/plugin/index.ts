@@ -223,9 +223,9 @@ export class PluginManager {
   /**
    * 执行钩子
    */
-  async executeHook(hookName: string, ...args: any[]): Promise<any[]> {
+  async executeHook(hookName: string, ...args: unknown[]): Promise<unknown[]> {
     const hooks = this.hooks.get(hookName) || []
-    const results: any[] = []
+    const results: unknown[] = []
 
     for (const hook of hooks) {
       try {
@@ -334,7 +334,7 @@ export async function loadPluginConfig(workspace: string): Promise<PluginConfigM
   const configPath = path.join(workspace, ".mira", "plugins.json")
   try {
     const content = await fs.readFile(configPath, "utf-8")
-    return JSON.parse(content)
+    return JSON.parse(content) as PluginConfigMap
   } catch {
     return {}
   }

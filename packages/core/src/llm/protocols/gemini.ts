@@ -1,4 +1,4 @@
-import type { LLMMessage, LLMEvent } from "../schema"
+import type { LLMMessage, LLMEvent, FinishReason } from "../schema"
 import type { Protocol } from "../route/types"
 
 interface GeminiContent {
@@ -161,13 +161,13 @@ export const GeminiProtocol: Protocol = {
   },
 }
 
-function mapFinishReason(reason: string): string {
+function mapFinishReason(reason: string): FinishReason {
   switch (reason) {
     case "STOP": return "stop"
     case "MAX_TOKENS": return "length"
-    case "SAFETY": return "content_filter"
-    case "RECITATION": return "content_filter"
+    case "SAFETY": return "content-filtered"
+    case "RECITATION": return "content-filtered"
     case "OTHER": return "stop"
-    default: return reason
+    default: return "unknown"
   }
 }

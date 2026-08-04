@@ -3,7 +3,7 @@
  * 根据模型自动选择最优 Provider，支持 failover
  */
 
-import { ProviderPolicyEngine } from "./provider-policy"
+import type { ProviderPolicyEngine } from "./provider-policy"
 
 export interface ProviderChainConfig {
   providers: Array<{

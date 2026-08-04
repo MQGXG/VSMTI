@@ -87,7 +87,8 @@ export function getJsonSchema(def: Def): Record<string, unknown> {
 /** 将 Effect Def 转为旧式 ToolDef 兼容格式 */
 export function toLegacyToolDef(effectDef: Def) {
   const schema = getJsonSchema(effectDef)
-  const props = (schema.properties || {}) as Record<string, any>
+  interface SchemaProperty { type?: string; description?: string }
+  const props = (schema.properties || {}) as Record<string, SchemaProperty>
   const shape: Record<string, z.ZodType> = {}
   for (const [k, v] of Object.entries(props)) {
     const t = v.type === "string" ? z.string()

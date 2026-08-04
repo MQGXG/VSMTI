@@ -99,7 +99,7 @@ describe('settle()', () => {
     expect(result.success).toBe(false)
     expect(result.error).toContain('Invalid input')
     expect(result.metadata?.errorType).toBe('recoverable')
-    expect(content[0].text).toContain('Invalid input')
+    expect((content[0] as { text?: string }).text).toContain('Invalid input')
   })
 
   test('输出截断', async () => {

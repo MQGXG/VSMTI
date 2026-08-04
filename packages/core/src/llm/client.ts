@@ -1,7 +1,7 @@
-import { z } from "zod"
+import type { z } from "zod"
 import { ProviderCatalog } from "./provider-catalog"
 import { LLMError } from "./schema/errors"
-import type { LLMMessage } from "./schema/messages"
+import type { LLMMessage, ContentPart } from "./schema/messages"
 import { getToolResultOutput } from "./schema/messages"
 import type { LLMRequest as LLMRequestSchema } from "./schema/options"
 import { zodToJsonSchema } from "../shared/zod-converter"
@@ -45,7 +45,7 @@ function convertMessages(messages: LLMMessage[]): LLMMessage[] {
     role: m.role,
     content: typeof m.content === "string"
       ? m.content
-      : m.content.map((part: any) => {
+      : m.content.map((part: ContentPart) => {
           if (part.type === "text") return { type: "text" as const, text: part.text }
           if (part.type === "tool-call") return { type: "tool-call" as const, toolCallId: part.toolCallId, toolName: part.toolName, args: part.args }
           if (part.type === "tool-result") return { type: "tool-result" as const, toolCallId: part.toolCallId, toolName: part.toolName, output: getToolResultOutput(part.output) }
@@ -116,7 +116,7 @@ export function createLLMClient(config: SDKConfig): LLMClient {
         model: config.model,
         messages: convertMessages(request.messages),
         tools: convertTools(request.tools),
-        generation: config.options as any,
+        generation: config.options,
       }
 
       let accumulatedArgs = ""

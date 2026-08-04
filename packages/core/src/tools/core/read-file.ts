@@ -36,10 +36,13 @@ const NATIVE_ENCODINGS = new Set(["utf-8", "utf8", "utf-16le", "utf16le", "latin
 
 function decodeText(buffer: Buffer, encoding: string): string {
   if (NATIVE_ENCODINGS.has(encoding)) {
-    return buffer.toString(encoding as any)
+    return buffer.toString(encoding as BufferEncoding)
   }
   try {
-    const iconv = require("iconv-lite")
+    const iconv = require("iconv-lite") as {
+      encodingExists(enc: string): boolean
+      decode(buffer: Buffer, enc: string): string
+    }
     if (iconv.encodingExists(encoding)) {
       return iconv.decode(buffer, encoding)
     }
@@ -167,7 +170,7 @@ export const readFileTool = make({
       }
     }
 
-    return await readTextFile(real, buffer, input, (input as any).path, ctx.workspace)
+    return await readTextFile(real, buffer, input, input.path, ctx.workspace)
   },
 })
 
@@ -181,10 +184,10 @@ const STREAMING_THRESHOLD = 10 * 1024 * 1024 // 10MB
 async function readTextFile(
   real: string,
   buffer: Buffer,
-  input: { offset?: number; limit?: number; encoding?: string },
+  input: { offset?: number; limit?: number; encoding?: string; path?: string },
   requestPath?: string,
   workspace?: string
-): Promise<{ success: boolean; output: string; metadata?: Record<string, unknown> }> {
+): Promise<{ success: boolean; output?: string; error?: string; metadata?: Record<string, unknown> }> {
   const enc = (input.encoding || "utf-8").toLowerCase()
   const offset = (input.offset || 1) - 1
   const limit = input.limit || 0
@@ -205,7 +208,7 @@ async function fastPath(
   real: string, buffer: Buffer, enc: string,
   input: { offset?: number; limit?: number; encoding?: string },
   requestPath?: string, workspace?: string,
-): Promise<{ success: boolean; output: string; metadata?: Record<string, unknown> }> {
+): Promise<{ success: boolean; output?: string; error?: string; metadata?: Record<string, unknown> }> {
   let text: string
   try {
     text = decodeText(buffer, enc)
@@ -238,8 +241,8 @@ async function streamingPath(
   offset: number, limit: number,
   input: { offset?: number; limit?: number; encoding?: string },
   requestPath?: string, workspace?: string,
-): Promise<{ success: boolean; output: string; metadata?: Record<string, unknown> }> {
-  return new Promise((resolve, reject) => {
+): Promise<{ success: boolean; output?: string; error?: string; metadata?: Record<string, unknown> }> {
+  return new Promise<{ success: boolean; output?: string; error?: string; metadata?: Record<string, unknown> }>((resolve, reject) => {
     const lines: string[] = []
     let lineIndex = 0
     let byteAccum = 0
@@ -330,7 +333,7 @@ async function buildOutput(
   offset: number, nextLine: number,
   input: { offset?: number; limit?: number; encoding?: string },
   workspace?: string,
-): Promise<{ success: boolean; output: string; metadata?: Record<string, unknown> }> {
+): Promise<{ success: boolean; output?: string; error?: string; metadata?: Record<string, unknown> }> {
   // 截断长行
   const processed = lines.map(l =>
     l.length > MAX_LINE_LENGTH ? l.slice(0, MAX_LINE_LENGTH) + MAX_LINE_SUFFIX : l

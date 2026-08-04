@@ -5,7 +5,7 @@
  * 改动：普通表 → FTS5 虚拟表，LIKE → MATCH，LENGTH → rank(BM25)
  */
 
-import { MemoryProvider } from "./types"
+import type { MemoryProvider } from "./types"
 import initSqlJs, { type Database as SqliteDb } from "sql.js"
 import { getPlatformPaths } from "../config/paths"
 import { join } from "path"
@@ -185,7 +185,7 @@ export class FTSMemoryProvider implements MemoryProvider {
       let pruned = 0
 
       const existing = this.db.exec(this._hasFTS5 ? "SELECT path FROM fts_files" : "SELECT path FROM fts_files")
-      const indexedPaths = new Set(existing[0]?.values?.map((r: any) => r[0]) || [])
+      const indexedPaths = new Set(existing[0]?.values?.map((r) => r[0]) || [])
 
       // 清理已删除文件
       for (const p of indexedPaths) {

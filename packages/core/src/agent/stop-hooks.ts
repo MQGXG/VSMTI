@@ -46,7 +46,7 @@ export async function runStopHooks(ctx: StopContext): Promise<StopResult> {
 }
 
 export async function autoDreamHook(ctx: StopContext): Promise<StopResult> {
-  if (!ctx.dreamDistillManager || !(ctx.contextManager as any).shouldAutoDream?.()) {
+  if (!ctx.dreamDistillManager || !ctx.contextManager.shouldAutoDream?.()) {
     return { additionalMessages: [], shouldContinue: false }
   }
   try {

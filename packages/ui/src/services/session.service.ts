@@ -4,9 +4,9 @@
 
 export interface SessionInfo {
   session_id: string
-  project_id: string
+  project_id?: string
   title: string
-  kind: "session" | "task"
+  kind: string
   workspace_path: string
   message_count: number
   updated_at: string
@@ -17,6 +17,7 @@ export interface SessionMessage {
   role: string
   content: string
   retryCount?: number
+  timestamp?: string
 }
 
 export interface SearchResult {

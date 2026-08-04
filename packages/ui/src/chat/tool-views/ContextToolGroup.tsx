@@ -76,6 +76,6 @@ export function ContextToolGroup({ parts, allDone }: Props) {
 
 function getSubtitle(part: MiraPart): string {
   if (!part.args) return "";
-  const { path, pattern, query, dir } = part.args as any;
+  const { path, pattern, query, dir } = part.args as { path?: string; pattern?: string; query?: string; dir?: string };
   return path || pattern || query || dir || "";
 }

@@ -1,5 +1,7 @@
 import type { ToolContext } from "../shared/tool"
 import type { AgentMode } from "../config/modes"
+import * as fs from "fs"
+import * as path from "path"
 import { CodeContext } from "../lsp/code-context"
 import {
   SourceManager,
@@ -68,7 +70,7 @@ export function buildToolContext(config: AgentRunConfig): ToolContext {
     agent: "build",
     assistantMessageID: "",
     toolCallID: "",
-    shell: (config.options as any)?.shell || undefined,
+    shell: config.options?.shell as string | undefined,
   }
 }
 
@@ -102,8 +104,6 @@ export async function buildSystemMessage(
     "<env>",
     `  Working directory: ${config.workspace || "unknown"}`,
     `  Platform: ${process.platform}`,
-    `  Today's date: ${new Date().toDateString()}`,
-    `  Current time: ${new Date().toLocaleTimeString("zh-CN", { hour12: false })}`,
     "</env>",
   ]
   parts.push(envParts.join("\n"))
@@ -174,10 +174,10 @@ export async function prepareSourceManagerContext(
   // 注入 Dream 知识
   if (config.workspace) {
     try {
-      const knowledgePath = require("path").join(config.workspace, ".mira", "knowledge", "knowledge.json")
-      if (require("fs").existsSync(knowledgePath)) {
-        const knowledge = JSON.parse(require("fs").readFileSync(knowledgePath, "utf-8"))
-        const facts = knowledge.entries?.map((e: any) => `- ${e.content}`).join("\n") || ""
+      const knowledgePath = path.join(config.workspace, ".mira", "knowledge", "knowledge.json")
+      if (fs.existsSync(knowledgePath)) {
+        const knowledge = JSON.parse(fs.readFileSync(knowledgePath, "utf-8")) as { entries?: Array<{ content: string }> }
+        const facts = knowledge.entries?.map((e) => `- ${e.content}`).join("\n") || ""
         sources.knowledge.setKnowledgeContent(facts)
       }
     } catch { /* 静默 */ }

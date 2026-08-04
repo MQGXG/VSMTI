@@ -22,7 +22,7 @@ function loadBounds(): PetBounds {
   try {
     const p = boundsPath();
     if (existsSync(p)) {
-      return JSON.parse(readFileSync(p, "utf-8"));
+      return JSON.parse(readFileSync(p, "utf-8")) as PetBounds;
     }
   } catch { /* ignore */ }
   return { width: 280, height: 380 };

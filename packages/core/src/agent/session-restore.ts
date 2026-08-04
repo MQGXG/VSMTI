@@ -16,13 +16,13 @@ function hasToolCalls(content: string | any[]): boolean {
 }
 
 /** 尝试解析旧格式的 assistant 消息 */
-function tryParseAssistantPayload(content: string): { text: string; tool_calls: any[] } | null {
+function tryParseAssistantPayload(content: string): { text: string; tool_calls: Array<{ id: string; name: string; args: string }> } | null {
   try {
-    const parsed = JSON.parse(content)
+    const parsed = JSON.parse(content) as { text?: unknown; tool_calls?: unknown }
     if (parsed && typeof parsed === "object" && "text" in parsed && "tool_calls" in parsed) {
-      return parsed
+      return parsed as { text: string; tool_calls: Array<{ id: string; name: string; args: string }> }
     }
-  } catch {}
+  } catch { /* json parse fallback */ }
   return null
 }
 
@@ -52,7 +52,7 @@ export async function restoreSessionHistory(
           role: "assistant",
           content: [
             { type: "text", text: parsed.text },
-            ...parsed.tool_calls.map((tc: any) => ({
+            ...parsed.tool_calls.map((tc) => ({
               type: "tool-call" as const,
               toolCallId: tc.id,
               toolName: tc.name,

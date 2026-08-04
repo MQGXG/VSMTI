@@ -12,7 +12,7 @@ interface Props {
 
 function useModelList() {
   const [models, setModels] = useState<Record<string, string>>(() => {
-    try { return JSON.parse(localStorage.getItem("pet_models") || '{"hiyori":"/models/hiyori/Hiyori.model3.json"}') }
+    try { return JSON.parse(localStorage.getItem("pet_models") || '{"hiyori":"/models/hiyori/Hiyori.model3.json"}') as Record<string, string> }
     catch { return { hiyori: "/models/hiyori/Hiyori.model3.json" } }
   })
   const save = (m: Record<string, string>) => {
@@ -109,6 +109,43 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
           </label>
         </div>
       ))}
+
+      <div className="p-4 rounded-xl bg-surface-secondary border border-standard">
+        <label className="flex items-center justify-between cursor-pointer">
+          <div>
+            <div className="text-sm text-primary">AI 生成追问建议</div>
+            <div className="text-xs mt-0.5 text-secondary">每条回复后由模型生成贴合内容的追问建议；关闭则使用本地规则。会消耗少量 token</div>
+          </div>
+          <Switch checked={settings.followUpLlm !== false}
+            onCheckedChange={(v) => onUpdate({ followUpLlm: v })} />
+        </label>
+      </div>
+
+      <div className="p-4 rounded-xl bg-surface-secondary border border-standard">
+        <div className="text-sm mb-3 text-primary">语音</div>
+        <label className="flex items-center justify-between cursor-pointer mb-3">
+          <div>
+            <div className="text-sm text-primary">实时语音对话</div>
+            <div className="text-xs mt-0.5 text-secondary">语音对话模式：说话→识别→回复→朗读（本地 Whisper，离线可用）</div>
+          </div>
+          <Switch checked={settings.voiceChatEnabled !== false}
+            onCheckedChange={(v) => onUpdate({ voiceChatEnabled: v })} />
+        </label>
+        <div>
+          <label className="text-xs mb-1 block text-secondary">朗读引擎</label>
+          <Select value={settings.ttsEngine || "webspeech"}
+            onValueChange={(v) => onUpdate({ ttsEngine: v })}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="webspeech">系统语音（WebSpeech）</SelectItem>
+              <SelectItem value="local">本地（Kokoro，离线）</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] mt-1 text-secondary">本地引擎首次使用需下载模型（约 80MB），之后可离线朗读</p>
+        </div>
+      </div>
 
       <div className="p-4 rounded-xl bg-surface-secondary border border-standard">
         <div className="text-sm mb-3 text-primary">Live2D 桌宠</div>

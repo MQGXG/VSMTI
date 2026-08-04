@@ -3,10 +3,12 @@
  * 子 Agent 继承父 Agent 的注册表与权限子集，拥有独立会话和预算
  */
 
-import { AgentConfig } from "../agent/agent"
-import { ToolRegistry } from "../system/registry"
-import { PermissionSet, PermissionRule } from "../system/permission"
-import { createLLMClient, LLMMessage } from "../llm/client"
+import type { AgentConfig } from "../agent/agent"
+import type { ToolRegistry } from "../system/registry"
+import type { PermissionRule } from "../system/permission";
+import { PermissionSet } from "../system/permission"
+import type { LLMMessage } from "../llm/client";
+import { createLLMClient } from "../llm/client"
 import { IterationBudget } from "../task/budget"
 import { evaluateToolCalls } from "../system/permission/gate"
 
@@ -101,13 +103,13 @@ Your task: ${task}`,
 
     const toolSet = registry.materialize(childConfig.permissions).definitions
     const client = createLLMClient({
-      provider: (config.provider as any) || "openai",
+      provider: config.provider || "openai",
       model: config.model,
       apiKey: config.apiKey,
       apiUrl: config.apiUrl,
       headers: config.headers,
       options: config.options,
-    } as any)
+    })
 
     const budget = new IterationBudget(childConfig.maxSteps || 5)
     let finalText = ""

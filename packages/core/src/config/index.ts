@@ -62,7 +62,7 @@ function readJsonFile(path: string): Record<string, unknown> | null {
   try {
     if (!existsSync(path)) return null
     const raw = readFileSync(path, "utf-8")
-    return JSON.parse(raw)
+    return JSON.parse(raw) as Record<string, unknown>
   } catch {
     return null
   }
@@ -153,7 +153,7 @@ export function loadConfig(workspace?: string): MiraConfig {
     envConfig as Record<string, unknown>,
   )
 
-  return resolveConfigValues(merged) as unknown as MiraConfig
+  return resolveConfigValues(merged)
 }
 
 export function saveGlobalConfig(config: Partial<MiraConfig>): void {

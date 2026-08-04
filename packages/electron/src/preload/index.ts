@@ -1,4 +1,5 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
+import type { IpcRendererEvent } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
 
 const electronAPI = {
   minimizeWindow: () => ipcRenderer.send("window:minimize"),
@@ -65,6 +66,9 @@ const electronAPI = {
 
     /** 停止 Agent 流 */
     stopStream: (channel: string) => ipcRenderer.invoke("agent:stopStream", channel),
+
+    /** 用 LLM 生成会话追问建议 */
+    suggestFollowUps: (sessionId: string) => ipcRenderer.invoke("agent:suggestFollowUps", sessionId),
 
     /** 列出可用 Skill */
     listSkills: () => ipcRenderer.invoke("skill:listSkills"),

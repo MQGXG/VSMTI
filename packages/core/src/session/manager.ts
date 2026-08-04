@@ -87,7 +87,7 @@ export async function listSessions(projectId?: string): Promise<SessionInfo[]> {
       session_id,
       project_id: project_id || projectId || "",
       title: title || "",
-      kind: "session" as SessionInfo["kind"],
+      kind: "session",
       workspace_path: workspace || "",
       message_count: countMap.get(session_id) || 0,
       updated_at: updated_at || "",
@@ -99,7 +99,7 @@ export async function getSessionMessages(sessionId: string): Promise<Array<{ rol
   reloadDatabase()
   const stored = await loadSession(sessionId)
   if (!stored) return []
-  return stored.messages.map((m, i) => ({ id: i, role: m.role, content: m.content, retryCount: (m as any).retryCount || 0 }))
+  return stored.messages.map((m, i) => ({ id: i, role: m.role, content: m.content, retryCount: m.retryCount || 0 }))
 }
 
 export async function updateProject(projectId: string, data: { name?: string; workspace_path?: string }): Promise<void> {
@@ -207,8 +207,8 @@ export async function deleteSessionById(sessionId: string): Promise<void> {
 
   // 清理 FTS 记忆索引
   try {
-    const initSqlJs = require("sql.js")
-    const _SQL = await initSqlJs()
+    const sqlModule = await import("sql.js")
+    const _SQL = await sqlModule.default()
     const ftsPath = join(getPlatformPaths().userData, "fts-memory.db")
     if (fs.existsSync(ftsPath)) {
       const buffer = fs.readFileSync(ftsPath)

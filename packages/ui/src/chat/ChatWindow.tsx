@@ -9,7 +9,7 @@ import { MiraRuntimeProvider } from "./MiraRuntimeProvider";
 import { ModelSelector, loadModelChoice, loadModeChoice } from "./ModelSelector";
 import type { ModelOption } from "./ModelSelector";
 import type { AgentMode } from "./types";
-import type { MiraMessage } from "./mira-runtime";
+import type { MiraMessage, MiraPart } from "./mira-runtime";
 import { PermissionDialog } from "./PermissionDialog";
 import { QuestionDialog } from "./QuestionDialog";
 import { MarkdownText } from "../components/assistant-ui/markdown-text";
@@ -19,16 +19,21 @@ import { ThinkingBlock } from "./ThinkingBlock";
 import { ProgressBar } from "./ProgressBar";
 import { RenderMessageParts, findDiffSummary } from "./ToolCallView";
 import { loadSettings } from "../sidebar/provider-data";
-import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight, ListOrdered } from "lucide-react";
+import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight, ListOrdered, ThumbsUp, ThumbsDown, Volume2, VolumeX } from "lucide-react";
 import { AnimatedAvatar, type AvatarState } from "../components/assistant-ui/animated-avatar";
 import "../components/assistant-ui/animated-avatar.css";
 import { Live2DAvatar } from "../components/assistant-ui/live2d-avatar";
 import { VoiceInput } from "./VoiceInput";
+import { VoiceChatButton } from "./VoiceChatButton";
 import { ToolCallView } from "./ToolCallView";
 import type { MiraRuntimeContext } from "./MiraRuntimeProvider";
 import { AgentService } from "../services/agent.service";
+import { useTheme } from "../contexts/ThemeContext";
+import { buildBuiltinCommands, SOURCE_LABEL, type SlashCommandDef } from "./slash-commands";
+import { createTTSEngine } from "../services/voice/tts";
+import type { TTSEngine } from "../services/voice/types";
 
-interface Props { sessionId: string; onSessionChange?: (id: string) => void; }
+interface Props { sessionId: string; onSessionChange?: (id: string) => void; onNewSession?: () => void; }
 interface SkillInfo { name: string; description: string; category: string | null; }
 
 function WelcomeScreen({ onSuggest }: { onSuggest: (text: string) => void }) {
@@ -53,6 +58,31 @@ function WelcomeScreen({ onSuggest }: { onSuggest: (text: string) => void }) {
 }
 
 function MessageActions({ messageId, ctx }: { messageId: string; ctx: MiraRuntimeContext }) {
+  const [speaking, setSpeaking] = useState(false);
+  const ttsEngineRef = useRef<TTSEngine | null>(null);
+
+  const messageText = useMemo(() => {
+    const msg = ctx.messages.find((m) => m.id === messageId);
+    return (msg?.parts || [])
+      .filter((p: MiraPart) => p.type === "text" && p.text)
+      .map((p: MiraPart) => (p as { text: string }).text)
+      .join(" ");
+  }, [ctx.messages, messageId]);
+
+  const handleSpeak = useCallback(async () => {
+    if (!ttsEngineRef.current) {
+      ttsEngineRef.current = createTTSEngine((loadSettings().ttsEngine as "webspeech" | "local") || "webspeech");
+    }
+    setSpeaking(true);
+    await ttsEngineRef.current.speak(messageText, { onEnd: () => setSpeaking(false) });
+    setSpeaking(false);
+  }, [messageText]);
+
+  const handleStopSpeak = useCallback(() => {
+    ttsEngineRef.current?.stop();
+    setSpeaking(false);
+  }, []);
+
   return (
     <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
       <BranchPickerPrimitive.Root hideWhenSingleBranch className="inline-flex items-center gap-1 text-[11px]" style={{ color: "var(--fg-tertiary)" }}>
@@ -72,37 +102,101 @@ function MessageActions({ messageId, ctx }: { messageId: string; ctx: MiraRuntim
       <ActionBarPrimitive.Edit asChild>
         <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="编辑"><Edit3 className="w-3 h-3" /></button>
       </ActionBarPrimitive.Edit>
+      <ActionBarPrimitive.FeedbackPositive asChild>
+        <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="好评"><ThumbsUp className="w-3 h-3" /></button>
+      </ActionBarPrimitive.FeedbackPositive>
+      <ActionBarPrimitive.FeedbackNegative asChild>
+        <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="差评"><ThumbsDown className="w-3 h-3" /></button>
+      </ActionBarPrimitive.FeedbackNegative>
+      {speaking ? (
+        <button onClick={handleStopSpeak} className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="停止朗读"><VolumeX className="w-3 h-3" /></button>
+      ) : (
+        <button onClick={handleSpeak} disabled={!messageText} className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="朗读"><Volume2 className="w-3 h-3" /></button>
+      )}
       <MessageTiming />
     </div>
   );
 }
 
-function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange, goalCondition, setGoalCondition }: {
+function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange, goalCondition, setGoalCondition, onNewSession }: {
   ctx: MiraRuntimeContext; selectedModel: ModelOption; onModelChange: (m: ModelOption) => void;
   agentMode: AgentMode; onModeChange: (m: AgentMode) => void;
   goalCondition: string | null; setGoalCondition: (v: string | null) => void;
+  onNewSession?: () => void;
 }) {
   const aui = useAui();
   const composerText = useAuiState((s) => s.composer.text);
   const composerIsEmpty = useAuiState((s) => s.composer.isEmpty);
   const threadEmpty = useAuiState((s) => s.thread.isEmpty);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { setTheme } = useTheme();
 
   const [skills, setSkills] = useState<SkillInfo[]>([]);
   const [showSkills, setShowSkills] = useState(false);
-  const [filteredSkills, setFilteredSkills] = useState<SkillInfo[]>([]);
-  const [selectedSkillIndex, setSelectedSkillIndex] = useState(0);
+  const [filteredCommands, setFilteredCommands] = useState<SlashCommandDef[]>([]);
+  const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
   const settings = useMemo(() => loadSettings(), []);
 
+  // 最新助手回复文本（供语音对话自动朗读）
+  const assistantText = useMemo(() => {
+    const last = ctx.messages[ctx.messages.length - 1];
+    if (last?.role !== "assistant") return "";
+    return (last.parts || [])
+      .filter((p: MiraPart) => p.type === "text" && p.text)
+      .map((p: MiraPart) => (p as { text: string }).text)
+      .join(" ");
+  }, [ctx.messages]);
+
   useEffect(() => { AgentService.listSkills().then((l) => setSkills(l)).catch(() => {}); }, []);
+
+  const builtinCommands = useMemo(
+    () => buildBuiltinCommands({
+      currentMode: agentMode,
+      onModeChange: (m) => onModeChange(m as AgentMode),
+      onNewSession,
+      clearMessages: () => ctx.setMessages([]),
+      sendMessage: (text) => { void ctx.sendMessage(text); },
+      setGoalCondition,
+      setTheme,
+      openHelp: () => { void ctx.sendMessage("请列出你可以使用的斜杠命令。"); },
+    }),
+    [agentMode, onModeChange, onNewSession, setGoalCondition, setTheme, ctx],
+  );
+
+  // 技能命令与内置命令合并
+  const allCommands = useMemo<SlashCommandDef[]>(
+    () => [
+      ...builtinCommands,
+      ...skills.map((s) => ({
+        id: `skill-${s.name}`,
+        trigger: s.name,
+        label: s.name,
+        description: s.description,
+        category: s.category || "技能",
+        source: "skill" as const,
+        action: () => { aui.composer().setText("/" + s.name + " "); setShowSkills(false); textareaRef.current?.focus(); },
+      })),
+    ],
+    [builtinCommands, skills, aui],
+  );
+
   useEffect(() => {
-    const m = composerText.match(/^\/{1}(\w*)$/);
-    if (m) { const q = m[1].toLowerCase(); const f = skills.filter((s) => s.name.toLowerCase().includes(q)); setFilteredSkills(f); setShowSkills(f.length > 0); setSelectedSkillIndex(0); }
-    else { setShowSkills(false); }
-  }, [composerText, skills]);
+    const m = composerText.match(/^\/([^\s/]*)$/);
+    if (m) {
+      const q = m[1].toLowerCase();
+      const f = allCommands.filter((c) =>
+        c.trigger.toLowerCase().includes(q) || c.label.toLowerCase().includes(q) || c.category.toLowerCase().includes(q),
+      );
+      setFilteredCommands(f);
+      setShowSkills(f.length > 0);
+      setSelectedCommandIndex(0);
+    } else {
+      setShowSkills(false);
+    }
+  }, [composerText, allCommands]);
 
   const onEnter = useCallback((e: DragEvent) => { e.preventDefault(); e.stopPropagation(); dragCounter.current++; if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) setIsDragging(true); }, []);
   const onLeave = useCallback((e: DragEvent) => { e.preventDefault(); e.stopPropagation(); dragCounter.current--; if (dragCounter.current === 0) setIsDragging(false); }, []);
@@ -110,7 +204,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   const onDrop = useCallback((e: DragEvent) => {
     e.preventDefault(); e.stopPropagation(); setIsDragging(false); dragCounter.current = 0;
     const files = e.dataTransfer?.files; if (!files || files.length === 0) return;
-    const paths: string[] = []; for (let i = 0; i < files.length; i++) paths.push((files[i] as any).path || files[i].name);
+    const paths: string[] = []; for (let i = 0; i < files.length; i++) paths.push((files[i] as File & { path?: string }).path || files[i].name);
     if (paths.length > 0) { aui.composer().setText("读取文件: " + paths.join(", ")); textareaRef.current?.focus(); }
   }, [aui]);
   useEffect(() => {
@@ -119,12 +213,12 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
     return () => { el.removeEventListener("dragenter", onEnter); el.removeEventListener("dragleave", onLeave); el.removeEventListener("dragover", onOver); el.removeEventListener("drop", onDrop); };
   }, [onEnter, onLeave, onOver, onDrop]);
 
-  function applySkill(skill: SkillInfo) { aui.composer().setText("/" + skill.name + " "); setShowSkills(false); textareaRef.current?.focus(); }
+  function applyCommand(cmd: SlashCommandDef) { cmd.action(); setShowSkills(false); }
   function handleKeyDown(e: React.KeyboardEvent) {
     if (showSkills) {
-      if (e.key === "ArrowDown") { e.preventDefault(); setSelectedSkillIndex((p) => Math.min(p + 1, filteredSkills.length - 1)); return; }
-      if (e.key === "ArrowUp") { e.preventDefault(); setSelectedSkillIndex((p) => Math.max(p - 1, 0)); return; }
-      if (e.key === "Enter" && !e.shiftKey && filteredSkills[selectedSkillIndex]) { e.preventDefault(); applySkill(filteredSkills[selectedSkillIndex]); return; }
+      if (e.key === "ArrowDown") { e.preventDefault(); setSelectedCommandIndex((p) => Math.min(p + 1, filteredCommands.length - 1)); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); setSelectedCommandIndex((p) => Math.max(p - 1, 0)); return; }
+      if (e.key === "Enter" && !e.shiftKey && filteredCommands[selectedCommandIndex]) { e.preventDefault(); applyCommand(filteredCommands[selectedCommandIndex]); return; }
       if (e.key === "Escape") { setShowSkills(false); return; }
     }
   }
@@ -223,6 +317,20 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                 );
               }}
             </ThreadPrimitive.Messages>
+            {!threadEmpty && (
+              <div className="flex flex-wrap justify-center gap-2 max-w-sm mx-auto mt-1">
+                <ThreadPrimitive.Suggestions>
+                  {({ suggestion }) => (
+                    <ThreadPrimitive.Suggestion
+                      prompt={suggestion.prompt}
+                      send
+                      className="px-4 py-2 text-xs rounded-full transition-all hover:scale-105 cursor-pointer"
+                      style={{ background: "var(--bg-secondary)", color: "var(--fg-secondary)", border: "none" }}
+                    />
+                  )}
+                </ThreadPrimitive.Suggestions>
+              </div>
+            )}
             <div className="h-4" />
           </div>
 
@@ -230,16 +338,34 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
             <div className="mx-auto px-6 pb-4 pt-2" style={{ maxWidth: "760px" }}>
               {showSkills && (
                 <div className="mb-3 rounded-xl overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", boxShadow: "var(--shadow-elevated)" }}>
-                  <div className="px-3 py-1.5 text-[10px] font-medium" style={{ color: "var(--fg-tertiary)", borderBottom: "1px solid var(--border-subtle)" }}>Skill 命令 — 回车选择</div>
+                  <div className="px-3 py-1.5 text-[10px] font-medium" style={{ color: "var(--fg-tertiary)", borderBottom: "1px solid var(--border-subtle)" }}>命令 — 回车执行 / ↑↓ 选择</div>
                   <div className="max-h-48 overflow-y-auto scrollbar-custom">
-                    {filteredSkills.map((skill, idx) => (
-                      <button key={skill.name} onMouseDown={() => applySkill(skill)}
-                        className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors ${idx === selectedSkillIndex ? "bg-primary-500/10" : ""}`}
-                        style={{ color: idx === selectedSkillIndex ? "var(--accent)" : "var(--fg-secondary)" }}>
-                        <span className="font-mono font-medium" style={{ color: "var(--accent)" }}>/</span>
-                        <span className="font-medium">{skill.name}</span>
-                        {skill.category && <span className="text-[10px] ml-auto" style={{ color: "var(--fg-tertiary)" }}>{skill.category}</span>}
-                      </button>
+                    {Object.entries(
+                      filteredCommands.reduce<Record<string, SlashCommandDef[]>>((acc, c) => {
+                        (acc[c.category] ||= []).push(c)
+                        return acc
+                      }, {}),
+                    ).map(([category, cmds]) => (
+                      <div key={category}>
+                        <div className="px-3 py-1 text-[10px] font-medium" style={{ color: "var(--fg-tertiary)" }}>{category}</div>
+                        {cmds.map((cmd, idx) => {
+                          const globalIdx = filteredCommands.indexOf(cmd)
+                          return (
+                            <button key={cmd.id} onMouseDown={() => applyCommand(cmd)}
+                              className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors ${globalIdx === selectedCommandIndex ? "bg-primary-500/10" : ""}`}
+                              style={{ color: globalIdx === selectedCommandIndex ? "var(--accent)" : "var(--fg-secondary)" }}>
+                              <span className="font-mono font-medium" style={{ color: "var(--accent)" }}>/</span>
+                              <span className="font-medium">{cmd.trigger}</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--fg-tertiary)" }}>
+                                {SOURCE_LABEL[cmd.source]}
+                              </span>
+                              {cmd.description && (
+                                <span className="text-[10px] truncate ml-auto max-w-[45%]" style={{ color: "var(--fg-tertiary)" }}>{cmd.description}</span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -269,13 +395,16 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                       </svg>
                     </button>
                   </ComposerPrimitive.Dictate>
+                  <VoiceChatButton onSendMessage={(t) => void ctx.sendMessage(t)} assistantText={assistantText} />
                   <ComposerPrimitive.DictationTranscript className="text-xs px-2 py-1 rounded" style={{ background: "var(--bg-secondary)", color: "var(--fg-secondary)" }} />
                   <ComposerPrimitive.Queue>
-                    <button className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono"
-                      style={{ background: "rgba(6,182,212,0.1)", color: "var(--accent)" }}>
-                      <ListOrdered className="w-3 h-3" />
-                      <span>排队中</span>
-                    </button>
+                    {() => (
+                      <button className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono"
+                        style={{ background: "rgba(6,182,212,0.1)", color: "var(--accent)" }}>
+                        <ListOrdered className="w-3 h-3" />
+                        <span>排队中</span>
+                      </button>
+                    )}
                   </ComposerPrimitive.Queue>
                   <ComposerPrimitive.Input ref={textareaRef} onKeyDown={handleKeyDown}
                     onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)}
@@ -336,7 +465,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   );
 }
 
-function ChatContent({ sessionId, onSessionChange }: { sessionId: string; onSessionChange?: (id: string) => void }) {
+function ChatContent({ sessionId, onSessionChange, onNewSession }: { sessionId: string; onSessionChange?: (id: string) => void; onNewSession?: () => void }) {
   const [selectedModel, setSelectedModel] = useState<ModelOption>(loadModelChoice);
   const [agentMode, setAgentMode] = useState<AgentMode>(loadModeChoice);
   const [goalCondition, setGoalCondition] = useState<string | null>(null);
@@ -363,12 +492,12 @@ function ChatContent({ sessionId, onSessionChange }: { sessionId: string; onSess
       {(ctx) => (
         <ChatInner ctx={ctx} selectedModel={selectedModel} onModelChange={setSelectedModel}
           agentMode={agentMode} onModeChange={setAgentMode}
-          goalCondition={goalCondition} setGoalCondition={setGoalCondition} />
+          goalCondition={goalCondition} setGoalCondition={setGoalCondition} onNewSession={onNewSession} />
       )}
     </MiraRuntimeProvider>
   );
 }
 
-export function ChatWindow({ sessionId, onSessionChange }: Props) {
-  return <ChatContent key={sessionId} sessionId={sessionId} onSessionChange={onSessionChange} />;
+export function ChatWindow({ sessionId, onSessionChange, onNewSession }: Props) {
+  return <ChatContent key={sessionId} sessionId={sessionId} onSessionChange={onSessionChange} onNewSession={onNewSession} />;
 }

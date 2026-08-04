@@ -76,7 +76,7 @@ async function checkToolPermission(
   )
 
   for (const ev of evaluations) {
-    if (ev.hardDenied) return { success: false, error: ev.hardDenied } as ToolResult
+    if (ev.hardDenied) return { success: false, error: ev.hardDenied }
     if (ev.needsApproval) {
       const resources = extractResources(ev.args)
       const cached = deps.approvalStore.checkAll(ev.permissionAction, resources)
@@ -99,7 +99,7 @@ async function checkToolPermission(
         deps.approvalStore.record(ev.permissionAction, resources, "allow", 300_000, workspace)
       } else {
         deps.approvalStore.record(ev.permissionAction, resources, "deny", 300_000, workspace)
-        return { success: false, error: `Permission denied: ${tc.name}` } as ToolResult
+        return { success: false, error: `Permission denied: ${tc.name}` }
       }
     }
   }
@@ -447,7 +447,7 @@ export async function* runTurn(
     messages.push({
       role: "assistant",
       content: [
-        { type: "text", text },
+        { type: "text" as const, text },
         ...toolCallList.map(tc => ({
           type: "tool-call" as const,
           toolCallId: tc.id,
@@ -455,7 +455,7 @@ export async function* runTurn(
           args: JSON.parse(tc.arguments),
         })),
       ],
-    } as any)
+    })
 
     const resultMap = new Map(toolResults.map(r => [r.id, r.result]))
     for (const tc of toolCallList) {
@@ -465,7 +465,7 @@ export async function* runTurn(
         role: "tool",
         content: [{ type: "tool-result" as const, toolCallId: tc.id, toolName: tc.name, output: resultText }],
         tool_call_id: tc.id,
-      } as any)
+      })
     }
 
     // 持久化工具结果到 DB
@@ -489,7 +489,7 @@ export async function* runTurn(
 
 export async function* runMaxModeTurn(
   input: TurnRunnerInput & {
-    maxModeConfig: { n: number; candidateConfig: LLMTurnConfig; judgeConfig?: any }
+    maxModeConfig: { n: number; candidateConfig: LLMTurnConfig; judgeConfig?: LLMTurnConfig }
   },
 ): AsyncGenerator<AgentEvent, TurnRunnerOutput> {
   const { messages, tools } = input
@@ -506,8 +506,8 @@ export async function* runMaxModeTurn(
   }
 
   const toolCallsArray = (maxResult.toolCalls || [])
-    .filter((tc: any) => tc.id && tc.name)
-    .map((tc: any) => ({
+    .filter((tc) => tc.id && tc.name)
+    .map((tc) => ({
       id: tc.id,
       type: "function" as const,
       function: { name: tc.name, arguments: tc.arguments },
@@ -517,7 +517,7 @@ export async function* runMaxModeTurn(
   messages.push({
     role: "assistant",
     content: [
-      { type: "text", text: maxResult.text },
+      { type: "text" as const, text: maxResult.text },
       ...toolCallsArray.map(tc => ({
         type: "tool-call" as const,
         toolCallId: tc.id,
@@ -525,7 +525,7 @@ export async function* runMaxModeTurn(
         args: JSON.parse(tc.function.arguments),
       })),
     ],
-  } as any)
+  })
 
   await appendMessage(input.sessionID, {
     role: "assistant",
@@ -567,7 +567,7 @@ export async function* runMaxModeTurn(
         role: "tool",
         content: [{ type: "tool-result" as const, toolCallId: tc.id, toolName: tc.function.name, output: resultText }],
         tool_call_id: tc.id,
-      } as any)
+      })
     }
   }
 

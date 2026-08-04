@@ -70,8 +70,8 @@ export const editFileTool = make({
     const diff = [
       `Edited file successfully. Replacements: ${count}`,
       "```diff",
-      ...previewLines(input.oldString as string, "-"),
-      ...previewLines(input.newString as string, "+"),
+      ...previewLines(input.oldString, "-"),
+      ...previewLines(input.newString, "+"),
       "```",
     ].join("\n")
     return [{ type: "text", text: diff }]
@@ -220,7 +220,7 @@ async function tryLspEnhancedEdit(
       return null
     }
 
-    const range = found.range || found.selectionRange
+    const range = (found.range || found.selectionRange) as { start: { line: number }; end: { line: number } } | null
     if (!range) {
       client.closeDocument(uri)
       return null

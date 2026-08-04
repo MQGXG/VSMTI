@@ -31,7 +31,7 @@ export interface SessionEvent {
   /** 事件类型 */
   type: EventType
   /** 事件负载 */
-  payload: Record<string, unknown>
+  payload: unknown
   /** 事件创建时间 */
   timestamp: string
   /** 事件 schema 版本（用于演进） */

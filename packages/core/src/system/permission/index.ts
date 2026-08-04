@@ -183,12 +183,12 @@ export class PermissionSet {
   /** 从 JSON 导入规则 */
   static importRules(json: string): PermissionSet {
     try {
-      const rules = JSON.parse(json)
-      if (!Array.isArray(rules)) return new PermissionSet([])
-      const validRules = rules.filter((r: any) =>
+      const parsed = JSON.parse(json) as unknown
+      if (!Array.isArray(parsed)) return new PermissionSet([])
+      const validRules = (parsed as Array<Record<string, unknown>>).filter((r) =>
         r && typeof r.action === "string" && typeof r.resource === "string" &&
-        ["allow", "deny", "ask"].includes(r.effect)
-      )
+        (r.effect === "allow" || r.effect === "deny" || r.effect === "ask")
+      ) as unknown as PermissionRule[]
       return new PermissionSet(validRules)
     } catch {
       return new PermissionSet([])

@@ -16,6 +16,20 @@ interface OpenAIChunk {
   }
 }
 
+export type { OpenAIChunk }
+
+interface OpenAIResponse {
+  choices?: Array<{
+    message?: {
+      content?: string
+      tool_calls?: Array<{
+        id: string
+        function: { name: string; arguments: string }
+      }>
+    }
+  }>
+}
+
 interface OpenAIMessage {
   role: string
   content: string | null
@@ -44,7 +58,7 @@ export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
         role: "tool",
         tool_call_id: toolResults[0].toolCallId,
         content: getToolResultOutput(toolResults[0].output),
-      } as OpenAIMessage
+      }
     }
 
     if (toolCalls.length > 0 && msg.role === "assistant") {
@@ -56,10 +70,10 @@ export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
           type: "function" as const,
           function: { name: tc.toolName, arguments: JSON.stringify(tc.args) },
         })),
-      } as OpenAIMessage
+      }
     }
 
-    return { role: msg.role, content: text || null } as OpenAIMessage
+    return { role: msg.role, content: text || null }
   })
 }
 
@@ -81,11 +95,11 @@ export function deserializeChunk(chunk: OpenAIChunk): LLMEvent | null {
 
   if (!delta) {
     if (finishReason) {
-      return { type: "finish", reason: finishReason, usage } as LLMEvent
+      return { type: "finish", reason: finishReason, usage }
     }
     // usage-only chunk（stream_options 启用时的最终 usage 块）
     if (usage) {
-      return { type: "finish", reason: "stop", usage } as LLMEvent
+      return { type: "finish", reason: "stop", usage }
     }
     return null
   }
@@ -106,7 +120,7 @@ export function deserializeChunk(chunk: OpenAIChunk): LLMEvent | null {
 
   // delta = {} 空对象，但有 finish_reason 或 usage
   if (finishReason || usage) {
-    return { type: "finish", reason: finishReason || "stop", usage } as LLMEvent
+    return { type: "finish", reason: finishReason || "stop", usage }
   }
 
   return null
@@ -148,9 +162,9 @@ export const OpenAIChatProtocol: Protocol = {
   },
 
   parseResponse(data) {
-    const choice = (data as any)?.choices?.[0]
+    const choice = (data as OpenAIResponse)?.choices?.[0]
     const content = choice?.message?.content || ""
-    const toolCalls = (choice?.message?.tool_calls || []).map((tc: any) => ({
+    const toolCalls = (choice?.message?.tool_calls || []).map((tc) => ({
       id: tc.id,
       name: tc.function.name,
       args: tc.function.arguments,

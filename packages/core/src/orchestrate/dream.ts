@@ -2,7 +2,7 @@ import * as fs from "fs"
 import { join } from "path"
 import { createLLMClient, type LLMMessage } from "../llm/client"
 import { logError } from "../system/logger"
-import type { DreamResult, GraphEntity, KnowledgeEntry, LLMConfig } from "./dream-types"
+import type { DreamResult, GraphEntity, GraphRelationship, GraphStore, KnowledgeEntry, LLMConfig } from "./dream-types"
 import { extractLightweightEntities, mergeGraphData, loadGraphStore, saveGraphStore } from "./dream-graph"
 import { runDistill } from "./distill"
 
@@ -43,7 +43,7 @@ export class DreamDistillManager {
   private knowledgePath = ""
   private graphPath = ""
   private store: { entries: KnowledgeEntry[] } = { entries: [] }
-  private graphStore: { entities: GraphEntity[]; relationships: GraphEntity[] } = { entities: [], relationships: [] }
+  private graphStore: GraphStore = { entities: [], relationships: [] }
   private dreamHistory: DreamResult[] = []
   private distillHistory: Array<{ timestamp: string; workflowsFound: string[]; summary: string }> = []
   private turnCount = 0
@@ -117,7 +117,7 @@ export class DreamDistillManager {
         if (event.type === "delta") responseText += event.delta
       }
 
-      const parsed = parseDreamResponse(responseText)
+      const parsed = this.parseDreamResponse(responseText)
       if (parsed.graph) {
         mergeGraphData(this.graphStore, parsed.graph.entities || [], parsed.graph.relationships || [])
         saveGraphStore(this.graphStore, this.graphPath)
@@ -196,7 +196,7 @@ export class DreamDistillManager {
 
   getGraphData(): any { return { ...this.graphStore } }
 
-  private parseDreamResponse(text: string): { knowledge: Array<{ content: string; tags: string[] }>; graph?: { entities: GraphEntity[]; relationships: GraphEntity[] }; outdated: string[]; summary: string } {
+  private parseDreamResponse(text: string): { knowledge: Array<{ content: string; tags: string[] }>; graph?: { entities: GraphEntity[]; relationships: GraphRelationship[] }; outdated: string[]; summary: string } {
     try {
       const cleaned = text.replace(/```(?:json)?\n?/g, "").trim()
       const parsed = JSON.parse(cleaned)

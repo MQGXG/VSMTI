@@ -112,7 +112,7 @@ export class MCPManager {
         new URL(config.url),
         {
           requestInit: {
-            headers: config.headers as Record<string, string> | undefined,
+            headers: config.headers,
           },
         }
       )
@@ -125,7 +125,7 @@ export class MCPManager {
     const tools: MCPToolDef[] = toolsResult.tools.map(tool => ({
       name: `${config.name}_${tool.name}`,
       description: tool.description || `MCP tool from ${config.name}`,
-      inputSchema: tool.inputSchema as Record<string, unknown>,
+      inputSchema: tool.inputSchema,
     }))
 
     this.connections.set(config.name, {

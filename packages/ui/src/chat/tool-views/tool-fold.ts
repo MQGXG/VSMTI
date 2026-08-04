@@ -28,7 +28,7 @@ const defaultConfigs: Record<string, ToolFoldConfig> = {
 
 function loadSettings(): Record<string, any> {
   try {
-    return JSON.parse(localStorage.getItem("settings") || "{}")
+    return JSON.parse(localStorage.getItem("settings") || "{}") as Record<string, any>
   } catch {
     return {}
   }
@@ -36,7 +36,7 @@ function loadSettings(): Record<string, any> {
 
 function loadOverrides(): Record<string, Partial<ToolFoldConfig>> {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}")
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") as Record<string, Partial<ToolFoldConfig>>
   } catch {
     return {}
   }

@@ -113,7 +113,7 @@ function makeComplete(
   url: string,
   headers: Record<string, string>,
   timeout: number | undefined,
-): (request: Parameters<RouteInstance["complete"]>[0]) => Promise<{ content: string; toolCalls: Array<{ id: string; name: string; arguments: string }> }> {
+): (request: Parameters<RouteInstance["complete"]>[0]) => Promise<{ content: string; toolCalls: Array<{ id: string; name: string; args: string }> }> {
   return async (request) => {
     const body = protocol.serializeRequest(request)
     body.stream = false

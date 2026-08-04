@@ -5,7 +5,7 @@
 
 import { join } from "path"
 import fs from "fs"
-import { MemoryProvider } from "./types"
+import type { MemoryProvider } from "./types"
 import { getPlatformPaths } from "../config/paths"
 import { createHash } from "crypto"
 

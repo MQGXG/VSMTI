@@ -5,7 +5,7 @@
 
 import { join, relative } from "path"
 import fs from "fs"
-import { MemoryProvider } from "./types"
+import type { MemoryProvider } from "./types"
 
 const FORBIDDEN_PATTERNS = [
   /api[_-]?key/i, /secret/i, /token/i, /password/i,

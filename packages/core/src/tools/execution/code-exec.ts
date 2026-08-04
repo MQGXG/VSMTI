@@ -30,8 +30,9 @@ export const codeExecTool = make({
       })
       const output = (stdout || stderr).slice(0, 10000)
       return { success: true, output: output || "(no output)" }
-    } catch (e: any) {
-      const msg = e.stderr || e.stdout || e.message
+    } catch (e) {
+      const err = e as { stderr?: string; stdout?: string; message?: string }
+      const msg = err.stderr || err.stdout || err.message
       return { success: false, error: msg?.slice(0, 5000) }
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true })

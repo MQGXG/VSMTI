@@ -52,7 +52,7 @@ function serializeResponsesMessages(messages: LLMMessage[]): ResponseMessage[] {
       }
     }
 
-    return { role: msg.role, content: text || null } as ResponseMessage
+    return { role: msg.role, content: text || null }
   })
 }
 

@@ -3,8 +3,8 @@
  * 工具声明式并行 + Promise.allSettled 并发执行
  */
 
-import { ToolRegistry } from "../system/registry"
-import { ToolContext, ToolResult } from "../shared/tool"
+import type { ToolRegistry } from "../system/registry"
+import type { ToolContext, ToolResult } from "../shared/tool"
 import { executeToolCalls } from "../shared/tool-executor"
 import { ToolOutputStore } from "../tools/shared/tool-output-store"
 import { isToolParallel } from "../tools/shared/tool-meta"
@@ -70,7 +70,7 @@ export class ToolOrchestrator {
                 if (r.output) this.outputStore.store(id, call.name, r.output)
                 return { id, result: r }
               }
-              return { id: call.id, result: { success: false, error: "No result" } as ToolResult }
+              return { id: call.id, result: { success: false, error: "No result" } }
             }),
           )
           for (const item of batchResults) {

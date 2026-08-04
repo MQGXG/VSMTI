@@ -1,11 +1,16 @@
-import { LLMMessage } from '../llm/client'
+import type { LLMMessage } from '../llm/client'
 
-function contentLength(content: string | Array<any>): number {
+interface AnyContentPart {
+  type: string
+  text?: string
+}
+
+function contentLength(content: string | Array<AnyContentPart>): number {
   if (typeof content === 'string') return content.length
   return content.reduce((sum, p) => sum + (p.text?.length || JSON.stringify(p).length), 0)
 }
 
-export function hasToolCalls(content: string | Array<any>): boolean {
+export function hasToolCalls(content: string | Array<AnyContentPart>): boolean {
   if (typeof content === 'string') return false
   return content.some(p => p.type === 'tool-call')
 }

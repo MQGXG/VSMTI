@@ -6,7 +6,7 @@
 
 import { z } from "zod"
 import { make } from "../../shared/tool"
-import { SubagentManager } from "../../orchestrate/subagent"
+import type { SubagentManager } from "../../orchestrate/subagent"
 import type { SubagentInfo, ContextMode } from "../../orchestrate/subagent"
 import type { AgentConfig } from "../../agent/agent"
 
@@ -195,7 +195,7 @@ export const listSubagentsTool = make({
       }
 
       const lines = agents.map((a) => {
-        const icon = { pending: "○", running: "●", completing: "◐", completed: "✓", failed: "✗", cancelled: "⊘", orphaned: "?" }[a.status]
+        const icon = { pending: "○", running: "●", completing: "◐", completed: "✓", failed: "✗", cancelled: "⊘", orphaned: "?", stuck: "⏸" }[a.status]
         return `${icon} ${a.id}: ${a.description.slice(0, 80)} [${a.status}]`
       })
 

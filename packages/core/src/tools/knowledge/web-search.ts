@@ -48,14 +48,17 @@ async function callMCP(url: string, apiKey: string, toolCall: MCPToolCall): Prom
 
   if (!resp.ok) throw new Error(`MCP HTTP ${resp.status}: ${await resp.text().catch(() => "")}`)
 
-  const data = await resp.json()
+  const data = (await resp.json()) as {
+    error?: { message?: string }
+    result?: { content?: Array<{ type?: string; text?: string }> }
+  }
   if (data.error) throw new Error(`MCP error: ${data.error.message || JSON.stringify(data.error)}`)
 
   // 从 MCP 响应中提取结果文本
   const content = data.result?.content || []
   return content
-    .filter((c: any) => c.type === "text")
-    .map((c: any) => c.text)
+    .filter((c) => c.type === "text")
+    .map((c) => c.text)
     .join("\n\n")
 }
 
@@ -120,11 +123,11 @@ async function searxng(query: string, max: number, instance?: string): Promise<S
         signal: AbortSignal.timeout(8000),
       })
       if (!resp.ok) continue
-      const data = await resp.json()
-      const items = (data.results || []).slice(0, max).filter((r: any) => r.title && r.url)
-      if (items.length > 0) return items.map((r: any) => ({
-        title: r.title, url: r.url,
-        content: (r.content || "").slice(0, 500),
+      const data = (await resp.json()) as { results?: Array<{ title?: unknown; url?: unknown; content?: unknown }> }
+      const items = (data.results || []).slice(0, max).filter((r) => Boolean(r.title && r.url))
+      if (items.length > 0) return items.map((r) => ({
+        title: r.title as string, url: r.url as string,
+        content: typeof r.content === "string" ? r.content.slice(0, 500) : "",
         source: "searxng",
       }))
     } catch { continue }

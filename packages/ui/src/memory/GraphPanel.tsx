@@ -54,7 +54,7 @@ export function GraphPanel({ open, onClose, projectId, projectName }: GraphPanel
 
           for (const proj of projects) {
             const results = await MemoryService.searchByProject("", proj.project_id, 50)
-            const memories = results.map((r: any) => ({ content: r.content || "", tags: [] as string[] }))
+            const memories = results.map((r) => ({ content: r.content || "", tags: [] as string[] }))
 
             // 为每个项目创建根节点
             const projectRoot: GraphNode = {
@@ -107,7 +107,7 @@ export function GraphPanel({ open, onClose, projectId, projectName }: GraphPanel
         } else {
           // ── 单项目模式 ──
           const results = await MemoryService.searchByProject("", projectId, 100)
-          const memories = results.map((r: any) => ({ content: r.content || "", tags: [] as string[] }))
+          const memories = results.map((r) => ({ content: r.content || "", tags: [] as string[] }))
           const baseGraph = buildGraphFromKnowledgeStore(memories, projectName)
 
           // 合并 Dream 图谱

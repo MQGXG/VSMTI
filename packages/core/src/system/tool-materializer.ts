@@ -4,8 +4,9 @@
  */
 
 import { z } from "zod"
-import { ToolDef, ToolContext, ToolResult, ToolCall, settle, getJsonSchema, Content } from "../shared/tool"
-import { PermissionSet } from "./permission"
+import type { ToolDef, ToolContext, ToolResult, ToolCall, Content } from "../shared/tool";
+import { settle, getJsonSchema } from "../shared/tool"
+import type { PermissionSet } from "./permission"
 import * as ToolEffect from "../shared/tool-effect"
 import type { LLMToolSet } from "../llm/client"
 
@@ -22,7 +23,8 @@ export interface ModelFilter {
 export class ToolMaterializer {
   /** JSON Schema → Zod 转换 */
   jsonSchemaToZod(schema: Record<string, unknown>): z.ZodType {
-    const props = (schema.properties || {}) as Record<string, any>
+    interface SchemaProperty { type?: string; description?: string }
+    const props = (schema.properties || {}) as Record<string, SchemaProperty>
     const shape: Record<string, z.ZodType> = {}
     for (const [k, v] of Object.entries(props)) {
       const t = v.type === "string" ? z.string()
@@ -75,7 +77,7 @@ export class ToolMaterializer {
     return {
       definitions: toolSet,
       settle: async (call: ToolCall, ctx: ToolContext) => {
-        let def = tools.get(call.name)
+        const def = tools.get(call.name)
         if (def) {
           if (permissions && !permissions.isAllowed(def.name, def.permission)) {
             return {
@@ -96,7 +98,7 @@ export class ToolMaterializer {
           }
           const coercedArgs = ToolEffect.coerceArgs(call.name, call.input, effectDef.jsonSchema || {})
           try {
-            const result = await effectDef.execute(coercedArgs as any, ctx as any)
+            const result = await effectDef.execute(coercedArgs, ctx)
             const content: Content[] = [{ type: "text", text: result.output || result.error || "" }]
             return { result, content }
           } catch (e) {

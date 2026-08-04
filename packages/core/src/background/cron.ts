@@ -42,7 +42,7 @@ function parseCron(expr: string): { minute: number[]; hour: number[]; dayOfMonth
 }
 
 function nextCronTime(expr: { minute: number[]; hour: number[]; dayOfMonth: number[]; month: number[]; dayOfWeek: number[] }, from: Date = new Date()): number {
-  let candidate = new Date(from)
+  const candidate = new Date(from)
   candidate.setSeconds(0, 0)
 
   for (let yearOffset = 0; yearOffset < 5; yearOffset++) {

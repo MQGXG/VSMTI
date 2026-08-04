@@ -222,7 +222,6 @@ export class WorkflowEngine {
         encoding: "utf-8",
         timeout: (step.timeout || 30) * 1000,
         maxBuffer: 1024 * 1024,
-        signal,
         windowsHide: true,
       })
 

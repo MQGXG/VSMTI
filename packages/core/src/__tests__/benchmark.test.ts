@@ -11,7 +11,7 @@ describe('Agent Core benchmarks', () => {
         description: `Benchmark tool ${i}`,
         execute: async () => ({ success: true, output: 'ok' }),
         inputSchema: { safeParse: () => ({ success: true, data: {} }) } as any,
-        outputSchema: { parse: (v: any) => v } as any,
+        outputSchema: { parse: (v: unknown) => v } as any,
       })
     }
     const materialized = registry.materialize()
@@ -26,7 +26,7 @@ describe('Agent Core benchmarks', () => {
         description: `Tool ${i}`,
         execute: async () => ({ success: true, output: '' }),
         inputSchema: { safeParse: () => ({ success: true, data: {} }) } as any,
-        outputSchema: { parse: (v: any) => v } as any,
+        outputSchema: { parse: (v: unknown) => v } as any,
       })
     }
     const start = performance.now()

@@ -37,10 +37,10 @@ export async function extractImages(page: Page, max = 30): Promise<Array<{ url: 
   return page.evaluate((m) => {
     const imgs = document.querySelectorAll("img")
     return Array.from(imgs).slice(0, m).map(img => ({
-      url: (img as HTMLImageElement).src || "",
-      alt: (img as HTMLImageElement).alt || "",
-      width: (img as HTMLImageElement).naturalWidth || img.clientWidth,
-      height: (img as HTMLImageElement).naturalHeight || img.clientHeight,
+      url: (img).src || "",
+      alt: (img).alt || "",
+      width: (img).naturalWidth || img.clientWidth,
+      height: (img).naturalHeight || img.clientHeight,
     })).filter(img => img.url.startsWith("http"))
   }, max)
 }

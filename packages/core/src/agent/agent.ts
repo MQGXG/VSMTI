@@ -1,4 +1,4 @@
-import { ToolRegistry } from "../system/registry"
+import type { ToolRegistry } from "../system/registry"
 import type { AgentEvent } from "../types"
 import type { LLMMessage } from "../llm/client"
 import { estimateTokens } from "../shared/message-utils"
@@ -23,6 +23,7 @@ import { GoalJudge } from "../orchestrate/goal-judge"
 import type { LLMTurnConfig } from "./turn"
 import { getModeMaxIterations, getModeSystemPromptSuffix } from "../config/modes"
 import type { AgentMode } from "../config/modes"
+import type { AgentConfig } from "./constants"
 
 import { classifyStep, isTerminal, isRecovery, MAX_STEPS_WARNING, MAX_STEPS_REACHED } from "./turn-classifier"
 import { ProviderCatalog } from "../llm/provider-catalog"
@@ -32,32 +33,7 @@ import { PendingInputQueue } from "./input-queue"
 
 export type PermissionReply = "allow" | "deny" | "always"
 
-export interface AgentConfig {
-  sessionID: string
-  workspace: string
-  model: string
-  apiKey: string
-  apiUrl: string
-  provider?: string
-  headers?: Record<string, string>
-  options?: Record<string, unknown>
-  systemPrompt?: string
-  maxSteps?: number
-  maxContextTokens?: number
-  permissions?: PermissionSet
-  hardPermission?: PermissionRule[]
-  mode?: AgentMode
-  toolAllowlist?: string[]
-  onPermissionSave?: (rules: PermissionRule[]) => void
-  goalDescription?: string
-  judgeModel?: string
-  judgeProvider?: string
-  fallbacks?: Array<{ provider: string; model: string; apiKey: string; apiUrl: string }>
-  maxMode?: boolean
-  maxModeCandidates?: number
-  judgeModelConfig?: LLMTurnConfig
-  autoAcceptPermissions?: boolean
-}
+export type { AgentConfig } from "./constants"
 
 export type { AgentEvent } from "../types"
 
@@ -321,7 +297,7 @@ export class Agent {
             role: "assistant",
             content: [
               { type: "text", text: parsed.text },
-              ...parsed.tool_calls.map((tc: any) => ({
+              ...parsed.tool_calls.map((tc) => ({
                 type: "tool-call" as const,
                 toolCallId: tc.id, toolName: tc.name,
                 args: JSON.parse(tc.args),
@@ -383,23 +359,24 @@ export class Agent {
 
     return [
       { role: "system", content: systemContent },
-      ...history.map((m: any) => {
+      ...history.map((m) => {
         const role = String(m.role || "user") as LLMMessage["role"]
-        const content = m.content as LLMMessage["content"]
-        if (role === "assistant" && m.tool_calls && typeof content === "string") {
-          const oldTc = m.tool_calls || []
-          return {
-            role: "assistant" as const,
+        const content = m.content
+        if (role === "assistant" && "tool_calls" in m && m.tool_calls && typeof content === "string") {
+          const oldTc = m.tool_calls as Array<{ id?: string; name?: string; args?: unknown; toolCallId?: string; toolName?: string; function?: { name?: string; arguments?: string } }>
+          const assistantMsg: LLMMessage = {
+            role: "assistant",
             content: [
               { type: "text" as const, text: content },
-              ...oldTc.map((tc: any) => ({
+              ...oldTc.map((tc) => ({
                 type: "tool-call" as const,
                 toolCallId: String(tc.id || tc.toolCallId || ""),
                 toolName: String(tc.function?.name || tc.toolName || ""),
                 args: typeof tc.function?.arguments === "string" ? JSON.parse(tc.function.arguments) : (tc.args || {}),
               })),
             ],
-          } as LLMMessage
+          }
+          return assistantMsg
         }
         const msg: LLMMessage = { role, content }
         if (m.tool_call_id) msg.tool_call_id = String(m.tool_call_id)
@@ -521,7 +498,7 @@ export class Agent {
   ): AsyncGenerator<AgentEvent> {
     const { ctx, toolSet, llmConfig, maxSteps } = await this.prepareRun(config)
 
-    if (this.dreamDistillManager && (this.contextManager as any).shouldAutoDream?.()) {
+    if (this.dreamDistillManager && this.contextManager.shouldAutoDream?.()) {
       try {
         this.dreamDistillManager.setLLMConfig({ apiKey: config.apiKey, apiUrl: config.apiUrl, model: config.model, provider: config.provider || "openai" })
         await this.dreamDistillManager.autoDream()

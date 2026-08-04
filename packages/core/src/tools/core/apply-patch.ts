@@ -80,7 +80,7 @@ function parsePatch(raw: string): { hunks: Hunk[]; error?: string } {
   const endMatch = text.match(END_PATCH_RE)
   if (!endMatch) return { hunks: [], error: "缺少 *** End Patch 标记" }
 
-  const body = text.substring(beginMatch.index! + beginMatch[0].length, endMatch.index!).trim()
+  const body = text.substring(beginMatch.index! + beginMatch[0].length, endMatch.index).trim()
   if (body.length > MAX_PATCH_SIZE) return { hunks: [], error: "补丁内容超过 100KB 上限" }
 
   // 按文件分割

@@ -23,7 +23,7 @@ function RevertButton({ snapshotId, toolName }: { snapshotId?: string; toolName:
   const handleRevert = async () => {
     try {
       const workspace = window.electronAPI.platform === "win32" ? "C:\\" : "/";
-      const restored = await (window.electronAPI as any).ts.restoreSnapshot(snapshotId, workspace);
+      const restored = await window.electronAPI.ts.restoreSnapshot(snapshotId, workspace);
       alert(`已恢复 ${restored.length} 个文件`);
     } catch (e: any) {
       alert(`恢复失败: ${e.message || e}`);
@@ -51,20 +51,21 @@ export function groupParts(parts: MiraPart[]): (MiraPart | MiraPart[])[] {
   const result: (MiraPart | MiraPart[])[] = [];
   let i = 0;
   while (i < parts.length) {
+    const part = parts[i];
     if (
-      parts[i].type === "tool-call" &&
-      parts[i].toolName &&
-      CONTEXT_TOOLS.has(parts[i].toolName)
+      part.type === "tool-call" &&
+      part.toolName &&
+      CONTEXT_TOOLS.has(part.toolName)
     ) {
       const group: MiraPart[] = [];
-      while (
-        i < parts.length &&
-        parts[i].type === "tool-call" &&
-        parts[i].toolName &&
-        CONTEXT_TOOLS.has(parts[i].toolName)
-      ) {
-        group.push(parts[i]);
-        i++;
+      while (i < parts.length) {
+        const p = parts[i];
+        if (p.type === "tool-call" && p.toolName && CONTEXT_TOOLS.has(p.toolName)) {
+          group.push(p);
+          i++;
+        } else {
+          break;
+        }
       }
       result.push(group);
     } else {
@@ -210,10 +211,10 @@ function ToolFallbackRender({ part }: ToolCallPartProps) {
   const isRun = part.status === "running";
   return (
     <ToolFallbackRoot defaultOpen={!isRun || config.defaultExpanded}>
-      <ToolFallbackTrigger toolName={part.toolName || ""} status={isRun ? "running" : part.status === "done" ? "complete" : "incomplete"} />
+      <ToolFallbackTrigger toolName={part.toolName || ""} status={isRun ? { type: "running" } : part.status === "done" ? { type: "complete" } : { type: "incomplete", reason: "error" as const }} />
       <ToolFallbackContent>
         <ToolFallbackArgs argsText={JSON.stringify(part.args || {}, null, 2)} />
-        {part.result && <ToolFallbackResult resultText={part.result} />}
+        {part.result && <ToolFallbackResult result={part.result} />}
       </ToolFallbackContent>
     </ToolFallbackRoot>
   );

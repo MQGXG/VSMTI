@@ -1,12 +1,12 @@
 import { ipcMain } from "electron"
-import { taskTracker } from "@mira/core/task/tracker"
+import { taskTracker, type TaskStatus } from "@mira/core/task/tracker"
 
 export function registerTaskIPC(): void {
   ipcMain.handle("task:create", (_, summary: string, parentId?: string) => {
     return taskTracker.create(summary, parentId)
   })
-  ipcMain.handle("task:updateStatus", (_, taskId: string, status: string) => {
-    return taskTracker.updateStatus(taskId, status as any)
+  ipcMain.handle("task:updateStatus", (_, taskId: string, status: TaskStatus) => {
+    return taskTracker.updateStatus(taskId, status)
   })
   ipcMain.handle("task:updateSummary", (_, taskId: string, summary: string) => {
     return taskTracker.updateSummary(taskId, summary)

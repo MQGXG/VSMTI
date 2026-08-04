@@ -75,11 +75,15 @@ export class ProviderPolicyEngine {
     try {
       const rules = JSON.parse(json)
       if (!Array.isArray(rules)) return
-      const validRules = rules.filter((r: any) =>
-        r && typeof r.action === "string" && typeof r.resource === "string" &&
-        ["allow", "deny"].includes(r.effect)
-      )
-      this.rules = validRules
+      this.rules = rules.filter((r) => isValidRule(r))
     } catch { /* 静默 */ }
   }
+}
+
+/** 校验并收窄 JSON 中的规则为 ProviderRule */
+function isValidRule(r: unknown): r is ProviderRule {
+  if (!r || typeof r !== "object") return false
+  const rule = r as Record<string, unknown>
+  if (typeof rule.action !== "string" || typeof rule.resource !== "string") return false
+  return rule.effect === "allow" || rule.effect === "deny"
 }

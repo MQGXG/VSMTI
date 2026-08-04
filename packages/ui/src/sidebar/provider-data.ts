@@ -38,16 +38,24 @@ async function decryptProviders(list: Provider[]): Promise<Provider[]> {
   );
 }
 
-function migrateProviders(data: any[]): Provider[] {
+function migrateProviders(data: Array<Record<string, unknown>>): Provider[] {
   return data.map((p) => ({
     ...p,
-    displayName: p.displayName || p.name,
-    apiFormat: p.apiFormat || "openai",
-    headers: p.headers || {},
-    options: p.options || {},
-    models: p.models?.map((m: any) => ({
-      id: m.id, name: m.name, enabled: m.enabled !== false,
-    })) || [],
+    id: String(p.id || ""),
+    name: String(p.name || ""),
+    displayName: String(p.displayName || p.name || ""),
+    apiKey: typeof p.apiKey === "string" ? p.apiKey : "",
+    baseUrl: typeof p.baseUrl === "string" ? p.baseUrl : "",
+    enabled: p.enabled !== false,
+    website: typeof p.website === "string" ? p.website : undefined,
+    apiFormat: (p.apiFormat === "anthropic" || p.apiFormat === "custom" ? p.apiFormat : "openai"),
+    headers: (p.headers as Record<string, string>) || {},
+    options: (p.options as Record<string, string | number | boolean>) || {},
+    models: Array.isArray(p.models) ? (p.models as Array<Record<string, unknown>>).map((m) => ({
+      id: String(m.id || ""),
+      name: typeof m.name === "string" ? m.name : "",
+      enabled: m.enabled !== false,
+    })) : [],
   }));
 }
 
@@ -96,12 +104,12 @@ export async function loadProviders(): Promise<Provider[]> {
   try {
     const data = localStorage.getItem("providers_v2");
     if (data) {
-      const parsed = migrateProviders(JSON.parse(data));
+      const parsed = migrateProviders(JSON.parse(data) as Array<Record<string, unknown>>);
       return await decryptProviders(parsed);
     }
     const oldData = localStorage.getItem("providers");
     if (oldData) {
-      const migrated = migrateProviders(JSON.parse(oldData));
+      const migrated = migrateProviders(JSON.parse(oldData) as Array<Record<string, unknown>>);
       const encrypted = await encryptProviders(migrated);
       localStorage.setItem("providers_v2", JSON.stringify(encrypted));
       return migrated;
@@ -129,7 +137,7 @@ export async function saveProviders(list: Provider[]) {
 }
 
 export function loadSettings(): Record<string, any> {
-  try { return JSON.parse(localStorage.getItem("settings") || "{}") }
+  try { return JSON.parse(localStorage.getItem("settings") || "{}") as Record<string, unknown> }
   catch { return {} }
 }
 

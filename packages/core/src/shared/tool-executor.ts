@@ -1,4 +1,4 @@
-import { ToolContext, ToolResult } from "./tool"
+import type { ToolContext, ToolResult } from "./tool"
 import type { ToolRegistry } from "../system/registry"
 import { logToolCall } from "../system/logger"
 
