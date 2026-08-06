@@ -99,6 +99,32 @@ export { searchTools, getRecommendedTools, shouldLoadTool } from "./tools/shared
 export { ProviderCatalog } from "./llm/provider-catalog"
 export type { ProviderDef, ModelDef } from "./llm/provider-catalog"
 
+// Graph Engineering
+export {
+  StateGraph, type GraphRunOptions,
+  StateStore, GraphPersist,
+  type GraphDefinition, type GraphNode, type GraphEdge, type GraphState,
+  type GraphStateSchema, type GraphNodeKind, type GraphNodeContext,
+  type GraphNodeResult, type GraphRunResult, type GraphCheckpoint,
+  type GraphConditionBranch, type AnchorRule, type StateUpdateStrategy,
+} from "./graph"
+export { runCodingTask, buildCodingTaskGraph, type CodingTaskOptions } from "./graph/templates/coding-task"
+
+// 动态记忆图谱
+export { DynamicMemoryManager, createDynamicMemory } from "./memory/dynamic-memory"
+export { calculateStrength, updateStrengthAfterAccess, rankScore } from "./memory/memory-strength"
+export { retentionRate, decayStrength, forgettingCurveData, spacedRepetitionCurve } from "./memory/decay-curve"
+export { activateMemory, simpleTextRelevance, semanticRelevance } from "./memory/memory-activation"
+export {
+  type MemoryNode, type MemoryEdge, type MemoryGraph, type ActivationResult,
+  type DecayConfig, type MemoryType, createMemoryNode, createMemoryEdge, createEmptyGraph,
+  DECAY_PROFILES,
+} from "./memory/memory-node"
+export { memoryActivateTool, setDynamicMemoryManager, getDynamicMemoryManager } from "./tools/knowledge/memory-activate"
+export {
+  memoryGraphAddNodeTool, memoryGraphAddEdgeTool, memoryGraphQueryTool, memoryGraphDecayTool,
+} from "./tools/knowledge/memory-graph"
+
 
 
 

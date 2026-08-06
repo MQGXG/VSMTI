@@ -1,10 +1,12 @@
 /**
  * 3D 知识图谱 — 基于 react-force-graph-3d 的交互式可视化
+ * 支持传统知识图谱和动态记忆图谱（神经网络激活可视化）
  */
 
 import { useRef, useCallback, useMemo, useState, useEffect } from "react"
 import type { GraphData, GraphNode, GraphLink } from "./graph-data"
 import { buildGraphFromKnowledgeStore, buildGraphFromMemories } from "./graph-data"
+import type { MemoryNode, ActivationResult } from "@mira/core"
 
 // 动态导入 react-force-graph-3d（避免 SSR 问题）
 let ForceGraph3D: any = null
@@ -31,6 +33,54 @@ const RELATION_LABELS: Record<string, string> = {
   has_topic: "主题", has_knowledge: "知识",
 }
 
+/** 记忆类型颜色映射 */
+const MEMORY_TYPE_COLORS: Record<string, string> = {
+  semantic: "#3b82f6",
+  episodic: "#f59e0b",
+  procedural: "#10b981",
+  declarative: "#8b5cf6",
+}
+
+/** 记忆类型中文名 */
+const MEMORY_TYPE_LABELS: Record<string, string> = {
+  semantic: "语义记忆",
+  episodic: "情景记忆",
+  procedural: "程序性记忆",
+  declarative: "陈述性记忆",
+}
+
+/** 从动态记忆节点构建图谱数据 */
+function buildGraphFromDynamicNodes(nodes: Map<string, MemoryNode>): GraphData {
+  const graphNodes: GraphNode[] = []
+  const graphLinks: GraphLink[] = []
+
+  // 添加节点
+  for (const [id, node] of nodes) {
+    graphNodes.push({
+      id,
+      label: id,
+      type: "concept",
+      size: 8 + node.importance * 12,
+      color: MEMORY_TYPE_COLORS[node.type] || "#3b82f6",
+      description: node.content.slice(0, 200),
+    })
+
+    // 添加边
+    for (const [neighborId, strength] of node.associationStrengths) {
+      if (nodes.has(neighborId)) {
+        graphLinks.push({
+          source: id,
+          target: neighborId,
+          relation: "related_to",
+          strength,
+        })
+      }
+    }
+  }
+
+  return { nodes: graphNodes, links: graphLinks }
+}
+
 interface MemoryGraphProps {
   memories?: Array<{ content: string; tags?: string[]; source?: string }>
   knowledgeEntries?: Array<{ content: string; tags: string[] }>
@@ -40,6 +90,12 @@ interface MemoryGraphProps {
   height?: number
   hiddenRelations?: Set<string>
   onToggleRelation?: (relation: string) => void
+  /** 动态记忆图谱节点（来自 DynamicMemoryManager） */
+  dynamicNodes?: Map<string, MemoryNode>
+  /** 激活结果（用于高亮显示激活路径） */
+  activationResult?: ActivationResult | null
+  /** 激活路径高亮颜色 */
+  activationColor?: string
 }
 
 export function MemoryGraph({
@@ -51,6 +107,9 @@ export function MemoryGraph({
   height = 500,
   hiddenRelations = new Set(),
   onToggleRelation,
+  dynamicNodes,
+  activationResult,
+  activationColor = "#f59e0b",
 }: MemoryGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
@@ -60,11 +119,35 @@ export function MemoryGraph({
 
   // 构建图谱数据
   const rawData = useMemo(() => {
+    // 优先使用外部图谱数据
     if (externalGraphData) return externalGraphData
+
+    // 使用动态记忆图谱数据
+    if (dynamicNodes && dynamicNodes.size > 0) {
+      return buildGraphFromDynamicNodes(dynamicNodes)
+    }
+
+    // 使用传统知识图谱
     return knowledgeEntries.length > 0
       ? buildGraphFromKnowledgeStore(knowledgeEntries)
       : buildGraphFromMemories(memories)
-  }, [memories, knowledgeEntries, externalGraphData])
+  }, [memories, knowledgeEntries, externalGraphData, dynamicNodes])
+
+  // 构建激活节点集合（用于高亮）
+  const activatedNodeIds = useMemo(() => {
+    if (!activationResult) return new Set<string>()
+    return new Set(activationResult.nodes.map(n => n.id))
+  }, [activationResult])
+
+  // 构建激活路径集合（用于高亮边）
+  const activatedPathEdges = useMemo(() => {
+    if (!activationResult) return new Set<string>()
+    const edges = new Set<string>()
+    for (const path of activationResult.paths) {
+      edges.add(`${path.from}->${path.to}`)
+    }
+    return edges
+  }, [activationResult])
 
   // 过滤关系，确保至少有根节点
   const graphData = useMemo(() => {
@@ -121,12 +204,29 @@ export function MemoryGraph({
     width: dimensions.width,
     height: dimensions.height,
     backgroundColor: "rgba(0,0,0,0)",
-    nodeLabel: (node: GraphNode) => `<div style="background:rgba(15,15,15,0.95);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);font-size:13px;max-width:280px"><b style="color:${node.color};font-size:14px">${node.label}</b><br/><span style="color:#9ca3af;font-size:11px">${node.type === "project" ? "项目" : node.type}</span>${node.description ? `<br/><span style="color:#6b7280;max-width:240px;display:block;margin-top:4px;font-size:11px;line-height:1.4">${node.description.slice(0, 150)}</span>` : ""}</div>`,
-    nodeColor: (node: GraphNode) => node.color,
-    nodeVal: (node: GraphNode) => node.id === "root" ? 20 : node.size,
+    nodeLabel: (node: GraphNode) => {
+      const isActivated = activatedNodeIds.has(node.id)
+      const activationBadge = isActivated ? '<span style="background:#f59e0b;color:#000;padding:1px 4px;border-radius:3px;font-size:9px;margin-left:4px">激活</span>' : ''
+      return `<div style="background:rgba(15,15,15,0.95);padding:8px 12px;border-radius:8px;border:1px solid ${isActivated ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.15)'};font-size:13px;max-width:280px"><b style="color:${node.color};font-size:14px">${node.label}</b>${activationBadge}<br/><span style="color:#9ca3af;font-size:11px">${node.type === "project" ? "项目" : node.type}</span>${node.description ? `<br/><span style="color:#6b7280;max-width:240px;display:block;margin-top:4px;font-size:11px;line-height:1.4">${node.description.slice(0, 150)}</span>` : ""}</div>`
+    },
+    nodeColor: (node: GraphNode) => {
+      // 激活节点使用特殊颜色
+      if (activatedNodeIds.has(node.id)) return activationColor
+      return node.color
+    },
+    nodeVal: (node: GraphNode) => {
+      const baseSize = node.id === "root" ? 20 : node.size
+      // 激活节点放大 1.5 倍
+      return activatedNodeIds.has(node.id) ? baseSize * 1.5 : baseSize
+    },
     nodeOpacity: 1,
     nodeRelSize: 4,
     linkColor: (link: GraphLink) => {
+      // 激活路径使用特殊颜色
+      const edgeKey = `${link.source}->${link.target}`
+      if (activatedPathEdges.has(edgeKey)) return activationColor
+      if (activatedPathEdges.has(`${link.target}->${link.source}`)) return activationColor
+
       const colors: Record<string, string> = {
         depends_on: "rgba(239,68,68,0.4)",
         contains: "rgba(255,255,255,0.1)",
@@ -143,10 +243,22 @@ export function MemoryGraph({
       }
       return colors[link.relation] || "rgba(255,255,255,0.1)"
     },
-    linkWidth: (link: GraphLink) => link.strength > 0.4 ? 1.2 : 0.5,
-    linkDirectionalParticles: (link: GraphLink) => link.strength > 0.3 ? 2 : 1,
+    linkWidth: (link: GraphLink) => {
+      // 激活路径加粗
+      const edgeKey = `${link.source}->${link.target}`
+      const isActivated = activatedPathEdges.has(edgeKey) || activatedPathEdges.has(`${link.target}->${link.source}`)
+      return isActivated ? 2.5 : link.strength > 0.4 ? 1.2 : 0.5
+    },
+    linkDirectionalParticles: (link: GraphLink) => {
+      const edgeKey = `${link.source}->${link.target}`
+      const isActivated = activatedPathEdges.has(edgeKey) || activatedPathEdges.has(`${link.target}->${link.source}`)
+      return isActivated ? 4 : link.strength > 0.3 ? 2 : 1
+    },
     linkDirectionalParticleWidth: 1,
     linkDirectionalParticleColor: (link: GraphLink) => {
+      const edgeKey = `${link.source}->${link.target}`
+      if (activatedPathEdges.has(edgeKey) || activatedPathEdges.has(`${link.target}->${link.source}`)) return activationColor
+
       const colors: Record<string, string> = {
         depends_on: "rgba(239,68,68,0.6)",
         contains: "rgba(255,255,255,0.3)",
@@ -162,7 +274,7 @@ export function MemoryGraph({
     d3VelocityDecay: 0.3,
     warmupTicks: 100,
     cooldownTicks: 150,
-  }), [graphData, dimensions, handleNodeClick])
+  }), [graphData, dimensions, handleNodeClick, activatedNodeIds, activatedPathEdges, activationColor])
 
   if (!loaded) {
     return (
@@ -198,12 +310,34 @@ export function MemoryGraph({
       {/* 图例 */}
       <div className="absolute bottom-3 left-3 p-2 rounded-lg text-[10px] flex flex-col gap-1 bg-elevated border border-standard shadow-floating">
         <div className="font-medium mb-1 text-secondary">节点类型</div>
-        {(["project", "concept", "file", "decision"] as const).map((type) => (
-          <div key={type} className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full" style={{ background: { project: "#06b6d4", concept: "#3b82f6", file: "#10b981", decision: "#f59e0b" }[type] }} />
-            <span className="text-tertiary">{{ project: "项目", concept: "概念", file: "文件", decision: "决策" }[type]}</span>
+        {dynamicNodes && dynamicNodes.size > 0 ? (
+          // 动态记忆图谱图例
+          Object.entries(MEMORY_TYPE_LABELS).map(([type, label]) => (
+            <div key={type} className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full" style={{ background: MEMORY_TYPE_COLORS[type] }} />
+              <span className="text-tertiary">{label}</span>
+            </div>
+          ))
+        ) : (
+          // 传统知识图谱图例
+          (["project", "concept", "file", "decision"] as const).map((type) => (
+            <div key={type} className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full" style={{ background: { project: "#06b6d4", concept: "#3b82f6", file: "#10b981", decision: "#f59e0b" }[type] }} />
+              <span className="text-tertiary">{{ project: "项目", concept: "概念", file: "文件", decision: "决策" }[type]}</span>
+            </div>
+          ))
+        )}
+        {activationResult && activationResult.nodes.length > 0 && (
+          <div className="mt-1 pt-1 border-t border-standard">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full" style={{ background: activationColor }} />
+              <span className="text-tertiary">激活节点</span>
+            </div>
+            <div className="mt-0.5 text-quaternary text-[9px]">
+              激活强度: {activationResult.activationStrength.toFixed(2)}
+            </div>
           </div>
-        ))}
+        )}
       </div>
 
       {/* 节点统计 */}

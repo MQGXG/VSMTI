@@ -25,6 +25,7 @@ import "../components/assistant-ui/animated-avatar.css";
 import { Live2DAvatar } from "../components/assistant-ui/live2d-avatar";
 import { VoiceInput } from "./VoiceInput";
 import { VoiceChatButton } from "./VoiceChatButton";
+import { GraphPanel } from "./GraphPanel";
 import { ToolCallView } from "./ToolCallView";
 import type { MiraRuntimeContext } from "./MiraRuntimeProvider";
 import { AgentService } from "../services/agent.service";
@@ -118,11 +119,12 @@ function MessageActions({ messageId, ctx }: { messageId: string; ctx: MiraRuntim
   );
 }
 
-function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange, goalCondition, setGoalCondition, onNewSession }: {
+function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange, goalCondition, setGoalCondition, onNewSession, sessionId }: {
   ctx: MiraRuntimeContext; selectedModel: ModelOption; onModelChange: (m: ModelOption) => void;
   agentMode: AgentMode; onModeChange: (m: AgentMode) => void;
   goalCondition: string | null; setGoalCondition: (v: string | null) => void;
   onNewSession?: () => void;
+  sessionId: string;
 }) {
   const aui = useAui();
   const composerText = useAuiState((s) => s.composer.text);
@@ -137,6 +139,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showGraphPanel, setShowGraphPanel] = useState(false);
   const dragCounter = useRef(0);
   const settings = useMemo(() => loadSettings(), []);
 
@@ -237,6 +240,21 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
       )}
 
       {settings.showProgressBar !== false && ctx.isRunning && <ProgressBar />}
+
+      {showGraphPanel && (
+        <div className="mx-auto w-full px-6 pt-3" style={{ maxWidth: "760px" }}>
+          <div className="rounded-xl" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+            <GraphPanel
+              config={{
+                sessionID: sessionId,
+                model: selectedModel.value,
+                provider: selectedModel.provider,
+                mode: agentMode,
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <ThreadPrimitive.Root className="flex-1 flex flex-col min-h-0">
         <ThreadPrimitive.Viewport className={`flex-1 overflow-x-hidden min-h-0 ${threadEmpty ? "overflow-y-hidden" : "overflow-y-auto scrollbar-custom"}`}>
@@ -424,7 +442,18 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <ModelSelector selectedModel={selectedModel} onModelChange={onModelChange} agentMode={agentMode} onModeChange={onModeChange} />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowGraphPanel((v) => !v)}
+                      title="编码任务图"
+                      className={`btn-ghost flex items-center gap-1.5 text-[11px] ${showGraphPanel ? "is-active" : ""}`}
+                      style={{ height: 28, padding: "0 10px", color: showGraphPanel ? "var(--accent)" : undefined }}
+                    >
+                      <ListOrdered className="w-3.5 h-3.5" />
+                      {showGraphPanel ? "收起图" : "编码图"}
+                    </button>
+                    <ModelSelector selectedModel={selectedModel} onModelChange={onModelChange} agentMode={agentMode} onModeChange={onModeChange} />
+                  </div>
                   <div className="flex items-center gap-2">
                     {ctx.isRunning && ctx.liveTiming && (
                       <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono"
@@ -492,7 +521,8 @@ function ChatContent({ sessionId, onSessionChange, onNewSession }: { sessionId: 
       {(ctx) => (
         <ChatInner ctx={ctx} selectedModel={selectedModel} onModelChange={setSelectedModel}
           agentMode={agentMode} onModeChange={setAgentMode}
-          goalCondition={goalCondition} setGoalCondition={setGoalCondition} onNewSession={onNewSession} />
+          goalCondition={goalCondition} setGoalCondition={setGoalCondition} onNewSession={onNewSession}
+          sessionId={sessionId} />
       )}
     </MiraRuntimeProvider>
   );

@@ -45,17 +45,18 @@ export function App() {
       }
     } catch { /* fallback */ }
 
-    const defaultProject: Project = {
-      project_id: "default", name: "默认项目",
-      workspace_path: window.electronAPI.platform === "win32" ? "C:\\" : "/",
-      color: "#3b3b3b",
-    };
+    // 数据库为空或连接失败时，只创建一次默认项目（幂等：同名同路径会复用）
+    const defaultName = "默认项目";
+    const defaultPath = window.electronAPI.platform === "win32" ? "C:\\" : "/";
     try {
-      const created = await window.electronAPI.ts.createProject(defaultProject.name, defaultProject.workspace_path);
-      defaultProject.project_id = created.project_id;
+      const created = await window.electronAPI.ts.createProject(defaultName, defaultPath);
+      const defaultProject: Project = {
+        project_id: created.project_id, name: defaultName,
+        workspace_path: defaultPath, color: "#3b3b3b",
+      };
+      setProjects([defaultProject]);
+      if (!activeProject) setActiveProject(defaultProject.project_id);
     } catch { /* 静默 */ }
-    setProjects([defaultProject]);
-    if (!activeProject) setActiveProject(defaultProject.project_id);
   }, [activeProject]);
 
   useEffect(() => { loadProjects(); const timer = setInterval(loadProjects, 15000); return () => clearInterval(timer); }, [loadProjects]);
@@ -97,8 +98,10 @@ export function App() {
 
   const handleOpenProject = async (name: string, workspacePath: string) => {
     try {
-      await window.electronAPI.ts.createProject(name, workspacePath);
+      const created = await window.electronAPI.ts.createProject(name, workspacePath);
       await loadProjects();
+      // 修改点：同路径已存在项目时复用已有项目并跳转过去
+      if (created?.project_id) setActiveProject(created.project_id);
       setNewProjectOpen(false);
     } catch { /* ignore */ }
   };

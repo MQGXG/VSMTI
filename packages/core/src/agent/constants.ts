@@ -19,6 +19,8 @@ export interface AgentConfig {
   systemPrompt?: string
   maxSteps?: number
   maxContextTokens?: number
+  /** 全局 Token 硬预算（全程累计，0 表示不限制） */
+  maxTotalTokens?: number
   permissions?: import("../system/permission").PermissionSet
   hardPermission?: import("../system/permission").PermissionRule[]
   mode?: AgentMode

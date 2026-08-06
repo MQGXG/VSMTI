@@ -156,6 +156,15 @@ const electronAPI = {
     },
   },
 
+  /** Graph 图编排 */
+  graph: {
+    runCodingTask: (request: string, config: Record<string, unknown>, options?: { maxSteps?: number; testCommand?: string; maxTotalTokens?: number }) =>
+      ipcRenderer.invoke("graph:runCodingTask", request, config, options),
+    getStatus: (runId: string) => ipcRenderer.invoke("graph:getStatus", runId),
+    listRuns: (graphId?: string) => ipcRenderer.invoke("graph:listRuns", graphId),
+    stop: (runId: string) => ipcRenderer.invoke("graph:stop", runId),
+  },
+
   /** 记忆系统 */
   memory: {
     search: (query: string, type?: string, limit?: number) =>

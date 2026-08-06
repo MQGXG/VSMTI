@@ -137,6 +137,18 @@ mira/
 │   │       │   ├── execution.ts     #   工具编排执行（并行/串行）
 │   │       │   ├── dream.ts         #   Dream/Distill 记忆进化
 │   │       │   └── failover.ts      #   LLM 故障转移
+│   │       ├── graph/               # Graph Engineering 图编排引擎（Planner/Runtime/Recovery 三层分离）
+│   │       │   ├── index.ts         #   统一导出（StateGraph/Planner/Recovery/模板）
+│   │       │   ├── types.ts         #   核心类型（Node/Edge/State + Schema + 契约 + 并行组）
+│   │       │   ├── state.ts         #   StateStore（Schema 校验 + replace/append/reducer 更新 + snapshot/mergePatch）
+│   │       │   ├── runtime.ts       #   StateGraph 运行时（next_node 路由/条件边/失败回退/checkpoint/并行组/契约校验）
+│   │       │   ├── planner.ts       #   Planner 层（输入状态 → 图定义，createPlanner/composePlanner）
+│   │       │   ├── recovery.ts      #   Recovery 层（单节点重入上限 + 全局执行上限 + 失败升级决策）
+│   │       │   ├── persist.ts       #   图运行持久化
+│   │       │   ├── nodes/           #   节点实现
+│   │       │   │   └── agent-runner.ts #     Agent 节点运行器
+│   │       │   └── templates/       #   业务图模板
+│   │       │       └── coding-task.ts #     coding-task 模板（iterations 迭代 + recovery）
 │   │       ├── task/                # 任务管理
 │   │       │   ├── tracker.ts       #   任务追踪
 │   │       │   ├── planner.ts       #   任务规划
@@ -452,6 +464,23 @@ mira/
 
 ### LSP（Language Server Protocol）
 代码智能：定义跳转、引用查找、悬停信息。
+
+### Graph Engineering（图编排引擎）
+Planner / Runtime / Recovery 三层分离的通用图编排引擎（`packages/core/src/graph/`）：
+
+| 特性 | 说明 |
+|------|------|
+| **三层分离** | Planner（输入状态 → 图定义）、Runtime（图执行）、Recovery（失败收敛决策） |
+| **节点种类** | `agent` / `subagent` / `judge` / `function` / `human` / `workflow` |
+| **路由** | `next_node` 节点主动路由（运行时校验出边白名单）+ 确定性条件边（函数判断） |
+| **失败回退** | 失败边重试（maxRetries）+ fallback 回退边 + 失败升级决策 |
+| **State Schema** | 字段级类型声明 + replace/append/reducer 三种更新策略 + snapshot/mergePatch |
+| **Checkpoint** | 每节点检查点，中断可从最后完成的节点恢复（resumeRunId） |
+| **Token 预算** | 全局 Token 闸门 + Frozen Node 输出不可变 |
+| **并行组** | `all_of` / `any_of` fan-out 多分支独立执行 → join 节点汇聚 |
+| **节点契约** | contract 声明输入/输出，运行后引擎校验输出字段（防"假装完成"） |
+| **Recovery 策略** | 单节点重入上限 + 全局执行上限 + onExhausted 升级（fail / escalate） |
+| **模板** | `coding-task`（iterations 迭代收敛 + recovery 防死循环） |
 
 ## 聊天模块（Part 消息体系）
 

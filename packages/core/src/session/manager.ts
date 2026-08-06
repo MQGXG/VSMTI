@@ -20,14 +20,53 @@ export interface ProjectInfo {
   workspace_path: string
 }
 
+/** 路径规范化：统一分隔符、去末尾斜杠、Windows 大小写不敏感 */
+function normalizePath(p: string): string {
+  const trimmed = (p || "").trim()
+  if (!trimmed) return ""
+  const unified = trimmed.replace(/[\\/]+$/, "").replace(/\\/g, "/")
+  return process.platform === "win32" ? unified.toLowerCase() : unified
+}
+
+/** 项目去重锁：防止并发调用 createProject 导致重复插入 */
+let createProjectLock: Promise<ProjectInfo> | null = null
+
 export async function createProject(name: string, workspacePath: string): Promise<ProjectInfo> {
-  const project_id = `proj_${Date.now().toString(36)}`
-  await getDbAsync()
-  runWrite(
-    "INSERT INTO projects (project_id, name, workspace_path) VALUES (?, ?, ?)",
-    [project_id, name, workspacePath],
-  )
-  return { project_id, name, workspace_path: workspacePath }
+  // 如果已有正在进行的创建请求，等待其完成后再检查
+  if (createProjectLock) {
+    await createProjectLock
+  }
+
+  const doCreate = async (): Promise<ProjectInfo> => {
+    const normalized = normalizePath(workspacePath)
+    const projects = await listProjects()
+
+    // 去重策略：1) 同路径复用 2) 同名复用（路径为空时）
+    const existing = projects.find((p) => {
+      const pNorm = normalizePath(p.workspace_path)
+      if (normalized && pNorm) return pNorm === normalized
+      // 路径为空时按名称去重
+      if (!normalized && !pNorm) return p.name === name
+      return false
+    })
+    if (existing) return existing
+
+    const project_id = `proj_${Date.now().toString(36)}`
+    await getDbAsync()
+    runWrite(
+      "INSERT INTO projects (project_id, name, workspace_path) VALUES (?, ?, ?)",
+      [project_id, name, workspacePath],
+    )
+    return { project_id, name, workspace_path: workspacePath }
+  }
+
+  const promise = doCreate()
+  createProjectLock = promise
+  try {
+    return await promise
+  } finally {
+    createProjectLock = null
+  }
 }
 
 export async function listProjects(): Promise<ProjectInfo[]> {

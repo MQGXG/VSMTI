@@ -156,6 +156,26 @@ export interface ElectronAPI {
   live2d: {
     toggle: (enabled: boolean) => Promise<void>;
   };
+
+  /** Graph 图编排 */
+  graph: {
+    runCodingTask: (
+      request: string,
+      config: Record<string, unknown>,
+      options?: { maxSteps?: number; testCommand?: string; maxTotalTokens?: number },
+    ) => Promise<{ runId: string }>;
+    getStatus: (runId: string) => Promise<{ runId: string; active: boolean }>;
+    listRuns: (graphId?: string) => Promise<Array<{
+      graphId: string;
+      runId: string;
+      completedNodes: string[];
+      state: Record<string, unknown>;
+      visited: string[];
+      totalTokens: number;
+      updatedAt: string;
+    }>>;
+    stop: (runId: string) => Promise<boolean>;
+  };
 }
 
 declare global {

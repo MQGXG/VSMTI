@@ -18,6 +18,13 @@ export { gitStatusTool, gitDiffTool, gitLogTool, gitCommitTool } from "./core/gi
 export { createDocxTool } from "./core/create-docx"
 export { searchHistoryTool } from "./core/search-history"
 export { memorySearchTool, memoryRecallTool } from "./knowledge/memory"
+export { memoryActivateTool, setDynamicMemoryManager, getDynamicMemoryManager } from "./knowledge/memory-activate"
+export {
+  memoryGraphAddNodeTool,
+  memoryGraphAddEdgeTool,
+  memoryGraphQueryTool,
+  memoryGraphDecayTool,
+} from "./knowledge/memory-graph"
 export { spawnAgentTool, waitAgentsTool, listSubagentsTool } from "./orchestrate/agent-tools"
 export { createMCPTool } from "../mcp/index"
 export { applyPatchTool } from "./core/apply-patch"

@@ -5,6 +5,8 @@ import { estimateTokens } from "../shared/message-utils"
 import { pluginHooks } from "../shared/plugin-hooks"
 import type { PermissionSet, PermissionRule } from "../system/permission"
 import { MemoryManager } from "../memory/manager"
+import { DynamicMemoryManager, createDynamicMemory } from "../memory/dynamic-memory"
+import { setDynamicMemoryManager } from "../tools/knowledge/memory-activate"
 import { BuiltinMemoryProvider } from "../memory/builtin-provider"
 import { appendMessage, loadSession } from "../session/store"
 import { VectorMemoryProvider } from "../memory/vector-provider"
@@ -137,6 +139,7 @@ You have access to tools that let you interact with the user's system. ALWAYS us
 export class Agent {
   private stateMachine = new AgentStateMachine()
   private memoryManager!: MemoryManager
+  private dynamicMemory!: DynamicMemoryManager
   private approvalStore!: ApprovalStore
   private orchestrator!: ToolOrchestrator
   private checkpointProvider!: CheckpointProvider
@@ -159,6 +162,9 @@ export class Agent {
 
   /** 文本 N-gram 缓冲区 — 用于分类器的 text-repeat 检测 */
   private ngramBuffer: string[] = []
+
+  /** 全局 Token 预算累计（跨输入队列、跨 run 持久于实例） */
+  private runTotalTokens = 0
 
   get aborted(): boolean { return this.stateMachine.aborted }
   abort(): void { this.stateMachine.stop() }
@@ -186,6 +192,8 @@ export class Agent {
     },
   ) {
     this.memoryManager = deps?.memoryManager ?? new MemoryManager()
+    this.dynamicMemory = createDynamicMemory()
+    setDynamicMemoryManager(this.dynamicMemory)
     this.checkpointProvider = deps?.checkpointProvider ?? new CheckpointProvider()
     this.dreamDistillManager = deps?.dreamDistillManager ?? new DreamDistillManager()
     this.contextManager = deps?.contextManager ?? new ContextManager(this.checkpointProvider, this.memoryManager)
@@ -524,6 +532,10 @@ export class Agent {
       let step = 0
       let hasLastAssistant = false
       const allToolCalls: Array<{ name: string; args: string }> = []
+      // 全局 Token 预算累计（跨输入队列）
+      const maxTotalTokens = config.maxTotalTokens || 0
+      let totalTokensUsed = this.runTotalTokens
+      const budgetCheckpointAt = Math.floor(maxTotalTokens * 0.8)
 
       while (true) {
         step++
@@ -588,6 +600,18 @@ export class Agent {
         const { messages: newMessages, shouldContinue } = yield* this.handleTurnOutput(turnOutput, messages, config, currentInput, allToolCalls)
         messages = newMessages
         if (!shouldContinue) return
+
+        // ── 全局 Token 预算闸门 ──
+        if (turnOutput.usage?.totalTokens) {
+          totalTokensUsed += turnOutput.usage.totalTokens
+          this.runTotalTokens = totalTokensUsed
+          if (maxTotalTokens > 0 && totalTokensUsed >= maxTotalTokens) {
+            yield { type: "thinking", text: `⛔ Token 预算已耗尽（${totalTokensUsed}/${maxTotalTokens}），强制总结并终止...` }
+            messages.push({ role: "user", content: MAX_STEPS_REACHED })
+          } else if (maxTotalTokens > 0 && totalTokensUsed >= budgetCheckpointAt) {
+            yield { type: "thinking", text: `⚠️ Token 预算已使用 ${Math.round((totalTokensUsed / maxTotalTokens) * 100)}%（${totalTokensUsed}/${maxTotalTokens}），请尽快收尾...` }
+          }
+        }
 
         await this.contextManager.syncTurn(currentInput.message, turnOutput.text, config.sessionID)
         await this.memoryManager.promoteMemories(config.sessionID)

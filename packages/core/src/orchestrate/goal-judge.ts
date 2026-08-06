@@ -25,6 +25,8 @@ export interface GoalEvaluation {
   satisfied: boolean
   reasoning: string
   confidence: number
+  /** 完成证据（文件 diff / 测试输出 / schema 校验结果），Evidence-based 判定 */
+  evidence?: string[]
 }
 
 const JUDGE_SYSTEM_PROMPT = `You are an impartial goal evaluation judge. Your role is to determine whether a given goal has been achieved based on the conversation history.
@@ -34,12 +36,14 @@ Rules:
 2. Consider partial progress as NOT satisfied
 3. If the agent is still working toward the goal, mark as not satisfied
 4. Look for concrete results, not just intent
+5. Do NOT rely on confidence — rely on evidence. If the agent merely claims completion without test output, diff, or verification results, mark as not satisfied
 
 Respond in JSON format:
 {
   "satisfied": boolean,
   "reasoning": "Concise explanation of your decision",
-  "confidence": 0.0-1.0
+  "confidence": 0.0-1.0,
+  "evidence": ["Concrete evidence items backing the decision"]
 }`
 
 export class GoalJudge {
@@ -270,6 +274,7 @@ export class GoalJudge {
       evaluation.satisfied = parsed.satisfied
       evaluation.reasoning = parsed.reasoning
       evaluation.confidence = parsed.confidence
+      evaluation.evidence = parsed.evidence
     } catch (err) {
       logError(`[GoalJudge] Evaluation failed for goal ${goal.id}`, err)
       evaluation.reasoning = `Evaluation error: ${String(err)}`
@@ -413,15 +418,25 @@ export class GoalJudge {
     satisfied: boolean
     reasoning: string
     confidence: number
+    evidence?: string[]
   } {
     try {
       const jsonMatch = response.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>
+        const rawReasoning = parsed.reasoning
+        const reasoning = typeof rawReasoning === "string"
+          ? rawReasoning
+          : typeof rawReasoning === "object" && rawReasoning !== null
+            ? JSON.stringify(rawReasoning)
+            : String(rawReasoning)
         return {
           satisfied: Boolean(parsed.satisfied),
-          reasoning: String(parsed.reasoning || ""),
+          reasoning,
           confidence: Number(parsed.confidence) || 0,
+          evidence: Array.isArray(parsed.evidence)
+            ? parsed.evidence.map((e) => String(e)).slice(0, 10)
+            : undefined,
         }
       }
     } catch {

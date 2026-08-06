@@ -20,3 +20,8 @@ portable-python/
 *.db
 dev.log
 logs/
+memory/
+checkpoints/
+graphs/
+tasks/
+vector-memory/
