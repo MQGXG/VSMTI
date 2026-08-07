@@ -16,11 +16,18 @@ if (Test-Path $npm) {
 $env:ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/"
 & $npm config set registry https://registry.npmmirror.com/ 2>$null
 
+# pnpm workspace 专用安装助手
+. .\scripts\install-deps.ps1
+
 function Start-Dev {
     Write-Host "🚀 启动 Mira 桌面应用 (开发模式)..." -ForegroundColor Cyan
 
     Write-Host "📦 安装前端依赖..." -ForegroundColor Yellow
-    & $npm install
+    Install-Deps -Frozen
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "⚠️ lockfile 与 package.json 未同步，回退为普通安装并更新 lockfile..." -ForegroundColor Yellow
+        Install-Deps
+    }
 
     Write-Host "`n🖥️  启动 Electron + Vite 热重载..." -ForegroundColor Green
     Write-Host "   按 Ctrl+Shift+I 打开 DevTools" -ForegroundColor Green
@@ -32,7 +39,11 @@ function Start-Dev {
 function Start-Package {
     param([string]$target = "")
     Write-Host "📦 打包 Mira..." -ForegroundColor Cyan
-    & $npm install
+    Install-Deps -Frozen
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "⚠️ lockfile 与 package.json 未同步，回退为普通安装并更新 lockfile..." -ForegroundColor Yellow
+        Install-Deps
+    }
     if ($target) {
         & $npm run $target
     } else {

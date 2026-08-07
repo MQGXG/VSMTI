@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "description": "Mira - 全能 AI 助手桌面应用",
   "main": "dist-electron/main.js",
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
+    "predev": "corepack pnpm install",
     "dev": "electron-vite dev",
+    "prebuild": "corepack pnpm install",
     "build": "electron-vite build",
     "package": "electron-vite build && electron-builder",
     "package:win": "electron-vite build && electron-builder --win",
