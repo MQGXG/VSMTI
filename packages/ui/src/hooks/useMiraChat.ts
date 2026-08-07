@@ -5,7 +5,7 @@ import type { MiraMessage, MiraPart } from "../chat/mira-runtime";
 import type { AgentEvent, ToolResult } from "../services/agent.service";
 import type { ModelOption } from "../chat/ModelSelector";
 import type { AgentMode } from "../chat/types";
-import { handleStreamEvent, setAgentService } from "./stream-events";
+import { handleStreamEvent, setAgentService, clearContentBuffers } from "./stream-events";
 
 type AgentServiceShape = typeof import("../services/agent.service").AgentService
 
@@ -81,6 +81,8 @@ export function useMiraChat({
   const currentChannelRef = useRef<string | null>(null);
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const offlineSessionIdRef = useRef<string | null>(null);
+  /** 当前流的 onEvent 清理函数（暂停时调用以停止 SSE 监听） */
+  const streamCleanupRef = useRef<(() => void) | null>(null);
   const timingRef = useRef<{
     streamStartTime: number;
     firstTokenTime?: number;
@@ -250,9 +252,11 @@ export function useMiraChat({
               });
               if (event.type === "finish") {
                 cleanup();
+                if (streamCleanupRef.current === cleanup) streamCleanupRef.current = null;
               }
             }
           );
+          streamCleanupRef.current = cleanup;
           return;
         }
 
@@ -341,7 +345,20 @@ export function useMiraChat({
   );
 
   const stopStream = useCallback(() => {
+    // 停止 SSE 事件监听（防止暂停后 finish/error 事件继续更新已停消息）
+    if (streamCleanupRef.current) {
+      streamCleanupRef.current();
+      streamCleanupRef.current = null;
+    }
+    // 清理 loading 超时定时器
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
+    }
+    // 清理流式缓冲与计时
+    clearContentBuffers();
     setIsRunning(false);
+    setLiveTiming(null);
     const ch = currentChannelRef.current;
     if (ch && agentServiceRef.current) {
       agentServiceRef.current.stopStream(ch);

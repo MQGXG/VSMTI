@@ -133,6 +133,12 @@ export function createContentBuffer(
 
 const contentBuffers = new Map<string, ReturnType<typeof createContentBuffer>>();
 
+/** 清空所有流式文本缓冲（暂停/中断时调用，避免残留缓冲在下次渲染时闪现） */
+export function clearContentBuffers(): void {
+  contentBuffers.forEach((buf) => buf.flush());
+  contentBuffers.clear();
+}
+
 export function handleStreamEvent(
   event: AgentEvent,
   channel: string,

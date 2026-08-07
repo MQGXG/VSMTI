@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * AnimatedAvatar — 基于原图 + CSS 动画的动态头像
+ * AnimatedAvatar — 动态头像
  * 支持状态切换：idle / thinking / speaking / error
+ * 默认使用 AI.gif（动态头像），用户可在设置中自定义头像图。
  */
 
 import { useMemo, useState, useEffect } from "react"
@@ -16,6 +17,9 @@ interface AnimatedAvatarProps {
   size?: number
   className?: string
 }
+
+/** 默认头像（AI.gif，从 public 加载） */
+const DEFAULT_AVATAR = "/AI.gif"
 
 function getAvatarSrc(): string {
   try {
@@ -31,7 +35,8 @@ export function AnimatedAvatar({ src, state = "idle", size = 48, className }: An
     setSavedSrc(getAvatarSrc())
   }, [])
 
-  const finalSrc = src || savedSrc
+  // 优先级：显式传入 > 用户设置 > 默认 AI.gif
+  const finalSrc = src || savedSrc || DEFAULT_AVATAR
 
   const stateClass = useMemo(() => ({
     idle: "avatar-idle",
@@ -45,18 +50,9 @@ export function AnimatedAvatar({ src, state = "idle", size = 48, className }: An
       className={cn("animated-avatar relative shrink-0", stateClass, className)}
       style={{ width: size, height: size }}
     >
-      {/* 主图像层 */}
+      {/* 主图像层（AI.gif 动态图） */}
       <div className="avatar-image-wrapper">
-        {finalSrc ? (
-          <img src={finalSrc} alt="avatar" className="avatar-image" draggable={false} />
-        ) : (
-          <div className="avatar-fallback">
-            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="50" cy="50" r="48" fill="var(--bg-tertiary)" stroke="var(--border)" strokeWidth="2"/>
-              <text x="50" y="58" textAnchor="middle" fill="var(--fg-secondary)" fontSize="28" fontWeight="700" fontFamily="system-ui">M</text>
-            </svg>
-          </div>
-        )}
+        <img src={finalSrc} alt="avatar" className="avatar-image" draggable={false} />
       </div>
 
       {/* 呼吸光晕 */}

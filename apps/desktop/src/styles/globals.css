@@ -163,6 +163,8 @@
     max-width: 75%;
     font-size: 14px;
     line-height: 1.55;
+    /* 自适应内容宽度，避免短文本撑满气泡导致内容偏右 */
+    width: fit-content;
     /* 防止长文本/URL/连续字符溢出气泡 */
     min-width: 0;
     overflow-wrap: break-word;
@@ -178,6 +180,8 @@
     max-width: 85%;
     font-size: 14px;
     line-height: 1.65;
+    /* 自适应内容宽度，避免短文本撑满气泡导致内容偏右 */
+    width: fit-content;
     min-width: 0;
     overflow-wrap: break-word;
     word-break: break-word;

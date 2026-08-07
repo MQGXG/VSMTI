@@ -29,6 +29,7 @@ import { GraphPanel } from "./GraphPanel";
 import { ToolCallView } from "./ToolCallView";
 import { MessageBubble, MessageError } from "./MessageBubble";
 import { WidgetRenderer, extractWidgetBlocks } from "../components/assistant-ui/widget-renderer";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import type { MiraRuntimeContext } from "./MiraRuntimeProvider";
 import { AgentService } from "../services/agent.service";
 import { useTheme } from "../contexts/ThemeContext";
@@ -290,7 +291,14 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                 const diffSummaryPart = orig ? findDiffSummary(orig) : null;
                 const hasCustomParts = hasToolCalls || diffSummaryPart;
                 return (
-                  <MessagePrimitive.Root className="group mb-5 animate-message">
+                  <ErrorBoundary
+                    fallback={
+                      <div className="mb-5 rounded-lg px-3 py-2 text-xs" style={{ background: "rgba(239,68,68,0.06)", color: "var(--error)" }}>
+                        该条消息渲染异常，已跳过显示
+                      </div>
+                    }
+                  >
+                    <MessagePrimitive.Root className="group mb-5 animate-message">
                     {thinkingParts.length > 0 && settings.showReasoning !== false && thinkingParts.map((p: any, i: number) => (
                       <ThinkingBlock key={i} text={p.text || ""} active={isLast} />
                     ))}
@@ -342,6 +350,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                       </div>
                     </div>
                   </MessagePrimitive.Root>
+                  </ErrorBoundary>
                 );
               }}
             </ThreadPrimitive.Messages>
@@ -438,16 +447,19 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                     onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)}
                     placeholder="输入消息..." rows={1}
                     className="input-field min-h-[24px] max-h-[200px]" />
-                  <ComposerPrimitive.Cancel asChild>
-                    <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0, background: "rgba(239,68,68,0.08)", color: "var(--error)" }}>
-                      <Square className="w-3.5 h-3.5" fill="currentColor" />
-                    </button>
-                  </ComposerPrimitive.Cancel>
-                  <ComposerPrimitive.Send asChild>
-                    <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0, color: composerIsEmpty ? "var(--fg-tertiary)" : "var(--fg)" }}>
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </ComposerPrimitive.Send>
+                  {/* 合并发送/停止：运行中显示停止方块，空闲显示发送 */}
+                  <button
+                    onClick={() => ctx.isRunning ? ctx.stopStream() : aui.composer().send()}
+                    className="btn-ghost shrink-0"
+                    title={ctx.isRunning ? "停止" : "发送"}
+                    style={{
+                      width: 28, height: 28, padding: 0,
+                      color: ctx.isRunning ? "var(--error)" : (composerIsEmpty ? "var(--fg-tertiary)" : "var(--fg)"),
+                      background: ctx.isRunning ? "rgba(239,68,68,0.08)" : "transparent",
+                    }}
+                  >
+                    {ctx.isRunning ? <Square className="w-3.5 h-3.5" fill="currentColor" /> : <Send className="w-4 h-4" />}
+                  </button>
                 </div>
                 </div>
 
