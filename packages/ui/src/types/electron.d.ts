@@ -52,6 +52,7 @@ export interface ElectronAPI {
     updateSession: (sessionId: string, data: { title?: string }) => Promise<void>;
     searchMessages: (query: string) => Promise<Array<{ session_id: string; session_title: string; message: { role: string; content: string; timestamp: string }; context: string }>>;
     restoreSnapshot: (snapshotId: string, workspace: string) => Promise<string[]>;
+    writeFile: (filePath: string, content: string) => Promise<boolean>;
   };
 
   // TypeScript Agent Core

@@ -44,6 +44,7 @@ const electronAPI = {
     updateSession: (sessionId: string, data: { title?: string }) => ipcRenderer.invoke("ts:updateSession", sessionId, data),
     searchMessages: (query: string) => ipcRenderer.invoke("ts:searchMessages", query),
     restoreSnapshot: (snapshotId: string, workspace: string) => ipcRenderer.invoke("ts:restoreSnapshot", snapshotId, workspace),
+    writeFile: (filePath: string, content: string) => ipcRenderer.invoke("ts:writeFile", filePath, content),
   },
 
   // TypeScript Agent Core IPC

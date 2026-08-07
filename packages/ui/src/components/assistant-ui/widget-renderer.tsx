@@ -1,7 +1,9 @@
 "use client";
 
-import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { extractWidgetBlocks, prepareWidgetHtml } from "./widget-utils";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Copy, Code2, Download } from "lucide-react";
+import { extractWidgetBlocks, prepareWidgetHtml, widgetFileName, wrapStandaloneHtml, copyTextToClipboard } from "./widget-utils";
+import { DialogService } from "../../services/dialog.service";
 
 // 本地库源码（?raw 导入 → iframe 内联注入，离线可用、符合 CSP）
 // Chart.js 是 UMD 格式，可内联 <script>；mermaid 是 ESM，改由 UI 端 mermaid 插件渲染（```mermaid 块）
@@ -25,7 +27,12 @@ const INJECTABLE_LIBS: Record<string, string> = {
  */
 function WidgetRendererImpl({ html, className = "" }: { html: string; className?: string }) {
   const [height, setHeight] = useState(360);
+  const [showCode, setShowCode] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const downloadedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 预处理 HTML（CDN → 本地注入）
   const preparedHtml = useMemo(() => prepareWidgetHtml(html, INJECTABLE_LIBS).processed, [html]);
@@ -81,18 +88,83 @@ ${preparedHtml}
     return () => clearTimeout(t);
   }, [preparedHtml]);
 
+  // 卸载时清理计时器
+  useEffect(() => {
+    return () => {
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      if (downloadedTimer.current) clearTimeout(downloadedTimer.current);
+    };
+  }, []);
+
+  const handleCopy = useCallback(async () => {
+    const ok = await copyTextToClipboard(html);
+    if (ok) {
+      setCopied(true);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 1500);
+    }
+  }, [html]);
+
+  const handleDownload = useCallback(async () => {
+    const ok = await DialogService.saveTextFile(widgetFileName(html), wrapStandaloneHtml(html)).catch(() => false);
+    if (ok) {
+      setDownloaded(true);
+      if (downloadedTimer.current) clearTimeout(downloadedTimer.current);
+      downloadedTimer.current = setTimeout(() => setDownloaded(false), 1500);
+    }
+  }, [html]);
+
   return (
-    <div
-      className={`mira-widget overflow-hidden rounded-xl border border-[var(--border)] ${className}`}
-      style={{ height, transition: "height 0.15s ease", background: "#fff" }}
-    >
-      <iframe
-        ref={iframeRef}
-        srcDoc={srcDoc}
-        sandbox="allow-scripts"
-        title="可视化组件"
-        style={{ width: "100%", height: "100%", border: "none", background: "#fff" }}
-      />
+    <div className={`mira-widget overflow-hidden rounded-xl border border-[var(--border)] ${className}`}>
+      <div
+        className="flex items-center gap-2 px-2.5 h-8 select-none"
+        style={{ background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
+      >
+        <span className="text-[11px] font-medium" style={{ color: "var(--fg-tertiary)" }}>可视化组件</span>
+        <div className="flex-1" />
+        <button
+          onClick={() => setShowCode((v) => !v)}
+          className="btn-ghost inline-flex items-center gap-1 text-[11px]"
+          style={{ padding: "2px 8px" }}
+          title={showCode ? "收起代码" : "查看代码"}
+        >
+          <Code2 className="w-3 h-3" />
+          {showCode ? "收起代码" : "查看代码"}
+        </button>
+        <button
+          onClick={handleCopy}
+          className="btn-ghost inline-flex items-center gap-1 text-[11px]"
+          style={{ padding: "2px 8px" }}
+          title="复制代码"
+        >
+          <Copy className="w-3 h-3" />
+          {copied ? "已复制" : "复制代码"}
+        </button>
+        <button
+          onClick={handleDownload}
+          className="btn-ghost inline-flex items-center gap-1 text-[11px]"
+          style={{ padding: "2px 8px" }}
+          title="下载代码"
+        >
+          <Download className="w-3 h-3" />
+          {downloaded ? "已下载" : "下载代码"}
+        </button>
+      </div>
+      <div style={{ height, transition: "height 0.15s ease", background: "#fff" }}>
+        <iframe
+          ref={iframeRef}
+          srcDoc={srcDoc}
+          sandbox="allow-scripts"
+          title="可视化组件"
+          style={{ width: "100%", height: "100%", border: "none", background: "#fff" }}
+        />
+      </div>
+      {showCode && (
+        <pre
+          className="overflow-auto text-[11px] leading-relaxed whitespace-pre-wrap break-all scrollbar-custom"
+          style={{ margin: 0, padding: 12, maxHeight: 320, background: "#0f1115", color: "#e6e6e6", borderTop: "1px solid var(--border-subtle)" }}
+        >{html}</pre>
+      )}
     </div>
   );
 }

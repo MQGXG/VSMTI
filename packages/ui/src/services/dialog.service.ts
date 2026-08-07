@@ -14,4 +14,14 @@ export const DialogService = {
   async saveFile(name: string): Promise<string> {
     return window.electronAPI.saveFile(name)
   },
+
+  /**
+   * 保存文本文件到用户指定路径（保存对话框 + 主进程写入）
+   * @returns 写入成功返回 true；用户取消或写入失败返回 false
+   */
+  async saveTextFile(defaultName: string, content: string): Promise<boolean> {
+    const filePath = await window.electronAPI.saveFile(defaultName)
+    if (!filePath) return false
+    return window.electronAPI.ts.writeFile(filePath, content)
+  },
 }

@@ -77,3 +77,62 @@ export function prepareWidgetHtml(html: string, injectableLibs: Record<string, s
 
   return { processed: `${injection}\n${cleanedHtml}`, neededLibs: Array.from(neededLibs) };
 }
+
+/**
+ * 从 widget HTML 中提取 <title> 生成文件名（非法字符替换、长度限制）
+ */
+export function widgetFileName(html: string, fallback = "widget.html"): string {
+  const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  let name = m ? m[1].replace(/<[^>]+>/g, "").trim() : "";
+  if (!name) return fallback;
+  name = name.replace(/[\\/:*?"<>|\r\n\t]+/g, "_").trim().slice(0, 60);
+  return name ? `${name}.html` : fallback;
+}
+
+/**
+ * 将片段 HTML 包装为可独立打开的完整文档。
+ * 保留原始 CDN 引用，下载后在浏览器可直接打开渲染。
+ */
+export function wrapStandaloneHtml(html: string): string {
+  if (!html) return html;
+  if (/<html[\s>]/i.test(html)) return html;
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mira 可视化组件</title>
+</head>
+<body>
+${html}
+</body>
+</html>`;
+}
+
+/**
+ * 将字符串复制到剪贴板（优先异步 Clipboard API，降级 execCommand）。
+ * @returns 是否复制成功
+ */
+export async function copyTextToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // 继续走降级方案
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}

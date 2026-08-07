@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { extractWidgetBlocks, prepareWidgetHtml } from './widget-utils'
+import { extractWidgetBlocks, prepareWidgetHtml, widgetFileName, wrapStandaloneHtml, copyTextToClipboard } from './widget-utils'
 
 describe('extractWidgetBlocks', () => {
   test('提取单个 widget 代码块并清理文本', () => {
@@ -55,5 +55,44 @@ describe('prepareWidgetHtml', () => {
   test('空 HTML 返回占位', () => {
     const { processed } = prepareWidgetHtml('', libs)
     expect(processed).toContain('空内容')
+  })
+})
+
+describe('widgetFileName', () => {
+  test('提取 <title> 生成文件名', () => {
+    expect(widgetFileName('<html><head><title>销售趋势图</title></head><body></body></html>')).toBe('销售趋势图.html')
+  })
+
+  test('无 title 时使用 fallback', () => {
+    expect(widgetFileName('<div>hi</div>')).toBe('widget.html')
+    expect(widgetFileName('<div>hi</div>', 'chart.html')).toBe('chart.html')
+  })
+
+  test('非法文件名字符被替换', () => {
+    expect(widgetFileName('<title>a/b:c*d</title>')).toBe('a_b_c_d.html')
+  })
+})
+
+describe('wrapStandaloneHtml', () => {
+  test('片段 HTML 包装为完整文档', () => {
+    const out = wrapStandaloneHtml('<svg></svg>')
+    expect(out).toMatch(/^<!DOCTYPE html>/)
+    expect(out).toContain('<svg></svg>')
+  })
+
+  test('完整文档原样返回', () => {
+    const full = '<html><body><svg></svg></body></html>'
+    expect(wrapStandaloneHtml(full)).toBe(full)
+  })
+
+  test('空输入返回空', () => {
+    expect(wrapStandaloneHtml('')).toBe('')
+  })
+})
+
+describe('copyTextToClipboard', () => {
+  test('无剪贴板/DOM 环境优雅降级（返回 false）', async () => {
+    const ok = await copyTextToClipboard('hi')
+    expect(ok).toBe(false)
   })
 })

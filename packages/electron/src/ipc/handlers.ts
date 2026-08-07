@@ -1,4 +1,5 @@
 import { ipcMain, dialog, Notification, safeStorage } from "electron";
+import { promises as fs } from "fs";
 import { getMainWindow, minimizeWindow, toggleMaximizeWindow, hideWindow } from "../managers/window-manager";
 import { registerAgentIPCHandlers } from "./index";
 import { getFloatingBallManager } from "../managers/floating-ball-manager";
@@ -40,6 +41,13 @@ export function registerIPCHandlers(): void {
     if (!win) return null;
     const result = await dialog.showSaveDialog(win, { defaultPath: defaultName });
     return result.filePath;
+  });
+
+  // 写入文件（供渲染层下载 widget/导出内容）
+  ipcMain.handle("ts:writeFile", async (_, filePath: string, content: string) => {
+    if (!filePath || typeof content !== "string") return false;
+    await fs.writeFile(filePath, content, "utf-8");
+    return true;
   });
 
   // 系统通知
