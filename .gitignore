@@ -20,7 +20,9 @@ portable-python/
 *.db
 dev.log
 logs/
-memory/
+# 根锚定：只忽略仓库根目录的 memory/（会话记忆 JSON），
+# 避免误伤 packages/core/src/memory/ 等源码目录
+/memory/
 checkpoints/
 graphs/
 tasks/
