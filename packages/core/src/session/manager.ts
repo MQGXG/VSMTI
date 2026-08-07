@@ -101,8 +101,8 @@ export async function listSessions(projectId?: string): Promise<SessionInfo[]> {
   const db = await getDbAsync()
   const rows = db.exec(
     projectId
-      ? "SELECT session_id, project_id, title, workspace, created_at, updated_at FROM sessions WHERE project_id = ? ORDER BY updated_at DESC"
-      : "SELECT session_id, project_id, title, workspace, created_at, updated_at FROM sessions ORDER BY updated_at DESC",
+      ? "SELECT session_id, project_id, title, workspace, created_at, updated_at, COALESCE(cost,0), COALESCE(tokens_input,0), COALESCE(tokens_output,0), COALESCE(tokens_cache_read,0), COALESCE(tokens_cache_write,0) FROM sessions WHERE project_id = ? ORDER BY updated_at DESC"
+      : "SELECT session_id, project_id, title, workspace, created_at, updated_at, COALESCE(cost,0), COALESCE(tokens_input,0), COALESCE(tokens_output,0), COALESCE(tokens_cache_read,0), COALESCE(tokens_cache_write,0) FROM sessions ORDER BY updated_at DESC",
     projectId ? [projectId] : [],
   )
   if (rows.length === 0) return []
@@ -121,7 +121,7 @@ export async function listSessions(projectId?: string): Promise<SessionInfo[]> {
   } catch { /* messages 表可能不存在 */ }
 
   return rows[0].values.map((row) => {
-    const [session_id, project_id, title, workspace, _created, updated_at] = row as string[]
+    const [session_id, project_id, title, workspace, _created, updated_at, cost, tokensInput, tokensOutput, tokensCacheRead, tokensCacheWrite] = row as string[]
     return {
       session_id,
       project_id: project_id || projectId || "",
@@ -130,15 +130,28 @@ export async function listSessions(projectId?: string): Promise<SessionInfo[]> {
       workspace_path: workspace || "",
       message_count: countMap.get(session_id) || 0,
       updated_at: updated_at || "",
+      cost: Number(cost) || 0,
+      tokens: {
+        input: Number(tokensInput) || 0,
+        output: Number(tokensOutput) || 0,
+        cacheRead: Number(tokensCacheRead) || 0,
+        cacheWrite: Number(tokensCacheWrite) || 0,
+      },
     }
   })
 }
 
-export async function getSessionMessages(sessionId: string): Promise<Array<{ role: string; content: string; id: number; retryCount?: number }>> {
+export async function getSessionMessages(sessionId: string): Promise<Array<{ role: string; content: string; id: number; retryCount?: number; timestamp?: string }>> {
   reloadDatabase()
   const stored = await loadSession(sessionId)
   if (!stored) return []
-  return stored.messages.map((m, i) => ({ id: i, role: m.role, content: m.content, retryCount: m.retryCount || 0 }))
+  return stored.messages.map((m, i) => ({
+    id: m.id ?? i,
+    role: m.role,
+    content: m.content,
+    retryCount: m.retryCount || 0,
+    timestamp: m.timestamp,
+  }))
 }
 
 export async function updateProject(projectId: string, data: { name?: string; workspace_path?: string }): Promise<void> {
@@ -168,6 +181,71 @@ export async function updateSession(sessionId: string, data: { title?: string })
   params.push(new Date().toISOString())
   params.push(sessionId)
   runWrite(`UPDATE sessions SET ${updates.join(", ")} WHERE session_id = ?`, params)
+}
+
+/**
+ * 累加会话成本/token 用量（参考 opencode Session.Info.cost/tokens 聚合）
+ * 每次 LLM 调用完成后调用，把当次 cost/tokens 累加到 sessions 表
+ */
+export async function accumulateSessionUsage(
+  sessionId: string,
+  usage: { cost: number; inputTokens: number; outputTokens: number; reasoningTokens?: number; cacheReadTokens?: number; cacheWriteTokens?: number },
+): Promise<void> {
+  try {
+    const db = await getDbAsync()
+    runWrite(
+      `UPDATE sessions SET
+        cost = COALESCE(cost, 0) + ?,
+        tokens_input = COALESCE(tokens_input, 0) + ?,
+        tokens_output = COALESCE(tokens_output, 0) + ?,
+        tokens_reasoning = COALESCE(tokens_reasoning, 0) + ?,
+        tokens_cache_read = COALESCE(tokens_cache_read, 0) + ?,
+        tokens_cache_write = COALESCE(tokens_cache_write, 0) + ?,
+        updated_at = ?
+       WHERE session_id = ?`,
+      [
+        usage.cost || 0,
+        usage.inputTokens || 0,
+        usage.outputTokens || 0,
+        usage.reasoningTokens || 0,
+        usage.cacheReadTokens || 0,
+        usage.cacheWriteTokens || 0,
+        new Date().toISOString(),
+        sessionId,
+      ],
+    )
+  } catch { /* 成本累加失败不阻塞主流程 */ }
+}
+
+/** 获取会话的成本/token 汇总 */
+export async function getSessionUsage(sessionId: string): Promise<{
+  cost: number; inputTokens: number; outputTokens: number; reasoningTokens: number; cacheReadTokens: number; cacheWriteTokens: number
+} | null> {
+  try {
+    const db = await getDbAsync()
+    const result = db.exec(
+      "SELECT cost, tokens_input, tokens_output, tokens_reasoning, tokens_cache_read, tokens_cache_write FROM sessions WHERE session_id = ?",
+      [sessionId],
+    )
+    if (result.length === 0 || result[0].values.length === 0) return null
+    const row = result[0].values[0]
+    return {
+      cost: Number(row[0]) || 0,
+      inputTokens: Number(row[1]) || 0,
+      outputTokens: Number(row[2]) || 0,
+      reasoningTokens: Number(row[3]) || 0,
+      cacheReadTokens: Number(row[4]) || 0,
+      cacheWriteTokens: Number(row[5]) || 0,
+    }
+  } catch {
+    return null
+  }
+}
+
+/** 删除单条消息（UI 重试/编辑历史消息时清理旧记录） */
+export async function deleteMessageById(sessionId: string, messageId: number): Promise<void> {
+  const { deleteMessage } = await import("./store")
+  await deleteMessage(sessionId, messageId)
 }
 
 export async function deleteProjectById(projectId: string): Promise<void> {

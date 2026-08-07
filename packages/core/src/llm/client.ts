@@ -5,6 +5,7 @@ import type { LLMMessage, ContentPart } from "./schema/messages"
 import { getToolResultOutput } from "./schema/messages"
 import type { LLMRequest as LLMRequestSchema } from "./schema/options"
 import { zodToJsonSchema } from "../shared/zod-converter"
+import { isRetryableError as isUnifiedRetryable } from "../shared/errors"
 
 export type ProviderType = string
 export type { LLMMessage }
@@ -20,6 +21,7 @@ export interface SDKConfig {
 
 export type LLMStreamEvent =
   | { type: "delta"; delta: string }
+  | { type: "reasoning"; delta: string }
   | { type: "tool_call"; toolCall: { id: string; name: string; arguments: string; index: number } }
   | { type: "done"; usage?: { promptTokens: number; completionTokens: number; totalTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number } }
   | { type: "retry"; attempt: number; error: string }
@@ -30,6 +32,8 @@ export type LLMToolSet = Record<string, { description: string; inputSchema: z.Zo
 export interface LLMRequest2 {
   messages: LLMMessage[]
   tools?: LLMToolSet
+  /** Prompt 缓存策略 */
+  cache?: import("./schema/options").CachePolicy
 }
 
 /** @deprecated 使用 LLMRequest2 */
@@ -47,11 +51,14 @@ function convertMessages(messages: LLMMessage[]): LLMMessage[] {
       ? m.content
       : m.content.map((part: ContentPart) => {
           if (part.type === "text") return { type: "text" as const, text: part.text }
+          if (part.type === "reasoning") return { type: "reasoning" as const, text: part.text }
           if (part.type === "tool-call") return { type: "tool-call" as const, toolCallId: part.toolCallId, toolName: part.toolName, args: part.args }
           if (part.type === "tool-result") return { type: "tool-result" as const, toolCallId: part.toolCallId, toolName: part.toolName, output: getToolResultOutput(part.output) }
           return { type: "text" as const, text: "" }
         }),
     tool_call_id: "tool_call_id" in m ? m.tool_call_id as string : undefined,
+    // 回传 reasoning_content（DeepSeek thinking 模式必需，否则 400）
+    ...(m.reasoning_content ? { reasoning_content: m.reasoning_content } : {}),
   }))
 }
 
@@ -68,7 +75,7 @@ function isRetryableError(message: string): boolean {
   const code = parseInt(message.match(/HTTP (\d+)/)?.[1] || "0", 10)
   if (code >= 400 && code < 500) return code === 429
   if (code >= 500) return true
-  return true
+  return isUnifiedRetryable(new Error(message))
 }
 
 async function* withRetry(
@@ -97,7 +104,8 @@ async function* withRetry(
     } catch (e) {
       lastError = e instanceof Error ? e : new Error(String(e))
     }
-    if (lastError && !isRetryableError(lastError.message)) break
+    // 用统一的可重试判断（支持网络错误码/HTTP 状态/超时），Error 对象优先
+    if (lastError && !isUnifiedRetryable(lastError)) break
   }
   yield { type: "error", error: { message: lastError?.message || "Unknown error" } }
 }
@@ -117,6 +125,8 @@ export function createLLMClient(config: SDKConfig): LLMClient {
         messages: convertMessages(request.messages),
         tools: convertTools(request.tools),
         generation: config.options,
+        // 默认启用缓存（Anthropic 需要显式 cache_control，OpenAI/DeepSeek 服务端自动）
+        cache: request.cache ?? "auto",
       }
 
       let accumulatedArgs = ""
@@ -131,6 +141,9 @@ export function createLLMClient(config: SDKConfig): LLMClient {
             } else {
               yield { type: "delta", delta: event.delta }
             }
+            break
+          case "reasoning-delta":
+            yield { type: "reasoning", delta: event.delta }
             break
           case "tool-call":
             if (currentToolId && currentToolName) {

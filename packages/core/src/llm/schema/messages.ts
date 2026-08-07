@@ -5,6 +5,9 @@ export type MessageRole = "system" | "user" | "assistant" | "tool"
 export const TextPartSchema = z.object({ type: z.literal("text"), text: z.string() })
 export type TextPart = z.infer<typeof TextPartSchema>
 
+export const ReasoningPartSchema = z.object({ type: z.literal("reasoning"), text: z.string() })
+export type ReasoningPart = z.infer<typeof ReasoningPartSchema>
+
 export const ToolCallPartSchema = z.object({
   type: z.literal("tool-call"),
   toolCallId: z.string(),
@@ -23,6 +26,7 @@ export type ToolResultPart = z.infer<typeof ToolResultPartSchema>
 
 export const ContentPartSchema = z.union([
   TextPartSchema,
+  ReasoningPartSchema,
   ToolCallPartSchema,
   ToolResultPartSchema,
 ])
@@ -32,6 +36,12 @@ export interface LLMMessage {
   role: MessageRole
   content: string | ContentPart[]
   tool_call_id?: string
+  /**
+   * DeepSeek thinking 模型的思考内容（reasoning_content）。
+   * 注意：DeepSeek API 要求上一轮 assistant 的 reasoning_content 必须原样回传，
+   * 否则返回 HTTP 400 "The reasoning_content in the thinking mode must be passed back to the API."
+   */
+  reasoning_content?: string
 }
 
 export type ToolResultOutput = string | { type: "text"; value: string }
@@ -50,4 +60,8 @@ export function isToolCallPart(part: ContentPart): part is ToolCallPart {
 
 export function isToolResultPart(part: ContentPart): part is ToolResultPart {
   return part.type === "tool-result"
+}
+
+export function isReasoningPart(part: ContentPart): part is ReasoningPart {
+  return part.type === "reasoning"
 }

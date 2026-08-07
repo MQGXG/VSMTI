@@ -54,8 +54,10 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "docx": "^9.7.1",
     "effect": "^3.21.4",
+    "pptxgenjs": "^4.0.1",
     "sql.js": "^1.14.1",
     "turndown": "^7.2.4",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "optionalDependencies": {

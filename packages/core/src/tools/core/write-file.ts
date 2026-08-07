@@ -4,7 +4,7 @@ import { z } from "zod"
 import { make, type Content } from "../../shared/tool"
 import { getSnapshotManager } from "../../session/snapshot"
 import { realPath, contains } from "./path-util"
-import { invalidateFileState, getFileState, isFileChanged } from "./file-state-cache"
+import { isFileChanged, setFileState } from "./file-state-cache"
 
 /** 进程级文件写入锁 — 同一文件串行写入 */
 const writeLocks = new Map<string, Promise<void>>()
@@ -90,8 +90,9 @@ export const writeFileTool = make({
 
       await fs.writeFile(resolved, content, "utf-8")
 
-      // 清除缓存，下次 Read 重新读取
-      invalidateFileState(resolved)
+      // 更新缓存：写入后记录新内容哈希作为 CAS 版本号
+      const stat = await fs.stat(resolved)
+      setFileState(resolved, { content, mtimeMs: stat.mtimeMs, byteLength: Buffer.byteLength(content, "utf-8") })
 
       // LSP 通知（写后刷新诊断）
       if (ctx.workspace) {

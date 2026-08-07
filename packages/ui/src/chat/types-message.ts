@@ -7,9 +7,11 @@ export interface CompactionData {
 }
 
 export interface MiraPart {
-  type: "text" | "thinking" | "tool-call" | "file" | "diff-summary" | "compaction";
-  /** text / thinking */
+  type: "text" | "thinking" | "tool-call" | "file" | "diff-summary" | "compaction" | "widget";
+  /** text / thinking / widget */
   text?: string;
+  /** widget：iframe 渲染的富 HTML 内容 */
+  html?: string;
   /** tool-call */
   toolCallId?: string;
   toolName?: string;
@@ -61,4 +63,6 @@ export interface MiraMessage {
   createdAt?: Date;
   timing?: MessageTiming;
   retryCount?: number;
+  /** 消息级错误（模型失败等） */
+  error?: string;
 }

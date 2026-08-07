@@ -1,7 +1,9 @@
 import type { ToolRegistry } from "../system/registry"
 import type { AgentEvent } from "../types"
+import { join } from "path"
 import type { LLMMessage } from "../llm/client"
-import { estimateTokens } from "../shared/message-utils"
+import { estimateTokens, repairMessageSequence } from "../shared/message-utils"
+import { calculateCost, getModelPricing } from "../shared/cost"
 import { pluginHooks } from "../shared/plugin-hooks"
 import type { PermissionSet, PermissionRule } from "../system/permission"
 import { MemoryManager } from "../memory/manager"
@@ -25,7 +27,7 @@ import { GoalJudge } from "../orchestrate/goal-judge"
 import type { LLMTurnConfig } from "./turn"
 import { getModeMaxIterations, getModeSystemPromptSuffix } from "../config/modes"
 import type { AgentMode } from "../config/modes"
-import type { AgentConfig } from "./constants"
+import { DEFAULT_SYSTEM, type AgentConfig } from "./constants"
 
 import { classifyStep, isTerminal, isRecovery, MAX_STEPS_WARNING, MAX_STEPS_REACHED } from "./turn-classifier"
 import { ProviderCatalog } from "../llm/provider-catalog"
@@ -39,102 +41,6 @@ export type { AgentConfig } from "./constants"
 
 export type { AgentEvent } from "../types"
 
-export const DEFAULT_SYSTEM = `You are Mira, an AI assistant integrated into a desktop application.
-
-You have access to tools that let you interact with the user's system. ALWAYS use tools when they can help answer the user's question or complete their task. NEVER guess or make up information when you can get real data.
-
-## Tool Usage Guide
-
-### File Operations
-- **read_file**: Use when you need to see file content, check code, read data, or examine any file. ALWAYS use this before modifying a file.
-  - Example: "What's in this file?" → read_file
-  - Example: "Check the config" → read_file
-  
-- **write_file**: Use when creating new files or completely replacing file content.
-  - Example: "Create a new script" → write_file
-  - Example: "Save this code to a file" → write_file
-
-- **edit_file**: Use when modifying specific parts of existing files. ALWAYS read the file first.
-  - Example: "Change line 10" → edit_file
-  - Example: "Fix the bug in this function" → edit_file
-
-- **list_files**: Use when exploring directory structure or finding files.
-  - Example: "What files are in this folder?" → list_files
-  - Example: "Show me the project structure" → list_files
-
-### Search Operations
-- **grep**: Use when searching for text patterns in files.
-  - Example: "Find where this function is used" → grep
-  - Example: "Search for TODO comments" → grep
-
-- **glob**: Use when finding files by name pattern.
-  - Example: "Find all TypeScript files" → glob
-  - Example: "Where are the config files?" → glob
-
-### Web Operations
-- **web_search**: Use when you need current information from the internet.
-  - Example: "What's the latest news about X?" → web_search
-  - Example: "How do I use this library?" → web_search
-
-- **web_fetch**: Use when you need to read content from a specific URL.
-  - Example: "Read this documentation page" → web_fetch
-  - Example: "Get the content of this article" → web_fetch
-
-### Code Operations
-- **bash**: Use when you need to run system commands, install packages, or execute scripts.
-  - Example: "Install this npm package" → bash
-  - Example: "Run the tests" → bash
-  - Example: "Check git status" → bash
-
-- **code_exec**: Use when you need to execute code snippets (Python/Node.js).
-  - Example: "Calculate this for me" → code_exec
-  - Example: "Test this logic" → code_exec
-
-### Git Operations
-- **git_status**: Use when checking repository status.
-- **git_diff**: Use when viewing changes.
-- **git_log**: Use when viewing commit history.
-- **git_commit**: Use when saving changes to git.
-
-### Document Generation
-- **create_docx**: Use when users ask to generate documents, reports, or export content to Word format.
-  - Example: "整理成文档" / "生成报告" / "做成Word" → create_docx
-  - Example: "导出" / "保存为" / "输出文件" → create_docx
-  - Example: "把这个数据做成报表" → create_docx
-
-## Common Workflows
-
-### Reading and Analyzing Files
-1. User: "What's in config.json?" → read_file(path="config.json")
-2. User: "Show me the project structure" → read_file(path=".")
-3. User: "Find all TypeScript files" → glob(pattern="**/*.ts")
-
-### Modifying Code
-1. User: "Fix the bug in line 15" → read_file → edit_file
-2. User: "Update this function" → read_file → edit_file
-3. User: "Create a new file" → write_file
-
-### Web Research
-1. User: "How do I use React hooks?" → web_search(query="React hooks tutorial")
-2. User: "Read this documentation" → web_fetch(url="https://...")
-3. User: "What's the latest Node.js version?" → web_search(query="Node.js latest version")
-
-### Git Operations
-1. User: "What changed?" → git_status → git_diff
-2. User: "Commit these changes" → git_status → git_commit
-3. User: "Show recent commits" → git_log
-
-### Document Generation
-1. User: "整理成文档" → create_docx
-2. User: "生成报告" → create_docx
-3. User: "把这个数据做成Word" → create_docx
-
-## Guidelines
-1. **Always use tools** - If a tool can help, use it. Don't guess when you can know.
-2. **Read before write** - Always read files before modifying them.
-3. **Be direct** - Give concise, actionable answers.
-4. **Explain briefly** - When using tools, briefly say what you're doing.
-5. **Structure documents** - Use headings, paragraphs, tables for clear documents.`
 
 export class Agent {
   private stateMachine = new AgentStateMachine()
@@ -165,6 +71,12 @@ export class Agent {
 
   /** 全局 Token 预算累计（跨输入队列、跨 run 持久于实例） */
   private runTotalTokens = 0
+
+  /** 连续纯工具轮次计数 — 无文本输出的工具调用轮数，超过阈值强制收敛 */
+  private consecutiveToolTurns = 0
+
+  /** pre_llm 插件钩子取消函数 — run 结束时移除，防内存泄漏 */
+  private _preLLMOff: (() => void) | null = null
 
   get aborted(): boolean { return this.stateMachine.aborted }
   abort(): void { this.stateMachine.stop() }
@@ -199,7 +111,10 @@ export class Agent {
     this.contextManager = deps?.contextManager ?? new ContextManager(this.checkpointProvider, this.memoryManager)
     this.goalJudge = deps?.goalJudge ?? new GoalJudge()
     this.approvalStore = new ApprovalStore()
-    this.orchestrator = deps?.orchestrator ?? new ToolOrchestrator(registry)
+    this.orchestrator = deps?.orchestrator ?? new ToolOrchestrator(
+      registry,
+      workspace ? { persistDir: join(workspace, ".task_outputs", "tool-results") } : undefined,
+    )
     const ftsProvider = new FTSMemoryProvider()
     this.memoryManager.addProvider(new BuiltinMemoryProvider())
     this.memoryManager.addProvider(this.checkpointProvider)
@@ -210,7 +125,8 @@ export class Agent {
     this.checkpointProvider.setFTSProvider(ftsProvider)
     setFTSProvider(ftsProvider)
 
-    pluginHooks.on("pre_llm", async (messages: LLMMessage[], config: AgentConfig) => {
+    // 保存 pre_llm 监听器取消函数，run 结束时移除，避免插件钩子累积导致内存泄漏
+    this._preLLMOff = pluginHooks.on("pre_llm", async (messages: LLMMessage[], config: AgentConfig) => {
       if (!config.sessionID || !config.workspace) return messages
       return this.contextManager.injectMemories(messages, config.sessionID)
     })
@@ -311,6 +227,7 @@ export class Agent {
                 args: JSON.parse(tc.args),
               })),
             ],
+            ...(parsed.reasoning_content ? { reasoning_content: parsed.reasoning_content } : {}),
           })
           continue
         }
@@ -333,8 +250,10 @@ export class Agent {
       restored.push({ role: "user", content: m.content })
     }
 
-    const rebuilt = this.contextManager.onSessionResume(restored, config.sessionID)
-    return rebuilt.length > restored.length ? rebuilt : restored
+    // 修复消息序列（孤立 tool / 乱序 tool），确保发给 LLM 的序列合法
+    const repaired = repairMessageSequence(restored)
+    const rebuilt = this.contextManager.onSessionResume(repaired, config.sessionID)
+    return rebuilt.length > repaired.length ? rebuilt : repaired
   }
 
   /** 阶段 3: 构建系统提示和初始消息列表 */
@@ -421,6 +340,20 @@ export class Agent {
     }
 
     if (turnOutput.signal === "stop") {
+      // LLM 失败或无有效输出时，持久化错误消息，避免历史记录丢失
+      const llmFailedWithError = !!turnOutput.error
+      if (!this.stateMachine.aborted && (llmFailedWithError || (!turnOutput.text && turnOutput.toolCalls.length === 0))) {
+        // 部分输出 + 中途失败：先落部分文本，再补错误提示
+        if (turnOutput.text) {
+          try {
+            await appendMessage(config.sessionID, { role: "assistant", content: turnOutput.text, timestamp: new Date().toISOString(), retryCount: turnOutput.retryCount || 0 })
+          } catch { /* 持久化失败不阻塞 */ }
+        }
+        const msg = `⚠️ 模型调用失败${turnOutput.error ? `：${turnOutput.error}` : ""}，请检查 API Key / 模型配置后重试。`
+        try {
+          await appendMessage(config.sessionID, { role: "assistant", content: msg, timestamp: new Date().toISOString() })
+        } catch { /* 持久化失败不阻塞 */ }
+      }
       yield { type: "finish", reason: this.stateMachine.aborted ? "stopped" : "error", usage: turnOutput.usage }
       return { messages, shouldContinue: false }
     }
@@ -431,6 +364,23 @@ export class Agent {
     }
 
     if (turnOutput.toolCalls.length > 0) {
+      // 收敛控制：连续纯工具轮次（无文本输出）超阈值时，强制 LLM 总结并停止，避免"一直搜索不收敛"
+      // 搜索类工具更激进（4 轮），其他工具 8 轮
+      const allNames = turnOutput.toolCalls.map(tc => tc.name)
+      const isSearchTurn = allNames.some(n => ["web_search", "web_fetch", "web_browse", "web_fetch_url"].includes(n))
+      const MAX_PURE_TOOL_TURNS = isSearchTurn ? 4 : 8
+      if (!turnOutput.text) {
+        this.consecutiveToolTurns++
+      } else {
+        this.consecutiveToolTurns = 0
+      }
+      if (this.consecutiveToolTurns >= MAX_PURE_TOOL_TURNS) {
+        yield { type: "thinking", text: `⛔ 已连续 ${this.consecutiveToolTurns} 轮工具调用但未产生回复，强制总结当前结果并停止。` }
+        messages.push({ role: "user", content: "你已经连续调用工具多次但尚未给出文字回复。请立即基于已有信息总结回答，不要再调用任何工具。" })
+        this.consecutiveToolTurns = 0
+        return { messages, shouldContinue: true }
+      }
+
       for (const tc of turnOutput.toolCalls) allToolCalls.push({ name: tc.name, args: tc.arguments })
       const lastCall = turnOutput.toolCalls[turnOutput.toolCalls.length - 1]
       const { detectDoomLoop } = await import("./utils")
@@ -476,10 +426,24 @@ export class Agent {
     }
 
     if (turnOutput.text || turnOutput.toolCalls.length > 0) {
-      const content = turnOutput.toolCalls.length > 0
-        ? JSON.stringify({ text: turnOutput.text || "", tool_calls: turnOutput.toolCalls.map(tc => ({ id: tc.id, name: tc.name, args: tc.arguments })) })
-        : (turnOutput.text || "")
-      await appendMessage(config.sessionID, { role: "assistant", content, timestamp: new Date().toISOString(), retryCount: turnOutput.retryCount || 0 })
+      // 有工具调用时，assistant + tool 消息已由 turn-runner 按顺序落库，此处跳过避免重复/乱序
+      if (turnOutput.toolCalls.length === 0) {
+        // 纯文本回复：若有 reasoning_content，以 JSON 存储以便历史恢复时回传（DeepSeek thinking 必需）
+        const content = turnOutput.reasoningContent
+          ? JSON.stringify({ text: turnOutput.text || "", reasoning_content: turnOutput.reasoningContent })
+          : (turnOutput.text || "")
+        await appendMessage(config.sessionID, { role: "assistant", content, timestamp: new Date().toISOString(), retryCount: turnOutput.retryCount || 0 })
+        // 携带 reasoning_content 到内存消息，保证下一轮能回传（DeepSeek thinking 必需）
+        if (turnOutput.reasoningContent) {
+          messages.push({
+            role: "assistant",
+            content: turnOutput.text || "",
+            reasoning_content: turnOutput.reasoningContent,
+          })
+        } else if (turnOutput.text) {
+          messages.push({ role: "assistant", content: turnOutput.text })
+        }
+      }
     }
 
     const { messages: postToolMessages, didRebuild, reason } = await this.contextManager.checkAndRebuild(messages, config.sessionID)
@@ -495,11 +459,26 @@ export class Agent {
   /** 阶段 5: 清理 */
   private async finalizeRun(config: AgentConfig): Promise<void> {
     pluginHooks.emit("session_end", { sessionID: config.sessionID, workspace: config.workspace })
+    // pre_llm 监听器由 run() 的 finally 统一移除（防泄漏），这里只做资源关闭
     await this.contextManager.shutdown()
     this.memoryManager.shutdown().catch(() => {})
   }
 
   async *run(
+    userMessage: string,
+    history: LLMMessage[],
+    config: AgentConfig,
+  ): AsyncGenerator<AgentEvent> {
+    try {
+      yield* this._runCore(userMessage, history, config)
+    } finally {
+      // 无论正常结束、中断、abort 或异常，都确保清理（移除插件监听器，防止累积泄漏）
+      this._preLLMOff?.()
+      this._preLLMOff = null
+    }
+  }
+
+  private async *_runCore(
     userMessage: string,
     history: LLMMessage[],
     config: AgentConfig,
@@ -532,6 +511,7 @@ export class Agent {
       let step = 0
       let hasLastAssistant = false
       const allToolCalls: Array<{ name: string; args: string }> = []
+      this.consecutiveToolTurns = 0
       // 全局 Token 预算累计（跨输入队列）
       const maxTotalTokens = config.maxTotalTokens || 0
       let totalTokensUsed = this.runTotalTokens
@@ -541,12 +521,11 @@ export class Agent {
         step++
 
         if (step === maxSteps - 1) {
+          // 最后一轮前注入警告，本轮正常调用 LLM（不再 continue 浪费一轮）
           yield { type: "thinking", text: "⚠️ 已达步数上限，LLM 正在做总结..." }
           messages.push({ role: "user", content: MAX_STEPS_WARNING })
-          continue
-        }
-        if (step > maxSteps) {
-          yield { type: "thinking", text: "⛔ 超出步数上限，强制终止..." }
+        } else if (step >= maxSteps) {
+          yield { type: "thinking", text: "⛔ 超出步数上限，强制总结..." }
           messages.push({ role: "user", content: MAX_STEPS_REACHED })
         }
 
@@ -555,6 +534,7 @@ export class Agent {
             step, maxSteps, ngramBuffer: this.ngramBuffer,
             activeGoal: this.goalJudge.getActiveGoal(), toolErrorCount: 0,
             toolCallCount: messages.filter(m => Array.isArray(m.content) && m.content.some((p: any) => p.type === "tool-call")).length,
+            userIntent: detectUserIntent(currentInput.message),
           })
           if (isTerminal(stepAction)) break
           if (isRecovery(stepAction)) {
@@ -591,6 +571,8 @@ export class Agent {
           config: { ...llmConfig, maxContextTokens: config.maxContextTokens, permissions: config.permissions, onPermissionSave: config.onPermissionSave, autoAcceptPermissions: config.autoAcceptPermissions, fallbacks: config.fallbacks },
           deps: { registry: this.registry, stateMachine: this.stateMachine, approvalStore: this.approvalStore, orchestrator: this.orchestrator },
           ctx,
+          // 最后一步禁用所有工具定义，强制纯文本收尾（参考 OpenCode MAX_STEPS_PROMPT）
+          ...(step >= maxSteps ? { tools: {} } : {}),
         }
 
         const turnOutput = config.maxMode
@@ -600,6 +582,21 @@ export class Agent {
         const { messages: newMessages, shouldContinue } = yield* this.handleTurnOutput(turnOutput, messages, config, currentInput, allToolCalls)
         messages = newMessages
         if (!shouldContinue) return
+
+        // ── 成本/用量累加到会话（参考 opencode Session.Info.cost/tokens） ──
+        if (turnOutput.usage) {
+          const pricing = getModelPricing(config.model)
+          const result = calculateCost(turnOutput.usage, pricing)
+          const { accumulateSessionUsage } = await import("../session/manager")
+          await accumulateSessionUsage(config.sessionID, {
+            cost: result.cost,
+            inputTokens: result.inputTokens,
+            outputTokens: result.outputTokens,
+            reasoningTokens: result.reasoningTokens,
+            cacheReadTokens: result.cacheReadTokens,
+            cacheWriteTokens: result.cacheWriteTokens,
+          })
+        }
 
         // ── 全局 Token 预算闸门 ──
         if (turnOutput.usage?.totalTokens) {
@@ -647,11 +644,14 @@ function hasToolCalls(content: string | any[]): boolean {
   return false
 }
 
-function tryParseAssistantPayload(content: string): { text: string; tool_calls: Array<{ id: string; name: string; args: string }> } | null {
+function tryParseAssistantPayload(content: string): { text: string; tool_calls: Array<{ id: string; name: string; args: string }>; reasoning_content?: string } | null {
   try {
     const parsed = JSON.parse(content)
     if (parsed && typeof parsed === "object" && Array.isArray(parsed.tool_calls)) {
-      return { text: parsed.text || "", tool_calls: parsed.tool_calls }
+      return { text: parsed.text || "", tool_calls: parsed.tool_calls, reasoning_content: parsed.reasoning_content }
+    }
+    if (parsed && typeof parsed === "object" && "text" in parsed && "reasoning_content" in parsed) {
+      return { text: parsed.text || "", tool_calls: [], reasoning_content: parsed.reasoning_content }
     }
   } catch { /* json parse fallback */ }
   return null
@@ -662,4 +662,28 @@ function getNudgeMessage(action: { type: string; nudge?: string; reason?: string
   if (action.type === "text-repeat") return "🔁 检测到重复输出，正在尝试不同方式..."
   if (action.type === "auto-continue") return `⏩ 自动续跑中 (${(action as any).reason || ""})...`
   return "⏳ 处理中..."
+}
+
+/**
+ * 检测用户意图：区分"纯聊天"与"需要工具"。
+ * - 简单寒暄/概念问答 → chat_only（不应误调工具）
+ * - 涉及文件/代码/数据/网络 → requires_tool
+ * 参考 kimi.txt:7 的问答-任务区分逻辑。
+ */
+function detectUserIntent(message: string): "requires_tool" | "chat_only" | undefined {
+  if (!message) return undefined
+  const text = message.trim()
+  const chatOnlyPatterns = [
+    /^(你好|嗨|hi|hello|哈喽|早上好|下午好|晚上好|谢谢|再见|拜拜|在吗|你是谁|你能做什么|介绍一下你自己)\s*[!！。.]*$/i,
+  ]
+  if (chatOnlyPatterns.some(p => p.test(text))) return "chat_only"
+
+  // 明确需要工具的迹象
+  const toolIndicators = [
+    /(读|查|看|打开|修改|编辑|创建|写|删除|搜索|找|统计|分析|比较|运行|执行|安装|下载|检查|测试|部署|构建|打包|git|npm|python|node|文件|目录|代码|报错|错误|日志|数据库|接口|api|url|网页|新闻|数据)/i,
+  ]
+  if (toolIndicators.some(p => p.test(text))) return "requires_tool"
+
+  // 抽象概念问答（如"什么是递归"）→ 需要工具但可能只是解释
+  return undefined
 }

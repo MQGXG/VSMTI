@@ -1,4 +1,5 @@
 import type { LLMMessage, LLMEvent } from "../schema"
+import type { CachePolicy } from "../schema/options"
 
 export interface Endpoint {
   baseUrl: string
@@ -19,6 +20,7 @@ export interface Protocol {
     messages: LLMMessage[]
     tools?: Array<{ name: string; description: string; parameters: Record<string, unknown> }>
     generation?: Record<string, unknown>
+    cache?: CachePolicy
   }): Record<string, unknown>
 
   deserializeEvent(data: unknown): LLMEvent | null
@@ -49,6 +51,7 @@ export interface RouteInstance {
     messages: LLMMessage[]
     tools?: Array<{ name: string; description: string; parameters: Record<string, unknown> }>
     generation?: Record<string, unknown>
+    cache?: CachePolicy
   }): AsyncGenerator<LLMEvent>
 
   complete(request: {
@@ -56,6 +59,7 @@ export interface RouteInstance {
     messages: LLMMessage[]
     tools?: Array<{ name: string; description: string; parameters: Record<string, unknown> }>
     generation?: Record<string, unknown>
+    cache?: CachePolicy
   }): Promise<{ content: string; toolCalls: Array<{ id: string; name: string; args: string }> }>
 
   with(overrides: Partial<{

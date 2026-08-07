@@ -10,20 +10,22 @@ const execFileAsync = promisify(execFile)
 
 export const codeExecTool = make({
   name: "run_code",
-  description: "Execute Python code in a temporary sandbox. Returns output or errors. Use when: calculating something, testing logic, processing data, running algorithms.",
+  description: "Execute code in a temporary sandbox (Python or Node.js). Returns output or errors. Use when: calculating something, testing logic, processing data, running algorithms. Choose language based on task: python for data analysis, node for JS/TS logic.",
   inputSchema: z.object({
-    code: z.string().describe("Python code to execute"),
+    code: z.string().describe("Code to execute"),
+    language: z.enum(["python", "node"]).optional().describe("Runtime: python (default) or node"),
   }),
   outputSchema: z.string(),
   permission: "run_code",
 
   async execute(input, _ctx) {
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "omni-"))
-    const filePath = path.join(tmpDir, "script.py")
+    const isNode = input.language === "node"
+    const filePath = path.join(tmpDir, isNode ? "script.mjs" : "script.py")
     await fs.writeFile(filePath, input.code, "utf-8")
 
     try {
-      const { stdout, stderr } = await execFileAsync("python", [filePath], {
+      const { stdout, stderr } = await execFileAsync(isNode ? process.execPath : "python", [filePath], {
         timeout: 30000,
         maxBuffer: 1024 * 1024,
         env: { ...process.env, PYTHONIOENCODING: "utf-8" },

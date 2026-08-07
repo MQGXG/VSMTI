@@ -2,6 +2,7 @@ import { createLLMClient, type LLMToolSet, type LLMMessage } from "../llm/client
 import type { AgentEvent } from "../types"
 import { runLLMTurn, type LLMTurnConfig } from "./turn"
 import { detectTextNgramRepeat } from "./utils"
+import { sanitizeMessagesForLLM } from "../shared/message-utils"
 
 export interface MaxModeConfig {
   n: number
@@ -62,7 +63,7 @@ async function runCandidate(
         options: input.config.options,
       })
 
-      const stream = client.stream({ messages: input.messages, tools: input.tools })
+      const stream = client.stream({ messages: sanitizeMessagesForLLM(input.messages), tools: input.tools })
       let text = ""
       const toolCalls: Array<{ id: string; name: string; arguments: string }> = []
       let ngramWindow = ""

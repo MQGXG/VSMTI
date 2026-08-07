@@ -98,8 +98,11 @@ export class PermissionSet {
     return result === "allow" || result === "ask"
   }
 
-  needsApproval(action: string, resource?: string): boolean {
-    if (resource !== undefined) return this.evaluateResource(action, resource) === "ask"
+  needsApproval(action: string, resource?: string | string[]): boolean {
+    if (resource !== undefined) {
+      const resList = Array.isArray(resource) ? resource : [resource]
+      return this.evaluateResources(action, resList) === "ask"
+    }
     return this.evaluate(action) === "ask"
   }
 
@@ -128,22 +131,80 @@ export class PermissionSet {
   /**
    * 命令级别权限评估（新）
    * 同时匹配 action（工具名）和 resource（命令/路径内容）
+   * 支持 OpenCode 风格复合规则格式 `action:resource`（如 `edit:src/**`）
    * 用于 permission-gate.ts 的精确权限检查
    */
   evaluateResource(action: string, resource: string): "allow" | "deny" | "ask" {
-    const cacheKey = `${action}::${resource}`
+    return this.evaluateResources(action, [resource])
+  }
+
+  /**
+   * 精细化权限评估 — 多资源匹配
+   * 规则优先级（last-match-wins）：
+   * 1. 复合格式规则 `edit:src/**` — 要求 action + 任一资源都命中
+   * 2. 传统规则 `{ action: "edit", resource: "src/**" }` — action 命中 + 任一资源命中
+   */
+  evaluateResources(action: string, resources: string[]): "allow" | "deny" | "ask" {
+    const cacheKey = `${action}::${resources.join("|")}`
     const cached = this.matchCache.get(cacheKey)
     if (cached !== undefined) return cached
 
+    const resList = resources.filter((r): r is string => typeof r === "string" && r.length > 0)
+
     for (let i = this.rules.length - 1; i >= 0; i--) {
       const rule = this.rules[i]
+
+      // 复合格式规则：`edit:src/**` — action 中冒号前的部分是工具名，冒号后是资源模式
+      const colonIdx = rule.action.indexOf(":")
+      if (colonIdx > 0) {
+        const ruleAction = rule.action.slice(0, colonIdx)
+        const ruleResource = rule.action.slice(colonIdx + 1)
+        if (!wildcardMatch(ruleAction, action)) continue
+        if (resList.length === 0) continue
+        if (!resList.some(r => wildcardMatch(ruleResource, r))) continue
+        this.matchCache.set(cacheKey, rule.effect)
+        return rule.effect
+      }
+
+      // 传统格式规则
       if (!wildcardMatch(rule.action, action)) continue
-      if (rule.resource !== "*" && !wildcardMatch(rule.resource, resource)) continue
+      if (rule.resource !== "*" && !resList.some(r => wildcardMatch(rule.resource, r))) continue
       this.matchCache.set(cacheKey, rule.effect)
       return rule.effect
     }
+
     this.matchCache.set(cacheKey, "allow")
     return "allow"
+  }
+
+  /**
+   * 清空匹配缓存（规则变更后调用）
+   */
+  invalidateCache(): void {
+    this.matchCache.clear()
+  }
+
+  /**
+   * 追加规则（精细化管理入口，追加后自动失效缓存）
+   */
+  addRule(rule: PermissionRule): void {
+    this.rules.push(rule)
+    this.invalidateCache()
+  }
+
+  /**
+   * 移除规则（按 action+resource+effect 精确匹配）
+   */
+  removeRule(rule: PermissionRule): boolean {
+    const before = this.rules.length
+    this.rules = this.rules.filter(r =>
+      !(r.action === rule.action && r.resource === rule.resource && r.effect === rule.effect)
+    )
+    if (this.rules.length !== before) {
+      this.invalidateCache()
+      return true
+    }
+    return false
   }
 
   getAll(): PermissionRule[] {

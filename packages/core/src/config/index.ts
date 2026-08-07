@@ -193,13 +193,22 @@ export function getConfigForRenderer(workspace?: string): {
   apiUrl: string
   mode: string
   apiKeyFrom: "env" | "file" | "none"
+  apiKey?: string
+  headers?: Record<string, string>
+  options?: Record<string, unknown>
 } {
   const config = loadConfig(workspace)
   const envConfig = loadEnvConfig()
 
   let apiKeyFrom: "env" | "file" | "none" = "none"
-  if (envConfig.apiKey) apiKeyFrom = "env"
-  else if (config.apiKey) apiKeyFrom = "file"
+  let apiKey: string | undefined
+  if (envConfig.apiKey) {
+    apiKeyFrom = "env"
+    apiKey = envConfig.apiKey
+  } else if (config.apiKey) {
+    apiKeyFrom = "file"
+    apiKey = config.apiKey
+  }
 
   return {
     provider: config.provider || "",
@@ -207,6 +216,9 @@ export function getConfigForRenderer(workspace?: string): {
     apiUrl: config.apiUrl || "",
     mode: config.mode || "",
     apiKeyFrom,
+    apiKey,
+    headers: config.headers,
+    options: config.options,
   }
 }
 

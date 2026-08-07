@@ -39,6 +39,7 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, "index.html"),
           pet: resolve(__dirname, "apps/desktop/pet.html"),
+          "widget-test": resolve(__dirname, "apps/desktop/widget-test.html"),
         },
       },
     },

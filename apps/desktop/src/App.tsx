@@ -72,11 +72,22 @@ export function App() {
   }, []);
   useEffect(() => { if (!activeProject && projects.length > 0) setActiveProject(projects[0].project_id); }, [projects, activeProject]);
 
-  // 恢复上次活跃会话
+  // 恢复上次活跃会话（校验会话仍存在，避免恢复已删除会话导致空历史/孤儿数据）
   useEffect(() => {
     if (activeProject) {
       const saved = localStorage.getItem("last_session_" + activeProject);
-      if (saved) setActiveSession(saved);
+      if (saved) {
+        window.electronAPI.ts.listSessions(activeProject)
+          .then((sessions) => {
+            const exists = sessions?.some((s: any) => s.session_id === saved);
+            if (exists) {
+              setActiveSession(saved);
+            } else {
+              localStorage.removeItem("last_session_" + activeProject);
+            }
+          })
+          .catch(() => setActiveSession(saved));
+      }
     }
   }, [activeProject]);
   useEffect(() => {

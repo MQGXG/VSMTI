@@ -30,7 +30,7 @@ export interface ElectronAPI {
 
   // 配置系统（JSON 文件 + 环境变量）
   config: {
-    get: (workspace?: string) => Promise<{ provider: string; model: string; apiUrl: string; mode: string; apiKeyFrom: "env" | "file" | "none" }>;
+    get: (workspace?: string) => Promise<{ provider: string; model: string; apiUrl: string; mode: string; apiKeyFrom: "env" | "file" | "none"; apiKey?: string; headers?: Record<string, string>; options?: Record<string, unknown> }>;
     save: (config: Record<string, unknown>) => Promise<void>;
     getProviderCatalog: () => Promise<Array<{
       id: string; label: string; website?: string; defaultBaseUrl: string; authType: string
@@ -45,9 +45,10 @@ export interface ElectronAPI {
     updateProject: (projectId: string, data: { name?: string; workspace_path?: string }) => Promise<void>;
     deleteProject: (projectId: string) => Promise<void>;
     createSession: (projectId: string, title?: string) => Promise<{ session_id: string; title: string; kind: string; workspace_path: string; message_count: number; updated_at: string }>;
-    listSessions: (projectId?: string) => Promise<Array<{ session_id: string; title: string; kind: string; workspace_path: string; message_count: number; updated_at: string }>>;
+    listSessions: (projectId?: string) => Promise<Array<{ session_id: string; title: string; kind: string; workspace_path: string; message_count: number; updated_at: string; cost?: number; tokens?: { input: number; output: number; cacheRead: number; cacheWrite: number } }>>;
     getSessionMessages: (sessionId: string) => Promise<Array<{ id: number; role: string; content: string }>>;
     deleteSession: (sessionId: string) => Promise<void>;
+    deleteMessage: (sessionId: string, messageId: number) => Promise<void>;
     updateSession: (sessionId: string, data: { title?: string }) => Promise<void>;
     searchMessages: (query: string) => Promise<Array<{ session_id: string; session_title: string; message: { role: string; content: string; timestamp: string }; context: string }>>;
     restoreSnapshot: (snapshotId: string, workspace: string) => Promise<string[]>;

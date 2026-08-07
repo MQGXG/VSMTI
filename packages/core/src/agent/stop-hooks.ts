@@ -23,7 +23,10 @@ export type StopHook = (ctx: StopContext) => Promise<StopResult>
 const hooks: StopHook[] = []
 
 export function registerStopHook(hook: StopHook): void {
-  hooks.push(hook)
+  // 幂等注册：相同 hook 不重复添加，防止多次 new Agent 导致钩子累积泄漏
+  if (!hooks.includes(hook)) {
+    hooks.push(hook)
+  }
 }
 
 export async function runStopHooks(ctx: StopContext): Promise<StopResult> {

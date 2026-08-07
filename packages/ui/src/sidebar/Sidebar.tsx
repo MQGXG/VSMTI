@@ -39,6 +39,12 @@ function formatTime(iso: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+function formatCost(cost?: number): string {
+  if (!cost || cost <= 0) return "";
+  if (cost < 0.01) return `$${cost.toFixed(4)}`;
+  return `$${cost.toFixed(2)}`;
+}
+
 function getTimeGroup(iso: string): string {
   if (!iso) return "其他";
   const d = new Date(iso);
@@ -304,7 +310,10 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
                         </div>
                         <div className="min-w-0 flex-1">
                           <SessionTitle session={session} onRename={handleRename} onSessionChange={onSessionChange} />
-                          <div className="text-[10px] mt-0.5" style={{ color: "var(--fg-tertiary)" }}>{session.message_count || 0} 条 · {formatTime(session.updated_at)}</div>
+                          <div className="text-[10px] mt-0.5" style={{ color: "var(--fg-tertiary)" }}>
+                            {session.message_count || 0} 条 · {formatTime(session.updated_at)}
+                            {session.cost ? ` · ${formatCost(session.cost)}` : ""}
+                          </div>
                         </div>
                       </div>
                     </button>

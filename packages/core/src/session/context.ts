@@ -1,10 +1,11 @@
 import type { CheckpointProvider } from "../memory/checkpoint-provider"
 import type { MemoryManager } from "../memory/manager"
 import { needsContextRebuild, rebuildContextFromCheckpoint, truncateToBudget, estimateTokens, type CheckpointData } from "../shared/message-utils"
-import type { LLMMessage, ContentPart, ToolResultPart } from "../llm/schema/messages"
+import type { LLMMessage, ToolResultPart } from "../llm/schema/messages"
 import { compactMessages, type CompactLevel } from "./compaction"
-import { createLLMClient } from "../llm/client"
 import { IncrementalSummarizer } from "./structured-summary"
+import { ToolOutputStore } from "../tools/shared/tool-output-store"
+import { ContextEpochTracker, getContextEpochTracker, type ContextEpoch } from "./context-epoch"
 import * as fs from "fs"
 import * as path from "path"
 
@@ -57,6 +58,7 @@ export class ContextManager {
   private llmConfig: { apiKey: string; apiUrl: string; model: string; provider: string } | null = null
   private workspace = ""
   private summarizer = new IncrementalSummarizer()
+  private epochTracker = getContextEpochTracker()
 
   // ─── 构造 & 初始化 ─────────────────────────────
   constructor(
@@ -92,6 +94,45 @@ export class ContextManager {
 
   buildSystemPrompt(): string {
     return this.memoryManager.buildSystemPrompt()
+  }
+
+  // ── Context Epoch 集成 ─────────────────────────────────
+  /**
+   * 开始新 Epoch（通常在系统提示基线变化或事件数跨阈值时调用）
+   * @param sessionID 会话 ID
+   * @param baseline 系统提示基线
+   * @param latestSeq 当前事件序列号（无 EventStore 时传 turnCount）
+   * @param sourceSnapshot Source fingerprints（来自 SourceManager）
+   */
+  beginEpoch(
+    sessionID: string,
+    baseline: string,
+    latestSeq?: number,
+    sourceSnapshot?: Record<string, unknown>,
+  ): ContextEpoch {
+    const seq = latestSeq ?? this.turnCount
+    const fingerprints = sourceSnapshot as unknown as ContextEpoch["sourceSnapshot"] | undefined
+    return this.epochTracker.begin(sessionID, baseline, seq, fingerprints)
+  }
+
+  /** 获取当前 Epoch */
+  getCurrentEpoch(sessionID: string): ContextEpoch | undefined {
+    return this.epochTracker.current(sessionID)
+  }
+
+  /** 判断是否应开启新 Epoch（暴露给 Agent 主循环） */
+  shouldBeginEpoch(sessionID: string, latestSeq?: number, baselineChanged = false): boolean {
+    return this.epochTracker.shouldBegin(sessionID, latestSeq ?? this.turnCount, baselineChanged)
+  }
+
+  /** 当前 Epoch 与最新状态之间的增量事件数 */
+  getEpochDelta(sessionID: string, latestSeq?: number): number {
+    return this.epochTracker.delta(sessionID, latestSeq ?? this.turnCount)
+  }
+
+  /** 获取 Epoch 历史（供 UI 展示） */
+  getEpochHistory(sessionID: string): ContextEpoch[] {
+    return this.epochTracker.history(sessionID)
   }
 
   async prepareContext(
@@ -349,18 +390,7 @@ export class ContextManager {
   }
 
   private persistOutput(toolCallId: string, output: string): string {
-    if (output.length <= 30000) return output
-    try {
-      const dir = path.join(this.workspace, ".task_outputs", "tool-results")
-      fs.mkdirSync(dir, { recursive: true })
-      const filePath = path.join(dir, `${toolCallId}.txt`)
-      if (!fs.existsSync(filePath)) {
-        fs.writeFileSync(filePath, output, "utf-8")
-      }
-      return `<persisted-output>\nFull: ${filePath}\nPreview:\n${output.slice(0, 2000)}\n</persisted-output>`
-    } catch {
-      return output
-    }
+    return ToolOutputStore.persistOutput(this.workspace, toolCallId, output)
   }
 
   // ── L2: 旧结果占位（按 token 预算） ──────────────────────
@@ -392,7 +422,16 @@ export class ContextManager {
     const summary = await this.summarizer.update(messages)
     const summaryText = this.summarizer.formatSummary(summary)
 
-    return [{ role: "user" as const, content: `[Compacted]\n\n${summaryText}` }]
+    // 保留最近消息，避免摘要后丢失即时上下文
+    const keepRecentCount = Math.max(this.config.tailTurns * 2, 2)
+    const recent = messages.slice(-keepRecentCount)
+    const system = messages.find(m => m.role === "system")
+
+    const result: LLMMessage[] = []
+    if (system) result.push(system)
+    result.push({ role: "user" as const, content: `[Compacted]\n\n${summaryText}` })
+    result.push(...recent)
+    return result
   }
 
   /** 暴露结构化摘要给外部（如 CheckpointProvider） */
@@ -410,81 +449,29 @@ export class ContextManager {
     }
   }
 
-  private async summarizeHistory(messages: LLMMessage[]): Promise<string> {
-    if (!this.llmConfig) return "(no LLM config for summary)"
-
-    const conversation = messages.map(m => {
-      const content = typeof m.content === "string"
-        ? m.content
-        : m.content.map((p: ContentPart) => {
-            if (p.type === "text") return p.text
-            if (p.type === "tool-call") return `[Tool: ${p.toolName}]`
-            if (p.type === "tool-result") {
-              const out = typeof p.output === "string" ? p.output : p.output?.value || ""
-              return `[Result: ${out.slice(0, 200)}]`
-            }
-            return ""
-          }).join("\n")
-      return `${m.role}: ${content.slice(0, 500)}`
-    }).join("\n").slice(0, 80000)
-
-    const prompt: LLMMessage[] = [
-      {
-        role: "user",
-        content: `Summarize this coding-agent conversation so work can continue.\nPreserve: 1. current goal, 2. key findings/decisions, 3. files read/changed, 4. remaining work, 5. user constraints.\nBe compact but concrete.\n\n${conversation}`,
-      },
-    ]
-
-    try {
-      const client = createLLMClient({
-        provider: this.llmConfig.provider || "openai",
-        model: this.llmConfig.model,
-        apiKey: this.llmConfig.apiKey,
-        apiUrl: this.llmConfig.apiUrl,
-      })
-
-      const result = await client.complete({ messages: prompt })
-      const text = typeof result.content === "string"
-        ? result.content
-        : Array.isArray(result.content)
-          ? (result.content as unknown as ContentPart[]).filter((p): p is Extract<ContentPart, { type: "text" }> => p.type === "text").map((p) => p.text).join("")
-          : ""
-      return text.trim() || "(empty summary)"
-    } catch {
-      return "(summary failed)"
-    }
-  }
-
-  // ── 应急压缩 ──────────────────────────────────────────────
   // ─── 紧急压缩 ─────────────────────────────────
   async reactiveCompact(messages: LLMMessage[]): Promise<LLMMessage[]> {
     this.writeTranscript(messages)
 
-    // 优先使用 Structured Summary 的溢出压缩
-    const summary = this.summarizer.getCurrentSummary()
+    // 使用 Structured Summary 的溢出压缩（单一 LLM 摘要路径）
+    let summary = this.summarizer.getCurrentSummary()
+
+    // 无既有摘要时，先走一次 LLM 结构化摘要（仅当 LLM 可用）
+    if (!summary && this.llmConfig) {
+      try {
+        summary = await this.summarizer.update(messages)
+      } catch {
+        // 摘要失败则退化为简单截断
+      }
+    }
+
     if (summary) {
       return this.summarizer.overflowCompact(messages, summary, this.config.maxContextTokens)
     }
 
-    // fallback 到旧路径
+    // fallback：无 LLM 时保留最近消息 + 简单占位
     const tailStart = Math.max(0, messages.length - 5)
-
-    let tailStartAdj = tailStart
-    if (tailStartAdj > 0 && tailStartAdj < messages.length) {
-      const msg = messages[tailStartAdj]
-      if (msg.role === "user" && typeof msg.content !== "string" && msg.content.some((p: ContentPart) => p.type === "tool-result")) {
-        const prev = messages[tailStartAdj - 1]
-        if (prev.role === "assistant" && typeof prev.content !== "string" && prev.content.some((p: ContentPart) => p.type === "tool-call")) {
-          tailStartAdj--
-        }
-      }
-    }
-
-    const legacySummary = await this.summarizeHistory(messages.slice(0, tailStartAdj))
-    return [
-      { role: "user" as const, content: `[Reactive compact]\n\n${legacySummary}` },
-      ...messages.slice(tailStartAdj),
-    ]
+    return messages.slice(tailStart)
   }
 
   // ─── 外部接口 ─────────────────────────────────

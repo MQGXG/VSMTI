@@ -7,11 +7,13 @@
  */
 
 import { getToolResultOutput, type ToolResultOutput } from "../llm/schema/messages"
+import { estimateTextTokens } from "../shared/message-utils"
 
 export type CompactLevel = "none" | "l1_snip" | "l2_micro" | "l3_auto"
 
 type ContentPart =
   | { type: "text"; text: string }
+  | { type: "reasoning"; text: string }
   | { type: "tool-result"; output: ToolResultOutput }
   | { type: "tool-call"; toolCallId: string; toolName: string; args: Record<string, unknown> }
 
@@ -19,6 +21,7 @@ interface Message {
   role: "system" | "user" | "assistant" | "tool"
   content: string | ContentPart[]
   tool_call_id?: string
+  reasoning_content?: string
 }
 
 interface CompactionConfig {
@@ -42,9 +45,9 @@ const DEFAULT_CONFIG: CompactionConfig = {
   microThreshold: 10,
 }
 
-// 估算 token 数（粗略）
+// 估算 token 数（语言感知：中文 0.6/字，英文 0.3/字）
 function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 4)
+  return estimateTextTokens(text)
 }
 
 function getMessageTokens(msg: Message): number {

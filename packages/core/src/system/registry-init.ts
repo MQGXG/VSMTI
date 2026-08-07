@@ -9,9 +9,15 @@ import {
   grepTool, globTool, codeExecTool, bashTool, editFileTool,
 } from "../tools/index"
 import { skillsListTool, skillViewTool } from "../skill/skill-tools"
+import { createXlsxTool } from "../tools/core/create-xlsx"
+import { createPptxTool } from "../tools/core/create-pptx"
+import { createWebpageTool } from "../tools/core/create-webpage"
+import { createMockupTool } from "../tools/core/create-mockup"
+import { createSvgTool } from "../tools/core/create-svg"
 import { memorySearchTool, memoryRecallTool } from "../tools/knowledge/memory"
 import { dataAnalysisTool } from "../tools/knowledge/data-analysis"
 import { webBrowseTool } from "../tools/knowledge/web-browse"
+import { createChartTool } from "../tools/knowledge/create-chart"
 import { cronTool } from "../tools/orchestrate/cron-tool"
 import { taskTool } from "../tools/orchestrate/task-tool"
 import { delegateTaskTool } from "../tools/orchestrate/delegate-task"
@@ -46,6 +52,7 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(skillViewTool)
   registry.register(dataAnalysisTool)
   registry.register(webBrowseTool)
+  registry.register(createChartTool)
   registry.register(cronTool)
   registry.register(taskTool)
   registry.register(delegateTaskTool)
@@ -69,6 +76,11 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(workflowRunTool)
   registry.register(applyPatchTool)
   registry.register(todoTool)
+  registry.register(createXlsxTool)
+  registry.register(createPptxTool)
+  registry.register(createWebpageTool)
+  registry.register(createMockupTool)
+  registry.register(createSvgTool)
   return registry
 }
 

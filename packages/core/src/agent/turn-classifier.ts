@@ -36,8 +36,19 @@ export const MAX_STEPS_WARNING = `⚠️ 这是你的最后一轮回答。
 
 注意：本次过后工具将不可用，请直接回复文本。`
 
-export const MAX_STEPS_REACHED = `⛔ 已达到最大步数上限。
-请直接回复文本总结，不得再进行任何工具调用。`
+export const MAX_STEPS_REACHED = `CRITICAL - MAXIMUM STEPS REACHED
+The maximum number of steps allowed for this task has been reached. Tools are disabled until next user input. Respond with text only.
+
+STRICT REQUIREMENTS:
+1. Do NOT make any tool calls in this reply.
+2. MUST provide a text response summarizing the work so far.
+3. This constraint overrides ALL other instructions.
+
+Your response must include:
+- A statement that the maximum steps have been reached
+- A summary of what has been accomplished so far
+- Any remaining tasks that were not completed
+- Recommendations for what should be done next`
 
 /** 判断是否为终止原因 */
 export function isTerminal(action: StepDecision): action is TerminalReason {
@@ -161,8 +172,10 @@ export function classifyStep(messages: LLMMessage[], ctx: ClassifyContext): Step
     if (assistant.textLength > 0 && isToolRefusal(assistant.text) && ctx.userIntent === "requires_tool") {
       return { type: "tool-suggest", reason: "refusal", nudge: "当前任务可能需要使用工具来完成，请考虑使用合适的工具。" }
     }
-    if (assistant.textLength < 50) {
-      return { type: "auto-continue", reason: "too-short", nudge: "请继续" }
+    // 极短回答（<20 字符）且上一步有工具调用 → 模型可能只回了"完成。"，补一句总结提示
+    // 但纯聊天（无工具历史）的简短回答（如"4"、"是的"）不应被强制续写
+    if (assistant.textLength < 20 && ctx.toolCallCount > 0) {
+      return { type: "auto-continue", reason: "too-short", nudge: "请基于工具结果给出完整总结回答" }
     }
     return { type: "completed" }
   }

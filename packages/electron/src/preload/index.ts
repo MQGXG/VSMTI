@@ -40,6 +40,7 @@ const electronAPI = {
     listSessions: (projectId?: string) => ipcRenderer.invoke("ts:listSessions", projectId),
     getSessionMessages: (sessionId: string) => ipcRenderer.invoke("ts:getSessionMessages", sessionId),
     deleteSession: (sessionId: string) => ipcRenderer.invoke("ts:deleteSession", sessionId),
+    deleteMessage: (sessionId: string, messageId: number) => ipcRenderer.invoke("ts:deleteMessage", sessionId, messageId),
     updateSession: (sessionId: string, data: { title?: string }) => ipcRenderer.invoke("ts:updateSession", sessionId, data),
     searchMessages: (query: string) => ipcRenderer.invoke("ts:searchMessages", query),
     restoreSnapshot: (snapshotId: string, workspace: string) => ipcRenderer.invoke("ts:restoreSnapshot", snapshotId, workspace),
@@ -174,6 +175,31 @@ const electronAPI = {
 
   live2d: {
     toggle: (enabled: boolean) => ipcRenderer.invoke("live2d:toggle", enabled),
+  },
+
+  // 桌面悬浮球
+  floatingBall: {
+    toggle: (enabled: boolean) => ipcRenderer.invoke("floatingBall:toggle", enabled),
+    wake: () => ipcRenderer.send("floatingBall:wake"),
+    hide: () => ipcRenderer.send("floatingBall:hide"),
+    updateConfig: (config: Record<string, unknown>) => ipcRenderer.invoke("floatingBall:updateConfig", config),
+    onStateChange: (callback: (state: { state: string; reason: string }) => void) => {
+      const handler = (_event: IpcRendererEvent, state: { state: string; reason: string }) => callback(state)
+      ipcRenderer.on("floatingBall:stateChange", handler)
+      return () => ipcRenderer.removeListener("floatingBall:stateChange", handler)
+    },
+    // 悬浮球 UI 直接调用的方法
+    dragStart: (point: { x: number; y: number }) => ipcRenderer.send("floating-ball:drag-start", point),
+    dragMove: (point: { x: number; y: number }) => ipcRenderer.send("floating-ball:drag-move", point),
+    dragEnd: () => ipcRenderer.send("floating-ball:drag-end"),
+    click: () => ipcRenderer.send("floating-ball:click"),
+    closePanel: () => ipcRenderer.send("floating-ball:close-panel"),
+    sendMessage: (text: string) => ipcRenderer.send("floating-ball:send-message", text),
+    onMessage: (callback: (data: { role: string; content: string }) => void) => {
+      const handler = (_event: IpcRendererEvent, data: { role: string; content: string }) => callback(data)
+      ipcRenderer.on("floating-ball:message", handler)
+      return () => ipcRenderer.removeListener("floating-ball:message", handler)
+    },
   },
 };
 

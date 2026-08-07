@@ -106,6 +106,14 @@ export function createDefaultRegistry(): AgentProfileRegistry {
       { action: "bash", resource: "*", effect: "ask" },
       { action: "code_exec", resource: "*", effect: "ask" },
     ],
+    // 日常问答排除重型编排工具，避免纯聊天场景下模型面对过多工具定义而误调用
+    toolAllowlist: [
+      "read_file", "write_file", "edit_file", "list_files", "grep", "glob", "code_search",
+      "web_search", "web_fetch", "web_browse", "data_analysis", "create_chart",
+      "bash", "run_code", "git_status", "git_diff", "git_log", "git_commit",
+      "create_docx", "create_xlsx", "create_pptx", "create_webpage", "create_mockup", "create_svg", "memory_search", "memory_recall", "apply_patch",
+      "question", "todo_write", "search_history", "skills_list", "skill_view",
+    ],
   })
 
   registry.registerBuiltin({

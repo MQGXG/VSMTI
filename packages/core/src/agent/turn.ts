@@ -1,6 +1,7 @@
 import { createLLMClient, type LLMToolSet, type LLMMessage } from "../llm/client"
 import type { AgentEvent } from "../types"
 import type { ContextManager } from "../session/context"
+import { sanitizeMessagesForLLM } from "../shared/message-utils"
 
 export interface LLMTurnConfig {
   provider: string
@@ -24,6 +25,8 @@ export interface LLMTurnOutput {
   text: string
   toolCalls: Array<{ id: string; name: string; arguments: string }>
   compacted: boolean
+  /** DeepSeek thinking 模式的思考内容 */
+  reasoningContent?: string
 }
 
 const MAX_ATTEMPTS = 5
@@ -42,6 +45,7 @@ export async function* runLLMTurn(
   })
 
   let currentText = ""
+  let currentReasoning = ""
   const pendingToolCalls: Array<{ id: string; name: string; arguments: string }> = []
   let attemptCount = 0
   let compacted = false
@@ -50,13 +54,16 @@ export async function* runLLMTurn(
     attemptCount++
     pendingToolCalls.length = 0
     currentText = ""
+    currentReasoning = ""
 
     try {
-      const stream = client.stream({ messages, tools })
+      const stream = client.stream({ messages: sanitizeMessagesForLLM(messages), tools })
       for await (const event of stream) {
         if (event.type === "delta") {
           currentText += event.delta
           yield { type: "content" as const, text: event.delta }
+        } else if (event.type === "reasoning") {
+          currentReasoning += event.delta
         } else if (event.type === "tool_call" && event.toolCall) {
           pendingToolCalls.push({
             id: event.toolCall.id,
@@ -69,7 +76,7 @@ export async function* runLLMTurn(
           break
         }
       }
-      return { text: currentText, toolCalls: pendingToolCalls, compacted }
+      return { text: currentText, toolCalls: pendingToolCalls, compacted, reasoningContent: currentReasoning }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err))
       const msg = error.message.toLowerCase()

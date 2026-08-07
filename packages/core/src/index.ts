@@ -7,6 +7,18 @@ export { Agent } from "./agent/agent"
 export type { AgentConfig } from "./agent/agent"
 export type { PermissionReply } from "./agent/agent"
 export type { AgentEvent } from "./types"
+// 统一错误分类
+export {
+  MiraError,
+  invalidRequest, authError, rateLimitError, quotaError, contentPolicyError,
+  timeoutError, transportError, providerError,
+  toolNotFoundError, toolExecutionError, toolInvalidArgsError,
+  permissionDeniedError, sessionNotFoundError, contextOverflowError,
+  dbError, fsError, internalError,
+  isMiraError, getErrorCode, isRetryableError,
+  type MiraErrorCode,
+} from "./shared/errors"
+export { LLMError } from "./llm/schema/errors"
 export { ToolRegistry, type ModelFilter } from "./system/registry"
 export { make, withPermission, settle } from "./shared/tool"
 export { PermissionSet, defaultPermissions, permissionsForMode, type PermissionRule } from "./system/permission"
@@ -38,6 +50,8 @@ export { skillsListTool, skillViewTool } from "./skill/skill-tools"
 
 // 数据分析工具
 export { dataAnalysisTool } from "./tools/knowledge/data-analysis"
+// 图表生成工具
+export { createChartTool } from "./tools/knowledge/create-chart"
 // 浏览器自动化
 export { webBrowseTool } from "./tools/knowledge/web-browse"
 // Cron 定时任务工具
@@ -94,6 +108,7 @@ export { SnapshotManager } from "./session/snapshot"
 export { SessionForkManager } from "./session/fork"
 export { ForkCacheManager } from "./agent/fork-cache"
 export { SystemContextManager } from "./agent/system-context"
+export { ContextEpochTracker, getContextEpochTracker, type ContextEpoch } from "./session/context-epoch"
 export { TextNgramMonitor } from "./agent/text-ngram"
 export { searchTools, getRecommendedTools, shouldLoadTool } from "./tools/shared/tool-loader"
 export { ProviderCatalog } from "./llm/provider-catalog"
@@ -124,6 +139,109 @@ export { memoryActivateTool, setDynamicMemoryManager, getDynamicMemoryManager } 
 export {
   memoryGraphAddNodeTool, memoryGraphAddEdgeTool, memoryGraphQueryTool, memoryGraphDecayTool,
 } from "./tools/knowledge/memory-graph"
+
+// ACP (Agent Communication Protocol)
+export {
+  // 类型
+  type ACPCard,
+  type ACPCapabilities,
+  type ACPMessage,
+  type ACPMessageRole,
+  type ACPContent,
+  type ACPContentType,
+  type ACPToolCall,
+  type ACPToolCallStatus,
+  type ACPToolResult,
+  type ACPMessageMetadata,
+  type ACPTokenUsage,
+  type ACPTask,
+  type ACPTaskType,
+  type ACPTaskStatus,
+  type ACPTaskInput,
+  type ACPTaskOutput,
+  type ACPTaskMetadata,
+  type ACPEvent,
+  type ACPEventType,
+  type ACPPermissionRequest,
+  type ACPPermissionDecision,
+  type ACPSession,
+  type ACPSessionStatus,
+  type ACPDecision,
+  type ACPDecisionMode,
+  type ACPPresentation,
+  type ACPInlineContent,
+  type ACPDelegation,
+  type ACPWork,
+  type ACPWorkStatus,
+  type ACPConfig,
+  type ACPToolContext,
+  type ACPToolExecutor,
+  type ACPToolDefinition,
+
+  // 消息工具函数
+  createTextMessage,
+  createMultiContentMessage,
+  createToolCallMessage,
+  createToolResultMessage,
+  createSystemMessage,
+  createUserMessage,
+  createAssistantMessage,
+  createTextContent,
+  createCodeContent,
+  createImageContent,
+  createAudioContent,
+  createFileContent,
+  createToolCall,
+  createToolResult,
+  extractTextFromMessage,
+  extractCodeFromMessage,
+  getToolCallsFromMessage,
+  getToolResultsFromMessage,
+  toLLMMessage,
+  toLLMMessages,
+  validateMessage,
+  validateMessages,
+
+  // Work 状态机
+  WorkStateMachine,
+  globalWorkStateMachine,
+  generateWorkId,
+  isTerminalStatus,
+  isActiveStatus,
+  getStatusLabel,
+  getStatusColor,
+} from "./orchestrate/acp"
+
+// 语音交互模块
+export {
+  // 类型
+  type VADConfig,
+  type VADEvent,
+  type VADEventType,
+  type VADState,
+  type STTConfig,
+  type STTResult,
+  type STTEvent,
+  type STTEventType,
+  type TTSConfig,
+  type TTSResult,
+  type TTSEvent,
+  type TTSEventType,
+  type VoiceSessionConfig,
+  type VoiceSessionState,
+  type VoiceSessionEvent,
+  type VoiceSessionEventType,
+  type InterruptionConfig,
+  type InterruptionEvent,
+  type VoiceManagerConfig,
+  type VoiceManagerEvent,
+  type VoiceManagerEventType,
+
+  // 类
+  VoiceActivityDetector,
+  InterruptionManager,
+  VoiceSessionManager,
+} from "./voice"
 
 
 

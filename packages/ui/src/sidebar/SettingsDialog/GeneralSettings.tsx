@@ -148,6 +148,54 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
       </div>
 
       <div className="p-4 rounded-xl bg-surface-secondary border border-standard">
+        <div className="text-sm mb-3 text-primary">桌面悬浮球</div>
+        <div className="space-y-3">
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <div className="text-sm text-primary">启用悬浮球</div>
+              <div className="text-xs mt-0.5 text-secondary">在桌面显示常驻悬浮球，点击展开聊天面板</div>
+            </div>
+            <Switch checked={settings.floatingBallEnabled !== false}
+              onCheckedChange={(v) => onUpdate({ floatingBallEnabled: v })} />
+          </label>
+          {settings.floatingBallEnabled !== false && (
+            <>
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <div className="text-sm text-primary">自动隐藏</div>
+                  <div className="text-xs mt-0.5 text-secondary">无操作时自动隐藏悬浮球</div>
+                </div>
+                <Switch checked={settings.floatingBallAutoHide !== false}
+                  onCheckedChange={(v) => onUpdate({ floatingBallAutoHide: v })} />
+              </label>
+              <div>
+                <label className="text-xs mb-1 block text-secondary">隐藏超时（秒）</label>
+                <Input 
+                  type="number" 
+                  min={10}
+                  max={300}
+                  value={settings.floatingBallAutoHideSeconds || 60}
+                  onChange={(e) => onUpdate({ floatingBallAutoHideSeconds: parseInt(e.target.value) || 60 })} 
+                  className="h-8 text-xs" 
+                />
+              </div>
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <div className="text-sm text-primary">显示快捷键</div>
+                  <div className="text-xs mt-0.5 text-secondary">全局快捷键唤出悬浮球</div>
+                </div>
+                <Input 
+                  value={settings.floatingBallShortcut || "CommandOrControl+Shift+M"}
+                  onChange={(e) => onUpdate({ floatingBallShortcut: e.target.value })} 
+                  className="w-40 h-8 text-xs" 
+                />
+              </label>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="p-4 rounded-xl bg-surface-secondary border border-standard">
         <div className="text-sm mb-3 text-primary">Live2D 桌宠</div>
         <div className="space-y-3">
           <label className="flex items-center justify-between cursor-pointer">

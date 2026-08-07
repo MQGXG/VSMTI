@@ -9,6 +9,7 @@ import { evaluateToolCalls, extractResources } from "../system/permission/gate"
 import type { PermissionSet, PermissionRule } from "../system/permission"
 import { pluginHooks } from "../shared/plugin-hooks"
 import { appendMessage } from "../session/store"
+import { sanitizeMessagesForLLM } from "../shared/message-utils"
 import { isToolParallel } from "../tools/shared/tool-meta"
 import { TextNgramMonitor } from "./text-ngram"
 import { isFeatureEnabled } from "../config/flags"
@@ -52,6 +53,10 @@ export interface TurnRunnerOutput {
   signal: "continue" | "stop" | "context_overflow"
   usage?: { promptTokens: number; completionTokens: number; totalTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number }
   retryCount: number
+  /** LLM 流错误信息（signal=stop 且由错误触发时填充） */
+  error?: string
+  /** DeepSeek thinking 模式的思考内容（需回传给 API） */
+  reasoningContent?: string
 }
 
 /* ───────── 权限检查（串行，需要 yield 事件） ───────── */
@@ -182,7 +187,9 @@ export async function* runTurn(
   const { messages, tools, config, deps, ctx, sessionID } = input
   const toolCallList: Array<{ id: string; name: string; arguments: string }> = []
   let text = ""
+  let reasoningContent = ""
   let llmFailed = false
+  let llmErrorMsg = ""
   const toolResults: Array<{ id: string; result: ToolResult }> = []
   let turnUsage: TurnRunnerOutput["usage"] = undefined
   let retryCount = 0
@@ -202,7 +209,8 @@ export async function* runTurn(
     ? new FallbackClient({ primary: primaryConfig, fallbacks: config.fallbacks })
     : createLLMClient(primaryConfig)
 
-  const stream = client.stream({ messages, tools })
+  // 发送前清洗：为缺失结果的 tool-call 补 error 结果，修复消息序列（防 HTTP 400）
+  const stream = client.stream({ messages: sanitizeMessagesForLLM(messages), tools })
   const toolDoneQueue: Array<{ id: string; result: ToolResult }> = []
   const ngramMonitor = new TextNgramMonitor()
 
@@ -365,6 +373,10 @@ export async function* runTurn(
         break
       }
       yield { type: "content" as const, text: event.delta }
+    } else if (event.type === "reasoning") {
+      // DeepSeek thinking 模式：累积 reasoning_content（需回传给 API）
+      reasoningContent += event.delta
+      yield { type: "thinking" as const, text: event.delta }
     } else if (event.type === "tool_call" && event.toolCall) {
       toolCallList.push(event.toolCall)
       yield { type: "tool_start" as const, id: event.toolCall.id, name: event.toolCall.name, args: JSON.parse(event.toolCall.arguments) }
@@ -391,10 +403,11 @@ export async function* runTurn(
     } else if (event.type === "error") {
       const errMsg = (event.error?.message || "").toLowerCase()
       if (errMsg.includes("prompt_too_long") || errMsg.includes("context_length_exceeded") || errMsg.includes("too many tokens")) {
-        return { text, toolCalls: toolCallList, signal: "context_overflow" as const, messages, toolResults, usage: turnUsage, retryCount }
+        return { text, toolCalls: toolCallList, signal: "context_overflow" as const, messages, toolResults, usage: turnUsage, retryCount, reasoningContent }
       }
       llmFailed = true
-      yield { type: "error" as const, message: event.error?.message || "LLM stream error" }
+      llmErrorMsg = event.error?.message || "LLM stream error"
+      yield { type: "error" as const, message: llmErrorMsg }
       break
     } else if (event.type === "done") {
       turnUsage = event.usage
@@ -439,7 +452,7 @@ export async function* runTurn(
   }
 
   if (llmFailed) {
-    return { text, toolCalls: toolCallList, signal: "stop" as const, messages, toolResults, usage: turnUsage, retryCount }
+    return { text, toolCalls: toolCallList, signal: "stop" as const, messages, toolResults, usage: turnUsage, retryCount, error: llmErrorMsg, reasoningContent }
   }
 
   // ── 将工具结果追加到消息列表 ──
@@ -455,12 +468,16 @@ export async function* runTurn(
           args: JSON.parse(tc.arguments),
         })),
       ],
+      // 携带 reasoning_content，保证下一轮请求能原样回传（DeepSeek thinking 必需）
+      ...(reasoningContent ? { reasoning_content: reasoningContent } : {}),
     })
 
     const resultMap = new Map(toolResults.map(r => [r.id, r.result]))
     for (const tc of toolCallList) {
       const result = resultMap.get(tc.id)
-      const resultText = result?.success ? (result.output || "") : (result?.error || result?.output || "No result")
+      const rawText = result?.success ? (result.output || "") : (result?.error || result?.output || "No result")
+      // 即时截断超大工具结果，避免 50000 字符直接注入上下文（参考 OpenCode tool-output-store）
+      const resultText = truncateToolResult(rawText)
       messages.push({
         role: "tool",
         content: [{ type: "tool-result" as const, toolCallId: tc.id, toolName: tc.name, output: resultText }],
@@ -468,21 +485,37 @@ export async function* runTurn(
       })
     }
 
-    // 持久化工具结果到 DB
-    for (const tr of toolResults) {
-      const tc = toolCallList.find(t => t.id === tr.id)
-      if (tc) {
-        appendMessage(sessionID, {
-          role: "tool",
-          content: tr.result.output || tr.result.error || "",
-          timestamp: new Date().toISOString(),
-          toolCallId: tc.id,
-        })
+    // 持久化到 DB：顺序必须为 assistant(含 tool_calls) → tool 结果，
+    // 否则 OpenAI 兼容 API 收到孤立 tool 消息会返回 400
+    const hasToolCalls = toolCallList.length > 0
+    if (hasToolCalls) {
+      // 1. 先落 assistant（含 tool_calls 的 JSON）
+      await appendMessage(sessionID, {
+        role: "assistant",
+        content: JSON.stringify({
+          text: text || "",
+          tool_calls: toolCallList.map(tc => ({ id: tc.id, name: tc.name, args: tc.arguments })),
+          ...(reasoningContent ? { reasoning_content: reasoningContent } : {}),
+        }),
+        timestamp: new Date().toISOString(),
+        retryCount,
+      })
+      // 2. 再落 tool 结果（顺序紧随对应 assistant）
+      for (const tr of toolResults) {
+        const tc = toolCallList.find(t => t.id === tr.id)
+        if (tc) {
+          await appendMessage(sessionID, {
+            role: "tool",
+            content: tr.result.output || tr.result.error || "",
+            timestamp: new Date().toISOString(),
+            toolCallId: tc.id,
+          })
+        }
       }
     }
   }
 
-  return { text, toolCalls: toolCallList, signal: "continue" as const, messages, toolResults, usage: turnUsage, retryCount }
+  return { text, toolCalls: toolCallList, signal: "continue" as const, messages, toolResults, usage: turnUsage, retryCount, reasoningContent }
 }
 
 /* ───────── Max Mode 支持 ───────── */
@@ -502,7 +535,7 @@ export async function* runMaxModeTurn(
   })
 
   if (!maxResult.text && (!maxResult.toolCalls || maxResult.toolCalls.length === 0)) {
-    return { text: "", toolCalls: [], toolResults: [], messages, signal: "stop" as const, retryCount: 0 }
+    return { text: "", toolCalls: [], toolResults: [], messages, signal: "stop" as const, retryCount: 0, error: "Max Mode 所有候选与降级调用均未返回有效输出" }
   }
 
   const toolCallsArray = (maxResult.toolCalls || [])
@@ -529,10 +562,12 @@ export async function* runMaxModeTurn(
 
   await appendMessage(input.sessionID, {
     role: "assistant",
-    content: maxResult.text || JSON.stringify({
-      text: maxResult.text,
-      tool_calls: toolCallsArray.map(tc => ({ id: tc.id, name: tc.function.name, args: tc.function.arguments })),
-    }),
+    content: toolCallsArray.length > 0
+      ? JSON.stringify({
+          text: maxResult.text || "",
+          tool_calls: toolCallsArray.map(tc => ({ id: tc.id, name: tc.function.name, args: tc.function.arguments })),
+        })
+      : (maxResult.text || ""),
     timestamp: new Date().toISOString(),
   })
 
@@ -568,8 +603,28 @@ export async function* runMaxModeTurn(
         content: [{ type: "tool-result" as const, toolCallId: tc.id, toolName: tc.function.name, output: resultText }],
         tool_call_id: tc.id,
       })
+      // 落库 tool 结果（顺序在 assistant 之后，与 runTurn 保持一致）
+      await appendMessage(input.sessionID, {
+        role: "tool",
+        content: resultText,
+        timestamp: new Date().toISOString(),
+        toolCallId: tc.id,
+      })
     }
   }
 
   return { text: maxResult.text, toolCalls: maxResult.toolCalls || [], toolResults, messages, signal: "continue" as const, retryCount: 0 }
+}
+
+/**
+ * 截断超大工具结果（注入上下文前）：
+ * 超过 MAX_TOOL_RESULT_CHARS 时头尾各保留一半，中间用省略标记。
+ * 防止 web_fetch 等工具的 50000 字符输出直接撑爆上下文。
+ */
+const MAX_TOOL_RESULT_CHARS = 6000
+
+function truncateToolResult(text: string): string {
+  if (!text || text.length <= MAX_TOOL_RESULT_CHARS) return text
+  const half = Math.floor(MAX_TOOL_RESULT_CHARS / 2)
+  return `${text.slice(0, half)}\n\n... [output truncated: ${text.length} chars total, saved full output to tool output store] ...\n\n${text.slice(-half)}`
 }

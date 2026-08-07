@@ -163,6 +163,11 @@
     max-width: 75%;
     font-size: 14px;
     line-height: 1.55;
+    /* 防止长文本/URL/连续字符溢出气泡 */
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .bubble-assistant {
@@ -173,6 +178,24 @@
     max-width: 85%;
     font-size: 14px;
     line-height: 1.65;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* 消息气泡内的代码块水平滚动，避免撑破容器 */
+  .bubble-assistant pre,
+  .bubble-user pre {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* 消息气泡内图片/长内容自适应 */
+  .bubble-assistant img,
+  .bubble-user img {
+    max-width: 100%;
+    height: auto;
   }
 
   .sidebar-item {

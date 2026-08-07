@@ -17,8 +17,40 @@ import {
   updateToolCall,
   addCompaction,
   type MiraMessage,
+  type MiraPart,
 } from "../chat/mira-runtime";
 import { loadSettings as getSettings } from "../sidebar/provider-data";
+import { extractWidgetBlocks } from "../components/assistant-ui/widget-renderer";
+
+/**
+ * 从 assistant 消息的 text parts 中提取 widget 代码块，转为独立 widget part。
+ * 保留清洗后的文本（不含 widget 代码），widget HTML 单独渲染。
+ */
+function extractWidgetsFromMessage(message: MiraMessage): MiraMessage {
+  const newParts: MiraPart[] = [];
+  let hasWidget = false;
+
+  for (const part of message.parts) {
+    if (part.type === "text" && part.text) {
+      const { cleanText, widgets } = extractWidgetBlocks(part.text);
+      if (widgets.length > 0) {
+        hasWidget = true;
+        if (cleanText) {
+          newParts.push({ ...part, text: cleanText });
+        }
+        for (const html of widgets) {
+          newParts.push({ type: "widget", html, text: "widget" });
+        }
+      } else {
+        newParts.push(part);
+      }
+    } else {
+      newParts.push(part);
+    }
+  }
+
+  return hasWidget ? { ...message, parts: newParts } : message;
+}
 
 /** AgentService 延迟注入（由 useMiraChat 初始化，避免循环依赖） */
 let agentService: typeof AgentService | null = null;
@@ -31,6 +63,8 @@ export interface StreamEventContext {
   setMessages: Dispatch<SetStateAction<MiraMessage[]>>;
   setIsRunning: Dispatch<SetStateAction<boolean>>;
   clearCurrentChannel: () => void;
+  /** 真实会话 ID（用于会话标题更新等，channel 是随机流标识不等同于 sessionId） */
+  sessionId?: string;
   setPermissionReq: Dispatch<SetStateAction<{
     tool_name: string;
     args: Record<string, unknown>;
@@ -186,13 +220,20 @@ export function handleStreamEvent(
     let hint = "";
     if (lower.includes("401")) hint = "API Key 无效，请在设置中检查";
     else if (lower.includes("400") && (lower.includes("api key") || lower.includes("apikey") || lower.includes("token"))) hint = "API Key 格式错误，请在设置中重新配置";
+    else if (lower.includes("400") && (lower.includes("tool") || lower.includes("message") || lower.includes("context"))) hint = "消息序列异常（可能是历史工具调用记录损坏）。建议新建会话，或删除该会话重新开始。";
     else if (lower.includes("400") || lower.includes("bad request")) hint = "请求参数错误，检查模型名/Provider 配置是否正确";
+    else if (lower.includes("402")) hint = "账户余额不足，请检查 API 计费";
     else if (lower.includes("429")) hint = "请求过于频繁，请稍后重试";
     else if (lower.includes("500") || lower.includes("502") || lower.includes("503")) hint = "服务端暂时不可用，请稍后重试";
-    setMessages((prev) => [
-      ...prev,
-      createMiraMessage("assistant", `⚠️ ${cleanMsg || raw}${hint ? `\n\n💡 ${hint}` : ""}`),
-    ]);
+    const errorText = `⚠️ ${cleanMsg || raw}${hint ? `\n\n💡 ${hint}` : ""}`;
+    // 更新原消息而非追加新消息，避免半截内容与错误信息错位
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.id === assistantId) {
+        return [...prev.slice(0, -1), { ...last, parts: [...last.parts, { type: "text" as const, text: errorText }], error: cleanMsg || raw }];
+      }
+      return [...prev, createMiraMessage("assistant", errorText, assistantId)];
+    });
     contentBuffers.get(channel)?.flush();
     contentBuffers.delete(channel);
     setLiveTiming(null);
@@ -214,8 +255,9 @@ export function handleStreamEvent(
       return prev;
     });
   } else if (event.type === "finish") {
-    // 第一条消息完成后自动生成会话标题
-    if (channel && !channel.startsWith("offline-")) {
+    // 第一条消息完成后自动生成会话标题（用真实 sessionId，channel 是随机流标识）
+    const targetSession = ctx.sessionId || channel;
+    if (targetSession && !targetSession.startsWith("offline-")) {
       ctx.setMessages((prev) => {
         const isFirstTurn = prev.length <= 2;
         if (isFirstTurn) {
@@ -223,7 +265,7 @@ export function handleStreamEvent(
           if (userText) {
             const title = userText.replace(/[\n\r]/g, " ").trim().slice(0, 50);
             import("../services/session.service").then(({ SessionService }) => {
-              SessionService.update(channel, { title }).catch(() => {});
+              SessionService.update(targetSession, { title }).catch(() => {});
             }).catch(() => {});
           }
         }
@@ -233,6 +275,17 @@ export function handleStreamEvent(
 
     const t = timingRef.current;
     const usage = event.usage;
+
+    // 提取 widget 代码块（```html ... ```）→ 转为独立 widget part，隐藏原始代码
+    contentBuffers.get(channel)?.flush();
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant") {
+        return [...prev.slice(0, -1), extractWidgetsFromMessage(last)];
+      }
+      return prev;
+    });
+
     if (t) {
       const now = Date.now();
       const totalTime = now - t.streamStartTime;

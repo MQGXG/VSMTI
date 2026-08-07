@@ -1,6 +1,7 @@
 import { ipcMain, dialog, Notification, safeStorage } from "electron";
 import { getMainWindow, minimizeWindow, toggleMaximizeWindow, hideWindow } from "../managers/window-manager";
 import { registerAgentIPCHandlers } from "./index";
+import { getFloatingBallManager } from "../managers/floating-ball-manager";
 
 export function registerIPCHandlers(): void {
   registerAgentIPCHandlers();
@@ -62,4 +63,36 @@ export function registerIPCHandlers(): void {
   });
 
   ipcMain.handle("safeStorage:isAvailable", () => safeStorage.isEncryptionAvailable());
+
+  // 桌面悬浮球
+  ipcMain.handle("floatingBall:toggle", async (_, enabled: boolean) => {
+    const manager = getFloatingBallManager();
+    if (enabled) {
+      await manager.create();
+    } else {
+      manager.destroy();
+    }
+    return { success: true };
+  });
+
+  ipcMain.on("floatingBall:wake", () => {
+    const manager = getFloatingBallManager();
+    manager.wake('ipc');
+  });
+
+  ipcMain.on("floatingBall:hide", () => {
+    const manager = getFloatingBallManager();
+    manager.hide('ipc');
+  });
+
+  ipcMain.handle("floatingBall:updateConfig", async (_, config: Record<string, unknown>) => {
+    const manager = getFloatingBallManager();
+    if (typeof config.autoHideTimeout === 'number') {
+      manager.updateConfig({ autoHideTimeout: config.autoHideTimeout });
+    }
+    if (typeof config.shortcut === 'string') {
+      manager.registerShortcut(config.shortcut);
+    }
+    return { success: true };
+  });
 }

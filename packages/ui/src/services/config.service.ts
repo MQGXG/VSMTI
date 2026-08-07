@@ -8,6 +8,9 @@ export interface ConfigInfo {
   apiUrl: string
   mode: string
   apiKeyFrom: "env" | "file" | "none"
+  apiKey?: string
+  headers?: Record<string, string>
+  options?: Record<string, unknown>
 }
 
 export const ConfigService = {

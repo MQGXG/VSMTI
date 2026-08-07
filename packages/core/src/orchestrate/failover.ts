@@ -5,6 +5,7 @@
 
 import { createLLMClient } from "../llm/client"
 import type { SDKConfig , LLMRequest, LLMStreamEvent } from "../llm/client"
+import { isRetryableError } from "../shared/errors"
 type ClientConfig = SDKConfig
 
 export interface FallbackConfig {
@@ -98,8 +99,8 @@ export class FallbackClient {
     // 不需要降级的错误
     if (lower.includes("auth") || lower.includes("401") || lower.includes("403")) return false
     if (lower.includes("invalid") || lower.includes("bad request") || lower.includes("400")) return false
-    // 默认降级
-    return true
+    // 兜底：用统一的可重试判断（网络错误码/SSE 超时/socket hang up）
+    return isRetryableError(new Error(error))
   }
 }
 

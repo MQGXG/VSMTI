@@ -27,6 +27,8 @@ import { VoiceInput } from "./VoiceInput";
 import { VoiceChatButton } from "./VoiceChatButton";
 import { GraphPanel } from "./GraphPanel";
 import { ToolCallView } from "./ToolCallView";
+import { MessageBubble, MessageError } from "./MessageBubble";
+import { WidgetRenderer, extractWidgetBlocks } from "../components/assistant-ui/widget-renderer";
 import type { MiraRuntimeContext } from "./MiraRuntimeProvider";
 import { AgentService } from "../services/agent.service";
 import { useTheme } from "../contexts/ThemeContext";
@@ -290,7 +292,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                 return (
                   <MessagePrimitive.Root className="group mb-5 animate-message">
                     {thinkingParts.length > 0 && settings.showReasoning !== false && thinkingParts.map((p: any, i: number) => (
-                      <ThinkingBlock key={i} text={p.text || ""} />
+                      <ThinkingBlock key={i} text={p.text || ""} active={isLast} />
                     ))}
                     <div className={`flex w-full gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
                       {!isUser && (
@@ -298,18 +300,25 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                           <AnimatedAvatar state={avatarState} size={28} />
                         </div>
                       )}
-                      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-[calc(100%-44px)]`}>
+                      <div className={`flex flex-col ${isUser ? "items-end" : "items-start"} max-w-[calc(100%-44px)] min-w-0`}>
                         {isUser ? (
-                          <div className="bubble-user">
+                          <MessageBubble role="user" className="min-w-0">
                             <MessagePrimitive.Parts>
-                              {({ part }) => { if (part.type === "text") return <p className="whitespace-pre-wrap">{part.text}</p>; return null; }}
+                              {({ part }) => { if (part.type === "text") return <p className="whitespace-pre-wrap break-words">{part.text}</p>; return null; }}
                             </MessagePrimitive.Parts>
-                          </div>
+                          </MessageBubble>
                         ) : (
-                          <div className="bubble-assistant">
+                          <MessageBubble role="assistant" className="min-w-0">
                             <MessagePrimitive.Parts>
                               {({ part }) => { if (part.type === "text") return <MarkdownText />; return null; }}
                             </MessagePrimitive.Parts>
+                            {orig && orig.parts.some((p: any) => p.type === "widget") && (
+                              <div className="mt-2 space-y-3">
+                                {orig.parts.filter((p: any) => p.type === "widget").map((p: any, i: number) => (
+                                  <WidgetRenderer key={i} html={p.html || ""} />
+                                ))}
+                              </div>
+                            )}
                             {hasCustomParts && orig && (
                               <div className="mt-2 space-y-1.5">
                                 <RenderMessageParts message={orig} />
@@ -321,13 +330,14 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                                 style={{ padding: "4px 8px" }}
                               />
                             </SelectionToolbarPrimitive.Root>
-                          </div>
+                          </MessageBubble>
                         )}
                         <MessagePrimitive.Error>
                           <ErrorPrimitive.Root className="mt-2 rounded-md px-3 py-2 text-xs" style={{ background: "rgba(239,68,68,0.08)", color: "var(--error)" }}>
                             <ErrorPrimitive.Message />
                           </ErrorPrimitive.Root>
                         </MessagePrimitive.Error>
+                        {!isUser && <MessageError text={orig?.error} />}
                         {!isUser && <MessageActions messageId={message.id} ctx={ctx} />}
                       </div>
                     </div>

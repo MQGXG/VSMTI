@@ -5,8 +5,8 @@
 
 import { Agent, type AgentConfig, type AgentEvent, type PermissionReply } from "../../index"
 import { createDefaultRegistry, defaultPermissions, PermissionSet, resolveRuntimeConfig, type PermissionRule } from "../../index"
-import { DEFAULT_SYSTEM } from "../../agent/agent"
-import { modeToPermissionSet, getModeConfig, getAllModes } from "../../config/modes"
+import { DEFAULT_SYSTEM } from "../../agent/constants"
+import { modeToPermissionSet, getModeConfig, getAllModes, getModeMaxIterations } from "../../config/modes"
 import { getJsonSchema } from "../../shared/tool"
 import { loadWorkspacePermissions, saveWorkspacePermission } from "../permission/store"
 import { buildInstructionSystemPrompt } from "../instruction"
@@ -150,7 +150,7 @@ export async function handleStartStream(
     headers: mergedConfig.headers,
     options: mergedConfig.options,
     systemPrompt,
-    maxSteps: config.maxSteps as number || 10,
+    maxSteps: (config.maxSteps as number) || getModeMaxIterations(config.mode as string),
     maxContextTokens: config.maxContextTokens as number,
     permissions,
     mode: config.mode as any,

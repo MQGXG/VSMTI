@@ -24,7 +24,10 @@ const SCHEMA = `
   CREATE TABLE IF NOT EXISTS sessions (
     session_id TEXT PRIMARY KEY, project_id TEXT DEFAULT '', title TEXT DEFAULT '',
     workspace TEXT DEFAULT '', created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
+    updated_at TEXT DEFAULT (datetime('now')),
+    cost REAL DEFAULT 0,
+    tokens_input INTEGER DEFAULT 0, tokens_output INTEGER DEFAULT 0,
+    tokens_reasoning INTEGER DEFAULT 0, tokens_cache_read INTEGER DEFAULT 0, tokens_cache_write INTEGER DEFAULT 0
   );
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL,
@@ -121,6 +124,13 @@ async function createDb(): Promise<SqliteDb> {
   // 迁移：为旧表添加 retry_count 列（如果不存在）
   try { newDb.run("ALTER TABLE messages ADD COLUMN retry_count INTEGER DEFAULT 0") } catch { /* 列已存在 */ }
   try { newDb.run("ALTER TABLE actor_registry ADD COLUMN context_mode TEXT DEFAULT 'none'") } catch { /* 列已存在或表刚创建 */ }
+  // 迁移：sessions 表成本/token 列（旧库升级）
+  try { newDb.run("ALTER TABLE sessions ADD COLUMN cost REAL DEFAULT 0") } catch { /* 列已存在 */ }
+  try { newDb.run("ALTER TABLE sessions ADD COLUMN tokens_input INTEGER DEFAULT 0") } catch { /* 列已存在 */ }
+  try { newDb.run("ALTER TABLE sessions ADD COLUMN tokens_output INTEGER DEFAULT 0") } catch { /* 列已存在 */ }
+  try { newDb.run("ALTER TABLE sessions ADD COLUMN tokens_reasoning INTEGER DEFAULT 0") } catch { /* 列已存在 */ }
+  try { newDb.run("ALTER TABLE sessions ADD COLUMN tokens_cache_read INTEGER DEFAULT 0") } catch { /* 列已存在 */ }
+  try { newDb.run("ALTER TABLE sessions ADD COLUMN tokens_cache_write INTEGER DEFAULT 0") } catch { /* 列已存在 */ }
   return newDb
 }
 

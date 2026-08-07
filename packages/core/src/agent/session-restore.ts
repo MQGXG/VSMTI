@@ -6,6 +6,7 @@
 import { loadSession } from "../session/store"
 import type { LLMMessage } from "../llm/client"
 import type { ContextManager } from "../session/context"
+import { repairMessageSequence } from "../shared/message-utils"
 
 /** 检查 assistant 消息是否包含 tool_calls */
 function hasToolCalls(content: string | any[]): boolean {
@@ -16,11 +17,11 @@ function hasToolCalls(content: string | any[]): boolean {
 }
 
 /** 尝试解析旧格式的 assistant 消息 */
-function tryParseAssistantPayload(content: string): { text: string; tool_calls: Array<{ id: string; name: string; args: string }> } | null {
+function tryParseAssistantPayload(content: string): { text: string; tool_calls: Array<{ id: string; name: string; args: string }>; reasoning_content?: string } | null {
   try {
-    const parsed = JSON.parse(content) as { text?: unknown; tool_calls?: unknown }
+    const parsed = JSON.parse(content) as { text?: unknown; tool_calls?: unknown; reasoning_content?: unknown }
     if (parsed && typeof parsed === "object" && "text" in parsed && "tool_calls" in parsed) {
-      return parsed as { text: string; tool_calls: Array<{ id: string; name: string; args: string }> }
+      return { text: String(parsed.text || ""), tool_calls: (parsed.tool_calls as Array<{ id: string; name: string; args: string }>) || [], reasoning_content: typeof parsed.reasoning_content === "string" ? parsed.reasoning_content : undefined }
     }
   } catch { /* json parse fallback */ }
   return null
@@ -59,6 +60,7 @@ export async function restoreSessionHistory(
               args: JSON.parse(tc.args),
             })),
           ],
+          ...(parsed.reasoning_content ? { reasoning_content: parsed.reasoning_content } : {}),
         })
         continue
       }
@@ -91,9 +93,12 @@ export async function restoreSessionHistory(
     restored.push({ role: "user", content: m.content })
   }
 
+  // 修复消息序列（孤立 tool / 乱序 tool / 末尾 tool），确保发给 LLM 的序列合法
+  const repaired = repairMessageSequence(restored)
+
   // 尝试从 checkpoint 重建上下文
-  const rebuilt = contextManager.onSessionResume(restored, sessionID)
-  const didRebuild = rebuilt.length > restored.length
+  const rebuilt = contextManager.onSessionResume(repaired, sessionID)
+  const didRebuild = rebuilt.length > repaired.length
 
   return { history: rebuilt, didRebuild }
 }

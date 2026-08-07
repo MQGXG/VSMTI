@@ -144,12 +144,13 @@ function connectAndGetChannel(
   let cleanup: (() => void) | null = null
 
   return new Promise((resolve, reject) => {
+    // 30 秒超时（Core 冷启动/GC 暂停可能需要较长时间），超时后清理底层连接
     const timer = setTimeout(() => {
       pendingStreams.delete(id)
       cleanup?.() // 清理底层 SSE 连接，避免超时后 socket 泄漏
-      console.error(`[Sidecar] SSE channel timeout for stream #${id} after 15s`)
+      console.error(`[Sidecar] SSE channel timeout for stream #${id} after 30s`)
       reject(new Error("SSE channel timeout"))
-    }, 15_000)
+    }, 30_000)
 
     pendingStreams.set(id, { resolve, reject, timer })
 

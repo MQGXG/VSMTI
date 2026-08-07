@@ -1,5 +1,6 @@
 import type { LLMMessage, LLMEvent } from "../schema"
 import type { Protocol } from "../route/types"
+import { withMessageCache, withSystemCache, withToolsCache } from "../cache-policy"
 
 interface AnthropicMessage {
   role: "user" | "assistant"
@@ -52,10 +53,14 @@ export function serializeMessages(messages: LLMMessage[]): AnthropicMessage[] {
       switch (part.type) {
         case "text":
           return { type: "text", text: part.text }
+        case "reasoning":
+          return { type: "text", text: part.text }
         case "tool-call":
           return { type: "tool_use", id: part.toolCallId, name: part.toolName, input: part.args }
         case "tool-result":
           return { type: "tool_result", tool_use_id: part.toolCallId, content: typeof part.output === "string" ? part.output : part.output.value }
+        default:
+          return { type: "text", text: "" }
       }
     })
 
@@ -118,19 +123,16 @@ export const AnthropicMessagesProtocol: Protocol = {
   name: "anthropic-messages",
   serializeRequest(request) {
     const system = serializeSystem(request.messages)
+    const serialized = serializeMessages(request.messages.filter((m) => m.role !== "system"))
     const body: Record<string, unknown> = {
       model: request.model,
-      messages: serializeMessages(request.messages.filter((m) => m.role !== "system")),
+      messages: withMessageCache(serialized, request.cache, "anthropic"),
       max_tokens: (request.generation?.maxTokens) || 4096,
       stream: true,
     }
-    if (system) body.system = system
+    if (system) body.system = withSystemCache(system, request.cache, "anthropic")
     if (request.tools && request.tools.length > 0) {
-      body.tools = request.tools.map((t) => ({
-        name: t.name,
-        description: t.description,
-        input_schema: t.parameters,
-      }))
+      body.tools = withToolsCache(request.tools, request.cache, "anthropic")
     }
     const gen = request.generation || {}
     if (gen.temperature !== undefined) body.temperature = gen.temperature

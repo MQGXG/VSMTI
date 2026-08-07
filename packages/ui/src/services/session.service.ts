@@ -10,6 +10,15 @@ export interface SessionInfo {
   workspace_path: string
   message_count: number
   updated_at: string
+  /** 会话累计成本（美元） */
+  cost?: number
+  /** 会话累计 token 用量 */
+  tokens?: {
+    input: number
+    output: number
+    cacheRead: number
+    cacheWrite: number
+  }
 }
 
 export interface SessionMessage {
@@ -38,6 +47,10 @@ export const SessionService = {
 
   async delete(sessionId: string): Promise<void> {
     return window.electronAPI.ts.deleteSession(sessionId)
+  },
+
+  async deleteMessage(sessionId: string, messageId: number): Promise<void> {
+    return window.electronAPI.ts.deleteMessage(sessionId, messageId)
   },
 
   async getMessages(sessionId: string): Promise<SessionMessage[]> {

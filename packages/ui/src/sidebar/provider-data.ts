@@ -126,11 +126,21 @@ export async function saveProviders(list: Provider[]) {
     const active = list.find((p) => p.enabled && p.models.some((m) => m.enabled));
     const defaultModel = active?.models.find((m) => m.enabled);
     if (active && defaultModel) {
+      let apiKey = active.apiKey || "";
+      let apiUrl = active.baseUrl || "";
+      // localStorage 无 key 时，保留 config.json/env 已有的 apiKey/apiUrl，避免空串覆盖
+      if (!apiKey || !apiUrl) {
+        try {
+          const fileConfig = await ConfigService.get();
+          if (!apiKey && fileConfig.apiKeyFrom !== "none" && fileConfig.apiKey) apiKey = fileConfig.apiKey;
+          if (!apiUrl && fileConfig.apiUrl) apiUrl = fileConfig.apiUrl;
+        } catch { /* ignore */ }
+      }
       await ConfigService.save({
         provider: active.id.startsWith("custom-") ? "custom" : active.id,
         model: defaultModel.id,
-        apiKey: active.apiKey || "",
-        apiUrl: active.baseUrl || "",
+        apiKey,
+        apiUrl,
       });
     }
   } catch { /* JSON 文件保存失败不影响主流程 */ }
@@ -150,7 +160,18 @@ export async function getActiveProvider(): Promise<{ provider: string; model: st
   for (const p of list) {
     if (p.enabled) {
       const def = p.models.find((m) => m.enabled);
-      if (def) return { provider: p.id.startsWith("custom-") ? "custom" : p.id, model: def.id, apiKey: p.apiKey, apiUrl: p.baseUrl };
+      let apiKey = p.apiKey;
+      let apiUrl = p.baseUrl;
+      if (!apiKey) {
+        try {
+          const fileConfig = await ConfigService.get();
+          if (fileConfig.apiKeyFrom !== "none" && fileConfig.apiKey) {
+            apiKey = fileConfig.apiKey;
+            apiUrl = apiUrl || fileConfig.apiUrl;
+          }
+        } catch { /* ignore */ }
+      }
+      if (def) return { provider: p.id.startsWith("custom-") ? "custom" : p.id, model: def.id, apiKey, apiUrl };
     }
   }
   return null;
@@ -166,8 +187,14 @@ export async function getProviderById(providerId: string): Promise<{ apiKey: str
       }
       try {
         const fileConfig = await ConfigService.get();
-        if (fileConfig.apiKeyFrom !== "none") {
-          return { apiKey: "", apiUrl: p.baseUrl || fileConfig.apiUrl, headers: p.headers, options: p.options };
+        // 兜底：localStorage 无 key 时从 config.json/env 读取（file/env 来源）
+        if (fileConfig.apiKeyFrom !== "none" && fileConfig.apiKey) {
+          return {
+            apiKey: fileConfig.apiKey,
+            apiUrl: p.baseUrl || fileConfig.apiUrl,
+            headers: { ...(fileConfig.headers || {}), ...(p.headers || {}) },
+            options: { ...(fileConfig.options || {}), ...(p.options || {}) },
+          };
         }
       } catch { /* ignore */ }
       return { apiKey: "", apiUrl: p.baseUrl, headers: p.headers, options: p.options };

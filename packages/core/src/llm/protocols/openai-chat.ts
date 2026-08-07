@@ -4,7 +4,7 @@ import type { Protocol } from "../route/types"
 
 interface OpenAIChunk {
   choices?: Array<{
-    delta?: { content?: string; tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }> }
+    delta?: { content?: string; reasoning_content?: string; tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }> }
     finish_reason?: string
   }>
   usage?: {
@@ -13,6 +13,9 @@ interface OpenAIChunk {
     total_tokens?: number
     prompt_tokens_details?: { cached_tokens?: number }
     completion_tokens_details?: { reasoning_tokens?: number }
+    // DeepSeek 专用缓存字段（服务端自动缓存）
+    prompt_cache_hit_tokens?: number
+    prompt_cache_miss_tokens?: number
   }
 }
 
@@ -22,6 +25,7 @@ interface OpenAIResponse {
   choices?: Array<{
     message?: {
       content?: string
+      reasoning_content?: string
       tool_calls?: Array<{
         id: string
         function: { name: string; arguments: string }
@@ -34,6 +38,7 @@ interface OpenAIMessage {
   role: string
   content: string | null
   tool_call_id?: string
+  reasoning_content?: string
   tool_calls?: Array<{
     id: string
     type: "function"
@@ -46,10 +51,15 @@ export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
     if (typeof msg.content === "string") {
       const out: OpenAIMessage = { role: msg.role, content: msg.content }
       if (msg.role === "tool" && msg.tool_call_id) out.tool_call_id = msg.tool_call_id
+      // 回传 reasoning_content（DeepSeek thinking 模式必需）
+      if (msg.role === "assistant" && msg.reasoning_content) {
+        ;(out as any).reasoning_content = msg.reasoning_content
+      }
       return out
     }
     const parts = msg.content
     const text = parts.filter((p) => p.type === "text").map((p) => p.text).join("")
+    const reasoningText = parts.filter((p) => p.type === "reasoning").map((p) => p.text).join("")
     const toolCalls = parts.filter((p) => p.type === "tool-call")
     const toolResults = parts.filter((p) => p.type === "tool-result")
 
@@ -70,11 +80,26 @@ export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
           type: "function" as const,
           function: { name: tc.toolName, arguments: JSON.stringify(tc.args) },
         })),
+        ...(msg.reasoning_content ? { reasoning_content: msg.reasoning_content } : {}),
+        ...(reasoningText ? { reasoning_content: reasoningText } : {}),
       }
     }
 
-    return { role: msg.role, content: text || null }
+    // 空 assistant（无文本、无 reasoning、无 tool_calls）直接丢弃，避免 DeepSeek 400
+    if (msg.role === "assistant" && !text && !reasoningText && !msg.reasoning_content) {
+      return null as unknown as OpenAIMessage
+    }
+
+    return {
+      role: msg.role,
+      // 空内容用空字符串而非 null（DeepSeek 要求 assistant 必须有 content 或 tool_calls，reasoning-only 也算）
+      content: (msg.role === "assistant" && (msg.reasoning_content || reasoningText)) ? (text || "") : (text || null),
+      ...(msg.role === "assistant" && msg.reasoning_content ? { reasoning_content: msg.reasoning_content } : {}),
+      ...(msg.role === "assistant" && reasoningText ? { reasoning_content: reasoningText } : {}),
+    }
   })
+  // 过滤掉空 assistant（返回 null 的占位）
+  .filter((m): m is OpenAIMessage => m !== null)
 }
 
 export function deserializeChunk(chunk: OpenAIChunk): LLMEvent | null {
@@ -84,11 +109,13 @@ export function deserializeChunk(chunk: OpenAIChunk): LLMEvent | null {
 
   // 提取 usage（如果存在）
   if (chunk.usage) {
+    // DeepSeek 用 prompt_cache_hit_tokens，OpenAI 用 prompt_tokens_details.cached_tokens
+    const cachedTokens = chunk.usage.prompt_cache_hit_tokens ?? chunk.usage.prompt_tokens_details?.cached_tokens
     usage = {
       promptTokens: chunk.usage.prompt_tokens || 0,
       completionTokens: chunk.usage.completion_tokens || 0,
       totalTokens: chunk.usage.total_tokens || 0,
-      cacheReadTokens: chunk.usage.prompt_tokens_details?.cached_tokens,
+      cacheReadTokens: cachedTokens,
       cacheWriteTokens: undefined,
     } as any
   }
@@ -106,6 +133,11 @@ export function deserializeChunk(chunk: OpenAIChunk): LLMEvent | null {
 
   if (delta.content) {
     return { type: "text-delta", delta: delta.content }
+  }
+
+  // DeepSeek thinking 模式：思考内容在 delta.reasoning_content
+  if (delta.reasoning_content) {
+    return { type: "reasoning-delta", delta: delta.reasoning_content }
   }
 
   if (delta.tool_calls) {

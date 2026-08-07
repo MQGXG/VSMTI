@@ -21,6 +21,14 @@ if (userData) {
 
 console.log(`[Sidecar] Starting @mira/core server on port ${port}...`)
 
+// 全局异常保护：防止单个未捕获异常导致整个 Sidecar 进程崩溃（导致 SSE 通道中断/超时）
+process.on("uncaughtException", (err) => {
+  console.error(`[Sidecar] Uncaught exception (keeping process alive): ${err?.stack || err?.message || String(err)}`)
+})
+process.on("unhandledRejection", (reason) => {
+  console.error(`[Sidecar] Unhandled rejection (keeping process alive): ${reason instanceof Error ? reason.stack : String(reason)}`)
+})
+
 startServer({ port, authToken })
   .then(({ port, token }) => {
     // 输出 JSON 供父进程读取

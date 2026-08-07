@@ -13,8 +13,9 @@ export function convertMessage(message: MiraMessage): ThreadMessageLike {
   const content: Array<Extract<ThreadMessageLike["content"], readonly unknown[]>[number]> = [];
 
   for (const part of message.parts) {
-    if (part.type === "text" && part.text) {
-      content.push({ type: "text", text: part.text });
+    if (part.type === "text") {
+      // 保留空 text part 作为稳定占位，避免流式过程中索引漂移导致渲染闪烁
+      content.push({ type: "text", text: part.text || "" });
     } else if (part.type === "tool-call") {
       content.push({
         type: "tool-call",
@@ -30,7 +31,10 @@ export function convertMessage(message: MiraMessage): ThreadMessageLike {
     content: content.length > 0 ? content : "",
     id: message.id,
     createdAt: message.createdAt,
-    metadata: message.timing ? { timing: message.timing, custom: {} } : undefined,
+    metadata: {
+      ...(message.timing ? { timing: message.timing, custom: {} } : {}),
+      ...(message.error ? { custom: { error: message.error } } : {}),
+    },
   };
 }
 

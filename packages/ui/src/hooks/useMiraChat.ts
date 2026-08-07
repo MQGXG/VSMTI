@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { getProviderById, loadSettings as getSettings } from "../sidebar/provider-data";
 import { createMiraMessage } from "../chat/mira-runtime";
-import type { MiraMessage } from "../chat/mira-runtime";
+import type { MiraMessage, MiraPart } from "../chat/mira-runtime";
 import type { AgentEvent, ToolResult } from "../services/agent.service";
 import type { ModelOption } from "../chat/ModelSelector";
 import type { AgentMode } from "../chat/types";
@@ -122,12 +122,11 @@ export function useMiraChat({
         const formattedMessages: MiraMessage[] = tsMsgs
           .filter((msg) => msg.role !== "tool")
           .map((msg) => ({
-            id: crypto.randomUUID(),
+            // 使用数据库稳定 id，保证 retry/edit 指向一致
+            id: `msg-${msg.id}`,
             dbId: msg.id,
             role: msg.role as "user" | "assistant",
-            parts: typeof msg.content === "string" && msg.content
-              ? [{ type: "text" as const, text: msg.content }]
-              : [],
+            parts: parseStoredMessageContent(msg.content),
             createdAt: msg.timestamp ? new Date(msg.timestamp) : undefined,
             retryCount: msg.retryCount || 0,
           }));
@@ -180,19 +179,8 @@ export function useMiraChat({
         const apiKey = provider?.apiKey || "";
         const apiUrl = provider?.apiUrl || "";
 
-        if (!apiKey) {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId
-                ? { ...m, parts: [{ type: "text", text: "⚠️ 未配置 API Key。请点击右上角 ⚙️ 设置，配置 Provider 的 API Key 后重试。" }] }
-                : m
-            )
-          );
-          setIsRunning(false);
-          return;
-        }
-
-        if (apiKey || provider) {
+        // 有 API Key → 走 LLM 流式对话
+        if (apiKey) {
           const workspace =
             window.electronAPI.platform === "win32" ? "C:\\" : "/";
           const settings = getSettings();
@@ -203,6 +191,7 @@ export function useMiraChat({
             apiKey,
             apiUrl,
             provider: selectedModel.provider,
+            mode: agentMode,
             headers: provider?.headers || {},
             maxMode: settings.maxMode || false,
             maxModeCandidates: 3,
@@ -253,6 +242,7 @@ export function useMiraChat({
                 setMessages,
                 setIsRunning,
                 clearCurrentChannel: () => { currentChannelRef.current = null; },
+                sessionId: config.sessionID,
                 setPermissionReq,
                 setQuestionReq,
                 setLiveTiming,
@@ -266,7 +256,7 @@ export function useMiraChat({
           return;
         }
 
-        // 无 API Key → 关键词路由
+        // 无 API Key → 先尝试关键词路由（本地工具能力），路由不到再提示配置
         const tools = await svc.listTools().catch(() => []);
         if (tools.length > 0) {
           const { routeToolMessage } = await import("../chat/tool-router");
@@ -296,10 +286,7 @@ export function useMiraChat({
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
-              ? {
-                  ...m,
-                  parts: [{ type: "text", text: "未识别到工具命令。请使用 🔧 工具面板手动执行，或在设置中配置 API Key 启用 AI 对话。" }],
-                }
+              ? { ...m, parts: [{ type: "text", text: "⚠️ 未配置 API Key。请点击右上角 ⚙️ 设置，配置 Provider 的 API Key 后启用 AI 对话，或使用 🔧 工具面板执行本地工具。" }] }
               : m
           )
         );
@@ -326,20 +313,31 @@ export function useMiraChat({
   const retryMessage = useCallback(
     async (assistantMsgId: string) => {
       let userContent = "";
+      let userDbId: number | undefined;
+      let assistantDbId: number | undefined;
       setMessages((prev) => {
         const idx = prev.findIndex(m => m.id === assistantMsgId);
         if (idx > 0 && prev[idx - 1]?.role === "user") {
           const userPart = prev[idx - 1].parts.find(p => p.type === "text");
           userContent = userPart?.text || "";
+          userDbId = prev[idx - 1].dbId;
+          assistantDbId = prev[idx].dbId;
           return prev.filter((_, i) => i !== idx - 1 && i !== idx);
         }
         return prev;
       });
-      if (userContent) {
+      // 清理 DB 中旧的 user/assistant 消息，避免重试后重复累积
+      if (userContent && sessionId) {
+        if (userDbId !== undefined) {
+          window.electronAPI.ts.deleteMessage(sessionId, userDbId).catch(() => {});
+        }
+        if (assistantDbId !== undefined) {
+          window.electronAPI.ts.deleteMessage(sessionId, assistantDbId).catch(() => {});
+        }
         await sendMessage(userContent);
       }
     },
-    [sendMessage]
+    [sendMessage, sessionId]
   );
 
   const stopStream = useCallback(() => {
@@ -408,4 +406,43 @@ export function useMiraChat({
     loadHistory,
     setMessages,
   };
+}
+
+/**
+ * 解析历史消息的存储内容为渲染 parts。
+ * agent.ts 将含工具调用的 assistant 消息存为 JSON 字符串：
+ *   {"text":"...","tool_calls":[{"id","name","args"}]}
+ * 此处还原为 text + tool-call parts，避免历史记录显示 JSON 乱码。
+ */
+function parseStoredMessageContent(content: string): MiraPart[] {
+  if (!content) return [];
+  const trimmed = content.trim();
+  // 尝试解析 JSON 结构（含工具调用的历史消息）
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        const parts: MiraPart[] = [];
+        if (typeof parsed.text === "string" && parsed.text) {
+          parts.push({ type: "text", text: parsed.text });
+        }
+        if (Array.isArray(parsed.tool_calls)) {
+          for (const tc of parsed.tool_calls) {
+            if (tc && typeof tc.id === "string" && typeof tc.name === "string") {
+              parts.push({
+                type: "tool-call",
+                toolCallId: tc.id,
+                toolName: tc.name,
+                args: (tc.args as Record<string, unknown>) || {},
+                status: "done",
+                result: "",
+              });
+            }
+          }
+        }
+        if (parts.length > 0) return parts;
+      }
+    } catch { /* 不是 JSON 则按纯文本处理 */ }
+  }
+  return [{ type: "text", text: content }];
 }

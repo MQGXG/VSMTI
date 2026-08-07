@@ -10,12 +10,14 @@ export type FinishReason = "stop" | "length" | "tool-calls" | "error" | "content
 
 export type LLMEvent =
   | { type: "text-delta"; delta: string }
+  | { type: "reasoning-delta"; delta: string }
   | { type: "tool-call"; id: string; name: string; args: string }
   | { type: "finish"; reason: FinishReason; usage?: TokenUsage }
   | { type: "error"; message: string }
 
 export const LLMEvent = {
   textDelta(delta: string): LLMEvent { return { type: "text-delta", delta } },
+  reasoningDelta(delta: string): LLMEvent { return { type: "reasoning-delta", delta } },
   toolCall(id: string, name: string, args: string): LLMEvent { return { type: "tool-call", id, name, args } },
   finish(reason: FinishReason, usage?: TokenUsage): LLMEvent { return { type: "finish", reason, usage } },
   error(message: string): LLMEvent { return { type: "error", message } },

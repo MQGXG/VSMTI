@@ -16,9 +16,14 @@ export interface OrchestratedToolCall {
 }
 
 export class ToolOrchestrator {
-  private outputStore = new ToolOutputStore()
+  private outputStore: ToolOutputStore
 
-  constructor(private registry: ToolRegistry) {}
+  constructor(
+    private registry: ToolRegistry,
+    options?: { persistDir?: string },
+  ) {
+    this.outputStore = new ToolOutputStore({ persistDir: options?.persistDir })
+  }
 
   async execute(
     calls: OrchestratedToolCall[],

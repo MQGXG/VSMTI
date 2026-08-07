@@ -3,6 +3,7 @@ import { getEventStore } from "./event-store"
 import { createMessageEvent } from "./event-types"
 
 export interface StoredMessage {
+  id?: number
   role: "user" | "assistant" | "tool"
   content: string
   timestamp: string
@@ -39,7 +40,7 @@ export async function appendMessage(sessionID: string, message: StoredMessage): 
 
   if (isNew) {
     runWrite(
-      "INSERT INTO sessions (session_id, project_id, title, workspace, created_at, updated_at) VALUES (?, '', ?, '', datetime('now'), datetime('now'))",
+      "INSERT OR IGNORE INTO sessions (session_id, project_id, title, workspace, created_at, updated_at) VALUES (?, '', ?, '', datetime('now'), datetime('now'))",
       [sessionID, `会话 ${new Date().toLocaleDateString("zh-CN")}`],
     )
   }
@@ -76,15 +77,17 @@ export async function loadSession(sessionID: string): Promise<StoredSession | nu
     const [id, title, created, updated, workspace] = row as string[]
 
     const msgResult = db.exec(
-      "SELECT role, content, timestamp, tool_call_id FROM messages WHERE session_id = ? ORDER BY id ASC",
+      "SELECT id, role, content, timestamp, tool_call_id, retry_count FROM messages WHERE session_id = ? ORDER BY id ASC LIMIT 500",
       [sessionID],
     )
     const messages: StoredMessage[] = msgResult.length > 0
       ? msgResult[0].values.map((r: any) => ({
-          role: r[0] as StoredMessage["role"],
-          content: r[1] as string,
-          timestamp: r[2] as string,
-          ...(r[3] ? { toolCallId: r[3] as string } : {}),
+          id: r[0] as number,
+          role: r[1] as StoredMessage["role"],
+          content: r[2] as string,
+          timestamp: r[3] as string,
+          ...(r[4] ? { toolCallId: r[4] as string } : {}),
+          retryCount: r[5] as number | undefined,
         }))
       : []
 
@@ -145,6 +148,12 @@ export async function deleteSession(sessionID: string): Promise<void> {
   const db = await getDbAsync()
   runWrite("DELETE FROM messages WHERE session_id = ?", [sessionID])
   runWrite("DELETE FROM sessions WHERE session_id = ?", [sessionID])
+}
+
+/** 删除单条消息（UI 重试/编辑历史消息时清理旧记录，避免重复累积） */
+export async function deleteMessage(sessionID: string, messageId: number): Promise<void> {
+  const db = await getDbAsync()
+  runWrite("DELETE FROM messages WHERE session_id = ? AND id = ?", [sessionID, messageId])
 }
 
 export async function messageCount(sessionID: string): Promise<number> {
