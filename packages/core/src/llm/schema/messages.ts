@@ -24,9 +24,19 @@ export const ToolResultPartSchema = z.object({
 })
 export type ToolResultPart = z.infer<typeof ToolResultPartSchema>
 
+export const ImagePartSchema = z.object({
+  type: z.literal("image"),
+  /** data URL（base64）或远程 URL */
+  image: z.string(),
+  /** 图片 MIME 类型（data URL 时可由前缀推导） */
+  mediaType: z.string().optional(),
+})
+export type ImagePart = z.infer<typeof ImagePartSchema>
+
 export const ContentPartSchema = z.union([
   TextPartSchema,
   ReasoningPartSchema,
+  ImagePartSchema,
   ToolCallPartSchema,
   ToolResultPartSchema,
 ])
@@ -52,6 +62,10 @@ export function getToolResultOutput(output: ToolResultOutput): string {
 
 export function isTextPart(part: ContentPart): part is TextPart {
   return part.type === "text"
+}
+
+export function isImagePart(part: ContentPart): part is ImagePart {
+  return part.type === "image"
 }
 
 export function isToolCallPart(part: ContentPart): part is ToolCallPart {

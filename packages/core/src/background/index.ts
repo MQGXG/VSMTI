@@ -5,6 +5,8 @@
 
 import { randomUUID } from "crypto"
 
+export * from "./notifier"
+
 export type BackgroundStatus = "queued" | "running" | "done" | "failed"
 
 export interface BackgroundTask {
@@ -20,6 +22,12 @@ export interface BackgroundTask {
 
 const tasks = new Map<string, BackgroundTask>()
 const handlers = new Map<string, () => Promise<string>>()
+/** 全局后台播报器（cron/后台任务完成时投递；可注入 AnnouncementWindow 进行插话门控） */
+export let backgroundNotifier: import("./notifier").BackgroundNotifier | null = null
+
+export function setBackgroundNotifier(notifier: import("./notifier").BackgroundNotifier | null): void {
+  backgroundNotifier = notifier
+}
 
 /** 判断是否为慢操作（需要后台执行） */
 export function isSlowOperation(command: string): boolean {
@@ -58,6 +66,12 @@ export function startBackground(name: string, handler: () => Promise<string>): s
     }
     task.completedAt = Date.now()
     handlers.delete(id)
+    // 完成后播报（安全窗口门控由 notifier 处理）
+    backgroundNotifier?.addTaskResult(
+      task.status === "done" ? "completed" : "failed",
+      task.name,
+      task.status === "done" ? task.result?.slice(0, 200) : task.error?.slice(0, 200),
+    )
   })
 
   return id

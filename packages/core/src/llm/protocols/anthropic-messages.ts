@@ -14,6 +14,8 @@ interface AnthropicContentBlock {
   name?: string
   input?: Record<string, unknown>
   content?: string
+  tool_use_id?: string
+  source?: { type: string; media_type?: string; data?: string; url?: string }
 }
 
 interface AnthropicStreamEvent {
@@ -55,6 +57,15 @@ export function serializeMessages(messages: LLMMessage[]): AnthropicMessage[] {
           return { type: "text", text: part.text }
         case "reasoning":
           return { type: "text", text: part.text }
+        case "image": {
+          const img = part as { image: string; mediaType?: string }
+          // data URL → base64 source；远程 URL → url source
+          const m = /^data:([^;]+);base64,(.+)$/s.exec(img.image)
+          if (m) {
+            return { type: "image", source: { type: "base64", media_type: img.mediaType || m[1], data: m[2] } }
+          }
+          return { type: "image", source: { type: "url", url: img.image } }
+        }
         case "tool-call":
           return { type: "tool_use", id: part.toolCallId, name: part.toolName, input: part.args }
         case "tool-result":

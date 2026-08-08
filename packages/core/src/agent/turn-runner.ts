@@ -34,6 +34,7 @@ export interface TurnRunnerInput {
     onPermissionSave?: (rules: PermissionRule[]) => void
     autoAcceptPermissions?: boolean
     fallbacks?: SDKConfig[]
+    visionModel?: SDKConfig["visionModel"]
   }
   signal?: AbortSignal
   deps: {
@@ -203,6 +204,7 @@ export async function* runTurn(
     apiUrl: config.apiUrl,
     headers: config.headers,
     options: config.options,
+    visionModel: config.visionModel,
   }
 
   const client = config.fallbacks && config.fallbacks.length > 0

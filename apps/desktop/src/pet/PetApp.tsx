@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { SpeechBubble } from "./SpeechBubble"
 import { ChatInput } from "./ChatInput"
-import { VoiceChatButton, type RealtimeStatus } from "@mira/ui"
+import { VoiceChatButton, type RealtimeStatus, LipSyncEngine, PetMotionManager, defaultPetPlugins } from "@mira/ui"
 
 declare global {
   interface Window {
@@ -69,12 +69,56 @@ export function PetApp() {
   const modelRef = useRef<Live2DModelHandle | null>(null)
   const appRef = useRef<any>(null)
   const loadModelRef = useRef<((modelKey?: string) => Promise<void>) | null>(null)
+  // 动作管理器引用：供事件回调触发情绪动作
+  const motionRef = useRef<PetMotionManager | null>(null)
 
-  // 口型联动：语音对话聆听/朗读时张嘴，否则闭嘴
+  // 口型联动 + 动作系统：统一 rAF 驱动
+  //  - LipSyncEngine 在说话期独占 ParamMouthOpenY（响度驱动）
+  //  - PetMotionManager 驱动其余参数（眨眼/呼吸/情绪动作），mouth 仅在非说话期回写
+  const voiceStatusRef = useRef<RealtimeStatus>(voiceStatus)
+  useEffect(() => { voiceStatusRef.current = voiceStatus }, [voiceStatus])
   useEffect(() => {
-    const mouth = voiceStatus === "listening" || voiceStatus === "speaking" ? 0.3 : 0
-    setParameterByName(modelRef.current, "ParamMouthOpenY", mouth)
-  }, [voiceStatus])
+    const lipSync = new LipSyncEngine({ cap: 0.9, idleMs: 120 })
+    const motion = new PetMotionManager({ idleIntervalMs: 16 })
+    for (const plugin of defaultPetPlugins()) motion.register(plugin)
+    // motion 负责 mouth 外的参数；呼吸/表情的 mouth 写到 shadowMap 待说话期后回写
+    const shadow: Record<string, number> = {}
+    motion.setSink((name, value) => { shadow[name] = value })
+    motionRef.current = motion
+    let raf = 0
+    let breathT = 0
+    let lastNow = 0
+    const targetVolume = (status: RealtimeStatus): number =>
+      status === "listening" || status === "speaking" ? 0.55 : 0
+
+    const tick = (now: number) => {
+      const dtSec = lastNow === 0 ? 0.016 : Math.min(0.1, (now - lastNow) / 1000)
+      lastNow = now
+      breathT += dtSec
+      const breath = 0.04 + 0.03 * Math.sin(breathT * 2.2)
+      const vol = Math.min(1, targetVolume(voiceStatusRef.current) + breath)
+      const out = lipSync.update({ volume: vol, timeMs: now })
+
+      motion.update(Math.max(0.001, dtSec))
+      const speaking = voiceStatusRef.current === "listening" || voiceStatusRef.current === "speaking"
+      // 非 mouth 参数直接回写；说话时 mouth 由 lip-sync 独占
+      for (const [name, value] of Object.entries(shadow)) {
+        if (speaking && name === "ParamMouthOpenY") continue
+        setParameterByName(modelRef.current, name, value)
+      }
+      if (speaking && out.mouthOpen !== 0) {
+        setParameterByName(modelRef.current, "ParamMouthOpenY", out.mouthOpen)
+      } else if (!speaking && shadow.ParamMouthOpenY !== undefined) {
+        // 说话结束：使用动作系统提供的 mouth（呼吸微幅），无则由 lipSync 归零
+        setParameterByName(modelRef.current, "ParamMouthOpenY", shadow.ParamMouthOpenY)
+      } else if (!speaking) {
+        setParameterByName(modelRef.current, "ParamMouthOpenY", 0)
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [])
 
   // 语音对话自动朗读的助手文本：仅在回复完成后提供（避免流式中间态反复朗读）
   const assistantText = useMemo(() => {
@@ -255,6 +299,7 @@ export function PetApp() {
       if (!text.trim() || streaming) return
       setStreaming(true)
       addMsg("user", text)
+      motionRef.current?.trigger({ kind: "nod", durationMs: 600 })
 
       try {
         if (!sessionRef.current) {
@@ -278,11 +323,14 @@ export function PetApp() {
         const cleanup = window.electronAPI.agent.onEvent(channel, (data: any) => {
           if (data.type === "delta" && data.content) {
             updateLastMsg((prev: string) => prev + data.content)
+            motionRef.current?.trigger({ kind: "joy", durationMs: 900 })
           } else if (data.type === "finish") {
             setStreaming(false)
+            motionRef.current?.trigger({ kind: "joy", durationMs: 700 })
           } else if (data.type === "error") {
             updateLastMsg((prev: string) => prev || `Error: ${data.message}`)
             setStreaming(false)
+            motionRef.current?.trigger({ kind: "sad", durationMs: 900 })
           }
         })
         streamCleanupRef.current = cleanup

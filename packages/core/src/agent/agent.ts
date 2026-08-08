@@ -16,6 +16,8 @@ import { FileMemoryProvider } from "../memory/file-memory-provider"
 import { FTSMemoryProvider } from "../memory/fts-memory-provider"
 import { CheckpointProvider } from "../memory/checkpoint-provider"
 import { setFTSProvider } from "../tools/knowledge/memory"
+import { MemoryExtractor, createExtractorLlmCall } from "../memory/memory-extractor"
+import { getSessionMessages } from "../session/manager"
 import { ToolOrchestrator } from "../orchestrate/execution"
 import { AgentStateMachine } from "./state-machine"
 import { buildToolContext, buildSystemMessage, createSourceManager, prepareSourceManagerContext } from "./context"
@@ -452,11 +454,46 @@ export class Agent {
   }
 
   /** 阶段 5: 清理 */
-  private async finalizeRun(config: AgentConfig): Promise<void> {
+  private finalizeRun = async (config: AgentConfig): Promise<void> => {
     pluginHooks.emit("session_end", { sessionID: config.sessionID, workspace: config.workspace })
     // pre_llm 监听器由 run() 的 finally 统一移除（防泄漏），这里只做资源关闭
+    // 会话结束自动记忆提取（fire-and-forget，永不阻塞/阻断会话收尾）
+    await this.maybeExtractSessionMemory(config)
     await this.contextManager.shutdown()
     this.memoryManager.shutdown().catch(() => {})
+  }
+
+  /**
+   * 会话结束自动记忆提取（M9）：用轻量文本模型从本次转写提取用户长期事实。
+   * 提取本身 fire-and-forget，失败静默；这里的 await 只用于获取 llm 配置（异步懒加载）。
+   */
+  private async maybeExtractSessionMemory(config: AgentConfig): Promise<void> {
+    if (!config.sessionID || !config.apiKey) return
+    const fts = this.memoryManager.getFTSProvider()
+    if (!fts) return
+    try {
+      const llmCall = await createExtractorLlmCall({
+        provider: config.provider || "openai",
+        model: config.model,
+        apiKey: config.apiKey,
+        apiUrl: config.apiUrl,
+        headers: config.headers,
+        options: config.options,
+      })
+      if (!llmCall) return
+      const extractor = new MemoryExtractor({
+        store: {
+          list: (sessionID, limit) => fts.listMemories(sessionID, limit),
+          remember: (content, sessionID) => fts.remember(content, sessionID),
+        },
+        listMessages: (sessionID) => getSessionMessages(sessionID),
+        llmCall,
+        minUserMessages: 4,
+      })
+      await extractor.maybeRun(config.sessionID)
+    } catch {
+      // 提取失败绝不阻断会话收尾
+    }
   }
 
   async *run(
@@ -563,7 +600,7 @@ export class Agent {
 
         const turnInput: TurnRunnerInput = {
           messages, tools: toolSet, sessionID: config.sessionID, workspace: config.workspace,
-          config: { ...llmConfig, maxContextTokens: config.maxContextTokens, permissions: config.permissions, onPermissionSave: config.onPermissionSave, autoAcceptPermissions: config.autoAcceptPermissions, fallbacks: config.fallbacks },
+          config: { ...llmConfig, maxContextTokens: config.maxContextTokens, permissions: config.permissions, onPermissionSave: config.onPermissionSave, autoAcceptPermissions: config.autoAcceptPermissions, fallbacks: config.fallbacks, visionModel: config.visionModel },
           deps: { registry: this.registry, stateMachine: this.stateMachine, approvalStore: this.approvalStore, orchestrator: this.orchestrator },
           ctx,
           // 最后一步禁用所有工具定义，强制纯文本收尾（参考 OpenCode MAX_STEPS_PROMPT）

@@ -43,3 +43,5 @@ export type {
 export { VoiceActivityDetector } from './vad'
 export { InterruptionManager } from './interruption'
 export { VoiceSessionManager } from './voice-session'
+export { AnnouncementWindow } from './announcement-window'
+export type { ResponseInfo, SpeechOrigin } from './announcement-window'

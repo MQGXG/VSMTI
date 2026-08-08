@@ -8,6 +8,8 @@ interface GeminiContent {
 
 type GeminiPart =
   | { text: string }
+  | { inlineData: { mimeType: string; data: string } }
+  | { fileData: { mimeType: string; fileUri: string } }
   | { functionCall: { name: string; args: Record<string, unknown> } }
   | { functionResponse: { name: string; response: Record<string, unknown> } }
 
@@ -46,6 +48,14 @@ function convertMessages(messages: LLMMessage[]): GeminiContent[] {
       for (const part of msg.content) {
         if (part.type === "text") {
           parts.push({ text: part.text })
+        } else if (part.type === "image") {
+          const img = part as { image: string; mediaType?: string }
+          const m = /^data:([^;]+);base64,(.+)$/s.exec(img.image)
+          if (m) {
+            parts.push({ inlineData: { mimeType: img.mediaType || m[1], data: m[2] } })
+          } else {
+            parts.push({ fileData: { mimeType: img.mediaType || "image/png", fileUri: img.image } })
+          }
         } else if (part.type === "tool-call") {
           parts.push({
             functionCall: { name: part.toolName, args: part.args as Record<string, unknown> },

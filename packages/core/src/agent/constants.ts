@@ -36,6 +36,15 @@ export interface AgentConfig {
   maxModeCandidates?: number
   judgeModelConfig?: import("./turn").LLMTurnConfig
   autoAcceptPermissions?: boolean
+  /** 多模态视觉桥：主模型不支持 vision 时，图片交由此视觉模型描述 */
+  visionModel?: {
+    provider: string
+    model: string
+    apiKey: string
+    apiUrl?: string
+    headers?: Record<string, string>
+    options?: Record<string, unknown>
+  }
 }
 
 export const DEFAULT_SYSTEM = `You are Mira, an AI assistant integrated into a desktop application. You help users with questions, tasks, coding, research, and document generation.

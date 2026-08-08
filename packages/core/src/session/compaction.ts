@@ -14,6 +14,7 @@ export type CompactLevel = "none" | "l1_snip" | "l2_micro" | "l3_auto"
 type ContentPart =
   | { type: "text"; text: string }
   | { type: "reasoning"; text: string }
+  | { type: "image"; image: string; mediaType?: string }
   | { type: "tool-result"; output: ToolResultOutput }
   | { type: "tool-call"; toolCallId: string; toolName: string; args: Record<string, unknown> }
 

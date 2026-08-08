@@ -321,6 +321,25 @@ export class FTSMemoryProvider implements MemoryProvider {
     } catch { /* 跳过 */ }
   }
 
+  /**
+   * 写入一条记忆（供会话记忆自动提取等场景）。
+   * source 标记来源，默认 `inferred`（可在无需改动人工记忆的情况下批量回退）。
+   */
+  remember(content: string, sessionID: string, source = "inferred"): void {
+    if (!this.db || !content) return
+    try {
+      const capped = content.slice(0, 500)
+      this.db.run(
+        "INSERT INTO fts_memory (source, content, session_id) VALUES (?, ?, ?)",
+        [source, capped, sessionID],
+      )
+      if (this._hasFTS5) {
+        this.db.run("INSERT INTO fts_memory_fts (content, session_id, source) VALUES (?, ?, ?)",
+          [capped, sessionID, source])
+      }
+    } catch { /* 跳过 */ }
+  }
+
   /** 索引 MEMORY.md 内容到记忆表（有 FTS5 时同步索引） */
   indexMemoryMd(content: string, sessionID: string): void {
     if (!this.db || !content) return
@@ -507,6 +526,31 @@ export class FTSMemoryProvider implements MemoryProvider {
     const parts = [fileResults, memoryResults].filter(Boolean)
     return parts.length > 0 ? parts.join("\n\n") : ""
   }
+
+  /**
+   * 列出记忆表中已有的内容（供会话记忆自动提取做去重与"已有记忆"提示）。
+   * sessionID 为空时列出全部，默认按最近写入优先。
+   */
+  listMemories(sessionID?: string, limit = 64): Array<{ content: string; source: string; sessionId: string }> {
+    if (!this.db) return []
+    try {
+      const stmt = sessionID
+        ? this.db.prepare("SELECT content, source, session_id FROM fts_memory WHERE session_id = ? ORDER BY rowid DESC LIMIT ?")
+        : this.db.prepare("SELECT content, source, session_id FROM fts_memory ORDER BY rowid DESC LIMIT ?")
+      if (sessionID) stmt.bind([sessionID, limit])
+      else stmt.bind([limit])
+      const results: Array<{ content: string; source: string; sessionId: string }> = []
+      while (stmt.step()) {
+        const row = stmt.getAsObject() as any
+        if (row && row.content) {
+          results.push({ content: String(row.content), source: String(row.source || ""), sessionId: String(row.session_id || "") })
+        }
+      }
+      stmt.free()
+      return results
+    } catch { return [] }
+  }
+
 
   private save(): void {
     const dbPath = this.dbPath()

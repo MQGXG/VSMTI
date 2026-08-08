@@ -13,7 +13,7 @@ import { loadTTSPipeline } from "./transformers-loader"
 
 // ── WebSpeech 实现 ─────────────────────────────────────
 
-function createWebSpeechEngine(): TTSEngine {
+export function createWebSpeechEngine(): TTSEngine {
   let current: SpeechSynthesisUtterance | null = null
 
   return {
@@ -51,7 +51,13 @@ type LocalTTS = {
 
 const KOKORO_MODEL = "onnx-community/Kokoro-82M-v1.0-ONNX"
 
-function createLocalEngine(): TTSEngine {
+/**
+ * 本地 TTS 引擎（transformers.js ONNX —— Kokoro）
+ *
+ * 与 cloud 引擎暴露相同的 TTSEngine 接口，调用方无感知：
+ * createDefaultTTSEngine() 优先此引擎，运行时失败自动回退 WebSpeech。
+ */
+export function createLocalEngine(): TTSEngine {
   let ctx: AudioContext | null = null
   let pipelinePromise: Promise<LocalTTS> | null = null
   let activeSource: AudioBufferSourceNode | null = null
@@ -79,18 +85,26 @@ function createLocalEngine(): TTSEngine {
     isAvailable: () => typeof window !== "undefined" && "AudioContext" in window,
     async speak(text, options) {
       if (!text.trim()) return
+      let started = false
       try {
         const tts = await loadPipeline()
         const out = await tts.textToSpeech(text)
         const ac = ensureAudioContext()
         const { node, promise } = playFloat32(ac, out.audio, out.sampling_rate)
         activeSource = node
+        started = true
         options?.onStart?.()
         await promise
         options?.onEnd?.()
       } catch (err) {
-        console.error("[voice] 本地 TTS 失败，回退 WebSpeech:", err)
-        options?.onEnd?.()
+        console.warn("[voice] 本地 TTS 失败，回退 WebSpeech:", err)
+        // 回退规则：
+        //  - started=false：尚未开始播放（模型加载/合成失败），整段交给 WebSpeech（含 onStart）
+        //  - started=true ：播放中途异常，只补 onEnd，不再重复 onStart
+        if (started) {
+          options?.onEnd?.()
+          return
+        }
         const fallback = createWebSpeechEngine()
         await fallback.speak(text, options)
       }
@@ -108,7 +122,8 @@ export function createTTSEngine(type: TTSType): TTSEngine {
   return type === "local" ? createLocalEngine() : createWebSpeechEngine()
 }
 
-/** 默认 TTS 引擎：优先本地，回退 WebSpeech */
+/** 默认 TTS 引擎：优先本地（离线 Kokoro），引擎不可用时回退 WebSpeech */
 export function createDefaultTTSEngine(): TTSEngine {
-  return createTTSEngine("webspeech")
+  if (createLocalEngine().isAvailable()) return createLocalEngine()
+  return createWebSpeechEngine()
 }

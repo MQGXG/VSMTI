@@ -52,6 +52,8 @@ export class VoiceSessionManager extends EventEmitter {
   private stream: MediaStream | null = null
   private transcriptBuffer: string = ''
   private lastTranscriptTime = 0
+  /** turn 世代：每次用户语音开始 +1，防止旧回合的迟到音频/文本串话 */
+  private turnGeneration = 0
 
   constructor(config?: Partial<VoiceSessionConfig>) {
     super()
@@ -135,6 +137,7 @@ export class VoiceSessionManager extends EventEmitter {
    * 处理语音开始
    */
   private handleSpeechStart(): void {
+    this.turnGeneration++
     if (this.state === 'speaking') {
       // 打断当前播放
       this.interruption.handleUserSpeaking()
@@ -232,8 +235,19 @@ export class VoiceSessionManager extends EventEmitter {
     const event: VoiceSessionEvent = {
       type,
       data,
+      generation: this.turnGeneration,
     }
     this.emit(type, event)
+  }
+
+  /** 当前世代号（新回合 +1） */
+  getGeneration(): number {
+    return this.turnGeneration
+  }
+
+  /** 事件是否属于当前世代（防旧回合迟到响应） */
+  isCurrentGeneration(generation?: number): boolean {
+    return generation === undefined || generation >= this.turnGeneration
   }
 
   /**

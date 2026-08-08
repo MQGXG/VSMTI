@@ -3,6 +3,8 @@
  * 零外部依赖，替代 Python cron_scheduler
  */
 
+import { backgroundNotifier, setBackgroundNotifier } from "./index"
+
 type CronTask = {
   id: string
   expression: string
@@ -114,7 +116,20 @@ export class CronScheduler {
       if (!task.enabled) continue
       if (task.nextRun <= now) {
         task.lastRun = now
-        task.handler().catch(() => {})
+        task.handler().then(
+          () => {
+            try {
+              const { backgroundNotifier } = require("./index") as typeof import("./index")
+              backgroundNotifier?.addTaskResult("completed", task.description || task.id)
+            } catch { /* notifier 未配置/模块未加载时静默 */ }
+          },
+          (err: Error) => {
+            try {
+              const { backgroundNotifier } = require("./index") as typeof import("./index")
+              backgroundNotifier?.addTaskResult("failed", task.description || task.id, err?.message)
+            } catch { /* 同上 */ }
+          },
+        )
         // 计算下一次运行时间
         const parsed = parseCron(task.expression)
         task.nextRun = nextCronTime(parsed, new Date(now + 60000))

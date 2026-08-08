@@ -3,6 +3,7 @@ import { ProviderCatalog } from "./provider-catalog"
 import { LLMError } from "./schema/errors"
 import type { LLMMessage, ContentPart } from "./schema/messages"
 import { getToolResultOutput } from "./schema/messages"
+import { multimodalBridge, hasImageContent, modelHasVision } from "./transform"
 import type { LLMRequest as LLMRequestSchema } from "./schema/options"
 import { zodToJsonSchema } from "../shared/zod-converter"
 import { isRetryableError as isUnifiedRetryable } from "../shared/errors"
@@ -17,6 +18,15 @@ export interface SDKConfig {
   apiUrl?: string
   headers?: Record<string, string>
   options?: Record<string, unknown>
+  /** 多模态视觉桥：主模型不支持 vision 时，将图片交给该视觉模型描述 */
+  visionModel?: {
+    provider: string
+    model: string
+    apiKey: string
+    apiUrl?: string
+    headers?: Record<string, string>
+    options?: Record<string, unknown>
+  }
 }
 
 export type LLMStreamEvent =
@@ -127,9 +137,20 @@ export function createLLMClient(config: SDKConfig): LLMClient {
 
   async function* innerStream(request: LLMRequest2): AsyncGenerator<LLMStreamEvent> {
     try {
+      // 多模态视觉桥：主模型无 vision 能力且消息含图片时，先由视觉模型描述替换
+      let bridgeMessages = request.messages
+      if (config.visionModel && hasImageContent(request.messages) && !modelHasVision(config.provider, config.model)) {
+        try {
+          bridgeMessages = await multimodalBridge(request.messages, config.visionModel)
+        } catch (bridgeErr) {
+          // 桥失败回落到原消息（由协议层决定是否报"模型不支持图像"）
+          console.warn("[multimodal bridge] vision analysis failed:", bridgeErr)
+        }
+      }
+
       const llmRequest: LLMRequestSchema = {
         model: config.model,
-        messages: convertMessages(request.messages),
+        messages: convertMessages(bridgeMessages),
         tools: convertTools(request.tools),
         generation: config.options,
         // 默认启用缓存（Anthropic 需要显式 cache_control，OpenAI/DeepSeek 服务端自动）

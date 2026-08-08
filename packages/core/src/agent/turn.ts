@@ -10,6 +10,14 @@ export interface LLMTurnConfig {
   apiUrl: string
   headers?: Record<string, string>
   options?: Record<string, unknown>
+  visionModel?: {
+    provider: string
+    model: string
+    apiKey: string
+    apiUrl?: string
+    headers?: Record<string, string>
+    options?: Record<string, unknown>
+  }
 }
 
 export interface LLMTurnInput {
@@ -42,6 +50,7 @@ export async function* runLLMTurn(
     apiUrl: config.apiUrl,
     headers: config.headers,
     options: config.options,
+    visionModel: config.visionModel,
   })
 
   let currentText = ""

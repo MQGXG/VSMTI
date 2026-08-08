@@ -36,7 +36,7 @@ interface OpenAIResponse {
 
 interface OpenAIMessage {
   role: string
-  content: string | null
+  content: string | null | Array<{ type: string; text?: string; image_url?: { url: string } }>
   tool_call_id?: string
   reasoning_content?: string
   tool_calls?: Array<{
@@ -44,6 +44,11 @@ interface OpenAIMessage {
     type: "function"
     function: { name: string; arguments: string }
   }>
+}
+
+/** 图片 part → OpenAI image_url 内容块 */
+function toImageContentPart(image: string, mediaType: string | undefined): { type: "image_url"; image_url: { url: string } } {
+  return { type: "image_url" as const, image_url: { url: image } }
 }
 
 export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
@@ -60,6 +65,7 @@ export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
     const parts = msg.content
     const text = parts.filter((p) => p.type === "text").map((p) => p.text).join("")
     const reasoningText = parts.filter((p) => p.type === "reasoning").map((p) => p.text).join("")
+    const imageParts = parts.filter((p) => p.type === "image")
     const toolCalls = parts.filter((p) => p.type === "tool-call")
     const toolResults = parts.filter((p) => p.type === "tool-result")
 
@@ -69,6 +75,16 @@ export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
         tool_call_id: toolResults[0].toolCallId,
         content: getToolResultOutput(toolResults[0].output),
       }
+    }
+
+    // 含图片的 user 消息：以多内容块数组发送（OpenAI vision 格式）
+    if (imageParts.length > 0 && msg.role === "user") {
+      const blocks: Array<{ type: string; text?: string; image_url?: { url: string } }> = []
+      if (text) blocks.push({ type: "text", text })
+      for (const img of imageParts) {
+        blocks.push(toImageContentPart((img as { image: string }).image, (img as { mediaType?: string }).mediaType))
+      }
+      return { role: "user", content: blocks }
     }
 
     if (toolCalls.length > 0 && msg.role === "assistant") {

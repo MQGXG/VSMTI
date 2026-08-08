@@ -20,7 +20,7 @@ export {
 } from "./shared/errors"
 export { LLMError } from "./llm/schema/errors"
 export { ToolRegistry, type ModelFilter } from "./system/registry"
-export { make, withPermission, settle } from "./shared/tool"
+export { make, withPermission, settle, truncateToolOutput } from "./shared/tool"
 export { PermissionSet, defaultPermissions, permissionsForMode, type PermissionRule } from "./system/permission"
 export { type AgentMode, getModeConfig, getAllModes, modeToPermissionSet, loadCustomAgents, registerAgent, registerAgentFromJson, getModeToolAllowlist } from "./config/modes"
 export { type AgentProfile, AgentProfileRegistry, getGlobalAgentDir, getProjectAgentDir } from "./config/profile"
@@ -28,7 +28,7 @@ export { ContextManager, type ContextConfig, type ContextStats } from "./session
 export { GoalJudge, type Goal, type GoalConfig, type GoalEvaluation } from "./orchestrate/goal-judge"
 export { createLLMClient } from "./llm/client"
 export type { SDKConfig as ClientConfig } from "./llm/client"
-export type { ToolDef, ToolContext, ToolResult, ToolCall, Content, Settlement } from "./shared/tool"
+export type { ToolDef, ToolContext, ToolResult, ToolCall, Content, Settlement, TruncatedOutput, TruncateOutputOptions } from "./shared/tool"
 export * as ToolEffect from "./shared/tool-effect"
 export { lspManager } from "./lsp/manager"
 
@@ -135,6 +135,15 @@ export {
   type DecayConfig, type MemoryType, createMemoryNode, createMemoryEdge, createEmptyGraph,
   DECAY_PROFILES,
 } from "./memory/memory-node"
+// 会话结束自动记忆提取
+export {
+  MemoryExtractor, createExtractorLlmCall, parseOps, cleanFact,
+  transcriptLines, containsSensitiveContent,
+  EXTRACTOR_SYSTEM_PROMPT, SENSITIVE_PATTERNS,
+  type MemoryExtractorOptions, type ExtractorLlmCall,
+  type MemoryExtractorStore, type ExtractedMessage,
+} from "./memory/memory-extractor"
+
 export { memoryActivateTool, setDynamicMemoryManager, getDynamicMemoryManager } from "./tools/knowledge/memory-activate"
 export {
   memoryGraphAddNodeTool, memoryGraphAddEdgeTool, memoryGraphQueryTool, memoryGraphDecayTool,
@@ -241,6 +250,9 @@ export {
   VoiceActivityDetector,
   InterruptionManager,
   VoiceSessionManager,
+  AnnouncementWindow,
+  type ResponseInfo,
+  type SpeechOrigin,
 } from "./voice"
 
 

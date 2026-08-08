@@ -10,6 +10,8 @@
 
 import type { z } from "zod"
 import { zodToJsonSchema as zodToJsonSchemaConverter } from "./zod-converter"
+import * as fs from "fs"
+import * as path from "path"
 
 export interface ToolContext {
   sessionID: string
@@ -178,6 +180,101 @@ export function toOpenAISchema(def: ToolDef): Record<string, unknown> {
   }
 }
 
+// ── 统一输出截断（参考 OpenCode truncate.ts）──────────────────
+
+export const DEFAULT_MAX_LINES = 2000
+export const DEFAULT_MAX_BYTES = 50 * 1024
+
+export interface TruncateOutputOptions {
+  /** 最大行数，默认 2000 */
+  maxLines?: number
+  /** 最大字节数（utf-8），默认 50KB */
+  maxBytes?: number
+  /** 截断方向：保留头部（head）或尾部（tail），默认 head */
+  direction?: "head" | "tail"
+  /** 工作区目录；提供时超限输出落盘到 `<workspace>/.task_outputs/tool-results/` */
+  workspace?: string
+  /** 落盘文件名主干（通常为 toolCallID） */
+  id?: string
+}
+
+export interface TruncatedOutput {
+  content: string
+  truncated: boolean
+  outputPath?: string
+  /** 被截掉的行数（仅 truncated 时有意义） */
+  removedLines?: number
+}
+
+/**
+ * 统一工具输出截断：超行数/字节则截断为 preview，完整输出落盘，
+ * 追加读取提示（供 Grep/Read 查看全文）。
+ * 纯函数，无副作用（落盘失败静默降级为纯正文截断）。
+ */
+export function truncateToolOutput(text: string, opts: TruncateOutputOptions = {}): TruncatedOutput {
+  const maxLines = opts.maxLines ?? DEFAULT_MAX_LINES
+  const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES
+  const direction = opts.direction ?? "head"
+  const lines = text.split("\n")
+  const totalBytes = Buffer.byteLength(text, "utf-8")
+
+  if (lines.length <= maxLines && totalBytes <= maxBytes) {
+    return { content: text, truncated: false }
+  }
+
+  const out: string[] = []
+  let bytes = 0
+  let hitBytes = false
+
+  if (direction === "head") {
+    for (let i = 0; i < lines.length && i < maxLines; i++) {
+      const size = Buffer.byteLength(lines[i], "utf-8") + (i > 0 ? 1 : 0)
+      if (bytes + size > maxBytes) { hitBytes = true; break }
+      out.push(lines[i])
+      bytes += size
+    }
+  } else {
+    for (let i = lines.length - 1; i >= 0 && out.length < maxLines; i--) {
+      const size = Buffer.byteLength(lines[i], "utf-8") + (out.length > 0 ? 1 : 0)
+      if (bytes + size > maxBytes) { hitBytes = true; break }
+      out.unshift(lines[i])
+      bytes += size
+    }
+  }
+
+  const removedUnits = hitBytes ? totalBytes - bytes : lines.length - out.length
+  const removedLines = hitBytes ? 0 : lines.length - out.length
+  const preview = out.join("\n")
+
+  // 完整输出落盘
+  let outputPath: string | undefined
+  if (opts.workspace && opts.id) {
+    try {
+      const dir = path.join(opts.workspace, ".task_outputs", "tool-results")
+      fs.mkdirSync(dir, { recursive: true })
+      outputPath = path.join(dir, `${opts.id}.txt`)
+      fs.writeFileSync(outputPath, text, "utf-8")
+    } catch {
+      outputPath = undefined
+    }
+  }
+
+const fullHint = outputPath
+    ? `\n输出已完整保存至: ${outputPath}\nUse Grep to search the full content or Read with offset/limit to view specific sections.`
+    : ""
+
+  const body = direction === "head"
+    ? `${preview}\n\n...[${removedUnits} ${hitBytes ? "bytes" : "lines"} truncated]...`
+    : `...${removedUnits} ${hitBytes ? "bytes" : "lines"} truncated...\n\n${preview}`
+
+  return {
+    content: `${body}${fullHint}`,
+    truncated: true,
+    outputPath,
+    removedLines,
+  }
+}
+
 /**
  * 执行工具 — 带耗时追踪 + 输出截断 + 错误分类
  * 参考 MAF FunctionTool.invoke() 的计时和解析逻辑
@@ -216,9 +313,22 @@ export async function settle(
     const result = await def.execute(parseResult.data, ctx)
     const elapsed = Date.now() - startTime
 
-    // 输出截断
+    // 统一输出截断：超行/超字节 → preview + 落盘全量（参考 OpenCode truncate）
     let output = result.output ?? (result.success ? "" : result.error ?? "")
     let truncated = false
+    let outputPath: string | undefined
+    const truncation = truncateToolOutput(output, {
+      maxLines: 2000,
+      maxBytes: DEFAULT_MAX_BYTES,
+      workspace: ctx.workspace || undefined,
+      id: call.id,
+    })
+    if (truncation.truncated) {
+      output = truncation.content
+      outputPath = truncation.outputPath
+      truncated = true
+    }
+    // 工具级字符上限二次裁剪（maxOutputLength 语义为字符数，保持向后兼容）
     if (output.length > maxOutput) {
       output = output.slice(0, maxOutput) + `\n\n[Output truncated at ${maxOutput} chars]`
       truncated = true
@@ -237,6 +347,7 @@ export async function settle(
           ...result.metadata,
           elapsed,
           truncated,
+          ...(outputPath ? { outputPath } : {}),
         },
       },
       content,

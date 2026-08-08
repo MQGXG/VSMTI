@@ -153,6 +153,8 @@ export interface VoiceSessionEvent {
   transcript?: STTResult
   audio?: ArrayBuffer
   error?: string
+  /** turn 世代：每次用户语音开始 +1，接收方丢弃 generation < current 的事件 */
+  generation?: number
   data?: unknown
 }
 
