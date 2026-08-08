@@ -70,6 +70,8 @@ export interface ApprovalResult {
   permissionAction: string
   needsApproval: boolean
   hardDenied?: string
+  /** 规则级 deny 原因（命中 `effect: "deny"` 规则） */
+  denyReason?: string
 }
 
 export function evaluateToolCalls(
@@ -99,13 +101,16 @@ export function evaluateToolCalls(
     }
 
     // Gate 2+3: rule matching + user approval
-    const needsApproval = permissions?.needsApproval(permissionAction, resources) ?? false
+    const ruleEffect = permissions?.evaluateResources(permissionAction, resources) ?? "allow"
+    const needsApproval = ruleEffect === "ask"
+    const denyReason = ruleEffect === "deny" ? `blocked by rule: ${permissionAction} denies this action` : undefined
 
     return {
       toolCall: { id: call.id, name: call.function.name, input: args },
       args,
       permissionAction,
       needsApproval,
+      denyReason,
     }
   })
 }

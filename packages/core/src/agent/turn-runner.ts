@@ -81,7 +81,8 @@ async function* checkToolPermission(
   )
 
   for (const ev of evaluations) {
-    if (ev.hardDenied) return { success: false, error: ev.hardDenied }
+    if (ev.hardDenied) return { success: false, error: `Permission denied: ${tc.name} — ${ev.hardDenied}` }
+    if (ev.denyReason) return { success: false, error: `Permission denied: ${tc.name} — ${ev.denyReason}` }
     if (ev.needsApproval) {
       const resources = extractResources(ev.args)
       const cached = deps.approvalStore.checkAll(ev.permissionAction, resources)
@@ -103,7 +104,7 @@ async function* checkToolPermission(
         deps.approvalStore.record(ev.permissionAction, resources, "allow", 300_000, workspace)
       } else {
         deps.approvalStore.record(ev.permissionAction, resources, "deny", 300_000, workspace)
-        return { success: false, error: `Permission denied: ${tc.name}` }
+        return { success: false, error: `Permission denied: ${tc.name} — user denied this request` }
       }
     }
   }
@@ -230,8 +231,8 @@ export async function* runTurn(
     }
   }
 
-  const quickPermissionCheck = (tc: { id: string; name: string; arguments: string }): "allow" | "ask" | "deny" => {
-    if (input.config.autoAcceptPermissions) return "allow"
+  const quickPermissionCheck = (tc: { id: string; name: string; arguments: string }): { status: "allow" | "ask" | "deny"; reason?: string } => {
+    if (input.config.autoAcceptPermissions) return { status: "allow" }
 
     let args: Record<string, unknown>
     try { args = JSON.parse(tc.arguments) } catch { args = {} }
@@ -240,7 +241,7 @@ export async function* runTurn(
     const resources = extractResources(args)
 
     const cached = deps.approvalStore.checkAll(permissionAction, resources)
-    if (cached === "allow") return "allow"
+    if (cached === "allow") return { status: "allow" }
 
     const evaluations = evaluateToolCalls(
       [{ id: tc.id, function: { name: tc.name, arguments: tc.arguments } }],
@@ -248,20 +249,21 @@ export async function* runTurn(
       input.config.permissions,
     )
     const ev = evaluations[0]
-    if (ev?.hardDenied) return "deny"
-    if (!ev?.needsApproval) return "allow"
+    if (ev?.hardDenied) return { status: "deny", reason: `Permission denied: ${tc.name} — ${ev.hardDenied}` }
+    if (ev?.denyReason) return { status: "deny", reason: `Permission denied: ${tc.name} — ${ev.denyReason}` }
+    if (!ev?.needsApproval) return { status: "allow" }
 
     // 智能权限分类：对 bash/code_exec 按风险级别自动放行
     if (tc.name === "bash") {
       const command = typeof args.command === "string" ? args.command.trim() : ""
-      if (isSafeBashCommand(command)) return "allow"
+      if (isSafeBashCommand(command)) return { status: "allow" }
     }
     if (tc.name === "run_code") {
       const code = typeof args.code === "string" ? args.code.trim() : ""
-      if (isSafeCodeExec(code)) return "allow"
+      if (isSafeCodeExec(code)) return { status: "allow" }
     }
 
-    return "ask"
+    return { status: "ask" }
   }
 
   // 参考 Claude Code 的 YOLO 分类器模式：
@@ -382,10 +384,10 @@ export async function* runTurn(
 
       const permResult = quickPermissionCheck(event.toolCall)
 
-      if (permResult === "allow") {
+      if (permResult.status === "allow") {
         startToolExecution(event.toolCall)
-      } else if (permResult === "deny") {
-        const result = { success: false, error: `Permission denied: ${event.toolCall.name}` } as ToolResult
+      } else if (permResult.status === "deny") {
+        const result = { success: false, error: permResult.reason || `Permission denied: ${event.toolCall.name}` } as ToolResult
         toolResults.push({ id: event.toolCall.id, result })
         toolDoneQueue.push({ id: event.toolCall.id, result })
       } else {
@@ -429,7 +431,7 @@ export async function* runTurn(
       startToolExecution(pp.toolCall)
     } else {
       deps.approvalStore.record(pp.permissionAction, pp.resources, "deny", 300_000, input.workspace)
-      const result = { success: false, error: `Permission denied: ${pp.toolCall.name}` } as ToolResult
+      const result = { success: false, error: `Permission denied: ${pp.toolCall.name} — user denied this request` } as ToolResult
       toolResults.push({ id: pp.toolCall.id, result })
       toolDoneQueue.push({ id: pp.toolCall.id, result })
     }
