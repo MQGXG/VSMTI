@@ -38,10 +38,12 @@ mira/
 ├── packages/
 │   ├── core/                        # @mira/core — Agent Core 核心逻辑
 │   │   └── src/
-│   │       ├── agent.ts             # Agent 核心循环
+│   │       ├── agent/               # Agent 核心循环（agent/turn-runner/turn-classifier/state-machine）
 │   │       ├── llm/                 # LLM 分层架构（协议/Provider/路由）
-│   │       ├── tools/               # 38 个工具
-│   │       ├── memory/              # 四层记忆系统
+│   │       ├── tools/               # 45 个默认注册工具
+│   │       ├── memory/              # 记忆系统（FTS5 + 动态记忆图谱 + 向量嵌入）
+│   │       ├── graph/               # Graph Engineering 图编排引擎
+│   │       ├── orchestrate/         # 子 Agent / Goal Judge / Dream / ACP
 │   │       ├── skill/               # Skill 系统
 │   │       ├── permission/          # 声明式权限
 │   │       └── ...                  # 配置/数据库/会话管理等
@@ -50,19 +52,25 @@ mira/
 │   │   └── src/
 │   │       ├── main/                # 应用入口
 │   │       ├── preload/             # 安全桥接 (contextBridge)
-│   │       ├── ipc/                 # IPC 通信（14 个模块）
-│   │       ├── managers/            # 窗口/托盘管理
+│   │       ├── ipc/                 # IPC 通信（15 个模块）
+│   │       ├── managers/            # 窗口/托盘/悬浮球管理
 │   │       └── utils/               # 日志/环境变量
 │   │
 │   └── ui/                          # @mira/ui — React 前端组件
 │       └── src/
 │           ├── chat/                # 聊天组件（流式渲染/工具视图/权限弹窗）
 │           ├── sidebar/             # 侧边栏（项目/会话/设置）
-│           ├── layout/              # 自定义标题栏
+│           ├── memory/              # 知识图谱 3D 可视化
+│           ├── services/            # IPC 服务层（含语音服务）
 │           └── ui/                  # 通用 UI
 │
 ├── apps/
 │   └── desktop/                     # @mira/desktop — Electron 应用壳
+│       ├── src/App.tsx              # 应用根组件
+│       ├── src/pet/                 # Live2D 桌宠
+│       ├── index.html
+│       ├── pet.html                 # 桌宠窗口 HTML
+│       └── widget-test.html         # Widget 测试 HTML
 │
 ├── data/                            # 运行时数据
 ├── docs/                            # 文档
@@ -74,21 +82,26 @@ mira/
 - 无边框窗口 + 自定义标题栏
 - 系统托盘 + 全局快捷键 `Ctrl+Shift+A`
 - 本地文件拖拽分析
-- 多模型切换（OpenAI / Anthropic / DeepSeek / Ollama / Groq / Gemini 等 10+ Provider）
+- 多模型切换（OpenAI / Anthropic / DeepSeek / Ollama / Groq / Gemini 等 12 Provider）
 - 5 种 Agent 模式（助手 / 专家 / 执行 / 安全 / 规划）+ 自定义 Agent
-- 38 个内置工具（文件操作 / 代码执行 / 网页搜索 / Git / 数据分析 / 记忆 / 工作流等）
-- 声明式权限系统（通配符匹配 + 模式叠加 + 运行时审批）
-- 四层记忆系统（Session → Project → Global → History）
+- 45 个内置工具（文件操作 / 代码执行 / 网页搜索 / Git / 数据分析 / 记忆 / 文档生成 / 工作流等）
+- 声明式权限系统（通配符匹配 + 模式叠加 + 运行时审批 + 硬拒绝列表）
+- 记忆系统（FTS5 全文搜索 + 动态记忆图谱 + 向量嵌入 + 中文分词）
 - Goal Judge（任务完成度验证）
 - Max Mode（并行采样选优）
 - Dynamic Workflow（代码级编排）
 - Subagent 管理（最大并行 5 个，支持 Actor 模型/任务门控/ReAct 循环/粘滞检测）
+- Graph Engineering（图编排引擎：coding-task 模板 / checkpoint 恢复 / 并行组 / 契约校验）
 - MCP 协议支持（扩展工具能力）
 - LSP 代码智能（定义跳转 / 引用查找 / 悬停信息）
 - Skill 系统（Slash 命令 + 动态加载）
 - API Key 加密存储（Electron safeStorage）
 - 浏览器自动化（Playwright 截图/点击/输入，支持 SPA 页面）
 - 文件快照回退（每次编辑前自动快照，支持一键恢复）
+- Widget 渲染（LLM 生成 HTML 沙箱 iframe + 本地 chart.js）
+- Live2D 桌宠（透明置顶窗口，直接对话 + 嘴型同步 + 语音）
+- 语音对话（能量 VAD + Whisper STT + Kokoro TTS）
+- Token 成本追踪（模型定价表 + 会话级成本）
 - 便携打包，目标电脑无需安装任何运行时
 
 ## 开发指南

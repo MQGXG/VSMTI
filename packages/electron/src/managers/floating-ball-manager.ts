@@ -4,7 +4,7 @@
  */
 
 import { BrowserWindow, screen, globalShortcut, ipcMain, nativeImage } from 'electron'
-import { resolve } from 'path'
+import { join, resolve } from 'path'
 
 /** 悬浮球状态 */
 export type FloatingBallState = 'active' | 'hidden' | 'waking'
@@ -90,6 +90,7 @@ export class FloatingBallManager {
       skipTaskbar: true,
       show: false,
       webPreferences: {
+        preload: join(__dirname, "preload.js"),
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: true,
@@ -110,7 +111,7 @@ export class FloatingBallManager {
 
     // 显示悬浮球窗口
     this.ballWindow.show()
-    this.ballWindow.webContents.send('lifecycle', { state: this.state, reason: 'created' })
+    this.ballWindow.webContents.send('floatingBall:stateChange', { state: this.state, reason: 'created' })
 
     this.logger.info('[FloatingBall] Created')
   }
@@ -209,27 +210,27 @@ export class FloatingBallManager {
           
           ball.addEventListener('mousedown', (e) => {
             isDragging = false;
-            window.electronAPI?.dragStart({ x: e.screenX, y: e.screenY });
+            window.electronAPI?.floatingBall.dragStart({ x: e.screenX, y: e.screenY });
           });
           
           document.addEventListener('mousemove', (e) => {
             if (e.buttons === 1) {
               isDragging = true;
-              window.electronAPI?.dragMove({ x: e.screenX, y: e.screenY });
+              window.electronAPI?.floatingBall.dragMove({ x: e.screenX, y: e.screenY });
             }
           });
           
           document.addEventListener('mouseup', () => {
             if (!isDragging) {
-              window.electronAPI?.click();
+              window.electronAPI?.floatingBall.click();
             }
-            window.electronAPI?.dragEnd();
+            window.electronAPI?.floatingBall.dragEnd();
             isDragging = false;
           });
           
           // 接收状态更新
-          window.electronAPI?.onStateChange((state) => {
-            ball.className = 'ball ' + state;
+          window.electronAPI?.floatingBall.onStateChange((state) => {
+            ball.className = 'ball ' + state.state;
           });
         </script>
       </body>
@@ -356,6 +357,7 @@ export class FloatingBallManager {
       hasShadow: true,
       show: false,
       webPreferences: {
+        preload: join(__dirname, "preload.js"),
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: true,
@@ -484,7 +486,7 @@ export class FloatingBallManager {
       <body>
         <div class="header">
           <h1>Mira</h1>
-          <button class="close-btn" onclick="window.electronAPI?.closePanel()">&times;</button>
+          <button class="close-btn" onclick="window.electronAPI?.floatingBall.closePanel()">&times;</button>
         </div>
         <div class="messages" id="messages">
           <div class="message assistant">你好！我是 Mira，你的 AI 助手。有什么可以帮你的吗？</div>
@@ -511,7 +513,7 @@ export class FloatingBallManager {
             input.value = '';
             
             // 发送到主进程
-            window.electronAPI?.sendMessage(text);
+            window.electronAPI?.floatingBall.sendMessage(text);
           }
           
           function addMessage(role, content) {
@@ -523,7 +525,7 @@ export class FloatingBallManager {
           }
           
           // 接收消息
-          window.electronAPI?.onMessage((data) => {
+          window.electronAPI?.floatingBall.onMessage((data) => {
             addMessage(data.role, data.content);
           });
         </script>
@@ -597,7 +599,7 @@ export class FloatingBallManager {
     if (this.state === 'hidden') {
       this.setState('waking', reason)
     } else {
-      this.ballWindow.webContents.send('lifecycle', {
+      this.ballWindow.webContents.send('floatingBall:stateChange', {
         state: this.state,
         reason: 'activity',
       })
@@ -636,7 +638,7 @@ export class FloatingBallManager {
    */
   private setState(state: FloatingBallState, reason: string): void {
     this.state = state
-    this.ballWindow?.webContents.send('lifecycle', { state, reason })
+    this.ballWindow?.webContents.send('floatingBall:stateChange', { state, reason })
   }
 
   /**

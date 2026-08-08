@@ -92,15 +92,22 @@ async function* withRetry(
     }
     try {
       let hasError = false
+      let emittedContent = false
       for await (const event of fn()) {
         if (event.type === "error") {
           hasError = true
           lastError = new Error(event.error.message)
           break
         }
+        if (event.type === "delta" || event.type === "reasoning" || event.type === "tool_call") {
+          emittedContent = true
+        }
         yield event
       }
       if (!hasError) return
+      // 已产出部分内容（delta/reasoning/tool_call）时禁止重试：重试会从头重放，
+      // 导致已送达 UI 的前半段内容重复
+      if (emittedContent) break
     } catch (e) {
       lastError = e instanceof Error ? e : new Error(String(e))
     }

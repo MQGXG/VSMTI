@@ -20,8 +20,23 @@ type Live2DModelHandle = import("pixi.js").Container & {
   anchor: { set(x?: number, y?: number): void }
   focus?(x: number, y: number): void
   internalModel?: {
-    setParameterValueById(id: string, value: number, weight?: number): void
-    getParameterValueById(id: string): number
+    coreModel?: {
+      _model?: { parameters?: { ids?: string[] } }
+      setParameterValueByIndex?(index: number, value: number, weight?: number): void
+    }
+  }
+}
+
+function setParameterByName(model: Live2DModelHandle | null, name: string, value: number): void {
+  const coreModel = model?.internalModel?.coreModel
+  if (!coreModel || typeof coreModel.setParameterValueByIndex !== "function") return
+  try {
+    const ids = coreModel._model?.parameters?.ids
+    if (!ids) return
+    const index = ids.indexOf(name)
+    if (index >= 0) coreModel.setParameterValueByIndex(index, value)
+  } catch {
+    /* 引擎内部状态变化时忽略，避免影响聊天流程 */
   }
 }
 
@@ -58,7 +73,7 @@ export function PetApp() {
   // 口型联动：语音对话聆听/朗读时张嘴，否则闭嘴
   useEffect(() => {
     const mouth = voiceStatus === "listening" || voiceStatus === "speaking" ? 0.3 : 0
-    modelRef.current?.internalModel?.setParameterValueById("ParamMouthOpenY", mouth)
+    setParameterByName(modelRef.current, "ParamMouthOpenY", mouth)
   }, [voiceStatus])
 
   // 语音对话自动朗读的助手文本：仅在回复完成后提供（避免流式中间态反复朗读）
@@ -215,7 +230,7 @@ export function PetApp() {
           app.stage.off("pointerup")
           app.stage.off("pointerupoutside")
           ro?.disconnect()
-          modelRef.current?.destroy()
+          modelRef.current = null
           app.destroy(true, { children: true, texture: true })
         }
 

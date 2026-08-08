@@ -1,8 +1,23 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { Agent } from '../agent/agent'
 import { ToolRegistry } from '../system/registry'
 import { make } from '../shared/tool'
 import { z } from 'zod/v4'
+import { loadSession } from '../session/store'
+
+vi.mock('../llm/client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../llm/client')>()
+  return {
+    ...actual,
+    createLLMClient: vi.fn().mockImplementation(() => ({
+      stream: vi.fn().mockImplementation(async function* () {
+        yield { type: 'delta' as const, delta: 'Hello from agent' }
+        yield { type: 'done' as const }
+      }),
+      complete: vi.fn().mockImplementation(async () => ({ content: '0' })),
+    })),
+  }
+})
 
 const echoTool = make({
   name: 'echo',
@@ -67,5 +82,21 @@ describe('Agent', () => {
     agent.abort()
     agent.abort() // 第二次不应抛异常
     expect(agent.aborted).toBe(true)
+  })
+
+  test('persists pure-text assistant reply to session', async () => {
+    const registry = new ToolRegistry()
+    const agent = new Agent(registry)
+    const config = {
+      sessionID: 'c1-test',
+      workspace: '/tmp',
+      model: 'gpt-4',
+      apiKey: 'k',
+      apiUrl: 'http://x',
+    }
+    for await (const _e of agent.run('hi', [], config)) {}
+    const stored = await loadSession('c1-test')
+    const assistant = stored?.messages.filter((m) => m.role === 'assistant')
+    expect(assistant?.some((m) => m.content.includes('Hello from agent'))).toBe(true)
   })
 })

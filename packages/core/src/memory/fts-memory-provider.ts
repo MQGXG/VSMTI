@@ -12,6 +12,7 @@ import { join } from "path"
 import * as fss from "fs"
 import * as fsp from "fs/promises"
 import * as pt from "path"
+import { getDbAsync } from "../system/database"
 
 const DEFAULT_IGNORE_DIRS = ["node_modules", ".git", ".svn", ".hg", "target", "dist", "build", ".next", ".nuxt", "venv", "__pycache__", ".cache", ".idea", ".vscode", ".mimo", ".opencode"]
 const DEFAULT_IGNORE_EXTS = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".svg", ".woff", ".woff2", ".eot", ".ttf", ".otf", ".pyc", ".class", ".o", ".so", ".dll", ".exe", ".zip", ".tar", ".gz"]
@@ -342,25 +343,45 @@ export class FTSMemoryProvider implements MemoryProvider {
     return this.searchMemoryLikeFallback(query, limit)
   }
 
-  /** 按项目过滤的记忆搜索 — JOIN sessions 表获取 project_id */
+  /**
+   * 按项目过滤的记忆搜索。
+   *
+   * 注意：fts_memory_fts / fts_memory 位于独立的 fts-memory.db，
+   * 而 sessions 表位于主库 mira.db —— 不能跨库 JOIN。
+   * 这里先从主库查出该项目下的 session_id 列表，再在 FTS 库内用 IN 过滤。
+   */
   async searchMemoryByProject(query: string, projectId: string, limit = 50): Promise<Array<{ content: string; source: string; sessionId: string }>> {
     if (!this.db) return []
-    const ftsQuery = FTSMemoryProvider.toFTS5Query(query || "*")
-    if (!ftsQuery) return []
 
     try {
+      // 从主库（mira.db）解析该项目下的会话 ID
+      let sessionIds: string[] = []
+      try {
+        const db = await getDbAsync()
+        const rows = db.exec("SELECT session_id FROM sessions WHERE project_id = ?", [projectId])
+        if (rows.length > 0 && rows[0].values) {
+          sessionIds = rows[0].values.map((r) => String(r[0]))
+        }
+      } catch { /* 主库不可用时降级为空 */ }
+      if (sessionIds.length === 0) return []
+
       const results: Array<{ content: string; source: string; sessionId: string }> = []
+      const inClause = sessionIds.map(() => "?").join(", ")
+      const tokens = (query || "").match(/[\p{L}\p{N}_]+/gu) || []
 
       if (this._hasFTS5) {
+        const matchClause = tokens.length > 0
+          ? `AND fts_memory_fts MATCH ?`
+          : ""
         const stmt = this.db.prepare(`
-          SELECT f.content, f.source, f.session_id
-          FROM fts_memory_fts f
-          JOIN sessions s ON f.session_id = s.session_id
-          WHERE s.project_id = ?
+          SELECT content, source, session_id
+          FROM fts_memory_fts
+          WHERE session_id IN (${inClause})
+          ${matchClause}
           ORDER BY rank
           LIMIT ?
         `)
-        stmt.bind([projectId, limit])
+        stmt.bind(tokens.length > 0 ? [...sessionIds, FTSMemoryProvider.toFTS5Query(query), limit] : [...sessionIds, limit])
         while (stmt.step()) {
           const row = stmt.getAsObject() as Record<string, unknown>
           results.push({
@@ -371,14 +392,20 @@ export class FTSMemoryProvider implements MemoryProvider {
         }
         stmt.free()
       } else {
+        const params: Array<string | number> = [...sessionIds]
+        const likeClause = tokens.length > 0
+          ? `AND ${tokens.map(() => "content LIKE ?").join(" AND ")}`
+          : ""
+        for (const t of tokens) params.push(`%${t}%`)
         const stmt = this.db.prepare(`
-          SELECT m.content, m.source, m.session_id
-          FROM fts_memory m
-          JOIN sessions s ON m.session_id = s.session_id
-          WHERE s.project_id = ?
+          SELECT content, source, session_id
+          FROM fts_memory
+          WHERE session_id IN (${inClause})
+          ${likeClause}
+          ORDER BY rowid DESC
           LIMIT ?
         `)
-        stmt.bind([projectId, limit])
+        stmt.bind([...params, limit])
         while (stmt.step()) {
           const row = stmt.getAsObject() as Record<string, unknown>
           results.push({

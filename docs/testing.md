@@ -21,16 +21,40 @@ pnpm typecheck
 
 ```
 packages/
-├── core/src/__tests__/           # 核心逻辑测试
-│   ├── agent.test.ts             # Agent 循环测试
-│   ├── tool.test.ts              # 工具系统测试
-│   ├── llm-sdk.test.ts           # LLM SDK 测试
-│   ├── permission.test.ts        # 权限系统测试
-│   ├── memory.test.ts            # 记忆系统测试
-│   └── ...
-├── ui/src/chat/__tests__/        # UI 组件测试
-│   └── tool-router.test.ts       # 工具路由测试
-└── electron/src/__tests__/       # Electron 测试
+├── core/src/__tests__/           # 核心逻辑测试（26 个文件，~290 用例）
+│   ├── setup.ts                  # 初始化平台路径 + 内存 SQLite
+│   ├── agent.test.ts             # Agent 端到端运行（工具使用、流式）
+│   ├── benchmark.test.ts         # Agent 性能/迭代基准
+│   ├── compaction.test.ts        # 上下文压缩
+│   ├── context-epoch.test.ts     # 上下文纪元/检查点
+│   ├── context-source.test.ts    # 系统上下文 Source
+│   ├── cost.test.ts              # Token 成本计算
+│   ├── create-chart.test.ts      # create_chart SVG
+│   ├── create-doc.test.ts        # create_xlsx / create_pptx
+│   ├── create-visual.test.ts     # create_svg / create_webpage / create_mockup
+│   ├── dynamic-memory.test.ts    # 动态记忆图谱 + memory_* 工具
+│   ├── failover.test.ts          # LLM 故障转移
+│   ├── file-state-cache.test.ts  # 文件状态缓存（stale 检测）
+│   ├── graph.test.ts             # Graph Engineering 引擎
+│   ├── llm-sdk.test.ts           # LLM 客户端
+│   ├── memory-manager.test.ts    # 记忆管理器
+│   ├── message-utils.test.ts     # 消息工具函数
+│   ├── permission-loop.test.ts   # 权限门控/审批循环
+│   ├── plugin-hooks.test.ts      # 插件钩子
+│   ├── provider-catalog.test.ts  # Provider 目录
+│   ├── reasoning-content.test.ts # 推理内容 Part
+│   ├── session-improvement.test.ts # 会话改进（Source/事件溯源/ScopedToolRegistry）
+│   ├── session-snapshot.test.ts  # 会话快照
+│   ├── smoke.test.ts             # 冒烟测试
+│   ├── state-machine.test.ts     # 生命周期状态机
+│   ├── tool.test.ts              # 工具工厂 (make/settle)
+│   └── tools-core.test.ts        # read/write/edit 纯函数
+├── ui/src/chat/__tests__/        # UI 测试
+│   ├── tool-router.test.ts       # 工具路由测试
+│   ├── follow-up-suggestions.test.ts
+│   └── zod-schema.test.ts
+└── ui/src/components/assistant-ui/
+    └── widget-utils.test.ts      # Widget 提取逻辑
 ```
 
 ## 编写测试

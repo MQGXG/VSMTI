@@ -397,6 +397,22 @@ export class Agent {
     }
 
     if (turnOutput.toolCalls.length === 0) {
+      // 纯文本回复：此处必须先落库再 return，否则下方 finish 分支提前返回导致消息丢失（工具调用消息已由 turn-runner 按序落库）
+      const content = turnOutput.reasoningContent
+        ? JSON.stringify({ text: turnOutput.text || "", reasoning_content: turnOutput.reasoningContent })
+        : (turnOutput.text || "")
+      await appendMessage(config.sessionID, { role: "assistant", content, timestamp: new Date().toISOString(), retryCount: turnOutput.retryCount || 0 })
+      // 携带 reasoning_content 到内存消息，保证下一轮能回传（DeepSeek thinking 必需）
+      if (turnOutput.reasoningContent) {
+        messages.push({
+          role: "assistant",
+          content: turnOutput.text || "",
+          reasoning_content: turnOutput.reasoningContent,
+        })
+      } else if (turnOutput.text) {
+        messages.push({ role: "assistant", content: turnOutput.text })
+      }
+
       const activeGoal = this.goalJudge.getActiveGoal()
       if (activeGoal) {
         const quickCheck = this.goalJudge.quickCheck(activeGoal, messages)
@@ -423,27 +439,6 @@ export class Agent {
       }
       yield { type: "finish", reason: "stop", usage: turnOutput.usage }
       return { messages, shouldContinue: false }
-    }
-
-    if (turnOutput.text || turnOutput.toolCalls.length > 0) {
-      // 有工具调用时，assistant + tool 消息已由 turn-runner 按顺序落库，此处跳过避免重复/乱序
-      if (turnOutput.toolCalls.length === 0) {
-        // 纯文本回复：若有 reasoning_content，以 JSON 存储以便历史恢复时回传（DeepSeek thinking 必需）
-        const content = turnOutput.reasoningContent
-          ? JSON.stringify({ text: turnOutput.text || "", reasoning_content: turnOutput.reasoningContent })
-          : (turnOutput.text || "")
-        await appendMessage(config.sessionID, { role: "assistant", content, timestamp: new Date().toISOString(), retryCount: turnOutput.retryCount || 0 })
-        // 携带 reasoning_content 到内存消息，保证下一轮能回传（DeepSeek thinking 必需）
-        if (turnOutput.reasoningContent) {
-          messages.push({
-            role: "assistant",
-            content: turnOutput.text || "",
-            reasoning_content: turnOutput.reasoningContent,
-          })
-        } else if (turnOutput.text) {
-          messages.push({ role: "assistant", content: turnOutput.text })
-        }
-      }
     }
 
     const { messages: postToolMessages, didRebuild, reason } = await this.contextManager.checkAndRebuild(messages, config.sessionID)

@@ -61,14 +61,14 @@ export interface TurnRunnerOutput {
 
 /* ───────── 权限检查（串行，需要 yield 事件） ───────── */
 
-async function checkToolPermission(
+async function* checkToolPermission(
   tc: { id: string; name: string; arguments: string },
   deps: TurnRunnerInput["deps"],
   permissions: PermissionSet | undefined,
   workspace: string,
   autoAccept: boolean | undefined,
   onPermissionSave: ((rules: PermissionRule[]) => void) | undefined,
-): Promise<ToolResult | null> {
+): AsyncGenerator<AgentEvent, ToolResult | null> {
   let args: Record<string, unknown>
   try { args = JSON.parse(tc.arguments) } catch { args = {} }
 
@@ -97,8 +97,7 @@ async function checkToolPermission(
           ? () => onPermissionSave([{ action: ev.permissionAction, resource: "*", effect: "allow" as const }])
           : undefined,
       )
-      // 权限请求通过 yield 交给 UI，但这里无法直接 yield
-      // 改用直接等待回复
+      yield { type: "permission_request", id, action: ev.permissionAction, resources, toolCall: { id: tc.id, name: tc.name, input: args } }
       const allowed = await waitForReply()
       if (allowed) {
         deps.approvalStore.record(ev.permissionAction, resources, "allow", 300_000, workspace)
@@ -575,7 +574,7 @@ export async function* runMaxModeTurn(
   const toolResults: Array<{ id: string; result: ToolResult }> = []
   if (toolCallsArray.length > 0) {
     for (const tc of toolCallsArray) {
-      const permCheck = await checkToolPermission(
+      const permCheck = yield* checkToolPermission(
         { id: tc.id, name: tc.function.name, arguments: tc.function.arguments },
         input.deps,
         input.config.permissions,
@@ -598,6 +597,7 @@ export async function* runMaxModeTurn(
     for (const tc of toolCallsArray) {
       const result = resultMap.get(tc.id)
       const resultText = result?.success ? (result.output || "") : (result?.error || result?.output || "No result")
+      yield { type: "tool_result", id: tc.id, name: tc.function.name, result: result || { success: false, error: "No result" } }
       messages.push({
         role: "tool",
         content: [{ type: "tool-result" as const, toolCallId: tc.id, toolName: tc.function.name, output: resultText }],

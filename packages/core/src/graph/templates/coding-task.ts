@@ -329,6 +329,8 @@ export function buildCodingTaskGraph(
           { if: (s) => s.testPassed === false, then: "fix" },
         ],
       },
+      // fix 成功后回流 test 重新验证；失败边用于 fix 自身重试
+      { from: "fix", to: "test" },
       { from: "fix", to: "test", on: "failure", maxRetries: 2 },
       // review 驳回 → fix（带反馈）；批准 → done
       {

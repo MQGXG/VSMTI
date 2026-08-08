@@ -10,6 +10,7 @@ export default defineConfig({
       emptyOutDir: false,
       rollupOptions: {
         input: { main: resolve(__dirname, "packages/electron/src/main/index.ts") },
+        external: ["playwright", "playwright-core"],
       },
     },
     resolve: {

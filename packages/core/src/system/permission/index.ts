@@ -63,6 +63,19 @@ function segmentMatch(pattern: string, value: string): boolean {
   return true
 }
 
+/** 检测命令是否包含 shell 链式操作符 */
+function hasShellChain(cmd: string): boolean {
+  return /&&|\|\||;|\||\r\n|`|\$\(/.test(cmd)
+}
+
+/** 判断一个通配符匹配是否来自「前缀放行」规则（如 ls *），命中链式命令时不得放行 */
+function chainableAllowLeaks(action: string, pattern: string, resources: string[]): boolean {
+  if (action !== "bash") return false
+  if (!pattern.includes("*")) return false
+  if (pattern === "*" || pattern === "**") return false
+  return resources.some((r) => hasShellChain(r))
+}
+
 /** Gate 1: 硬拒绝列表 — 任何匹配这些模式的 bash 命令直接拒绝 */
 const HARD_DENY_PATTERNS = [
   "rm -rf /",
@@ -151,6 +164,8 @@ export class PermissionSet {
 
     const resList = resources.filter((r): r is string => typeof r === "string" && r.length > 0)
 
+    let skippedChainableAllow = false
+
     for (let i = this.rules.length - 1; i >= 0; i--) {
       const rule = this.rules[i]
 
@@ -162,6 +177,11 @@ export class PermissionSet {
         if (!wildcardMatch(ruleAction, action)) continue
         if (resList.length === 0) continue
         if (!resList.some(r => wildcardMatch(ruleResource, r))) continue
+        // 链式命令保护：通配符前缀 allow 不得放行含 && / || / ; / | 的命令
+        if (rule.effect === "allow" && chainableAllowLeaks(action, ruleResource, resList)) {
+          skippedChainableAllow = true
+          continue
+        }
         this.matchCache.set(cacheKey, rule.effect)
         return rule.effect
       }
@@ -169,8 +189,19 @@ export class PermissionSet {
       // 传统格式规则
       if (!wildcardMatch(rule.action, action)) continue
       if (rule.resource !== "*" && !resList.some(r => wildcardMatch(rule.resource, r))) continue
+      // 链式命令保护：通配符前缀 allow（如 ls *）不得放行链式命令
+      if (rule.effect === "allow" && chainableAllowLeaks(action, rule.resource, resList)) {
+        skippedChainableAllow = true
+        continue
+      }
       this.matchCache.set(cacheKey, rule.effect)
       return rule.effect
+    }
+
+    // 通配符前缀 allow 被跳过且无兜底规则时，链式命令应要求确认而非默认放行
+    if (skippedChainableAllow) {
+      this.matchCache.set(cacheKey, "ask")
+      return "ask"
     }
 
     this.matchCache.set(cacheKey, "allow")

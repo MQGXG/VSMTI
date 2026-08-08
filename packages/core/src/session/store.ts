@@ -77,11 +77,12 @@ export async function loadSession(sessionID: string): Promise<StoredSession | nu
     const [id, title, created, updated, workspace] = row as string[]
 
     const msgResult = db.exec(
-      "SELECT id, role, content, timestamp, tool_call_id, retry_count FROM messages WHERE session_id = ? ORDER BY id ASC LIMIT 500",
+      "SELECT id, role, content, timestamp, tool_call_id, retry_count FROM messages WHERE session_id = ? ORDER BY id DESC LIMIT 500",
       [sessionID],
     )
+    // DESC 取最新 500 条后反转为时间正序（最旧在前），保证调用方顺序语义不变
     const messages: StoredMessage[] = msgResult.length > 0
-      ? msgResult[0].values.map((r: any) => ({
+      ? msgResult[0].values.reverse().map((r: any) => ({
           id: r[0] as number,
           role: r[1] as StoredMessage["role"],
           content: r[2] as string,

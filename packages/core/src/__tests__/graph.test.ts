@@ -245,7 +245,7 @@ describe("CodingTask 模板", () => {
     }
   }
 
-  it("模板定义完整（6 节点 5 边）", () => {
+  it("模板定义完整（6 节点 6 边）", () => {
     const def = buildCodingTaskGraph(new ToolRegistry(), makeConfig(), {
       request: "修复测试",
     })
@@ -255,7 +255,7 @@ describe("CodingTask 模板", () => {
     expect(def.nodes.map((n) => n.id)).toEqual(["research", "implement", "fix", "test", "review", "done"])
     // research/implement/fix 是真实 Agent 节点
     expect(def.nodes.filter((n) => n.kind === "agent").map((n) => n.id)).toEqual(["research", "implement", "fix"])
-    expect(def.edges).toHaveLength(5)
+    expect(def.edges).toHaveLength(6)
   })
 
   it("测试失败时经 fix 回流，通过时走 review", async () => {
@@ -301,6 +301,15 @@ describe("CodingTask 模板", () => {
     expect(fix.contract?.outputs?.some((o) => o.field === "fixFeedback" && o.required)).toBe(true)
     expect(def.recovery?.maxReentries?.fix).toBe(3)
     expect(def.recovery?.onExhausted).toBe("fail")
+  })
+
+  it("fix 成功后回流 test 重新验证（有 success 出边）", () => {
+    const def = buildCodingTaskGraph(new ToolRegistry(), makeConfig(), { request: "x" })
+    const fixEdges = def.edges.filter((e) => e.from === "fix")
+    // 必须有 success（或默认）边回流 test：否则 fix 成功后无法继续路由，图被判定未达终点
+    const successEdge = fixEdges.find((e) => e.on === "success" || !e.on)
+    expect(successEdge).toBeDefined()
+    expect(successEdge!.to).toBe("test")
   })
 
   it("Planner 生成与模板等价，且可组合装饰", () => {

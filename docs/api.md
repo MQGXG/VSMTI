@@ -2,160 +2,112 @@
 
 ## 概述
 
-Mira 采用 Electron IPC 通信，**不使用 HTTP API**。所有通信通过 `contextBridge` 暴露的 `electronAPI` 进行。
+Mira 采用 Electron IPC 通信（**不使用 HTTP API**）。所有通信通过 `contextBridge` 暴露的 `electronAPI` 进行。
+实际 API 面定义在 `packages/electron/src/preload/index.ts`（`type ElectronAPI = typeof electronAPI`），以下为完整清单。
 
-## IPC 通道
+> **注意**：`agent.chat` / `agent.runAgentStream` / `getPythonStatus` 等为死 API（preload 暴露但无 ipcMain handler），真实流式执行走 `agent.startStream`。
 
-### Agent 相关
+## 全局方法
 
-| 通道 | 方法 | 说明 |
+| 方法 | 类型 | 说明 |
 |------|------|------|
-| `agent:run` | run(config, messages) | 启动 Agent 执行，返回事件流 |
-| `agent:cancel` | cancel(sessionId) | 取消正在执行的 Agent |
-| `agent:replyPermission` | reply(id, reply) | 回复权限审批 |
-| `agent:replyQuestion` | reply(id, answer) | 回复用户提问 |
-| `agent:getSkills` | getSkills() | 获取可用 Skill 列表 |
+| `minimizeWindow()` / `maximizeWindow()` / `closeWindow()` | send | 窗口控制 |
+| `openFile()` / `openDirectory()` / `saveFile(name)` | invoke | 文件/目录选择对话框 |
+| `notify(title, body)` | invoke | 系统通知 |
+| `encryptApiKey(text)` / `decryptApiKey(enc)` / `isEncryptionAvailable()` | invoke | API Key 加解密（Electron safeStorage） |
+| `platform` | 常量 | 当前平台标识 |
 
-### 会话管理
+## `config.*` — 配置系统
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `session:create` | create(projectId, title?) | 创建新会话 |
-| `session:list` | list(projectId?) | 获取会话列表 |
-| `session:delete` | delete(sessionId) | 删除会话 |
-| `session:getMessages` | getMessages(sessionId) | 获取会话消息 |
-| `session:searchMessages` | searchMessages(query) | 搜索消息 |
+| 方法 | 说明 |
+|------|------|
+| `get(workspace?)` | 获取配置（全局 JSON + 项目 JSON + env 合并） |
+| `save(config)` | 保存配置 |
+| `getProviderCatalog()` | 获取 Provider 目录 |
 
-### 项目管理
+## `ts.*` — 会话/项目
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `session:createProject` | createProject(name, path) | 创建项目 |
-| `session:listProjects` | listProjects() | 获取项目列表 |
-| `session:updateProject` | updateProject(id, data) | 更新项目 |
-| `session:deleteProject` | deleteProject(id) | 删除项目 |
+| 方法 | 说明 |
+|------|------|
+| `listProjects()` / `createProject(name, workspace)` / `updateProject(id, data)` / `deleteProject(id)` | 项目 CRUD |
+| `createSession(projectId, title?)` / `listSessions(projectId?)` / `deleteSession(id)` / `updateSession(id, {title})` | 会话 CRUD |
+| `getSessionMessages(sessionId)` | 获取会话消息 |
+| `deleteMessage(sessionId, messageId)` | 删除单条消息 |
+| `searchMessages(query)` | 跨会话搜索消息 |
+| `restoreSnapshot(snapshotId, workspace)` | 恢复文件快照 |
+| `writeFile(filePath, content)` | 写入文件 |
 
-### 配置
+## `agent.*` — Agent 执行
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `config:get` | get(key?) | 获取配置 |
-| `config:set` | set(key, value) | 设置配置 |
-| `config:getProviders` | getProviders() | 获取 Provider 列表 |
-| `config:addProvider` | addProvider(config) | 添加 Provider |
-| `config:deleteProvider` | deleteProvider(name) | 删除 Provider |
+| 方法 | 说明 |
+|------|------|
+| `executeTool(name, args)` | 直接执行工具（不经 LLM） |
+| `listTools()` / `listAgents()` | 列出工具 / Agent 模式 |
+| `startStream(sessionId, message, config)` | **实时流式执行**（SSE via sidecar） |
+| `replyPermission(channel, requestId, reply)` | 回复权限请求（allow/deny/always） |
+| `stopStream(channel)` | 停止流 |
+| `suggestFollowUps(sessionId)` | LLM 生成追问建议 |
+| `listSkills()` | 列出可用 Skill |
+| `onEvent(channel, cb)` | 监听 Agent 流式事件（返回取消函数） |
 
-### 记忆
+### `agent.question.*`
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `memory:search` | search(query, scope?) | 搜索记忆 |
-| `memory:recall` | recall(query, scope?) | 召回记忆 |
-| `memory:list` | list(scope?) | 列出记忆 |
-| `memory:delete` | delete(path) | 删除记忆 |
+| 方法 | 说明 |
+|------|------|
+| `answer(questionId, answer)` | 回答 Agent 提问 |
+| `listPending()` | 列出待处理提问 |
 
-### Goal
+### `agent.task.*`
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `goal:create` | create(sessionId, description) | 创建 Goal |
-| `goal:evaluate` | evaluate(sessionId, goalId) | 评估 Goal |
-| `goal:list` | list(sessionId) | 列出 Goals |
-| `goal:cancel` | cancel(sessionId, goalId) | 取消 Goal |
+`create(summary, parentId?)` / `updateStatus(id, status)` / `updateSummary(id, summary)` / `addNote(id, note)` / `get(id)` / `list(status?)` / `listActive()` / `toText()`
 
-### Dream/Distill
+### `agent.subagent.*`
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `dream:run` | run(sessionId) | 执行 Dream（知识提取） |
-| `distill:run` | run(sessionId) | 执行 Distill（工作流发现） |
+`spawn(description, options?)` / `wait(id, timeoutMs?)` / `cancel(id)` / `get(id)` / `list(filter?)` / `listActive()` / `cancelAll()` / `toText()`
 
-### Skill
+### `agent.goal.*`
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `skill:list` | list() | 列出可用 Skill |
-| `skill:load` | load(name) | 加载 Skill |
+`set(description, timeoutMs?)` / `getActive()` / `list()` / `cancel()` / `toText()` / `load(sessionID)` / `save()`
 
-### 子 Agent
+### `agent.dreamDistill.*`
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `subagent:list` | list() | 列出活跃子 Agent |
-| `subagent:getStatus` | getStatus(id) | 获取子 Agent 状态 |
-| `subagent:cancel` | cancel(id) | 取消子 Agent |
+`dream(history, config)` / `distill(history, config)` / `getKnowledge()` / `toText()`
 
-### 任务管理
+### `agent.compose.*`
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `task:create` | create(summary, parentId?) | 创建任务 |
-| `task:list` | list(status?) | 列出任务 |
-| `task:get` | get(id) | 获取任务详情 |
-| `task:start` | start(id) | 开始任务 |
-| `task:done` | done(id) | 完成任务 |
+`start(spec)` / `getState()` / `getCurrentSkill()` / `advance()` / `goTo(phase)` / `update(updates)` / `addCodeFile(path)` / `addReviewComment(comment)` / `addTestResult(result)` / `addDebugLog(log)` / `setVerificationPassed(bool)` / `complete()` / `cancel()` / `getHistory()` / `toText()` / `getSkills()` / `getPhaseOrder()`
 
-### Sidecar
+## `graph.*` — Graph 图编排
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `sidecar:start` | start() | 启动 Sidecar 进程 |
-| `sidecar:stop` | stop() | 停止 Sidecar 进程 |
-| `sidecar:send` | send(message) | 发送消息到 Sidecar |
+| 方法 | 说明 |
+|------|------|
+| `runCodingTask(request, config, options?)` | 运行 coding-task 图 |
+| `getStatus(runId)` | 运行状态 |
+| `listRuns(graphId?)` | 历史运行 |
+| `stop(runId)` | 停止运行 |
 
-### 安全存储
+## `memory.*` — 记忆系统
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `safeStorage:encrypt` | encrypt(value) | 加密值 |
-| `safeStorage:decrypt` | decrypt(value) | 解密值 |
+| 方法 | 说明 |
+|------|------|
+| `search(query, type?, limit?)` | 记忆全文搜索 |
+| `status()` | 记忆状态 |
 
-### 文件对话框
+> **注意**：`memory:searchByProject` / `memory:getGraphData` 已在 `memory-ipc.ts` 注册，但**未桥接进 preload**，前端调用会 undefined。
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `dialog:showOpenDialog` | showOpenDialog(options) | 打开文件选择对话框 |
-| `dialog:showSaveDialog` | showSaveDialog(options) | 打开保存对话框 |
-| `dialog:showMessageBox` | showMessageBox(options) | 显示消息框 |
+## `live2d.*`
 
-### 窗口控制
+`toggle(enabled)` — 打开/关闭 Live2D 桌宠窗口。
 
-| 通道 | 方法 | 说明 |
-|------|------|------|
-| `window:minimize` | minimize() | 最小化窗口 |
-| `window:maximize` | maximize() | 最大化窗口 |
-| `window:close` | close() | 关闭窗口 |
+## `floatingBall.*` — 桌面悬浮球
 
-## 使用示例
+`toggle(enabled)` / `wake()` / `hide()` / `updateConfig(config)` / `onStateChange(cb)` / `dragStart(pt)` / `dragMove(pt)` / `dragEnd()` / `click()` / `closePanel()` / `sendMessage(text)` / `onMessage(cb)`
 
-```typescript
-// 在渲染进程中使用
-const { electronAPI } = window
+> 悬浮球默认不创建（懒加载），`sendMessage` 仅回显，未接入真实 Agent。
 
-// 创建会话
-const session = await electronAPI.session.create(projectId, "新会话")
+## 死 API（无 ipcMain handler）
 
-// 运行 Agent
-const events = await electronAPI.agent.run({
-  sessionID: session.session_id,
-  model: "gpt-4",
-  apiKey: "sk-xxx",
-  apiUrl: "https://api.openai.com/v1",
-  messages: [{ role: "user", content: "你好" }]
-})
-
-// 消费事件流
-for await (const event of events) {
-  switch (event.type) {
-    case 'content':
-      appendText(event.text)
-      break
-    case 'tool_start':
-      showToolCall(event.id, event.name, event.args)
-      break
-    case 'finish':
-      console.log('完成:', event.reason)
-      break
-  }
-}
-```
+| API | 说明 |
+|-----|------|
+| `getPythonStatus` / `getPythonLogs` / `clearPythonLogs` / `restartPython` | Python 遗留（项目零 Python 依赖） |
+| `agent.chat` / `agent.runAgentStream` | 旧执行入口，真实流式走 `agent.startStream` |

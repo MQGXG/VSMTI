@@ -25,16 +25,16 @@
 │  │  llm/             LLM 分层架构                           │  │
 │  │    schema/        消息/事件/错误类型                      │  │
 │  │    protocols/     OpenAI/Anthropic/Gemini 等 5 种协议    │  │
-│  │    providers/     12 个 Provider 配置                    │  │
+│  │    builtin-providers.ts  12 个 Provider 数据定义          │  │
 │  │    route/         路由客户端                             │  │
-│  │  tools/           38 个工具（8 分类）                     │  │
-│  │  memory/          五层记忆系统                           │  │
+│  │  tools/           45 个工具（默认注册）                   │  │
+│  │  memory/          记忆系统（FTS5 + 动态记忆图谱 + 向量）   │  │
 │  │  system/          数据库/权限/注册表/日志/服务            │  │
 │  │    permission/    声明式权限系统（gate/store/approval）   │  │
-│  │  session/         会话/项目管理 + 上下文压缩             │  │
+│  │  session/         会话/项目管理 + 上下文压缩 + 事件溯源   │  │
 │  │  orchestrate/     编排（Goal/Subagent/Dream/Failover）   │  │
-│  │    actor-gate/    任务门控（TaskGate 自动验证与重试）    │  │
-│  │    actor-protocol/ 标准化返回协议（Status/Summary）       │  │
+│  │    acp/           Agent 通信协议（消息工厂 + 工作状态机） │  │
+│  │  graph/           Graph Engineering 图编排引擎           │  │
 │  │  config/          配置多层合并 + Agent 模式              │  │
 │  │  task/            任务追踪/规划/预算控制                 │  │
 │  │  background/      定时调度/错误恢复/Git Worktree         │  │
@@ -44,6 +44,7 @@
 │  │  mcp/             MCP 协议支持                          │  │
 │  │  plugin/          插件系统                              │  │
 │  │  lsp/             LSP 代码智能                          │  │
+│  │  voice/           语音模块（VAD/打断管理）               │  │
 │  │  shared/          工具工厂/Zod 转换/消息工具/插件钩子    │  │
 │  └─────────────────────────────────────────────────────────┘  │
 │                           │                                    │
@@ -101,13 +102,14 @@ mira/
 
 ```
 用户输入 → ChatWindow → useMiraChat hook
-    → IPC "agent:run" → Agent.run()
+    → IPC "agent:startStream" → sidecar-bridge
+    → Core HTTP /api/agent/stream (SSE) → Agent.run()
     → LLM.stream() → Provider API
-    → AgentEvent (AsyncGenerator)
+    → AgentEvent (SSE 事件 → agent:event IPC)
     → ChatWindow 逐事件渲染
 ```
 
-**主流程通过 IPC (contextBridge) 直连通信；同时提供 Sidecar HTTP 进程作为可选代理层。**
+**真实流式执行走 `agent.startStream` → `sidecar-bridge` → Core HTTP SSE**；`agent.chat` / `runAgentStream` 为 preload 中的死 API（无 handler）。
 
 ### 3.2 工具执行流
 
@@ -209,18 +211,20 @@ export const myTool = make({
 })
 ```
 
-38 个工具通过 `system/registry.ts` + `system/registry-init.ts` 注册，分为 8 类：
+45 个工具通过 `system/registry.ts` + `system/registry-init.ts` 注册（`createDefaultRegistry`），分为 8 类：
 
 | 分类 | 工具 | 说明 |
 |------|------|------|
-| **core** | read/write/edit/list/grep/glob/git(bash/status/diff/log/commit)/code-search/search-history/create-docx/bash-security | 文件、搜索、Git、文档 |
-| **knowledge** | web-search/web-browse/web-fetch/data-analysis/memory-search/memory-recall | 网络、数据、记忆 |
-| **execution** | bash/code-exec/image-gen | Shell、代码、图片 |
-| **orchestrate** | agent-tools/delegate-task/team-tool/task-tool/cron-tool/worktree-tool/workflow-tool/spawn-agent/wait-agents/list-subagents | 子 Agent、任务、调度 |
-| **infra** | lsp-definition/lsp-references/lsp-hover/create-mcp | 代码智能 |
+| **core** | read_file/write_file/edit_file/list_files/grep/glob/code_search/git_status/git_diff/git_log/git_commit/todo_write/apply_patch/search_history | 文件、搜索、Git、批量编辑 |
+| **document** | create_docx/create_xlsx/create_pptx/create_webpage/create_mockup/create_svg | Word/Excel/PPT/HTML/SVG 生成 |
+| **knowledge** | web_search/web_browse/web_fetch/data_analysis/create_chart/memory_search/memory_recall | 网络、数据、记忆 |
+| **execution** | bash/run_code/image_generate | Shell、代码、图片 |
+| **orchestrate** | delegate_task/team_tool/plan_task/cronjob/worktree/workflow_run/spawn_agent/wait_agents/list_subagents | 子 Agent、任务、调度 |
+| **infra** | lsp_definition/lsp_references/lsp_hover | 代码智能 |
 | **interaction** | question | 用户交互 |
-| **skill** | skills-list/skill-view | Skill 系统 |
-| **shared** | tool-loader/tool-meta/tool-output-store | 工具元数据/输出 |
+| **skill** | skills_list/skill_view | Skill 系统 |
+
+另有 5 个记忆图谱工具（memory_activate / memory_graph_*）已实现并导出但**未注册进默认注册表**；MCP/Plugin/自定义工具运行时动态注册（`[MCP: ]` / `[Plugin: ]` 前缀）。
 
 - 并行执行声明
 - 权限过滤（permission 字段）
@@ -248,7 +252,7 @@ const rules: PermissionRule[] = [
 
 ### 4.5 记忆系统
 
-五层记忆，5 个 Provider：
+多 Provider 记忆系统 + 动态记忆图谱：
 
 | Provider | 层级 | 存储 | 说明 |
 |----------|------|------|------|
@@ -257,8 +261,9 @@ const rules: PermissionRule[] = [
 | FTSMemoryProvider | Session | SQLite FTS | 全文检索 |
 | FileMemoryProvider | Project | .mira/knowledge/ | 项目级持久知识 |
 | VectorMemoryProvider | Project | 本地 ONNX | Transformers.js 向量嵌入 |
+| DynamicMemoryManager | 全局 | SQLite 记忆图谱 | 节点/边/社区 + 激活传播 + 衰减遗忘 |
 
-MemoryManager 支持：预算注入（按 token 控制检索量）、跨 Provider 去重、批量刷入写缓冲区、记忆提升（session → project）。
+MemoryManager 支持：预算注入（按 token 控制检索量）、跨 Provider 去重、批量刷入写缓冲区、记忆提升（session → project）。动态记忆图谱支持中文分词 + 同义词发现 + 嵌入缓存。
 
 ### 4.6 上下文管理 (`session/context.ts`)
 
@@ -365,13 +370,14 @@ SubagentManager
 
 | 模块 | 职责 |
 |------|------|
-| handlers.ts | 基础处理（窗口控制、文件对话框、通知、API Key 加解密） |
+| handlers.ts | 基础处理（窗口控制、文件对话框、通知、API Key 加解密、悬浮球） |
 | compose-ipc.ts | 组合模式全流程 |
 | config-ipc.ts | 配置读写 |
 | dream-ipc.ts | Dream/Distill 操作 |
 | goal-ipc.ts | Goal 管理 |
-| live2d-ipc.ts | Live2D 头像控制 |
-| memory-ipc.ts | 记忆操作 |
+| graph-ipc.ts | Graph 图编排执行（runCodingTask/状态/停止） |
+| live2d-ipc.ts | Live2D 桌宠开关 |
+| memory-ipc.ts | 记忆操作（代理到 sidecar HTTP） |
 | question-ipc.ts | 用户交互 |
 | session-ipc.ts | 会话/项目 CRUD |
 | sidecar-bridge.ts | Sidecar 进程通信（HTTP 代理层） |
@@ -384,27 +390,27 @@ SubagentManager
 ```typescript
 // preload/index.ts
 contextBridge.exposeInMainWorld("electronAPI", {
-  agent: { run, cancel, replyPermission, onEvent, ... },
-  session: { createProject, listProjects, createSession, listSessions, deleteSession, searchMessages, ... },
-  config: { get, set, getEnv, ... },
+  agent: { startStream, replyPermission, stopStream, onEvent, suggestFollowUps, executeTool, listTools, ... },
+  agent.question / agent.task / agent.subagent / agent.goal / agent.dreamDistill / agent.compose,
+  ts: { listProjects, createProject, createSession, listSessions, getSessionMessages, searchMessages, restoreSnapshot, writeFile, ... },
+  config: { get, save, getProviderCatalog, ... },
+  graph: { runCodingTask, getStatus, listRuns, stop },
   encryptApiKey / decryptApiKey / isEncryptionAvailable,
-  memory: { search, recall, getStatus, ... },
-  question: { ask, ... },
-  task: { create, update, list, ... },
-  subagent: { list, cancel, ... },
-  goal: { create, evaluate, ... },
-  dreamDistill: { runDream, runDistill, ... },
-  compose: { run, ... },
+  memory: { search, status },
+  live2d: { toggle },
+  floatingBall: { toggle, wake, hide, updateConfig, onStateChange, ... },
   platform, notify,
   openFile / openDirectory / saveFile,
   minimizeWindow / maximizeWindow / closeWindow,
-  getPythonStatus / getPythonLogs / restartPython,
+  // 死 API（无 ipcMain handler）：getPythonStatus / getPythonLogs / restartPython / agent.chat / runAgentStream
 })
 ```
 
+> **注意**：`memory.searchByProject` / `memory.getGraphData` 已在 memory-ipc 注册但**未桥接进 preload**；`python:*`、`agent.chat` / `runAgentStream` 为死 API。
+
 ## 七、数据库
 
-SQLite (sql.js WASM)，WAL 模式 + 防抖持久化。表结构：
+SQLite (sql.js WASM)，WAL 模式 + 防抖持久化（`scheduleSave` 500ms）。核心表（完整 SCHEMA 见 `system/database.ts`）：
 
 ```sql
 CREATE TABLE projects (
@@ -420,7 +426,10 @@ CREATE TABLE sessions (
   title TEXT DEFAULT '',
   workspace TEXT DEFAULT '',
   created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
+  updated_at TEXT DEFAULT (datetime('now')),
+  cost REAL DEFAULT 0,
+  tokens_input INTEGER DEFAULT 0, tokens_output INTEGER DEFAULT 0,
+  tokens_reasoning INTEGER DEFAULT 0, tokens_cache_read INTEGER DEFAULT 0, tokens_cache_write INTEGER DEFAULT 0
 );
 
 CREATE TABLE messages (
@@ -430,6 +439,7 @@ CREATE TABLE messages (
   content TEXT NOT NULL,
   timestamp TEXT DEFAULT (datetime('now')),
   tool_call_id TEXT,
+  retry_count INTEGER DEFAULT 0,
   FOREIGN KEY (session_id) REFERENCES sessions(session_id)
 );
 
@@ -441,17 +451,13 @@ CREATE TABLE permissions (
   PRIMARY KEY (workspace, action, resource)
 );
 
-CREATE TABLE goals (
-  session_id TEXT NOT NULL,
-  id TEXT NOT NULL,
-  description TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now')),
-  status TEXT NOT NULL DEFAULT 'active',
-  satisfied_at TEXT,
-  timeout_ms INTEGER DEFAULT 0,
-  evaluations_json TEXT DEFAULT '[]',
-  PRIMARY KEY (session_id, id)
-);
+CREATE TABLE actor_registry ( ... );  -- 子 Agent 注册表
+CREATE TABLE goals ( ... );           -- Goal 追踪
+CREATE TABLE session_events ( ... );  -- 事件溯源日志
+CREATE TABLE event_snapshots ( ... ); -- 事件快照
+CREATE TABLE todos ( ... );           -- Todo 任务
+-- FTS5 虚拟表: messages_fts
+-- 记忆图谱表: memory_nodes / memory_edges / memory_communities / memory_metadata / memory_embeddings
 ```
 
 ## 八、配置系统
@@ -487,8 +493,8 @@ pnpm dev
 # 4. 在 system/registry-init.ts 注册
 
 # 添加新 Provider
-# 1. 在 packages/core/src/llm/providers/index.ts 添加配置
-# 2. 如需新协议，在 llm/protocols/ 创建协议适配
+# 1. 在 packages/core/src/llm/builtin-providers.ts 添加数据定义
+# 2. 如需新协议，在 llm/protocols/ 创建协议适配并注册到 provider-catalog.ts
 
 # 添加新模式
 # 1. 在 config/profile.ts 的 createDefaultRegistry() 中注册

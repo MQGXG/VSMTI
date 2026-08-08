@@ -28,6 +28,7 @@ vi.mock('../llm/client', async (importOriginal) => {
           }
           yield { type: 'done' }
         }),
+        complete: vi.fn().mockResolvedValue({ content: '0' }),
       }
     }),
   }
@@ -113,6 +114,45 @@ describe('Agent permission loop', () => {
 
     expect(savedRules).toHaveLength(1)
     expect(savedRules[0]).toEqual({ action: 'write', resource: '*', effect: 'allow' })
+  })
+
+  test('max mode yields permission_request before executing tool', async () => {
+    const registry = new ToolRegistry()
+    registry.register(writeTool)
+    const agent = new Agent(registry)
+
+    const config = {
+      sessionID: 'max-mode-permission-test',
+      workspace: '/tmp',
+      model: 'gpt-4',
+      apiKey: 'test-key',
+      apiUrl: 'http://localhost',
+      permissions: new PermissionSet([{ action: 'write', resource: '*', effect: 'ask' }]),
+      maxMode: true,
+      maxModeCandidates: 2,
+    }
+
+    const events: AgentEvent[] = []
+    let permissionId: string | undefined
+
+    for await (const event of agent.run('write a file', [], config)) {
+      events.push(event)
+      if (event.type === 'permission_request') {
+        permissionId = event.id
+        agent.replyPermission(event.id, 'allow')
+      }
+    }
+
+    expect(events.some((e) => e.type === 'permission_request')).toBe(true)
+    expect(permissionId).toBeDefined()
+
+    const toolResult = events.find((e) => e.type === 'tool_result') as Extract<
+      AgentEvent,
+      { type: 'tool_result' }
+    >
+    expect(toolResult).toBeDefined()
+    expect(toolResult.result.success).toBe(true)
+    expect(toolResult.result.output).toBe('wrote x.txt')
   })
 
   test('returns error when reply is deny', async () => {

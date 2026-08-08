@@ -171,6 +171,9 @@ const electronAPI = {
   memory: {
     search: (query: string, type?: string, limit?: number) =>
       ipcRenderer.invoke("memory:search", query, type, limit),
+    searchByProject: (query: string, projectId: string, limit?: number) =>
+      ipcRenderer.invoke("memory:searchByProject", query, projectId, limit),
+    getGraphData: () => ipcRenderer.invoke("memory:getGraphData"),
     status: () => ipcRenderer.invoke("memory:status"),
   },
 
