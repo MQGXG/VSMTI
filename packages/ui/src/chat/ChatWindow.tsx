@@ -261,7 +261,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
 
       <ThreadPrimitive.Root className="flex-1 flex flex-col min-h-0">
         <ThreadPrimitive.Viewport className={`flex-1 overflow-x-hidden min-h-0 ${threadEmpty ? "overflow-y-hidden" : "overflow-y-auto scrollbar-custom"}`}>
-          <div className="flex flex-col mx-auto py-6 min-h-full px-6" style={{ maxWidth: "760px", width: "100%" }}>
+          <div className="flex flex-col mx-auto py-6 min-h-full px-6" style={{ maxWidth: "900px", width: "100%" }}>
             <AuiIf condition={(s) => s.thread.isEmpty}>
               <WelcomeScreen onSuggest={(text) => { aui.composer().setText(text); textareaRef.current?.focus(); }} />
               <div className="flex flex-wrap justify-center gap-2 max-w-sm mx-auto mt-2">
@@ -374,7 +374,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
           </div>
 
           <ThreadPrimitive.ViewportFooter className="sticky bottom-0 z-10" style={{ background: "linear-gradient(to top, var(--bg) 60%, transparent)" }}>
-            <div className="mx-auto px-6 pb-4 pt-2" style={{ maxWidth: "760px" }}>
+            <div className="mx-auto px-6 pb-4 pt-2" style={{ maxWidth: "900px" }}>
               {showSkills && (
                 <div className="mb-3 rounded-xl overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", boxShadow: "var(--shadow-elevated)" }}>
                   <div className="px-3 py-1.5 text-[10px] font-medium" style={{ color: "var(--fg-tertiary)", borderBottom: "1px solid var(--border-subtle)" }}>命令 — 回车执行 / ↑↓ 选择</div>
