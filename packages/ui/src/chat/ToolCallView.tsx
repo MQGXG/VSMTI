@@ -98,6 +98,7 @@ export function RenderMessageParts({ message }: { message: MiraMessage }) {
         }
         switch (item.type) {
           case "thinking":
+          case "reasoning":
             return null; // handled separately by ChatWindow
           case "text":
             return null; // handled by assistant-ui MessagePrimitive.Parts

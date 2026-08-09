@@ -7,9 +7,13 @@ export interface CompactionData {
 }
 
 export interface MiraPart {
-  type: "text" | "thinking" | "tool-call" | "file" | "diff-summary" | "compaction" | "widget";
+  type: "text" | "thinking" | "reasoning" | "tool-call" | "file" | "diff-summary" | "compaction" | "widget";
   /** text / thinking / widget */
   text?: string;
+  /** reasoning */
+  reasoningId?: string;
+  /** reasoning 时间区间 */
+  time?: { start: number; end?: number };
   /** widget：iframe 渲染的富 HTML 内容 */
   html?: string;
   /** tool-call */

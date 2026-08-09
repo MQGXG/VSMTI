@@ -61,6 +61,23 @@ function makeStream(
     let buffer = ""
 
     let finishYielded = false
+    let reasoningOpen = false
+    const reasoningId = "reasoning-0"
+
+    // 对齐 opencode lifecycle：在协议无关层注入 reasoning-start/end。
+    // reasoning-delta 首次出现 → reasoning-start；text/tool/finish 到达时若推理块仍开放 → reasoning-end。
+    const beginReasoning = function* (): Generator<LLMEvent> {
+      if (!reasoningOpen) {
+        reasoningOpen = true
+        yield { type: "reasoning-start", id: reasoningId }
+      }
+    }
+    const endReasoning = function* (): Generator<LLMEvent> {
+      if (reasoningOpen) {
+        reasoningOpen = false
+        yield { type: "reasoning-end", id: reasoningId }
+      }
+    }
 
     try {
       while (true) {
@@ -75,6 +92,7 @@ function makeStream(
           if (line.startsWith("data: ")) {
             const data = line.slice(6).trim()
             if (data === "[DONE]") {
+              yield* endReasoning()
               if (!finishYielded) {
                 yield { type: "finish", reason: "stop" }
               }
@@ -84,7 +102,14 @@ function makeStream(
               const parsed = JSON.parse(data)
               const event = protocol.deserializeEvent(parsed)
               if (event) {
-                if (event.type === "finish") finishYielded = true
+                if (event.type === "finish") {
+                  yield* endReasoning()
+                  finishYielded = true
+                } else if (event.type === "reasoning-delta") {
+                  yield* beginReasoning()
+                } else if (event.type === "text-delta" || event.type === "tool-call") {
+                  yield* endReasoning()
+                }
                 yield event
               }
             } catch {
@@ -93,6 +118,7 @@ function makeStream(
           }
         }
       }
+      yield* endReasoning()
       if (!finishYielded) {
         yield { type: "finish", reason: "stop" }
       }

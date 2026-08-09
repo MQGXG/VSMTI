@@ -31,7 +31,9 @@ export interface SDKConfig {
 
 export type LLMStreamEvent =
   | { type: "delta"; delta: string }
-  | { type: "reasoning"; delta: string }
+  | { type: "reasoning-start"; id: string }
+  | { type: "reasoning-delta"; id: string; delta: string }
+  | { type: "reasoning-end"; id: string }
   | { type: "tool_call"; toolCall: { id: string; name: string; arguments: string; index: number } }
   | { type: "done"; usage?: { promptTokens: number; completionTokens: number; totalTokens: number; cacheReadTokens?: number; cacheWriteTokens?: number } }
   | { type: "retry"; attempt: number; error: string }
@@ -109,7 +111,7 @@ async function* withRetry(
           lastError = new Error(event.error.message)
           break
         }
-        if (event.type === "delta" || event.type === "reasoning" || event.type === "tool_call") {
+        if (event.type === "delta" || event.type === "reasoning-start" || event.type === "reasoning-delta" || event.type === "tool_call") {
           emittedContent = true
         }
         yield event
@@ -170,8 +172,14 @@ export function createLLMClient(config: SDKConfig): LLMClient {
               yield { type: "delta", delta: event.delta }
             }
             break
+          case "reasoning-start":
+            yield { type: "reasoning-start", id: event.id }
+            break
           case "reasoning-delta":
-            yield { type: "reasoning", delta: event.delta }
+            yield { type: "reasoning-delta", id: event.id, delta: event.delta }
+            break
+          case "reasoning-end":
+            yield { type: "reasoning-end", id: event.id }
             break
           case "tool-call":
             if (currentToolId && currentToolName) {

@@ -13,6 +13,8 @@ import {
   createMiraMessage,
   appendText,
   appendThinking,
+  appendReasoning,
+  finishReasoning,
   addToolCall,
   updateToolCall,
   addCompaction,
@@ -184,6 +186,32 @@ export function handleStreamEvent(
       }
       const newMsg = createMiraMessage("assistant", [], assistantId);
       return [...prev, addToolCall(newMsg, event.id, event.name, event.args)];
+    });
+  } else if (event.type === "reasoning-start") {
+    contentBuffers.get(channel)?.flush();
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.id === assistantId) {
+        return [...prev.slice(0, -1), appendReasoning(last, event.id, "")];
+      }
+      const newMsg = createMiraMessage("assistant", [], assistantId);
+      return [...prev, appendReasoning(newMsg, event.id, "")];
+    });
+  } else if (event.type === "reasoning-delta") {
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.id === assistantId) {
+        return [...prev.slice(0, -1), appendReasoning(last, event.id, event.text)];
+      }
+      return prev;
+    });
+  } else if (event.type === "reasoning-end") {
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.id === assistantId) {
+        return [...prev.slice(0, -1), finishReasoning(last, event.id)];
+      }
+      return prev;
     });
   } else if (event.type === "thinking") {
     contentBuffers.get(channel)?.flush();

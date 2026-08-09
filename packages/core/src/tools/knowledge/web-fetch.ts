@@ -11,6 +11,7 @@ import { make } from "../../shared/tool"
 import { assertSafeUrl } from "./ssrf-util"
 import { TTLCache } from "./cache-util"
 import TurndownService from "turndown"
+import { filterMainContent } from "./content-filter"
 
 const MAX_RESPONSE_SIZE = 5 * 1024 * 1024
 const DEFAULT_TIMEOUT = 30 * 1000
@@ -163,7 +164,8 @@ export const webFetchTool = make({
 
     switch (format) {
       case "markdown":
-        output = isHTML ? getTurndown().turndown(result.body) : result.body
+        // 正文噪音过滤（firecrawl 块列表 + crawl4ai Pruning 评分），再转 Markdown
+        output = isHTML ? getTurndown().turndown(filterMainContent(result.body)) : result.body
         break
       case "text":
         output = isHTML ? result.body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() : result.body
@@ -172,7 +174,7 @@ export const webFetchTool = make({
         output = result.body
         break
       default:
-        output = isHTML ? getTurndown().turndown(result.body) : result.body
+        output = isHTML ? getTurndown().turndown(filterMainContent(result.body)) : result.body
     }
 
     // 截断

@@ -71,8 +71,10 @@ export async function* runLLMTurn(
         if (event.type === "delta") {
           currentText += event.delta
           yield { type: "content" as const, text: event.delta }
-        } else if (event.type === "reasoning") {
+        } else if (event.type === "reasoning-delta") {
           currentReasoning += event.delta
+        } else if (event.type === "reasoning-start" || event.type === "reasoning-end") {
+          // 推理块生命周期事件，无需处理
         } else if (event.type === "tool_call" && event.toolCall) {
           pendingToolCalls.push({
             id: event.toolCall.id,

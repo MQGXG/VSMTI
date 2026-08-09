@@ -1,13 +1,50 @@
-import { spawn } from "child_process"
+import { spawn, execSync } from "child_process"
 import { z } from "zod"
 import { make } from "../../shared/tool"
 import path from "path"
+import * as fs from "fs"
 import { checkCommand, normalizeCommand, splitSubCommands, isReadOnlyCommand } from "../core/bash-security"
 import { getSessionCwd } from "../core/session-cwd"
 import { parseExternalDirs } from "./bash-ast"
 
 const MAX_OUTPUT_LENGTH = 50000
 const MAX_CAPTURE_BYTES = 1024 * 1024
+
+/**
+ * Windows 上探测 Git Bash（参考 opencode shell.gitbash）：
+ * 从 git 安装目录的 ../../bin/bash.exe 定位 bash，而非 WSL。
+ */
+function findGitBash(): string | undefined {
+  if (process.platform !== "win32") return undefined
+  try {
+    const git = execSync("where git", { encoding: "utf8" })
+      .split(/\r?\n/)[0]?.trim()
+    if (!git) return undefined
+    const bash = path.join(git, "..", "..", "bin", "bash.exe")
+    return fs.existsSync(bash) ? bash : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * 按 shell 生成启动参数（参考 opencode shell.args）：
+ * - bash：login shell + source .bashrc + eval 命令
+ * - cmd：/c
+ * - powershell/pwsh：-NoProfile -Command
+ * - wsl：bash -c
+ */
+function buildShellArgs(shell: string, command: string): string[] {
+  const n = path.basename(shell).replace(/\.exe$/i, "").toLowerCase()
+  if (n === "bash") {
+    const script = `shopt -s expand_aliases\n[[ -f ~/.bashrc ]] && source ~/.bashrc >/dev/null 2>&1 || true\neval ${JSON.stringify(command)}`
+    return ["-l", "-c", script]
+  }
+  if (n === "wsl") return ["bash", "-c", command]
+  if (n === "cmd") return ["/c", command]
+  if (n === "powershell" || n === "pwsh") return ["-NoProfile", "-Command", command]
+  return ["-c", command]
+}
 
 interface RunResult {
   stdout: string
@@ -149,24 +186,25 @@ export const bashTool = make({
     const isWin = process.platform === "win32"
 
     let shell: string
-    let shellArgs: string[]
 
     if (isWin) {
-      const psPath = "powershell"
-      shell = ctx?.shell === "powershell" ? psPath
-        : ctx?.shell === "cmd" ? "cmd"
-        : psPath
-      shellArgs = shell === "powershell"
-        ? ["-NoProfile", "-NonInteractive", "-Command", input.command]
-        : ["/c", input.command]
+      if (ctx?.shell === "bash") {
+        // Bash：Git Bash 优先，回退 WSL（对齐 opencode，而非之前错误的回退到 PowerShell）
+        const gitBash = findGitBash()
+        shell = gitBash || "wsl"
+      } else if (ctx?.shell === "cmd") {
+        shell = "cmd"
+      } else {
+        shell = "powershell"
+      }
     } else {
       shell = ctx?.shell || "/bin/sh"
-      shellArgs = ["-c", input.command]
     }
+    const shellArgs = buildShellArgs(shell, input.command)
 
     // 路径级权限检测：tree-sitter AST（识别文件命令参数）+ token 匹配合并，
     // 覆盖 bash 与 powershell 两类语法，避免任一路径漏检
-    const isPs = isWin && shell === "powershell"
+    const isPs = isWin && path.basename(shell).toLowerCase().startsWith("powershell")
     const astDirs = (await parseExternalDirs(input.command, cwd, isPs)) || []
     const tokenDirs = externalCommandDirs(input.command, cwd)
     const externalDirs = [...new Set([...astDirs, ...tokenDirs])]

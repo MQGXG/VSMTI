@@ -15,7 +15,7 @@ import { QuestionDialog } from "./QuestionDialog";
 import { MarkdownText } from "../components/assistant-ui/markdown-text";
 import { MessageTiming } from "../components/assistant-ui/message-timing";
 import { ContextDisplay } from "../components/assistant-ui/context-display";
-import { ThinkingBlock } from "./ThinkingBlock";
+import { ThinkingShimmer, ReasoningBlock } from "./ThinkingBlock";
 import { ProgressBar } from "./ProgressBar";
 import { RenderMessageParts, findDiffSummary } from "./ToolCallView";
 import { loadSettings } from "../sidebar/provider-data";
@@ -286,7 +286,8 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                 const avatarState: AvatarState = !isUser
                   ? isLast ? "speaking" : "idle"
                   : "idle";
-                const thinkingParts = orig?.parts.filter((p: any) => p.type === "thinking") || [];
+                const reasoningParts = orig?.parts.filter((p: any) => p.type === "reasoning" && String(p.text || "").trim() !== "") || [];
+                const showReasoning = settings.showReasoning !== false;
                 const hasToolCalls = orig?.parts.some((p: any) => p.type === "tool-call");
                 const diffSummaryPart = orig ? findDiffSummary(orig) : null;
                 const hasCustomParts = hasToolCalls || diffSummaryPart;
@@ -299,9 +300,10 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                     }
                   >
                     <MessagePrimitive.Root className="group mb-5 animate-message">
-                    {thinkingParts.length > 0 && settings.showReasoning !== false && thinkingParts.map((p: any, i: number) => (
-                      <ThinkingBlock key={i} text={p.text || ""} active={isLast} />
+                    {showReasoning && reasoningParts.length > 0 && reasoningParts.map((p: any, i: number) => (
+                      <ReasoningBlock key={p.reasoningId || i} text={p.text || ""} time={p.time} active={isLast} />
                     ))}
+                    {isLast && !showReasoning && <ThinkingShimmer />}
                     <div className={`flex w-full gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
                       {!isUser && (
                         <div className="shrink-0 mt-1">

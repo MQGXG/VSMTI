@@ -28,6 +28,9 @@ export type AgentEvent =
   | { type: "question"; id: string; question: string; options?: string[] }
   | { type: "error"; message: string }
   | { type: "thinking"; text: string }
+  | { type: "reasoning-start"; id: string }
+  | { type: "reasoning-delta"; id: string; text: string }
+  | { type: "reasoning-end"; id: string }
   | { type: "finish"; reason: string; usage?: { promptTokens?: number; completionTokens?: number; totalTokens?: number; cacheReadTokens?: number; cacheWriteTokens?: number } }
   | { type: "retry"; attempt: number; error: string }
   | { type: "context_rebuild"; reason: string; tokensBefore: number; tokensAfter: number }

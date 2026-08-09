@@ -27,11 +27,13 @@ export const SENSITIVE_PATTERNS = [
 export const EXTRACTOR_SYSTEM_PROMPT = [
   "你是一个记忆提取器，从智能助手与用户的对话转写中提取值得跨会话长期记住的用户个人事实。",
   '只输出一个 JSON 对象，不要输出任何其他文字。格式：',
-  '{"ops":[{"action":"add","kind":"stated","content":"用户……"}]}',
+  '{"ops":[{"action":"add","kind":"stated","type":"persona","priority":80,"content":"用户……"}]}',
   "",
   "规则：",
   '- 只提取用户本人陈述的、稳定的个人事实：身份、称呼、偏好、习惯、人际关系、长期目标或计划。',
   "- kind 只能是 stated 或 inferred：stated 表示用户明确陈述（如\"我是、我喜欢、我每天\"）；inferred 表示从上下文推测。拿不准时用 inferred。",
+  "- type 只能是 persona（稳定属性/偏好/身份）、episodic（已发生的客观事件/决定/计划）、instruction（要求 AI 长期遵守的行为规则）三类。",
+  "- priority 是 0-100 的整数：persona 中健康/禁忌/核心特质 80-100，一般喜好 50-70；episodic 重要事件 80-100，一般活动 60-70，琐事直接丢弃；instruction 严格全局规则 90-100，一般要求 70-80。",
   '每条 content 不超过 50 字，以"用户"开头，脱离对话也能独立成立。',
   "- 不提取：一次性情绪、临时安排、本次任务的执行细节、助手自身的行为、常识、随时可以再查到的事实。",
   "- 绝不提取：密码、密钥、验证码、令牌、证件号码、详细住址信息。",
@@ -76,12 +78,25 @@ export function cleanFact(value: unknown): string {
     .join("")
 }
 
+/** 提取的记忆类型（对齐 Tencent L1：persona/episodic/instruction） */
+export type MemoryType = "persona" | "episodic" | "instruction"
+
+export interface ExtractedOp {
+  action: string
+  kind: string
+  content: string
+  /** 结构化记忆类型（可选，兼容旧格式） */
+  type?: MemoryType
+  /** 优先级 0-100（可选） */
+  priority?: number
+}
+
 /** 模型可能包一层 Markdown 代码围栏，需先剥掉再解析。 */
-export function parseOps(text: string): Array<{ action: string; kind: string; content: string }> {
+export function parseOps(text: string): ExtractedOp[] {
   const raw = String(text || "").trim()
   const unfenced = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim()
   const parsed: unknown = JSON.parse(unfenced)
-  const ops = (parsed as { ops?: Array<{ action: string; kind: string; content: string }> } | null)?.ops
+  const ops = (parsed as { ops?: Array<ExtractedOp> } | null)?.ops
   if (!ops || !Array.isArray(ops)) {
     throw new Error("提取器输出缺少 ops 数组")
   }
@@ -228,7 +243,7 @@ export class MemoryExtractor {
       ].join("\n") +
       (existing.length ? "\n\n注：上面已有记忆中的内容除非用户再次明确提及，否则不要重复。" : "")
 
-    let ops: Array<{ action: string; kind: string; content: string }> = []
+    let ops: ExtractedOp[] = []
     try {
       ops = parseOps(await this.llmCall!({ system: EXTRACTOR_SYSTEM_PROMPT, user }))
     } catch (error) {
@@ -251,15 +266,21 @@ export class MemoryExtractor {
         this.audit?.record({ op: "skip", sessionID, reason: "sensitive" })
         continue
       }
-      if (existingValues.has(content.toLocaleLowerCase())) {
+      // 结构化类型前缀（对齐 Tencent L1：persona/episodic/instruction），
+      // 便于召回时区分记忆性质；旧格式无 type 时不加前缀，保持兼容。
+      const type = op.type === "persona" || op.type === "episodic" || op.type === "instruction"
+        ? op.type
+        : undefined
+      const stored = type ? `[${type}] ${content}` : content
+      if (existingValues.has(stored.toLocaleLowerCase())) {
         this.audit?.record({ op: "skip", sessionID, reason: "duplicate" })
         continue
       }
       try {
-        await this.store.remember(content, sessionID, "inferred")
-        existingValues.add(content.toLocaleLowerCase())
+        await this.store.remember(stored, sessionID, "inferred")
+        existingValues.add(stored.toLocaleLowerCase())
         written += 1
-        this.audit?.record({ op: "write", sessionID, content, source: "inferred" })
+        this.audit?.record({ op: "write", sessionID, content: stored, source: "inferred", type })
       } catch (error) {
         // 持久化失败：跳过剩余，静默收尾。
         this.audit?.record({ op: "error", sessionID, error: errMsg(error) })

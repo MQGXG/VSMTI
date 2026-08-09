@@ -35,6 +35,24 @@ const messages = [
 ]
 
 describe('MemoryExtractor', () => {
+  test('writes structured memories with type prefix', async () => {
+    const { written, store } = makeStore()
+    const extractor = new MemoryExtractor({
+      store,
+      listMessages: () => messages,
+      llmCall: () => JSON.stringify({
+        ops: [
+          { action: 'add', kind: 'stated', type: 'persona', priority: 80, content: '用户喜欢喝美式咖啡' },
+          { action: 'add', kind: 'stated', type: 'instruction', priority: 90, content: '用户要求 AI 回答时先给出结论' },
+        ],
+      }),
+    })
+    await extractor.run({ sessionID: 's1', messages })
+    expect(written).toHaveLength(2)
+    expect(written[0].content).toBe('[persona] 用户喜欢喝美式咖啡')
+    expect(written[1].content).toBe('[instruction] 用户要求 AI 回答时先给出结论')
+  })
+
   test('writes stated facts tagged inferred', async () => {
     const { written, store } = makeStore()
     const extractor = new MemoryExtractor({

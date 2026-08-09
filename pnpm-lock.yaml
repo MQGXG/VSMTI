@@ -230,6 +230,9 @@ importers:
       effect:
         specifier: ^3.21.4
         version: 3.22.1
+      parse5:
+        specifier: ^7.0.0
+        version: 7.0.0
       pptxgenjs:
         specifier: ^4.0.1
         version: 4.0.1

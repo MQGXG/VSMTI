@@ -88,6 +88,45 @@ export function appendThinking(
   return { ...message, parts };
 }
 
+/** 向消息追加 reasoning part（按 ID 追踪，对齐 opencode processor） */
+export function appendReasoning(
+  message: MiraMessage,
+  id: string,
+  text: string
+): MiraMessage {
+  const parts = [...message.parts];
+  const existing = parts.findIndex(
+    (p) => p.type === "reasoning" && p.reasoningId === id
+  );
+  if (existing >= 0) {
+    const part = parts[existing];
+    parts[existing] = { ...part, text: (part.text || "") + text };
+  } else {
+    parts.push({
+      type: "reasoning",
+      reasoningId: id,
+      text,
+      time: { start: Date.now() },
+    });
+  }
+  return { ...message, parts };
+}
+
+/** 完成 reasoning part（设置 end 时间） */
+export function finishReasoning(
+  message: MiraMessage,
+  id: string
+): MiraMessage {
+  return {
+    ...message,
+    parts: message.parts.map((p) =>
+      p.type === "reasoning" && p.reasoningId === id
+        ? { ...p, time: { start: p.time?.start ?? Date.now(), end: Date.now() } }
+        : p
+    ),
+  };
+}
+
 /** 添加 tool-call part */
 export function addToolCall(
   message: MiraMessage,

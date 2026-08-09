@@ -51,7 +51,7 @@ export function getFoldConfig(toolName: string): ToolFoldConfig {
   let base = defaultConfigs[toolName] || defaultConfigs.default
 
   const shellTools = ["bash", "code_exec"]
-  const editTools = ["write_file", "edit_file"]
+  const editTools = ["write_file", "edit_file", "apply_patch"]
 
   if (settings.expandShellTools && shellTools.includes(toolName)) {
     base = { ...base, defaultExpanded: true }

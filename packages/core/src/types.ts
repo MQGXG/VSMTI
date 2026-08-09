@@ -13,7 +13,7 @@ export type FinishReason = "stop" | "length" | "tool-calls" | "error" | "content
 export type EventType =
   | "content" | "tool_start" | "tool_result"
   | "permission_request" | "question" | "error" | "finish"
-  | "thinking" | "goal_status" | "context_rebuild" | "retry" | "subagent_status"
+  | "thinking" | "reasoning-start" | "reasoning-delta" | "reasoning-end" | "goal_status" | "context_rebuild" | "retry" | "subagent_status"
 
 export interface BaseAgentEvent {
   timestamp?: string
@@ -27,6 +27,9 @@ export interface QuestionEvent extends BaseAgentEvent { type: "question"; id: st
 export interface ErrorEvent extends BaseAgentEvent { type: "error"; message: string }
 export interface FinishEvent extends BaseAgentEvent { type: "finish"; reason: string; usage?: TokenUsage }
 export interface ThinkingEvent extends BaseAgentEvent { type: "thinking"; text: string }
+export interface ReasoningStartEvent extends BaseAgentEvent { type: "reasoning-start"; id: string }
+export interface ReasoningDeltaEvent extends BaseAgentEvent { type: "reasoning-delta"; id: string; text: string }
+export interface ReasoningEndEvent extends BaseAgentEvent { type: "reasoning-end"; id: string }
 export interface GoalStatusEvent extends BaseAgentEvent { type: "goal_status"; goalId: string; description: string; status: string; reasoning?: string }
 export interface ContextRebuildEvent extends BaseAgentEvent { type: "context_rebuild"; reason: string; tokensBefore: number; tokensAfter: number }
 export interface RetryEvent extends BaseAgentEvent { type: "retry"; attempt: number; error: string }
@@ -41,6 +44,9 @@ export type AgentEvent =
   | ErrorEvent
   | FinishEvent
   | ThinkingEvent
+  | ReasoningStartEvent
+  | ReasoningDeltaEvent
+  | ReasoningEndEvent
   | GoalStatusEvent
   | ContextRebuildEvent
   | RetryEvent

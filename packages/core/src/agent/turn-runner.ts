@@ -391,10 +391,14 @@ export async function* runTurn(
         break
       }
       yield { type: "content" as const, text: event.delta }
-    } else if (event.type === "reasoning") {
+    } else if (event.type === "reasoning-start") {
+      yield { type: "reasoning-start" as const, id: event.id }
+    } else if (event.type === "reasoning-delta") {
       // DeepSeek thinking 模式：累积 reasoning_content（需回传给 API）
       reasoningContent += event.delta
-      yield { type: "thinking" as const, text: event.delta }
+      yield { type: "reasoning-delta" as const, id: event.id, text: event.delta }
+    } else if (event.type === "reasoning-end") {
+      yield { type: "reasoning-end" as const, id: event.id }
     } else if (event.type === "tool_call" && event.toolCall) {
       toolCallList.push(event.toolCall)
       yield { type: "tool_start" as const, id: event.toolCall.id, name: event.toolCall.name, args: JSON.parse(event.toolCall.arguments) }

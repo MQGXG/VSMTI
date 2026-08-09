@@ -153,7 +153,7 @@ export function deserializeChunk(chunk: OpenAIChunk): LLMEvent | null {
 
   // DeepSeek thinking 模式：思考内容在 delta.reasoning_content
   if (delta.reasoning_content) {
-    return { type: "reasoning-delta", delta: delta.reasoning_content }
+    return { type: "reasoning-delta", id: "reasoning-0", delta: delta.reasoning_content }
   }
 
   if (delta.tool_calls) {
