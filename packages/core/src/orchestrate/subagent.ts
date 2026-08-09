@@ -61,6 +61,15 @@ const STUCK_TIMEOUT_MS = 5 * 60 * 1000 // 5 分钟
 const STUCK_CHECK_INTERVAL_MS = 60 * 1000 // 每分钟扫描
 const REACT_MAX_ROUNDS = 3
 
+/** 子 Agent 默认禁用的工具（权限派生，对齐 opencode）：防无限递归嵌套 */
+const CHILD_DENY_TOOLS = new Set(["spawn_agent", "todo_tool", "workflow_run"])
+
+/** 计算子 Agent 的工具白名单：父白名单（或全量）减去 CHILD_DENY_TOOLS */
+function childToolAllowlist(config: AgentConfig, registry: ToolRegistry): string[] {
+  const base = config.toolAllowlist || registry.getAll().map((t) => t.name)
+  return base.filter((t) => !CHILD_DENY_TOOLS.has(t))
+}
+
 export class SubagentManager {
   private sessions = new Map<string, SubagentSession>()
   private registry: ToolRegistry
@@ -169,6 +178,8 @@ export class SubagentManager {
       context?: ContextMode
       parentContext?: LLMMessage[]
       mode?: AgentMode
+      /** JSON Schema：子 Agent 最终结果以该结构 JSON 输出（作为交付内容） */
+      outputSchema?: Record<string, unknown>
     }
   ): SubagentInfo {
     const contextMode = options?.context || "none"
@@ -213,7 +224,13 @@ export class SubagentManager {
         session.peerWorkspace = peerDir
       }
 
-      session.promise = this.runSubagent(session, config, options?.prompt || description, id, parentContext, depth)
+      // 结构化输出：提供 outputSchema 时，要求子 Agent 最终结果以 JSON 输出
+      let basePrompt = options?.prompt || description
+      if (options?.outputSchema) {
+        basePrompt = `${basePrompt}\n\n请将最终结果以 JSON 输出，结构如下（作为交付内容，请确保可被 JSON.parse 解析）：\n${JSON.stringify(options.outputSchema, null, 2)}\n\n（请先用 **Status**/**Summary** 标注执行状态，随后给出 JSON 交付内容）`
+      }
+
+      session.promise = this.runSubagent(session, config, basePrompt, id, parentContext, depth)
         .then((result) => {
           if (result.status === "completed" && result.result) {
             const decision = this.gate.decide(id, result.result)
@@ -277,6 +294,7 @@ export class SubagentManager {
         ...config,
         sessionID: `${config.sessionID}-${info.id}`,
         agent: info.id,
+        toolAllowlist: childToolAllowlist(config, this.registry),
       })) {
         session.lastActivity = Date.now()
 
@@ -321,6 +339,7 @@ export class SubagentManager {
             ...config,
             sessionID: `${config.sessionID}-${info.id}`,
             agent: info.id,
+            toolAllowlist: childToolAllowlist(config, this.registry),
           })) {
             session.lastActivity = Date.now()
             if (abortController.signal.aborted) {

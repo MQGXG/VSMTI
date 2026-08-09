@@ -4,6 +4,7 @@ import { Switch } from "../../components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
+import { DialogService } from "../../services/dialog.service";
 
 interface Props {
   settings: Record<string, any>;
@@ -148,6 +149,42 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
       </div>
 
       <div className="p-4 rounded-xl bg-surface-secondary border border-standard">
+        <div className="text-sm mb-3 text-primary">默认工作目录</div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Input
+              readOnly
+              value={settings.defaultWorkspace || ""}
+              placeholder="未设置，使用系统默认（文档目录/Mira）"
+              className="h-8 text-xs flex-1"
+            />
+            <button
+              type="button"
+              onClick={async () => {
+                const dirs = await DialogService.openDirectory();
+                if (dirs && dirs.length > 0) onUpdate({ defaultWorkspace: dirs[0] });
+              }}
+              className="px-3 py-1.5 rounded-lg text-xs transition-colors"
+              style={{ background: "var(--bg-tertiary)", color: "var(--fg)" }}
+            >
+              浏览
+            </button>
+            {settings.defaultWorkspace && (
+              <button
+                type="button"
+                onClick={() => onUpdate({ defaultWorkspace: "" })}
+                className="px-3 py-1.5 rounded-lg text-xs transition-colors"
+                style={{ color: "var(--fg-tertiary)" }}
+              >
+                恢复默认
+              </button>
+            )}
+          </div>
+          <p className="text-[11px] text-secondary">新建/打开项目时的默认目录；留空使用系统默认（文档目录/Mira）</p>
+        </div>
+      </div>
+
+      <div className="p-4 rounded-xl bg-surface-secondary border border-standard">
         <div className="text-sm mb-3 text-primary">桌面悬浮球</div>
         <div className="space-y-3">
           <label className="flex items-center justify-between cursor-pointer">
@@ -156,7 +193,16 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
               <div className="text-xs mt-0.5 text-secondary">在桌面显示常驻悬浮球，点击展开聊天面板</div>
             </div>
             <Switch checked={settings.floatingBallEnabled !== false}
-              onCheckedChange={(v) => onUpdate({ floatingBallEnabled: v })} />
+              onCheckedChange={(v) => {
+                onUpdate({ floatingBallEnabled: v })
+                window.electronAPI?.floatingBall?.toggle(v)
+                if (v) {
+                  window.electronAPI?.floatingBall?.updateConfig({
+                    autoHideTimeout: (settings.floatingBallAutoHideSeconds || 60) * 1000,
+                    shortcut: settings.floatingBallShortcut || "CommandOrControl+Shift+M",
+                  })
+                }
+              }} />
           </label>
           {settings.floatingBallEnabled !== false && (
             <>
@@ -166,7 +212,12 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
                   <div className="text-xs mt-0.5 text-secondary">无操作时自动隐藏悬浮球</div>
                 </div>
                 <Switch checked={settings.floatingBallAutoHide !== false}
-                  onCheckedChange={(v) => onUpdate({ floatingBallAutoHide: v })} />
+                  onCheckedChange={(v) => {
+                    onUpdate({ floatingBallAutoHide: v })
+                    window.electronAPI?.floatingBall?.updateConfig({
+                      autoHideTimeout: (settings.floatingBallAutoHideSeconds || 60) * 1000,
+                    })
+                  }} />
               </label>
               <div>
                 <label className="text-xs mb-1 block text-secondary">隐藏超时（秒）</label>
@@ -175,7 +226,11 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
                   min={10}
                   max={300}
                   value={settings.floatingBallAutoHideSeconds || 60}
-                  onChange={(e) => onUpdate({ floatingBallAutoHideSeconds: parseInt(e.target.value) || 60 })} 
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value) || 60
+                    onUpdate({ floatingBallAutoHideSeconds: v })
+                    window.electronAPI?.floatingBall?.updateConfig({ autoHideTimeout: v * 1000 })
+                  }} 
                   className="h-8 text-xs" 
                 />
               </div>

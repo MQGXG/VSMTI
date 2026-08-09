@@ -139,6 +139,15 @@ export function clearContentBuffers(): void {
   contentBuffers.clear();
 }
 
+/** 仅清空指定 channel 的文本缓冲（多会话并发时避免互相清空） */
+export function clearChannelBuffer(channel: string): void {
+  const buf = contentBuffers.get(channel);
+  if (buf) {
+    buf.flush();
+    contentBuffers.delete(channel);
+  }
+}
+
 export function handleStreamEvent(
   event: AgentEvent,
   channel: string,

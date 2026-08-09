@@ -53,6 +53,7 @@ interface Props {
   agentMode: AgentMode;
   goalCondition?: string | null;
   onSessionChange?: (sessionId: string) => void;
+  workspace?: string;
   children: ReactNode | ((ctx: MiraRuntimeContext) => ReactNode);
 }
 
@@ -62,6 +63,7 @@ export function MiraRuntimeProvider({
   agentMode,
   goalCondition,
   onSessionChange,
+  workspace,
   children,
 }: Props) {
   const chat = useMiraChat({
@@ -70,6 +72,7 @@ export function MiraRuntimeProvider({
     agentMode,
     goalCondition,
     onSessionChange,
+    workspace,
   });
 
   /** LLM 生成的追问建议（回复完成后异步获取；null = 未生成/失败，回退启发式） */
@@ -90,6 +93,16 @@ export function MiraRuntimeProvider({
     return () => { cancelled = true; };
   }, [chat.messages.length, chat.isRunning, sessionId]);
 
+  /** 用 ref 保存最新回调，避免 queue/回调闭包捕获旧会话的 sendMessage（多会话并发关键） */
+  const sendMessageRef = useRef(chat.sendMessage);
+  const setMessagesRef = useRef(chat.setMessages);
+  const messagesRef = useRef(chat.messages);
+  useEffect(() => {
+    sendMessageRef.current = chat.sendMessage;
+    setMessagesRef.current = chat.setMessages;
+    messagesRef.current = chat.messages;
+  }, [chat.sendMessage, chat.setMessages, chat.messages]);
+
   /** 发送队列 — 运行时允许排队发消息 */
   const [queue] = useState(() =>
     createMessageQueue({
@@ -107,7 +120,7 @@ export function MiraRuntimeProvider({
         if (attachmentText) {
           input = `${input}\n\n${attachmentText}`;
         }
-        await chat.sendMessage(input);
+        await sendMessageRef.current(input);
       },
     }),
   )
@@ -138,9 +151,9 @@ export function MiraRuntimeProvider({
       if (attachmentText) {
         input = `${input}\n\n${attachmentText}`;
       }
-      await chat.sendMessage(input);
+      await sendMessageRef.current(input);
     },
-    [chat.sendMessage]
+    []
   );
 
   const onCancel = useCallback(() => {
@@ -156,15 +169,15 @@ export function MiraRuntimeProvider({
       const input = message.content[0].text;
       const parentId = message.parentId;
       if (parentId) {
-        chat.setMessages((prev) => {
+        setMessagesRef.current((prev) => {
           const idx = prev.findIndex(m => m.id === parentId);
           if (idx >= 0) return prev.slice(0, idx + 1);
           return prev;
         });
       }
-      await chat.sendMessage(input);
+      await sendMessageRef.current(input);
     },
-    [chat.sendMessage]
+    []
   );
 
   /** 重新生成最后一条助手回复 */
@@ -172,7 +185,7 @@ export function MiraRuntimeProvider({
     async (parentId: string | null) => {
       if (!parentId) return;
       // 找到 user 消息，重发
-      chat.setMessages((prev) => {
+      setMessagesRef.current((prev) => {
         const idx = prev.findIndex(m => m.id === parentId);
         if (idx >= 0) {
           const userMsg = prev[idx];
@@ -185,13 +198,13 @@ export function MiraRuntimeProvider({
         return prev;
       });
       // 从原始消息重发
-      const userMsg = chat.messages.find(m => m.id === parentId);
+      const userMsg = messagesRef.current.find(m => m.id === parentId);
       if (userMsg) {
         const text = userMsg.parts.find(p => p.type === "text")?.text;
-        if (text) await chat.sendMessage(text);
+        if (text) await sendMessageRef.current(text);
       }
     },
-    [chat.sendMessage]
+    []
   );
 
   const convertedMessages = useMemo(() => {

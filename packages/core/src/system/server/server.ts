@@ -20,6 +20,49 @@ import {
   handleMemoryStatus,
   handleGetGraphData,
   handleFollowUps,
+  handleListProjects,
+  handleCreateProject,
+  handleUpdateProject,
+  handleDeleteProject,
+  handleCreateSession,
+  handleListSessions,
+  handleGetSessionMessages,
+  handleDeleteSession,
+  handleDeleteMessage,
+  handleSearchMessages,
+  handleUpdateSession,
+  handleRestoreSnapshot,
+  handleSubagentSpawn,
+  handleSubagentWait,
+  handleSubagentCancel,
+  handleSubagentGet,
+  handleSubagentList,
+  handleSubagentListActive,
+  handleSubagentListByParent,
+  handleSubagentCancelByParent,
+  handleSubagentCancelAll,
+  handleSubagentToText,
+  handleGoalSet,
+  handleGoalGetActive,
+  handleGoalList,
+  handleGoalCancel,
+  handleGoalToText,
+  handleGoalLoad,
+  handleGoalSave,
+  handleTaskCreate,
+  handleTaskUpdateStatus,
+  handleTaskUpdateSummary,
+  handleTaskAddNote,
+  handleTaskGet,
+  handleTaskList,
+  handleTaskListActive,
+  handleTaskToText,
+  handleQuestionAnswer,
+  handleQuestionListPending,
+  handleRunGraphTask,
+  handleGraphGetStatus,
+  handleGraphListRuns,
+  handleGraphStop,
   type APIContext,
 } from "./api"
 import type { PermissionReply } from "../../index"
@@ -62,6 +105,30 @@ interface RequestBody {
   type?: string
   limit?: number
   projectId?: string
+  workspace?: string
+  data?: Record<string, unknown>
+  messageId?: number
+  snapshotId?: string
+  title?: string
+  description?: string
+  parentId?: string
+  model?: string
+  status?: string
+  summary?: string
+  note?: string
+  taskId?: string
+  request?: string
+  testCommand?: string
+  maxSteps?: number
+  maxTotalTokens?: number
+  graphId?: string
+  questionId?: string
+  answer?: string
+  filter?: Record<string, unknown>
+  id?: string
+  prompt?: string
+  timeoutMs?: number
+  runId?: string
 }
 
 /** 验证 auth token */
@@ -292,6 +359,309 @@ async function routeRequest(
       }
       const result = await handleFollowUps(body.sessionId)
       jsonResponse(res, 200, result)
+      return
+    }
+
+    // ── 项目 CRUD（Sidecar 单写者） ──
+    case "/api/projects": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, await handleListProjects())
+      return
+    }
+    case "/api/project/create": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, await handleCreateProject(body.name as string, body.workspace as string))
+      return
+    }
+    case "/api/project/update": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      await handleUpdateProject(body.projectId as string, body.data || {})
+      jsonResponse(res, 200, { ok: true })
+      return
+    }
+    case "/api/project/delete": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      await handleDeleteProject(body.projectId as string)
+      jsonResponse(res, 200, { ok: true })
+      return
+    }
+
+    // ── 会话 CRUD（Sidecar 单写者） ──
+    case "/api/session/create": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, await handleCreateSession(body.projectId as string, body.title))
+      return
+    }
+    case "/api/sessions": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, await handleListSessions(query.projectId as string))
+      return
+    }
+    case "/api/session/messages": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      if (!query.sessionId) {
+        errorResponse(res, 400, "sessionId is required")
+        return
+      }
+      jsonResponse(res, 200, await handleGetSessionMessages(query.sessionId as string))
+      return
+    }
+    case "/api/session/delete": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      await handleDeleteSession(body.sessionId as string)
+      jsonResponse(res, 200, { ok: true })
+      return
+    }
+    case "/api/message/delete": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      await handleDeleteMessage(body.sessionId as string, body.messageId as number)
+      jsonResponse(res, 200, { ok: true })
+      return
+    }
+    case "/api/session/search": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, await handleSearchMessages(body.query as string))
+      return
+    }
+    case "/api/session/update": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      await handleUpdateSession(body.sessionId as string, body.data || {})
+      jsonResponse(res, 200, { ok: true })
+      return
+    }
+    case "/api/session/restore-snapshot": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      await handleRestoreSnapshot(body.snapshotId as string, body.workspace as string)
+      jsonResponse(res, 200, { ok: true })
+      return
+    }
+
+    // ── 子 Agent（Sidecar 单写者） ──
+    case "/api/subagent/spawn": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, handleSubagentSpawn(body.description as string, body.config || {}, {
+        parentId: body.parentId, prompt: body.prompt, model: body.model,
+      }))
+      return
+    }
+    case "/api/subagent/wait": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, await handleSubagentWait(body.id as string, body.timeoutMs))
+      return
+    }
+    case "/api/subagent/cancel": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, { ok: handleSubagentCancel(body.id as string) })
+      return
+    }
+    case "/api/subagent/get": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleSubagentGet(query.id as string))
+      return
+    }
+    case "/api/subagent/list": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, handleSubagentList(body.filter))
+      return
+    }
+    case "/api/subagent/listActive": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleSubagentListActive())
+      return
+    }
+    case "/api/subagent/listByParent": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleSubagentListByParent(query.parentId as string))
+      return
+    }
+    case "/api/subagent/cancelByParent": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, { ok: handleSubagentCancelByParent(body.parentId as string) })
+      return
+    }
+    case "/api/subagent/cancelAll": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, { ok: handleSubagentCancelAll() })
+      return
+    }
+    case "/api/subagent/toText": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, { text: handleSubagentToText() })
+      return
+    }
+
+    // ── Goal（Sidecar 单写者） ──
+    case "/api/goal/set": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, handleGoalSet(body.description as string, body.timeoutMs))
+      return
+    }
+    case "/api/goal/getActive": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleGoalGetActive())
+      return
+    }
+    case "/api/goal/list": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleGoalList())
+      return
+    }
+    case "/api/goal/cancel": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, { ok: handleGoalCancel() })
+      return
+    }
+    case "/api/goal/toText": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, { text: handleGoalToText() })
+      return
+    }
+    case "/api/goal/load": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, await handleGoalLoad(body.sessionId as string))
+      return
+    }
+    case "/api/goal/save": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      await handleGoalSave()
+      jsonResponse(res, 200, { ok: true })
+      return
+    }
+
+    // ── Task（Sidecar 单写者） ──
+    case "/api/task/create": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, handleTaskCreate(body.summary as string, body.parentId))
+      return
+    }
+    case "/api/task/updateStatus": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, { ok: handleTaskUpdateStatus(body.taskId as string, body.status as string) })
+      return
+    }
+    case "/api/task/updateSummary": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, { ok: handleTaskUpdateSummary(body.taskId as string, body.summary as string) })
+      return
+    }
+    case "/api/task/addNote": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, { ok: handleTaskAddNote(body.taskId as string, body.note as string) })
+      return
+    }
+    case "/api/task/get": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleTaskGet(query.taskId as string))
+      return
+    }
+    case "/api/task/list": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleTaskList(query.status as string))
+      return
+    }
+    case "/api/task/listActive": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleTaskListActive())
+      return
+    }
+    case "/api/task/toText": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, { text: handleTaskToText() })
+      return
+    }
+
+    // ── Question（Sidecar 单写者） ──
+    case "/api/question/answer": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, { ok: handleQuestionAnswer(body.questionId as string, body.answer as string) })
+      return
+    }
+    case "/api/question/pending": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleQuestionListPending())
+      return
+    }
+
+    // ── Graph 图编排（Sidecar 单写者） ──
+    case "/api/graph/run": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      const request = body.request as string
+      const config = body.config || {}
+      if (!request) {
+        errorResponse(res, 400, "request is required")
+        return
+      }
+
+      const runId = `graph-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+        "X-Content-Type-Options": "nosniff",
+      })
+      res.write(`event: connected\ndata: {"status":"ok"}\n\n`)
+      res.write(`event: channel\ndata: ${JSON.stringify({ channel: runId })}\n\n`)
+
+      const heartbeat = setInterval(() => {
+        try { res.write(": heartbeat\n\n") } catch { clearInterval(heartbeat) }
+      }, 15000)
+      req.on("close", () => clearInterval(heartbeat))
+
+      const ctx: APIContext = {
+        writeEvent: (data: unknown) => {
+          try { res.write(`data: ${JSON.stringify(data)}\n\n`) } catch { /* ignore */ }
+        },
+        writeEnd: () => {
+          try { res.write("event: done\ndata: {}\n\n"); res.end() } catch { /* ignore */ }
+        },
+        onAbort: (callback: () => void) => { req.on("close", callback) },
+      }
+
+      handleRunGraphTask(request, config, {
+        maxSteps: body.maxSteps,
+        testCommand: body.testCommand,
+        maxTotalTokens: body.maxTotalTokens,
+      }, ctx, runId)
+      return
+    }
+    case "/api/graph/status": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleGraphGetStatus(query.runId as string))
+      return
+    }
+    case "/api/graph/listRuns": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      jsonResponse(res, 200, handleGraphListRuns(query.graphId as string))
+      return
+    }
+    case "/api/graph/stop": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      jsonResponse(res, 200, { ok: handleGraphStop(body.runId as string) })
       return
     }
 

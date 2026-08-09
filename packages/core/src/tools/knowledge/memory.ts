@@ -53,7 +53,7 @@ export const memorySearchTool = make({
       if (results.length === 0) {
         return {
           success: true,
-          output: `No results found for "${input.query}". Try different keywords or use grep for exact pattern matching.`,
+          output: `No results found for "${input.query}".\n💡 升级路径：1) 换更稀有的关键词重试；2) 用 search_history 搜索历史会话；3) 用 grep 在当前工作区做精确匹配。`,
         }
       }
 
@@ -95,7 +95,7 @@ export const memoryRecallTool = make({
       if (parts.length === 0) {
         return {
           success: true,
-          output: `No memories found about "${input.topic}". The system learns as you work - relevant files will be indexed automatically.`,
+          output: `No memories found about "${input.topic}".\n💡 升级路径：1) 用更具体/更稀有的措辞重试；2) 用 search_history 搜索历史会话；3) 用 grep 在当前工作区检索代码或文件。`,
         }
       }
 

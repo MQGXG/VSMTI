@@ -45,6 +45,7 @@ const electronAPI = {
     searchMessages: (query: string) => ipcRenderer.invoke("ts:searchMessages", query),
     restoreSnapshot: (snapshotId: string, workspace: string) => ipcRenderer.invoke("ts:restoreSnapshot", snapshotId, workspace),
     writeFile: (filePath: string, content: string) => ipcRenderer.invoke("ts:writeFile", filePath, content),
+    getDefaultWorkspace: () => ipcRenderer.invoke("ts:getDefaultWorkspace"),
   },
 
   // TypeScript Agent Core IPC

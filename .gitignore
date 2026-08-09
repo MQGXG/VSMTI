@@ -27,3 +27,6 @@ checkpoints/
 graphs/
 tasks/
 vector-memory/
+# Mira 运行时产物（快照/transcript 已迁移到 userData，此处为旧路径双保险）
+.mira/
+.transcripts/

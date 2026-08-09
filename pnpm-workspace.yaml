@@ -7,5 +7,7 @@ allowBuilds:
   onnxruntime-node: true
   protobufjs: true
   sharp: true
+  tree-sitter-bash: true
+  tree-sitter-powershell: true
 confirmModulesPurge: false
 nodeLinker: hoisted

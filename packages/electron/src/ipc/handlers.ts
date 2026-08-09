@@ -1,5 +1,6 @@
-import { ipcMain, dialog, Notification, safeStorage } from "electron";
+import { ipcMain, dialog, Notification, safeStorage, app } from "electron";
 import { promises as fs } from "fs";
+import * as path from "path";
 import { getMainWindow, minimizeWindow, toggleMaximizeWindow, hideWindow } from "../managers/window-manager";
 import { registerAgentIPCHandlers } from "./index";
 import { getFloatingBallManager } from "../managers/floating-ball-manager";
@@ -50,6 +51,19 @@ export function registerIPCHandlers(): void {
     return true;
   });
 
+  // 默认工作目录（Documents/Mira，回退 home/Mira）
+  ipcMain.handle("ts:getDefaultWorkspace", async () => {
+    let base = "";
+    try { base = app.getPath("documents"); } catch { /* ignore */ }
+    if (!base) {
+      try { base = app.getPath("home"); } catch { /* ignore */ }
+    }
+    if (!base) return "";
+    const dir = path.join(base, "Mira");
+    try { await fs.mkdir(dir, { recursive: true }); } catch { /* ignore */ }
+    return dir;
+  });
+
   // 系统通知
   ipcMain.handle("notify", (_, title: string, body: string) => {
     new Notification({ title, body }).show();
@@ -93,7 +107,7 @@ export function registerIPCHandlers(): void {
     manager.hide('ipc');
   });
 
-  ipcMain.handle("floatingBall:updateConfig", async (_, config: Record<string, unknown>) => {
+  ipcMain.handle("floatingBall:updateConfig", (_, config: Record<string, unknown>) => {
     const manager = getFloatingBallManager();
     if (typeof config.autoHideTimeout === 'number') {
       manager.updateConfig({ autoHideTimeout: config.autoHideTimeout });

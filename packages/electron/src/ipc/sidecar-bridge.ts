@@ -133,7 +133,7 @@ const pendingStreams = new Map<number, PendingStream>()
  * 建立 SSE 连接到 Core，等待 channel 事件后返回
  * 每个连接独立 resolution，避免并发冲突
  */
-function connectAndGetChannel(
+export function connectAndGetChannel(
   sm: ServerManager,
   body: Record<string, unknown>,
   onEvent: (data: unknown) => void,

@@ -8,7 +8,7 @@ const execFileAsync = promisify(execFile)
 
 export const grepTool = make({
   name: "grep",
-  description: "Search for text patterns in files using regex. Uses ripgrep for fast search. Use when: finding where a function is used, searching for TODO/FIXME comments, locating specific code patterns, finding variable definitions.",
+  description: "Search for text patterns in files using regex. Uses ripgrep for fast search. Use when: finding where a function is used, searching for TODO/FIXME comments, locating specific code patterns, finding variable definitions. Do NOT use for: searching the web (use web_search), searching conversation memory (use memory_search). Prefer this tool over running 'grep'/'rg' via bash.",
   inputSchema: z.object({
     pattern: z.string().describe("Regex pattern to search for"),
     include: z.string().optional().describe("File glob pattern, e.g. *.ts"),

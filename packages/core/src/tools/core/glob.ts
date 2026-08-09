@@ -25,7 +25,7 @@ function matchGlob(name: string, pattern: string): boolean {
 
 export const globTool = make({
   name: "glob",
-  description: "Find files by name pattern. Supports wildcards like **/*.ts, src/**/*.js. Use when: finding TypeScript/JavaScript files, locating config files, finding files by extension, exploring project structure.",
+  description: "Find files by name pattern. Supports wildcards like **/*.ts, src/**/*.js. Use when: finding TypeScript/JavaScript files, locating config files, finding files by extension, exploring project structure. Do NOT use for: content search (use grep), reading file contents (use read_file). Prefer this tool over running 'find'/'ls' via bash.",
   inputSchema: z.object({
     pattern: z.string().describe("Glob pattern, e.g. **/*.ts or src/**/*.py"),
     path: z.string().optional().describe("Search directory (default: workspace)"),

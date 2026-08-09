@@ -3,6 +3,9 @@
  */
 import { ToolRegistry } from "./registry"
 import { readFileTool } from "../tools/core/read-file"
+import { invalidTool } from "../tools/core/invalid"
+import { getCurrentTimeTool } from "../tools/core/get-current-time"
+import { changeDirectoryTool } from "../tools/core/change-directory"
 import {
   writeFileTool, listFilesTool,
   webSearchTool, webFetchTool, codeSearchTool, questionTool,
@@ -37,6 +40,9 @@ import type { MCPServerConfig } from "../mcp/index"
 export function createDefaultRegistry(): ToolRegistry {
   const registry = new ToolRegistry()
   registry.register(readFileTool)
+  registry.register(invalidTool)
+  registry.register(getCurrentTimeTool)
+  registry.register(changeDirectoryTool)
   registry.register(writeFileTool)
   registry.register(listFilesTool)
   registry.register(webSearchTool)

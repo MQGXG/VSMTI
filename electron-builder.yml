@@ -11,6 +11,10 @@ files:
   - dist/**/*
   - "!node_modules/**/*"
 
+# tree-sitter 等 WASM 文件 unpack 到 app.asar.unpacked，供 sidecar（纯 Node 子进程）读取
+asarUnpack:
+  - "**/*.wasm"
+
 extraResources: []
 
 win:

@@ -1,81 +1,71 @@
-import { ipcMain, type WebContents } from "electron"
-import { createDefaultRegistry } from "@mira/core/system/registry-init"
-import { SubagentManager } from "@mira/core/orchestrate/subagent"
-import { setSubagentManager } from "@mira/core/tools/orchestrate/agent-tools"
-import type { AgentConfig } from "@mira/core/agent/agent"
-import type { SubagentEvent } from "@mira/core/orchestrate/subagent"
+import { ipcMain } from "electron"
+import { getServerManager } from "./sidecar-bridge"
 
-const registry = createDefaultRegistry()
-const subagentManager = new SubagentManager(registry, { maxParallel: 5 })
-setSubagentManager(subagentManager)
+/**
+ * 子 Agent IPC — 全部代理到 Sidecar HTTP（Sidecar 单写者）
+ * 主进程不再创建 SubagentManager，避免双进程写 actor_registry。
+ * Channel 名称与参数签名保持不变。
+ */
 
-/** 将子 Agent 事件转发到前端 */
-function forwardSubagentEvent(sender: WebContents, event: SubagentEvent): void {
-  if (!sender.isDestroyed()) {
-    sender.send("agent:event", `subagent-${event.subagentId}`, {
-      type: "subagent_status",
-      subagentId: event.subagentId,
-      status: event.type,
-      description: event.info.description,
-    })
+function sm() {
+  const m = getServerManager()
+  if (!m) throw new Error("Sidecar not running")
+  return {
+    request: <T = unknown>(method: string, apiPath: string, body?: unknown): Promise<T> =>
+      m.request(method, apiPath, body) as Promise<T>,
   }
 }
 
 export function registerSubagentIPC(): void {
-  ipcMain.handle("subagent:spawn", (event, description: string, config: AgentConfig, options?: {
+  ipcMain.handle("subagent:spawn", async (_, description: string, config: Record<string, unknown>, options?: {
     parentId?: string
     prompt?: string
     model?: string
   }) => {
-    subagentManager.onEvent((evt) => forwardSubagentEvent(event.sender, evt))
-    return subagentManager.spawn(description, config, options)
+    return await sm().request("POST", "/api/subagent/spawn", { description, config, ...options })
   })
 
   ipcMain.handle("subagent:wait", async (_, id: string, timeoutMs?: number) => {
-    return await subagentManager.wait(id, timeoutMs)
+    return await sm().request("POST", "/api/subagent/wait", { id, timeoutMs })
   })
 
-  ipcMain.handle("subagent:cancel", (_, id: string) => {
-    return subagentManager.cancel(id)
+  ipcMain.handle("subagent:cancel", async (_, id: string) => {
+    return await sm().request("POST", "/api/subagent/cancel", { id })
   })
 
-  ipcMain.handle("subagent:get", (_, id: string) => {
-    return subagentManager.getInfo(id)
+  ipcMain.handle("subagent:get", async (_, id: string) => {
+    return await sm().request("GET", `/api/subagent/get?id=${encodeURIComponent(id)}`)
   })
 
-  ipcMain.handle("subagent:getEvents", (_, id: string) => {
-    return subagentManager.getEvents(id)
+  ipcMain.handle("subagent:getEvents", async (_, id: string) => {
+    return await sm().request("GET", `/api/subagent/get?id=${encodeURIComponent(id)}`)
   })
 
-  ipcMain.handle("subagent:list", (_, filter?: { parentId?: string; status?: string }) => {
-    return subagentManager.list(filter as { parentId?: string; status?: any })
+  ipcMain.handle("subagent:list", async (_, filter?: { parentId?: string; status?: string }) => {
+    return await sm().request("POST", "/api/subagent/list", { filter })
   })
 
-  ipcMain.handle("subagent:listActive", () => {
-    return subagentManager.listActive()
+  ipcMain.handle("subagent:listActive", async () => {
+    return await sm().request("GET", "/api/subagent/listActive")
   })
 
-  ipcMain.handle("subagent:listByParent", (_, parentId: string) => {
-    return subagentManager.listByParent(parentId)
+  ipcMain.handle("subagent:listByParent", async (_, parentId: string) => {
+    return await sm().request("GET", `/api/subagent/listByParent?parentId=${encodeURIComponent(parentId)}`)
   })
 
-  ipcMain.handle("subagent:cancelByParent", (_, parentId: string) => {
-    subagentManager.cancelAllByParent(parentId)
+  ipcMain.handle("subagent:cancelByParent", async (_, parentId: string) => {
+    return await sm().request("POST", "/api/subagent/cancelByParent", { parentId })
+  })
+
+  ipcMain.handle("subagent:cancelAll", async () => {
+    return await sm().request("POST", "/api/subagent/cancelAll")
+  })
+
+  ipcMain.handle("subagent:setMaxParallel", () => {
     return true
   })
 
-  ipcMain.handle("subagent:cancelAll", () => {
-    subagentManager.cancelAll()
-    return true
-  })
-
-  ipcMain.handle("subagent:setMaxParallel", (_, limit: number) => {
-    // 并发限制通过环境变量 MIRA_MAX_PARALLEL_AGENTS 配置
-    return true
-  })
-
-  ipcMain.handle("subagent:toText", () => {
-    return subagentManager.toText()
+  ipcMain.handle("subagent:toText", async () => {
+    return await sm().request("GET", "/api/subagent/toText")
   })
 }
-

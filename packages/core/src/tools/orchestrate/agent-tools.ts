@@ -62,6 +62,7 @@ export const spawnAgentTool = make({
     })).min(1).max(5),
     wait: z.boolean().optional().describe("是否等待全部完成再返回（默认 false）"),
     timeout: z.number().optional().describe("等待超时（秒，默认 300）"),
+    outputSchema: z.record(z.string(), z.any()).optional().describe("JSON Schema 对象：所有子 Agent 的最终结果将以该结构 JSON 输出（作为交付内容，便于结构化解析）"),
   }),
   outputSchema: z.string(),
   permission: "read",
@@ -83,6 +84,9 @@ export const spawnAgentTool = make({
 
           // context=full 时传递父上下文
           const options: any = { prompt: t.prompt || t.description, context: t.context || "none", mode: t.mode || "subagent" }
+          if (input.outputSchema) {
+            options.outputSchema = input.outputSchema
+          }
           if (t.context === "full") {
             options.parentContext = (parentConfig as any)?.parentContext || []
           }

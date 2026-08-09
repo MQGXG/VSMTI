@@ -8,6 +8,12 @@
 import * as fs from "fs"
 import * as path from "path"
 import { DEFAULT_SYSTEM } from "../agent/constants"
+import { getPlatformPaths } from "../config/paths"
+
+/** 将 workspace 路径转为安全的目录名（用于 userData 下 per-workspace 隔离） */
+function workspaceSlug(workspace: string): string {
+  return workspace.replace(/[\\/:*?"<>|]/g, "_") || "root"
+}
 
 // ── 类型定义 ────────────────────────────────────────────
 
@@ -64,7 +70,8 @@ export class SourceManager {
   private snapshotDir: string
 
   constructor(workspace: string) {
-    this.snapshotDir = path.join(workspace, ".mira", "context-snapshots")
+    // 快照存到 userData（而非 workspace），避免污染项目仓库；per-workspace 隔离
+    this.snapshotDir = path.join(getPlatformPaths().userData, "context-snapshots", workspaceSlug(workspace))
   }
 
   /** 注册 Source */
@@ -170,14 +177,17 @@ export class EnvSource implements ContextSource {
       "<env>",
       `  Working directory: ${ctx.workspace || "unknown"}`,
       `  Platform: ${process.platform}`,
+      `  Today's date: ${new Date().toDateString()}`,
       "</env>",
     ]
     return parts.join("\n")
   }
 
   fingerprint(_ctx: SourceContext): SourceFingerprint {
-    // 环境信息静态稳定，保证 system 前缀字节不变以命中 prompt cache
-    return { hash: "env-static-v1", updatedAt: Date.now() }
+    // 环境信息除日期外静态稳定；日期每日变化一次，对 prompt cache 影响最小。
+    // 注意：EnvSource 未实现 loadSnapshot，SourceManager 每次 build 都会重新 generate，
+    // 因此日期总是实时生成。
+    return { hash: `env-${new Date().toDateString()}-v1`, updatedAt: Date.now() }
   }
 }
 
@@ -254,10 +264,10 @@ export class CodeSource implements ContextSource {
     return { hash: `code-${ctx.currentFile || "none"}-${this.codeSuffix.length}`, updatedAt: Date.now() }
   }
 
-  /** 持久化快照 */
+  /** 持久化快照（存到 userData，不污染项目仓库） */
   saveSnapshot(key: SourceKey, content: string, fingerprint: SourceFingerprint): void {
     try {
-      const dir = path.join(this.workspace || process.cwd(), ".mira", "context-snapshots")
+      const dir = path.join(getPlatformPaths().userData, "context-snapshots", workspaceSlug(this.workspace || process.cwd()))
       fs.mkdirSync(dir, { recursive: true })
       fs.writeFileSync(
         path.join(dir, `${key}.json`),
@@ -270,7 +280,7 @@ export class CodeSource implements ContextSource {
   /** 从快照恢复 */
   loadSnapshot(key: SourceKey): { content: string; fingerprint: SourceFingerprint } | null {
     try {
-      const snapshotPath = path.join(this.workspace || process.cwd(), ".mira", "context-snapshots", `${key}.json`)
+      const snapshotPath = path.join(getPlatformPaths().userData, "context-snapshots", workspaceSlug(this.workspace || process.cwd()), `${key}.json`)
       if (!fs.existsSync(snapshotPath)) return null
       return JSON.parse(fs.readFileSync(snapshotPath, "utf-8")) as { content: string; fingerprint: SourceFingerprint }
     } catch {

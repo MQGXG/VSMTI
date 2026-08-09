@@ -117,6 +117,21 @@ async function executeTool(
   tc: { id: string; name: string; arguments: string },
   input: TurnRunnerInput,
 ): Promise<ToolResult> {
+  // invalid 自愈修复（参考 opencode）：LLM 调用不存在的工具时，
+  // 先尝试小写归一，仍失败则改写为 invalid 调用，返回可读错误回流让模型自纠
+  if (!input.deps.registry.get(tc.name)) {
+    const lowered = tc.name.toLowerCase()
+    if (input.deps.registry.get(lowered)) {
+      tc = { ...tc, name: lowered }
+    } else {
+      tc = {
+        id: tc.id,
+        name: "invalid",
+        arguments: JSON.stringify({ tool: tc.name, error: `Unknown tool "${tc.name}". Review the available tools and retry.` }),
+      }
+    }
+  }
+
   let args: Record<string, unknown>
   try { args = JSON.parse(tc.arguments) } catch { args = {} }
 
@@ -383,6 +398,14 @@ export async function* runTurn(
     } else if (event.type === "tool_call" && event.toolCall) {
       toolCallList.push(event.toolCall)
       yield { type: "tool_start" as const, id: event.toolCall.id, name: event.toolCall.name, args: JSON.parse(event.toolCall.arguments) }
+
+      // question 工具：向用户提问（前端弹窗），回答经 question:answer 回传到 sidecar 进程内 pendingQuestions
+      if (event.toolCall.name === "question") {
+        try {
+          const qArgs = JSON.parse(event.toolCall.arguments) as { question?: string; options?: string[] }
+          yield { type: "question" as const, id: event.toolCall.id, question: qArgs.question || "请回答", options: qArgs.options }
+        } catch { /* 参数解析失败忽略 */ }
+      }
 
       const permResult = quickPermissionCheck(event.toolCall)
 

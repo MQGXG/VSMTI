@@ -7,12 +7,33 @@ import { EditProjectDialog } from "@mira/ui/sidebar/EditProjectDialog";
 import { SettingsDialog } from "@mira/ui/sidebar/SettingsDialog";
 import { Menu, Plus, Settings, Network } from "lucide-react";
 import { GraphPanel } from "@mira/ui/memory/GraphPanel";
+import { setActiveSessionId } from "@mira/ui/hooks/session-runtime-store";
 
 interface Project {
   project_id: string;
   name: string;
   workspace_path: string;
   color: string;
+}
+
+/** 是否为根目录工作区（旧版默认项目误用 C:\ 或 /） */
+function isRootWorkspace(p: string): boolean {
+  if (!p) return false;
+  const t = p.trim().replace(/[\\/]+$/, "");
+  return /^[a-zA-Z]:$/.test(t) || t === "";
+}
+
+/** 默认工作目录：设置 > 系统默认（Documents/Mira） */
+async function getDefaultPath(): Promise<string> {
+  try {
+    const s = JSON.parse(localStorage.getItem("settings") || "{}") as { defaultWorkspace?: string };
+    if (s.defaultWorkspace) return s.defaultWorkspace;
+  } catch { /* ignore */ }
+  try {
+    return (await window.electronAPI.ts.getDefaultWorkspace()) || "";
+  } catch {
+    return "";
+  }
 }
 
 export function App() {
@@ -27,8 +48,15 @@ export function App() {
 
   const loadProjects = useCallback(async () => {
     try {
+      const defaultPath = await getDefaultPath();
       const tsProjects = await window.electronAPI.ts.listProjects();
       if (tsProjects && tsProjects.length > 0) {
+        // 迁移：旧版默认项目使用根目录（C:\ 或 /），自动更新到新默认路径
+        for (const p of tsProjects) {
+          if (defaultPath && isRootWorkspace(p.workspace_path)) {
+            await window.electronAPI.ts.updateProject(p.project_id, { workspace_path: defaultPath }).catch(() => {});
+          }
+        }
         const colorMap = JSON.parse(localStorage.getItem("project_colors") || "{}") as Record<string, string>;
         const hidden = JSON.parse(localStorage.getItem("hidden_projects") || "[]") as string[];
         const mapped: Project[] = tsProjects
@@ -36,7 +64,7 @@ export function App() {
           .map((p) => ({
             project_id: p.project_id,
             name: p.name,
-            workspace_path: p.workspace_path,
+            workspace_path: defaultPath && isRootWorkspace(p.workspace_path) ? defaultPath : p.workspace_path,
             color: colorMap[p.project_id] || "#3b3b3b",
           }));
         setProjects(mapped);
@@ -46,8 +74,8 @@ export function App() {
     } catch { /* fallback */ }
 
     // 数据库为空或连接失败时，只创建一次默认项目（幂等：同名同路径会复用）
+    const defaultPath = await getDefaultPath();
     const defaultName = "默认项目";
-    const defaultPath = window.electronAPI.platform === "win32" ? "C:\\" : "/";
     try {
       const created = await window.electronAPI.ts.createProject(defaultName, defaultPath);
       const defaultProject: Project = {
@@ -61,16 +89,22 @@ export function App() {
 
   useEffect(() => { loadProjects(); const timer = setInterval(loadProjects, 15000); return () => clearInterval(timer); }, [loadProjects]);
 
-  // 启动时检查桌宠设置
+  // 启动时检查桌宠/悬浮球设置
   useEffect(() => {
     try {
       const s = JSON.parse(localStorage.getItem("settings") || "{}");
       if (s.live2dPet) {
         window.electronAPI.live2d.toggle(true);
       }
+      if (s.floatingBallEnabled !== false) {
+        window.electronAPI.floatingBall.toggle(true);
+      }
     } catch { /* ignore */ }
   }, []);
   useEffect(() => { if (!activeProject && projects.length > 0) setActiveProject(projects[0].project_id); }, [projects, activeProject]);
+
+  // 同步当前激活会话到运行时 Store（用于后台会话的通知判断）
+  useEffect(() => { setActiveSessionId(activeSession); }, [activeSession]);
 
   // 恢复上次活跃会话（校验会话仍存在，避免恢复已删除会话导致空历史/孤儿数据）
   useEffect(() => {
@@ -206,7 +240,8 @@ export function App() {
       </div>
 
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <ChatWindow sessionId={activeSession} onSessionChange={setActiveSession} onNewSession={handleNewSession} />
+        <ChatWindow sessionId={activeSession} onSessionChange={setActiveSession} onNewSession={handleNewSession}
+          workspace={activeProject ? (projects.find(p => p.project_id === activeProject)?.workspace_path || "") : ""} />
       </main>
 
       {settingsOpen && createPortal(<SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />, document.body)}

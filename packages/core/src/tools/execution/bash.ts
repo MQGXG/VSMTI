@@ -3,6 +3,8 @@ import { z } from "zod"
 import { make } from "../../shared/tool"
 import path from "path"
 import { checkCommand, normalizeCommand, splitSubCommands, isReadOnlyCommand } from "../core/bash-security"
+import { getSessionCwd } from "../core/session-cwd"
+import { parseExternalDirs } from "./bash-ast"
 
 const MAX_OUTPUT_LENGTH = 50000
 const MAX_CAPTURE_BYTES = 1024 * 1024
@@ -17,13 +19,14 @@ interface RunResult {
   signal?: boolean
 }
 
-function runCommand(shell: string, args: string[], timeoutMs: number, signal?: AbortSignal): Promise<RunResult> {
+function runCommand(shell: string, args: string[], timeoutMs: number, signal?: AbortSignal, cwd?: string): Promise<RunResult> {
   return new Promise((resolve) => {
     const child = spawn(shell, args, {
       shell: false,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
       signal,
+      cwd,
     })
 
     let stdout = ""
@@ -118,10 +121,11 @@ function externalCommandDirs(command: string, cwd: string): string[] {
 
 export const bashTool = make({
   name: "bash",
-  description: "Execute shell commands (npm, git, system commands). Use for building, testing, installing packages. Use when: installing npm packages, running tests, checking git status, building projects, running scripts.",
+  description: "Execute shell commands (npm, git, system commands). Use for building, testing, installing packages. Use when: installing npm packages, running tests, checking git status, building projects, running scripts. Do NOT use for: reading file content (use read_file), searching (use grep), or simple time questions (use get_current_time). Prefer targeted commands over long chained ones.",
   inputSchema: z.object({
     command: z.string().describe("Shell command to execute"),
     timeout: z.number().optional().default(30).describe("Timeout in seconds (max 600)"),
+    interactive: z.boolean().optional().default(false).describe("Set true if the command requires interactive stdin (sudo password, ssh passphrase, y/N prompt). When true, the tool will check for interactivity and return clear guidance instead of hanging."),
   }),
   outputSchema: z.string(),
   permission: "bash",
@@ -132,8 +136,15 @@ export const bashTool = make({
       return { success: false, error: `Blocked: ${check.reason}` }
     }
 
-    const cwd = ctx.workspace || process.cwd()
-    const externalDirs = externalCommandDirs(input.command, cwd)
+    // 交互式命令：当前环境不支持交互 stdin，给出明确引导而非静默挂起
+    if (input.interactive) {
+      return {
+        success: false,
+        error: `该命令声明为需要交互式终端（sudo 密码 / ssh 凭据 / y-N 确认）。当前环境不支持交互式 stdin。请：1) 改用无需交互的替代命令（如 ssh -o BatchMode=yes、用 --password-stdin 输入凭据）；2) 拆分命令为无需确认的步骤；3) 若必须交互，请让用户在终端手动执行。`,
+      }
+    }
+
+    const cwd = getSessionCwd(ctx.sessionID) || ctx.workspace || process.cwd()
     const timeout = Math.min(input.timeout || 30, 600)
     const isWin = process.platform === "win32"
 
@@ -153,7 +164,14 @@ export const bashTool = make({
       shellArgs = ["-c", input.command]
     }
 
-    const result = await runCommand(shell, shellArgs, timeout * 1000, ctx.signal)
+    // 路径级权限检测：tree-sitter AST（识别文件命令参数）+ token 匹配合并，
+    // 覆盖 bash 与 powershell 两类语法，避免任一路径漏检
+    const isPs = isWin && shell === "powershell"
+    const astDirs = (await parseExternalDirs(input.command, cwd, isPs)) || []
+    const tokenDirs = externalCommandDirs(input.command, cwd)
+    const externalDirs = [...new Set([...astDirs, ...tokenDirs])]
+
+    const result = await runCommand(shell, shellArgs, timeout * 1000, ctx.signal, cwd)
 
     if (result.signal) {
       return { success: false, error: "Command cancelled via abort signal", metadata: { exitCode: null } }
@@ -168,7 +186,9 @@ export const bashTool = make({
     }
 
     const output = formatOutput(result)
-    const truncated = output.length > MAX_OUTPUT_LENGTH ? output.slice(0, MAX_OUTPUT_LENGTH) + `\n\n[Output truncated at ${MAX_OUTPUT_LENGTH / 1000}K characters]` : output
+    const truncated = output.length > MAX_OUTPUT_LENGTH
+      ? output.slice(0, MAX_OUTPUT_LENGTH) + `\n\n[Output truncated at ${MAX_OUTPUT_LENGTH / 1000}K characters]\n💡 输出过大。可考虑委派子代理处理，或先用 grep 缩小搜索范围。`
+      : output
 
     return {
       success: result.exitCode === 0,

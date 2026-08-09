@@ -321,8 +321,8 @@ export function PetApp() {
         )
 
         const cleanup = window.electronAPI.agent.onEvent(channel, (data: any) => {
-          if (data.type === "delta" && data.content) {
-            updateLastMsg((prev: string) => prev + data.content)
+          if (data.type === "content" && data.text) {
+            updateLastMsg((prev: string) => prev + data.text)
             motionRef.current?.trigger({ kind: "joy", durationMs: 900 })
           } else if (data.type === "finish") {
             setStreaming(false)

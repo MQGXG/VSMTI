@@ -6,6 +6,7 @@ import { make, type Content } from "../../shared/tool"
 import { lspManager } from "../../lsp/manager"
 import { realPath, contains, isBinaryExt, isDeviceFile } from "./path-util"
 import { setFileState, getFileState, isDuplicateRead } from "./file-state-cache"
+import { resolveSessionPath } from "./session-cwd"
 
 const MAX_READ_BYTES = 50 * 1024 // 50KB 上限
 const MAX_LINE_LENGTH = 2000
@@ -77,7 +78,7 @@ export const readFileTool = make({
   name: "read_file",
   description: "Read file content or list directory contents. Use this BEFORE modifying any file to understand its current state. Supports text files (with line offset/limit pagination, UTF-8 byte-accurate truncation, encoding detection), images (returned as viewable content), and directory listing. Use when: reading file content, checking code before editing, examining config files, listing directory contents, viewing images.",
   inputSchema: z.object({
-    path: z.string().describe("File or directory path (absolute or relative to workspace)"),
+    path: z.string().describe("File or directory path (absolute, or relative to current directory which can be changed via change_directory)"),
     offset: z.number().optional().default(1).describe("1-based line or entry offset to start reading from"),
     limit: z.number().optional().describe("Max lines (for files) or entries (for directories) to read"),
     encoding: z.string().optional().describe("File encoding: utf-8 (default), utf-16le, latin1, gbk, shift-jis, big5. Requires iconv-lite for gbk/shift-jis/big5."),
@@ -92,7 +93,7 @@ export const readFileTool = make({
   },
   async execute(input, ctx) {
     const isAbsolute = path.isAbsolute(input.path)
-    const absolute = isAbsolute ? input.path : path.resolve(ctx.workspace, input.path)
+    const absolute = isAbsolute ? input.path : resolveSessionPath(ctx.sessionID, ctx.workspace, input.path)
     const real = await realPath(absolute)
     const root = await realPath(ctx.workspace)
 
@@ -370,6 +371,10 @@ async function buildOutput(
 
   if (remaining > 0) {
     output += `\n... (${remaining} more lines, use read_file with offset=${finalNextLine + 1}${input.limit ? `&limit=${input.limit}` : ""} to continue)`
+  }
+
+  if (truncated) {
+    output += `\n💡 文件较大。可用 offset/limit 分页读取，或先用 grep 定位目标内容。`
   }
 
   // 存入文件状态缓存

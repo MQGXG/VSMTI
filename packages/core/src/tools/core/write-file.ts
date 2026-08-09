@@ -21,7 +21,7 @@ function hasBom(text: string): boolean { return text.startsWith(BOM) }
 
 export const writeFileTool = make({
   name: "write_file",
-  description: "Create a new file or completely replace file content. Creates parent directories automatically. Safeguards: stale-content detection (refuses to overwrite if file changed externally since read), process-level write lock, BOM preservation. Use for new files or full rewrites.",
+  description: "Create a new file or completely replace file content. Creates parent directories automatically. Safeguards: stale-content detection (refuses to overwrite if file changed externally since read), process-level write lock, BOM preservation. Use for new files or full rewrites. Do NOT use for: small edits (use edit_file), or creating documentation files unless explicitly requested. ALWAYS read the file first if it already exists.",
   inputSchema: z.object({
     path: z.string().describe("File path (absolute or relative to workspace)"),
     content: z.string().describe("Content to write"),

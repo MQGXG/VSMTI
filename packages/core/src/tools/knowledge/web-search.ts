@@ -152,7 +152,7 @@ const searchCache = new TTLCache<string>(SEARCH_CACHE_TTL)
 
 export const webSearchTool = make({
   name: "web_search",
-  description: "Search the web for current information. When API key is configured, uses professional search API (Exa/Parallel); otherwise uses DuckDuckGo with SEArxNG fallback (free). Use when: needing current information, looking for documentation, finding solutions to problems, researching topics.",
+  description: `Search the web for current information (as of ${new Date().getFullYear()}). When API key is configured, uses professional search API (Exa/Parallel); otherwise uses DuckDuckGo with SEArxNG fallback (free). Use when: needing current information, looking for documentation, finding solutions to problems, researching topics. Do NOT use for: questions that can be answered from the conversation or workspace, file content (use grep/read_file instead), or memory (use memory_search).`,
   inputSchema: z.object({
     query: z.string().describe("Search query"),
     maxResults: z.number().optional().default(5).describe("Max results (max 10)"),

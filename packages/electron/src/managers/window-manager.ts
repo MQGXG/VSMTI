@@ -59,6 +59,8 @@ export async function createWindow(): Promise<BrowserWindow> {
       preload: join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      // 隐藏到托盘期间渲染进程不节流，保证后台会话持续接收 SSE 并更新状态
+      backgroundThrottling: false,
     },
   });
 

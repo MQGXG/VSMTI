@@ -260,8 +260,8 @@ export function truncateToolOutput(text: string, opts: TruncateOutputOptions = {
   }
 
 const fullHint = outputPath
-    ? `\n输出已完整保存至: ${outputPath}\nUse Grep to search the full content or Read with offset/limit to view specific sections.`
-    : ""
+    ? `\n输出已完整保存至: ${outputPath}\nUse Grep to search the full content, Read with offset/limit to view sections, or consider delegating to a subagent for large output.`
+    : "\n输出过大。可考虑委派子代理处理，或用 Grep/Read 分片查看。"
 
   const body = direction === "head"
     ? `${preview}\n\n...[${removedUnits} ${hitBytes ? "bytes" : "lines"} truncated]...`

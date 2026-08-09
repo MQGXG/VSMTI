@@ -103,6 +103,7 @@ export class Agent {
       contextManager?: ContextManager
       goalJudge?: GoalJudge
       orchestrator?: ToolOrchestrator
+      ftsProvider?: FTSMemoryProvider
     },
   ) {
     this.memoryManager = deps?.memoryManager ?? new MemoryManager()
@@ -117,7 +118,7 @@ export class Agent {
       registry,
       workspace ? { persistDir: join(workspace, ".task_outputs", "tool-results") } : undefined,
     )
-    const ftsProvider = new FTSMemoryProvider()
+    const ftsProvider = deps?.ftsProvider ?? new FTSMemoryProvider()
     this.memoryManager.addProvider(new BuiltinMemoryProvider())
     this.memoryManager.addProvider(this.checkpointProvider)
     if (workspace) {
@@ -166,6 +167,11 @@ export class Agent {
     const modelFilter = { providerID: config.provider || "openai", modelID: config.model }
     const materialized = this.registry.materializeWithModel(modelFilter, config.permissions)
     let toolSet = materialized.definitions
+    // invalid 是内部自愈修复工具，不暴露给 LLM（参考 opencode activeTools 过滤）
+    if (toolSet && "invalid" in toolSet) {
+      const { invalid: _invalid, ...rest } = toolSet
+      toolSet = rest
+    }
     if (config.toolAllowlist && config.toolAllowlist.length > 0) {
       const allowed = new Set(config.toolAllowlist)
       toolSet = Object.fromEntries(Object.entries(toolSet).filter(([name]) => allowed.has(name)))

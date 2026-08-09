@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { MessageSquarePlus, Trash2, MessageSquare, Search, X, FileText, Plus, Check, Pencil } from "lucide-react";
 import { SessionService, type SessionInfo } from "../services/session.service";
 import { ProjectService, type ProjectInfo } from "../services/project.service";
 import { Input } from "../components/ui/input";
+import { subscribe as subscribeRuntime, getVersion as getRuntimeVersion, isSessionRunning, disposeSession } from "../hooks/session-runtime-store";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -133,6 +134,9 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[] | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; project: ProjectInfo } | null>(null);
+
+  // 订阅会话运行时 store，用于显示"运行中"徽标
+  useSyncExternalStore(subscribeRuntime, getRuntimeVersion);
 
   const project = useMemo(() => projects.find((p) => p.project_id === activeProject), [projects, activeProject]);
 
@@ -310,14 +314,20 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
                         </div>
                         <div className="min-w-0 flex-1">
                           <SessionTitle session={session} onRename={handleRename} onSessionChange={onSessionChange} />
-                          <div className="text-[10px] mt-0.5" style={{ color: "var(--fg-tertiary)" }}>
-                            {session.message_count || 0} 条 · {formatTime(session.updated_at)}
+                          <div className="text-[10px] mt-0.5 flex items-center gap-1.5" style={{ color: "var(--fg-tertiary)" }}>
+                            {isSessionRunning(session.session_id) && (
+                              <span className="flex items-center gap-1" style={{ color: "#22c55e" }}>
+                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#22c55e" }} />
+                                运行中
+                              </span>
+                            )}
+                            <span>{session.message_count || 0} 条 · {formatTime(session.updated_at)}</span>
                             {session.cost ? ` · ${formatCost(session.cost)}` : ""}
                           </div>
                         </div>
                       </div>
                     </button>
-                    <button onClick={async (e) => { e.stopPropagation(); try { await SessionService.delete(session.session_id); loadSessions(); } catch { /* ignore */ } if (activeSession === session.session_id) onNewSession(); }}
+                    <button onClick={async (e) => { e.stopPropagation(); disposeSession(session.session_id); try { await SessionService.delete(session.session_id); loadSessions(); } catch { /* ignore */ } if (activeSession === session.session_id) onNewSession(); }}
                       className="p-1 mr-1 rounded-md opacity-0 group-hover:opacity-100 transition-all btn-ghost shrink-0">
                       <Trash2 className="w-3 h-3" />
                     </button>

@@ -47,7 +47,10 @@
     "tailwind-merge": "^3.6.0",
     "three": "^0.185.1",
     "three-spritetext": "^1.10.0",
+    "tree-sitter-bash": "^0.25.1",
+    "tree-sitter-powershell": "^0.26.4",
     "untitled-pixi-live2d-engine": "^1.2.2",
+    "web-tree-sitter": "^0.26.11",
     "zod": "^4.4.3"
   },
   "optionalDependencies": {

@@ -37,7 +37,7 @@ import { buildBuiltinCommands, SOURCE_LABEL, type SlashCommandDef } from "./slas
 import { createTTSEngine } from "../services/voice/tts";
 import type { TTSEngine } from "../services/voice/types";
 
-interface Props { sessionId: string; onSessionChange?: (id: string) => void; onNewSession?: () => void; }
+interface Props { sessionId: string; onSessionChange?: (id: string) => void; onNewSession?: () => void; workspace?: string; }
 interface SkillInfo { name: string; description: string; category: string | null; }
 
 function WelcomeScreen({ onSuggest }: { onSuggest: (text: string) => void }) {
@@ -516,10 +516,18 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   );
 }
 
-function ChatContent({ sessionId, onSessionChange, onNewSession }: { sessionId: string; onSessionChange?: (id: string) => void; onNewSession?: () => void }) {
+function ChatContent({ sessionId, onSessionChange, onNewSession, workspace }: { sessionId: string; onSessionChange?: (id: string) => void; onNewSession?: () => void; workspace?: string }) {
   const [selectedModel, setSelectedModel] = useState<ModelOption>(loadModelChoice);
   const [agentMode, setAgentMode] = useState<AgentMode>(loadModeChoice);
   const [goalCondition, setGoalCondition] = useState<string | null>(null);
+
+  // 切换会话时重置模型/模式/Goal（替代原先 key={sessionId} 的 remount 语义，
+  // 保持会话切换不中断后台流）
+  useEffect(() => {
+    setSelectedModel(loadModelChoice());
+    setAgentMode(loadModeChoice());
+    setGoalCondition(null);
+  }, [sessionId]);
 
   useEffect(() => {
     const modes: AgentMode[] = ["assistant", "expert", "action", "safe", "plan"];
@@ -539,7 +547,7 @@ function ChatContent({ sessionId, onSessionChange, onNewSession }: { sessionId: 
   }, [agentMode]);
 
   return (
-    <MiraRuntimeProvider sessionId={sessionId} selectedModel={selectedModel} agentMode={agentMode} goalCondition={goalCondition} onSessionChange={onSessionChange}>
+    <MiraRuntimeProvider sessionId={sessionId} selectedModel={selectedModel} agentMode={agentMode} goalCondition={goalCondition} onSessionChange={onSessionChange} workspace={workspace}>
       {(ctx) => (
         <ChatInner ctx={ctx} selectedModel={selectedModel} onModelChange={setSelectedModel}
           agentMode={agentMode} onModeChange={setAgentMode}
@@ -550,6 +558,8 @@ function ChatContent({ sessionId, onSessionChange, onNewSession }: { sessionId: 
   );
 }
 
-export function ChatWindow({ sessionId, onSessionChange, onNewSession }: Props) {
-  return <ChatContent key={sessionId} sessionId={sessionId} onSessionChange={onSessionChange} onNewSession={onNewSession} />;
+export function ChatWindow({ sessionId, onSessionChange, onNewSession, workspace }: Props) {
+  // 注意：不再用 key={sessionId} 强制重建组件树，
+  // 会话状态由 session-runtime-store 管理，切换只换视图、不中断后台流
+  return <ChatContent sessionId={sessionId} onSessionChange={onSessionChange} onNewSession={onNewSession} workspace={workspace} />;
 }

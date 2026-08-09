@@ -53,6 +53,7 @@ export interface ElectronAPI {
     searchMessages: (query: string) => Promise<Array<{ session_id: string; session_title: string; message: { role: string; content: string; timestamp: string }; context: string }>>;
     restoreSnapshot: (snapshotId: string, workspace: string) => Promise<string[]>;
     writeFile: (filePath: string, content: string) => Promise<boolean>;
+    getDefaultWorkspace: () => Promise<string>;
   };
 
   // TypeScript Agent Core
@@ -157,6 +158,15 @@ export interface ElectronAPI {
   /** Live2D 桌宠 */
   live2d: {
     toggle: (enabled: boolean) => Promise<void>;
+  };
+
+  /** 桌面悬浮球 */
+  floatingBall: {
+    toggle: (enabled: boolean) => Promise<{ success: boolean }>;
+    wake: () => void;
+    hide: () => void;
+    updateConfig: (config: Record<string, unknown>) => Promise<unknown>;
+    onStateChange: (callback: (state: { state: string; reason: string }) => void) => () => void;
   };
 
   /** Graph 图编排 */

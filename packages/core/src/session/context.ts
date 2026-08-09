@@ -8,6 +8,7 @@ import { ToolOutputStore } from "../tools/shared/tool-output-store"
 import { ContextEpochTracker, getContextEpochTracker, type ContextEpoch } from "./context-epoch"
 import * as fs from "fs"
 import * as path from "path"
+import { getPlatformPaths } from "../config/paths"
 
 export interface ContextConfig {
   maxContextTokens: number
@@ -439,7 +440,8 @@ export class ContextManager {
 
   private writeTranscript(messages: LLMMessage[]): void {
     try {
-      const dir = path.join(this.workspace, ".transcripts")
+      // transcript 存到 userData（而非 workspace），避免污染项目仓库
+      const dir = path.join(getPlatformPaths().userData, "transcripts")
       fs.mkdirSync(dir, { recursive: true })
       const filePath = path.join(dir, `transcript_${Date.now()}.jsonl`)
       const lines = messages.map(m => JSON.stringify(m))

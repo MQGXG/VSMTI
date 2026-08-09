@@ -19,6 +19,17 @@ export function NewProjectDialog({ open, onClose, onCreate }: Props) {
       setName("");
       setWorkspacePath("");
       setError("");
+      // 预填默认工作目录（设置 > 系统默认 Documents/Mira）
+      (async () => {
+        try {
+          const s = JSON.parse(localStorage.getItem("settings") || "{}") as { defaultWorkspace?: string };
+          let p = s.defaultWorkspace || "";
+          if (!p) {
+            try { p = (await window.electronAPI.ts.getDefaultWorkspace()) || ""; } catch { /* ignore */ }
+          }
+          if (p) setWorkspacePath(p);
+        } catch { /* ignore */ }
+      })();
     }
   }, [open]);
 

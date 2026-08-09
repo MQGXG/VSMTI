@@ -43,7 +43,7 @@ export const searchHistoryTool = make({
 
       const result = db.exec(sql, params)
       if (result.length === 0 || result[0].values.length === 0) {
-        return { success: true, output: `No matching conversations found for "${input.query}".` }
+        return { success: true, output: `No matching conversations found for "${input.query}".\n💡 升级路径：1) 换更稀有的关键词；2) 用 grep 在当前工作区搜索代码/文件内容；3) 用 memory_search 查找项目记忆。` }
       }
 
       const rows = result[0].values

@@ -12,7 +12,21 @@ import { loadWorkspacePermissions, saveWorkspacePermission } from "../permission
 import { buildInstructionSystemPrompt } from "../instruction"
 import { matchSkillCommand, buildSkillInvocationMessage } from "../../skill/skill-commands"
 import { loadSkill } from "../../skill/skill-loader"
-import { initDatabase } from "../database"
+import { initDatabase, flushSave } from "../database"
+import {
+  listProjects,
+  createProject,
+  updateProject,
+  deleteProjectById,
+  createSession,
+  listSessions,
+  getSessionMessages,
+  deleteSessionById,
+  deleteMessageById,
+  searchMessages,
+  updateSession,
+  restoreSnapshot,
+} from "../../session/manager"
 import { AgentRegistry } from "../../agent/registry"
 import { logError } from "../logger"
 import { taskTracker } from "../../task/tracker"
@@ -21,6 +35,15 @@ import { setFTSProvider } from "../../tools/knowledge/memory"
 import { loadSession } from "../../session/store"
 import type { LLMMessage } from "../../llm/client"
 import { generateFollowUpSuggestions } from "../../llm/follow-up"
+import { FTSMemoryProvider } from "../../memory/fts-memory-provider"
+import { SubagentManager, type SubagentStatus } from "../../orchestrate/subagent"
+import { setSubagentManager } from "../../tools/orchestrate/agent-tools"
+import { GoalJudge } from "../../orchestrate/goal-judge"
+import type { TaskStatus } from "../../task/tracker"
+import { answerQuestion, getPendingQuestions } from "../../tools/interaction/question"
+import { StateGraph, GraphPersist } from "../../graph"
+import { buildCodingTaskGraph, type CodingState } from "../../graph/templates/coding-task"
+import type { GraphRunResult } from "../../graph/types"
 
 // ── 初始化 ──────────────────────────────────────────
 
@@ -42,6 +65,44 @@ for (const mode of getAllModes()) {
 }
 
 initDatabase().catch((err) => logError("API 初始化失败", err))
+
+// ── 共享 FTS 记忆单例 ────────────────────────────────
+// 每个 Agent 复用同一 FTS 提供者（而非每轮新建重新加载 1.3GB 库），
+// 并在启动时立即赋值 memoryFTS，使知识图谱重启后无需先发消息即可读取。
+
+let sharedMemoryFTS: FTSMemoryProvider | null = null
+
+async function getRecentWorkspace(): Promise<string> {
+  try {
+    const db = await initDatabase()
+    const rows = db.exec(
+      "SELECT workspace_path FROM projects WHERE workspace_path IS NOT NULL AND workspace_path != '' ORDER BY created_at DESC LIMIT 1",
+    )
+    if (rows.length > 0 && rows[0].values.length > 0) return String(rows[0].values[0][0])
+  } catch { /* 数据库未就绪时回退 */ }
+  return process.cwd()
+}
+
+async function ensureSharedMemoryFTS(preferredWorkspace?: string): Promise<FTSMemoryProvider | null> {
+  if (sharedMemoryFTS) return sharedMemoryFTS
+  try {
+    const ws = (preferredWorkspace && preferredWorkspace.trim()) || (await getRecentWorkspace())
+    const fts = new FTSMemoryProvider()
+    await fts.initialize("", ws)
+    sharedMemoryFTS = fts
+    setMemoryFTS(fts)
+    setFTSProvider(fts)
+    return fts
+  } catch (err) {
+    logError("[API] 初始化共享 FTS 记忆失败", err)
+    return null
+  }
+}
+
+// 启动时预初始化，保证重启后图谱/记忆 API 立即可用
+initDatabase()
+  .then(() => ensureSharedMemoryFTS())
+  .catch((err) => logError("启动共享记忆初始化失败", err))
 
 // ── Agent 会话管理 ──────────────────────────────────
 
@@ -117,7 +178,14 @@ export async function handleStartStream(
     workspace,
   })
 
-  const agent = new Agent(registry, mergedConfig.apiKey, mergedConfig.apiUrl, workspace)
+  const sharedFTS = await ensureSharedMemoryFTS(workspace)
+  const agent = new Agent(
+    registry,
+    mergedConfig.apiKey,
+    mergedConfig.apiUrl,
+    workspace,
+    sharedFTS ? { ftsProvider: sharedFTS } : undefined,
+  )
   // 将 FTS provider 注册到模块级单例（供 memory 工具和 HTTP 端点使用）
   const fts = agent.getFTSProvider()
   if (fts) {
@@ -197,6 +265,8 @@ async function runAgentInBackground(
     ctx.writeEvent({ type: "finish", reason: "completed" })
     ctx.writeEnd()
     activeSessions.delete(session.channel)
+    // 确保本轮消息可靠落盘（防抖持久化可能在进程退出前未触发）
+    flushSave()
   }
 }
 
@@ -222,7 +292,8 @@ export function handleListTools(mode?: string): Array<{ name: string; descriptio
     ? modeToPermissionSet(mode, defaultPermissions)
     : defaultPermissions
   const materialized = registry.materialize(permissions)
-  let toolNames = Object.keys(materialized.definitions)
+  // invalid 是内部自愈修复工具，不暴露给 UI 工具面板
+  let toolNames = Object.keys(materialized.definitions).filter((n) => n !== "invalid")
   if (modeConfig?.toolAllowlist && modeConfig.toolAllowlist.length > 0) {
     const allowed = new Set(modeConfig.toolAllowlist)
     toolNames = toolNames.filter((n) => allowed.has(n))
@@ -351,4 +422,257 @@ export async function handleFollowUps(sessionId: string): Promise<{ suggestions:
     logError("[API] handleFollowUps 失败", err)
     return { suggestions: [] }
   }
+}
+
+// ── 会话/项目数据库操作（Sidecar 单写者） ──────────────
+// 主进程不再直接持有 sql.js 数据库；所有会话/项目读写经本进程执行，
+// 避免双进程各自内存库互相覆盖导致消息丢失。
+
+export function handleListProjects(): Promise<Awaited<ReturnType<typeof listProjects>>> {
+  return listProjects()
+}
+
+export function handleCreateProject(name: string, workspace: string): Promise<Awaited<ReturnType<typeof createProject>>> {
+  return createProject(name, workspace)
+}
+
+export function handleUpdateProject(projectId: string, data: { name?: string; workspace_path?: string }): Promise<void> {
+  return updateProject(projectId, data)
+}
+
+export function handleDeleteProject(projectId: string): Promise<void> {
+  return deleteProjectById(projectId)
+}
+
+export function handleCreateSession(projectId: string, title?: string): Promise<Awaited<ReturnType<typeof createSession>>> {
+  return createSession(projectId, title)
+}
+
+export function handleListSessions(projectId?: string): Promise<Awaited<ReturnType<typeof listSessions>>> {
+  return listSessions(projectId)
+}
+
+export function handleGetSessionMessages(sessionId: string): Promise<Awaited<ReturnType<typeof getSessionMessages>>> {
+  return getSessionMessages(sessionId)
+}
+
+export function handleDeleteSession(sessionId: string): Promise<void> {
+  return deleteSessionById(sessionId)
+}
+
+export function handleDeleteMessage(sessionId: string, messageId: number): Promise<void> {
+  return deleteMessageById(sessionId, messageId)
+}
+
+export function handleSearchMessages(query: string): Promise<Awaited<ReturnType<typeof searchMessages>>> {
+  return searchMessages(query)
+}
+
+export function handleUpdateSession(sessionId: string, data: { title?: string }): Promise<void> {
+  return updateSession(sessionId, data)
+}
+
+export function handleRestoreSnapshot(snapshotId: string, workspace: string): Promise<Awaited<ReturnType<typeof restoreSnapshot>>> {
+  return restoreSnapshot(snapshotId, workspace)
+}
+
+// ── 子 Agent（Sidecar 单写者） ─────────────────────────
+// 共享实例：sidecar 的 spawn_agent/delegate_task 工具与 HTTP 端点共用，
+// 避免主进程再创建 SubagentManager 写 actor_registry。
+
+const subagentManager = new SubagentManager(registry, { maxParallel: 5 })
+setSubagentManager(subagentManager)
+
+export function handleSubagentSpawn(description: string, config: Record<string, unknown>, options?: { parentId?: string; prompt?: string; model?: string }) {
+  return subagentManager.spawn(description, config as unknown as AgentConfig, options)
+}
+
+export async function handleSubagentWait(id: string, timeoutMs?: number) {
+  return await subagentManager.wait(id, timeoutMs)
+}
+
+export function handleSubagentCancel(id: string): boolean {
+  return subagentManager.cancel(id)
+}
+
+export function handleSubagentGet(id: string) {
+  return subagentManager.getInfo(id)
+}
+
+export function handleSubagentList(filter?: { parentId?: string; status?: SubagentStatus }) {
+  return subagentManager.list(filter)
+}
+
+export function handleSubagentListActive() {
+  return subagentManager.listActive()
+}
+
+export function handleSubagentListByParent(parentId: string) {
+  return subagentManager.listByParent(parentId)
+}
+
+export function handleSubagentCancelByParent(parentId: string): boolean {
+  subagentManager.cancelAllByParent(parentId)
+  return true
+}
+
+export function handleSubagentCancelAll(): boolean {
+  subagentManager.cancelAll()
+  return true
+}
+
+export function handleSubagentToText(): string {
+  return subagentManager.toText()
+}
+
+// ── Goal（Sidecar 单写者） ─────────────────────────────
+
+const goalJudge = new GoalJudge()
+
+export function handleGoalSet(description: string, timeoutMs?: number) {
+  return goalJudge.setGoal(description, timeoutMs)
+}
+
+export function handleGoalGetActive() {
+  return goalJudge.getActiveGoal()
+}
+
+export function handleGoalList() {
+  return goalJudge.getAllGoals()
+}
+
+export function handleGoalCancel(): boolean {
+  return goalJudge.cancelGoal()
+}
+
+export function handleGoalToText(): string {
+  return goalJudge.toText()
+}
+
+export async function handleGoalLoad(sessionID: string) {
+  await goalJudge.load(sessionID)
+  return goalJudge.getAllGoals()
+}
+
+export async function handleGoalSave(): Promise<void> {
+  return goalJudge.save()
+}
+
+// ── Task（Sidecar 单写者，taskTracker 已在 stream 初始化） ──
+
+export function handleTaskCreate(summary: string, parentId?: string) {
+  return taskTracker.create(summary, parentId)
+}
+
+export function handleTaskUpdateStatus(taskId: string, status: string): boolean {
+  return taskTracker.updateStatus(taskId, status as TaskStatus)
+}
+
+export function handleTaskUpdateSummary(taskId: string, summary: string): boolean {
+  return taskTracker.updateSummary(taskId, summary)
+}
+
+export function handleTaskAddNote(taskId: string, note: string): boolean {
+  return taskTracker.addNote(taskId, note)
+}
+
+export function handleTaskGet(taskId: string) {
+  return taskTracker.getTask(taskId)
+}
+
+export function handleTaskList(status?: string) {
+  if (status) return taskTracker.getAllTasks().filter((t) => t.status === status)
+  return taskTracker.getAllTasks()
+}
+
+export function handleTaskListActive() {
+  return taskTracker.getActiveTasks()
+}
+
+export function handleTaskToText(): string {
+  return taskTracker.toText()
+}
+
+// ── Question（Sidecar 单写者，命中 sidecar 进程内 pendingQuestions） ──
+
+export function handleQuestionAnswer(questionId: string, answer: string): boolean {
+  return answerQuestion(questionId, answer)
+}
+
+export function handleQuestionListPending() {
+  return getPendingQuestions()
+}
+
+// ── Graph 图编排（Sidecar 单写者） ─────────────────────
+
+const activeGraphRuns = new Map<string, { promise: Promise<GraphRunResult<CodingState>> }>()
+
+export function handleRunGraphTask(
+  request: string,
+  config: Record<string, unknown>,
+  options: { maxSteps?: number; testCommand?: string; maxTotalTokens?: number },
+  ctx: APIContext,
+  runId: string,
+): void {
+  const graph = buildCodingTaskGraph(registry, config as unknown as AgentConfig, {
+    request,
+    maxSteps: options?.maxSteps,
+    testCommand: options?.testCommand,
+    collectEvents: true,
+  })
+  const engine = new StateGraph<CodingState>(graph)
+
+  const promise = engine.run({
+    runId,
+    maxTotalTokens: options?.maxTotalTokens,
+    initialState: {
+      request,
+      files: [],
+      testOutput: "",
+      testPassed: false,
+      reviewVerdict: "pending",
+      reviewFeedback: "",
+      fixFeedback: "",
+      iterations: 0,
+      finalSummary: "",
+      trace: [],
+    },
+    onEvent: (evt) => ctx.writeEvent({ type: "graph_event", event: evt }),
+  })
+
+  activeGraphRuns.set(runId, { promise })
+  void promise
+    .then((result) => {
+      ctx.writeEvent({
+        type: "graph_result",
+        runId,
+        status: result.status,
+        state: result.state,
+        visited: result.visited,
+        totalTokens: result.totalTokens,
+        error: result.error,
+      })
+    })
+    .finally(() => {
+      ctx.writeEnd()
+      activeGraphRuns.delete(runId)
+    })
+    .catch(() => {
+      try { ctx.writeEnd() } catch { /* ignore */ }
+      activeGraphRuns.delete(runId)
+    })
+}
+
+export function handleGraphGetStatus(runId: string) {
+  return activeGraphRuns.has(runId) ? { runId, active: true } : { runId, active: false }
+}
+
+export function handleGraphListRuns(graphId?: string) {
+  return new GraphPersist().listCheckpoints(graphId || "coding-task")
+}
+
+export function handleGraphStop(runId: string): boolean {
+  if (!activeGraphRuns.has(runId)) return false
+  activeGraphRuns.delete(runId)
+  return true
 }

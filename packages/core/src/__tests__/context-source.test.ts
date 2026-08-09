@@ -10,23 +10,23 @@ function makeCtx(overrides?: Partial<SourceContext>): SourceContext {
 }
 
 describe('EnvSource 缓存稳定性', () => {
-  test('generate 不包含时间戳，保证 system 前缀字节稳定', () => {
+  test("generate 注入当天日期（Today's date），供 LLM 免工具回答时间问题", () => {
     const env = new EnvSource()
     const content = env.generate(makeCtx())
-    expect(content).not.toMatch(/Today's date|Current time/)
+    expect(content).toMatch(/Today's date: \w{3} \w{3} \d{2} \d{4}/)
     expect(content).toContain('Working directory')
     expect(content).toContain('Platform')
   })
 
-  test('fingerprint 静态稳定（多次调用 hash 一致）', () => {
+  test('fingerprint 同日内稳定（hash 含当天日期，每日仅变化一次）', () => {
     const env = new EnvSource()
     const a = env.fingerprint(makeCtx())
     const b = env.fingerprint(makeCtx())
     expect(a.hash).toBe(b.hash)
-    expect(a.hash).toBe('env-static-v1')
+    expect(a.hash).toMatch(/^env-.*-v1$/)
   })
 
-  test('SourceManager 二次 build 字节一致（内容静态）', async () => {
+  test('SourceManager 二次 build 字节一致（同日内内容静态）', async () => {
     const sm = new SourceManager('/test/workspace')
     sm.register(new BaseSource())
     sm.register(new EnvSource())

@@ -85,6 +85,7 @@ export class FTSMemoryProvider implements MemoryProvider {
   }
 
   async initialize(_sessionID: string, workspace: string): Promise<void> {
+    if (this.ready) return
     this.workspace = workspace
     this.SQL = await initSqlJs()
     const dbPath = this.dbPath()

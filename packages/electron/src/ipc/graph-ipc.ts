@@ -1,109 +1,80 @@
+import { ipcMain, BrowserWindow } from "electron"
+import { getServerManager, connectAndGetChannel } from "./sidecar-bridge"
+
 /**
- * Graph IPC — 编码任务图运行（主进程直连 core，参照 subagent-ipc 模式）
- * 事件经 sender.send("agent:event", `graph-${runId}`, event) 转发到前端
+ * Graph IPC — 全部代理到 Sidecar HTTP（Sidecar 单写者）
+ * 主进程不再直接运行 StateGraph / Agent（避免写 sessions/messages 等表）。
+ * runCodingTask 复用 SSE 通道，事件经 webContents 转发到前端。
  */
 
-import { ipcMain, type WebContents } from "electron"
-import { createDefaultRegistry } from "@mira/core/system/registry-init"
-import { StateGraph, GraphPersist } from "@mira/core/graph"
-import { buildCodingTaskGraph, type CodingState } from "@mira/core/graph/templates/coding-task"
-import type { AgentConfig } from "@mira/core/agent/agent"
-import type { GraphRunResult } from "@mira/core/graph/types"
-
-const registry = createDefaultRegistry()
-
-interface ActiveGraphRun {
-  runId: string
-  sender: WebContents
-  promise: Promise<GraphRunResult<CodingState>>
-}
-
-const activeRuns = new Map<string, ActiveGraphRun>()
-
-/** 将 Graph 引擎事件转发到前端 */
-function forwardGraphEvent(run: ActiveGraphRun, event: unknown): void {
-  if (!run.sender.isDestroyed()) {
-    run.sender.send("agent:event", `graph-${run.runId}`, { type: "graph_event", event })
+function sm() {
+  const m = getServerManager()
+  if (!m) throw new Error("Sidecar not running")
+  return {
+    request: <T = unknown>(method: string, apiPath: string, body?: unknown): Promise<T> =>
+      m.request(method, apiPath, body) as Promise<T>,
   }
 }
 
 export function registerGraphIPC(): void {
-  // ── 启动编码任务图 ─────────────────────────────
-  ipcMain.handle("graph:runCodingTask", (event, request: string, config: AgentConfig, options?: {
+  // ── 启动编码任务图（SSE） ─────────────────────────
+  ipcMain.handle("graph:runCodingTask", async (event, request: string, config: Record<string, unknown>, options?: {
     maxSteps?: number
     testCommand?: string
     maxTotalTokens?: number
   }) => {
-    const sender = event.sender
-    const runId = `graph-${Date.now().toString(36)}`
-    const graph = buildCodingTaskGraph(registry, config, {
-      request,
-      maxSteps: options?.maxSteps,
-      testCommand: options?.testCommand,
-      collectEvents: true,
-    })
-    const engine = new StateGraph<CodingState>(graph)
+    const server = getServerManager()
+    if (!server) throw new Error("Sidecar not running")
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (!window) throw new Error("Cannot get sender window")
 
-    const promise = engine.run({
-      runId,
-      maxTotalTokens: options?.maxTotalTokens,
-      initialState: {
+    let runId = ""
+
+    runId = await connectAndGetChannel(
+      server,
+      {
         request,
-        files: [],
-        testOutput: "",
-        testPassed: false,
-        reviewVerdict: "pending",
-        reviewFeedback: "",
-        fixFeedback: "",
-        iterations: 0,
-        finalSummary: "",
-        trace: [],
+        config,
+        maxSteps: options?.maxSteps,
+        testCommand: options?.testCommand,
+        maxTotalTokens: options?.maxTotalTokens,
       },
-      onEvent: (evt) => {
-        const run = activeRuns.get(runId)
-        if (run) forwardGraphEvent(run, evt)
-      },
-    })
-
-    const run: ActiveGraphRun = { runId, sender, promise }
-    activeRuns.set(runId, run)
-
-    // 完成后转发结果并清理
-    void promise
-      .then((result) => {
-        if (!sender.isDestroyed()) {
-          sender.send("agent:event", `graph-${runId}`, { type: "graph_result", runId, status: result.status, state: result.state, visited: result.visited, totalTokens: result.totalTokens, error: result.error })
+      (data) => {
+        if (!window.isDestroyed()) {
+          window.webContents.send("agent:event", runId, data)
         }
-      })
-      .finally(() => activeRuns.delete(runId))
+      },
+      () => { /* 流结束，无需额外处理 */ },
+      (err) => {
+        console.error(`[Graph] Stream error: ${err.message}`)
+        if (!window.isDestroyed()) {
+          window.webContents.send("agent:event", runId, { type: "error", message: err.message })
+        }
+      },
+    )
 
     return { runId }
   })
 
   // ── 查询运行状态 ───────────────────────────────
-  ipcMain.handle("graph:getStatus", (_, runId: string) => {
-    const run = activeRuns.get(runId)
-    return run ? { runId, active: true } : { runId, active: false }
+  ipcMain.handle("graph:getStatus", async (_, runId: string) => {
+    try {
+      return await sm().request("GET", `/api/graph/status?runId=${encodeURIComponent(runId)}`)
+    } catch { return { runId, active: false } }
   })
 
   // ── 列出历史运行（检查点） ─────────────────────
-  ipcMain.handle("graph:listRuns", (_, graphId?: string) => {
-    return new GraphPersist().listCheckpoints(graphId || "coding-task")
+  ipcMain.handle("graph:listRuns", async (_, graphId?: string) => {
+    try {
+      const q = graphId ? `?graphId=${encodeURIComponent(graphId)}` : ""
+      return await sm().request("GET", `/api/graph/listRuns${q}`)
+    } catch { return [] }
   })
 
   // ── 停止运行 ───────────────────────────────────
-  ipcMain.handle("graph:stop", (_, runId: string) => {
-    const run = activeRuns.get(runId)
-    if (!run) return false
-    run.promise.catch(() => {})
-    activeRuns.delete(runId)
-    return true
+  ipcMain.handle("graph:stop", async (_, runId: string) => {
+    try {
+      return await sm().request("POST", "/api/graph/stop", { runId })
+    } catch { return false }
   })
-
-  // ── 清理退出 ──────────────────────────────────
-  import("electron").then(({ app }) => {
-    app.on("before-quit", () => {
-      activeRuns.clear()
-    })
-  }).catch(() => {})
 }
