@@ -62,6 +62,17 @@ export { MemoryGraph } from "./memory/MemoryGraph"
 export { GraphPanel } from "./memory/GraphPanel"
 export type { GraphNode, GraphLink, GraphData } from "./memory/graph-data"
 
+// ─── 数据语义色板（统一出口）───────────────────────────────────
+export {
+  GRAPH_NODE_COLORS,
+  MEMORY_TYPE_COLORS,
+  GRAPH_ACTIVATION_COLOR,
+  GRAPH_LINK_COLORS,
+  GRAPH_LINK_PARTICLE_COLORS,
+  PROJECT_COLORS,
+  DEFAULT_PROJECT_COLOR,
+} from "./theme/data-colors"
+
 // ─── 布局组件 ──────────────────────────────────────────────────
 export { TitleBar } from "./layout/TitleBar"
 

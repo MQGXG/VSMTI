@@ -6,6 +6,7 @@
 import { useRef, useCallback, useMemo, useState, useEffect } from "react"
 import type { GraphData, GraphNode, GraphLink } from "./graph-data"
 import { buildGraphFromKnowledgeStore, buildGraphFromMemories } from "./graph-data"
+import { GRAPH_NODE_COLORS, MEMORY_TYPE_COLORS, GRAPH_ACTIVATION_COLOR, GRAPH_LINK_COLORS, GRAPH_LINK_PARTICLE_COLORS } from "../theme/data-colors"
 import type { MemoryNode, ActivationResult } from "@mira/core"
 
 // 动态导入 react-force-graph-3d（避免 SSR 问题）
@@ -33,14 +34,6 @@ const RELATION_LABELS: Record<string, string> = {
   has_topic: "主题", has_knowledge: "知识",
 }
 
-/** 记忆类型颜色映射 */
-const MEMORY_TYPE_COLORS: Record<string, string> = {
-  semantic: "#3b82f6",
-  episodic: "#f59e0b",
-  procedural: "#10b981",
-  declarative: "#8b5cf6",
-}
-
 /** 记忆类型中文名 */
 const MEMORY_TYPE_LABELS: Record<string, string> = {
   semantic: "语义记忆",
@@ -61,7 +54,7 @@ function buildGraphFromDynamicNodes(nodes: Map<string, MemoryNode>): GraphData {
       label: id,
       type: "concept",
       size: 8 + node.importance * 12,
-      color: MEMORY_TYPE_COLORS[node.type] || "#3b82f6",
+      color: MEMORY_TYPE_COLORS[node.type] || GRAPH_NODE_COLORS.concept,
       description: node.content.slice(0, 200),
     })
 
@@ -109,7 +102,7 @@ export function MemoryGraph({
   onToggleRelation,
   dynamicNodes,
   activationResult,
-  activationColor = "#f59e0b",
+  activationColor = GRAPH_ACTIVATION_COLOR,
 }: MemoryGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
@@ -155,7 +148,7 @@ export function MemoryGraph({
     // 如果没有节点，至少显示根节点
     if (rawData.nodes.length === 0) {
       return {
-        nodes: [{ id: "root", label: projectName || "知识库", type: "project" as const, size: 20, color: "#06b6d4", description: "暂无记忆数据" }],
+        nodes: [{ id: "root", label: projectName || "知识库", type: "project" as const, size: 20, color: GRAPH_NODE_COLORS.project, description: "暂无记忆数据" }],
         links: [],
       }
     }
@@ -206,7 +199,7 @@ export function MemoryGraph({
     backgroundColor: "rgba(0,0,0,0)",
     nodeLabel: (node: GraphNode) => {
       const isActivated = activatedNodeIds.has(node.id)
-      const activationBadge = isActivated ? '<span style="background:#f59e0b;color:#000;padding:1px 4px;border-radius:3px;font-size:9px;margin-left:4px">激活</span>' : ''
+      const activationBadge = isActivated ? `<span style="background:${GRAPH_ACTIVATION_COLOR};color:#000;padding:1px 4px;border-radius:3px;font-size:9px;margin-left:4px">激活</span>` : ''
       return `<div style="background:rgba(15,15,15,0.95);padding:8px 12px;border-radius:8px;border:1px solid ${isActivated ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.15)'};font-size:13px;max-width:280px"><b style="color:${node.color};font-size:14px">${node.label}</b>${activationBadge}<br/><span style="color:#9ca3af;font-size:11px">${node.type === "project" ? "项目" : node.type}</span>${node.description ? `<br/><span style="color:#6b7280;max-width:240px;display:block;margin-top:4px;font-size:11px;line-height:1.4">${node.description.slice(0, 150)}</span>` : ""}</div>`
     },
     nodeColor: (node: GraphNode) => {
@@ -227,21 +220,7 @@ export function MemoryGraph({
       if (activatedPathEdges.has(edgeKey)) return activationColor
       if (activatedPathEdges.has(`${link.target}->${link.source}`)) return activationColor
 
-      const colors: Record<string, string> = {
-        depends_on: "rgba(239,68,68,0.4)",
-        contains: "rgba(255,255,255,0.1)",
-        part_of: "rgba(16,185,129,0.3)",
-        based_on: "rgba(59,130,246,0.3)",
-        replaces: "rgba(245,158,11,0.4)",
-        co_occurs: "rgba(255,255,255,0.08)",
-        similar_to: "rgba(139,92,246,0.25)",
-        tagged: "rgba(255,255,255,0.12)",
-        mentions: "rgba(255,255,255,0.1)",
-        related_to: "rgba(6,182,212,0.2)",
-        has_topic: "rgba(255,255,255,0.15)",
-        has_knowledge: "rgba(255,255,255,0.1)",
-      }
-      return colors[link.relation] || "rgba(255,255,255,0.1)"
+      return GRAPH_LINK_COLORS[link.relation] || "rgba(255,255,255,0.1)"
     },
     linkWidth: (link: GraphLink) => {
       // 激活路径加粗
@@ -259,14 +238,7 @@ export function MemoryGraph({
       const edgeKey = `${link.source}->${link.target}`
       if (activatedPathEdges.has(edgeKey) || activatedPathEdges.has(`${link.target}->${link.source}`)) return activationColor
 
-      const colors: Record<string, string> = {
-        depends_on: "rgba(239,68,68,0.6)",
-        contains: "rgba(255,255,255,0.3)",
-        based_on: "rgba(59,130,246,0.5)",
-        co_occurs: "rgba(255,255,255,0.2)",
-        similar_to: "rgba(139,92,246,0.4)",
-      }
-      return colors[link.relation] || "rgba(255,255,255,0.3)"
+      return GRAPH_LINK_PARTICLE_COLORS[link.relation] || "rgba(255,255,255,0.3)"
     },
     linkLabel: (link: GraphLink) => `<div style="background:rgba(20,20,20,0.9);padding:3px 8px;border-radius:4px;font-size:11px;border:1px solid rgba(255,255,255,0.1)">${link.relation.replace(/_/g, " ")}</div>`,
     onNodeClick: handleNodeClick,
@@ -322,7 +294,7 @@ export function MemoryGraph({
           // 传统知识图谱图例
           (["project", "concept", "file", "decision"] as const).map((type) => (
             <div key={type} className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full" style={{ background: { project: "#06b6d4", concept: "#3b82f6", file: "#10b981", decision: "#f59e0b" }[type] }} />
+              <span className="w-2 h-2 rounded-full" style={{ background: GRAPH_NODE_COLORS[type] }} />
               <span className="text-tertiary">{{ project: "项目", concept: "概念", file: "文件", decision: "决策" }[type]}</span>
             </div>
           ))

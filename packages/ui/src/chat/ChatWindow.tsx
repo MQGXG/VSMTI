@@ -392,8 +392,8 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                           return (
                             <button key={cmd.id} onMouseDown={() => applyCommand(cmd)}
                               className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors ${globalIdx === selectedCommandIndex ? "bg-primary-500/10" : ""}`}
-                              style={{ color: globalIdx === selectedCommandIndex ? "var(--accent)" : "var(--fg-secondary)" }}>
-                              <span className="font-mono font-medium" style={{ color: "var(--accent)" }}>/</span>
+                              style={{ color: globalIdx === selectedCommandIndex ? "var(--primary)" : "var(--fg-secondary)" }}>
+                              <span className="font-mono font-medium" style={{ color: "var(--primary)" }}>/</span>
                               <span className="font-medium">{cmd.trigger}</span>
                               <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--bg-secondary)", color: "var(--fg-tertiary)" }}>
                                 {SOURCE_LABEL[cmd.source]}
@@ -439,7 +439,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                   <ComposerPrimitive.Queue>
                     {() => (
                       <button className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono"
-                        style={{ background: "rgba(6,182,212,0.1)", color: "var(--accent)" }}>
+                        style={{ background: "color-mix(in srgb, var(--info) 10%, transparent)", color: "var(--primary)" }}>
                         <ListOrdered className="w-3 h-3" />
                         <span>排队中</span>
                       </button>
@@ -471,7 +471,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                       onClick={() => setShowGraphPanel((v) => !v)}
                       title="编码任务图"
                       className={`btn-ghost flex items-center gap-1.5 text-[11px] ${showGraphPanel ? "is-active" : ""}`}
-                      style={{ height: 28, padding: "0 10px", color: showGraphPanel ? "var(--accent)" : undefined }}
+                      style={{ height: 28, padding: "0 10px", color: showGraphPanel ? "var(--primary)" : undefined }}
                     >
                       <ListOrdered className="w-3.5 h-3.5" />
                       {showGraphPanel ? "收起图" : "编码图"}
@@ -481,7 +481,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                   <div className="flex items-center gap-2">
                     {ctx.isRunning && ctx.liveTiming && (
                       <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono"
-                        style={{ background: "rgba(6,182,212,0.08)", color: "var(--accent)" }}>
+                        style={{ background: "color-mix(in srgb, var(--info) 8%, transparent)", color: "var(--primary)" }}>
                         <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                         <span>{ctx.liveTiming.tokenCount} tok</span>
                         {ctx.liveTiming.firstTokenTime && (
@@ -497,7 +497,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
 
                 {goalCondition && (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.12)" }}>
-                    <span className="font-medium" style={{ color: "#d4a017" }}>Goal</span>
+                    <span className="font-medium" style={{ color: "var(--warning)" }}>Goal</span>
                     <span className="flex-1 truncate" style={{ color: "var(--fg)" }}>{goalCondition}</span>
                     <button onClick={() => setGoalCondition(null)} className="btn-ghost" style={{ height: 22, padding: "0 8px", fontSize: 11 }}>清除</button>
                   </div>

@@ -71,8 +71,8 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
               {availableModels.map((opt) => (
                 <button key={opt.value} onClick={() => { onModelChange(opt); saveModelChoice(opt); setModelOpen(false); }}
                   className={`w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all ${selectedModel.value === opt.value ? "bg-primary-500/10" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
-                  style={{ color: selectedModel.value === opt.value ? "var(--accent)" : "var(--fg-secondary)" }}>
-                  <div className="font-medium" style={{ color: selectedModel.value === opt.value ? "var(--accent)" : "var(--fg)" }}>{opt.label}</div>
+                  style={{ color: selectedModel.value === opt.value ? "var(--primary)" : "var(--fg-secondary)" }}>
+                  <div className="font-medium" style={{ color: selectedModel.value === opt.value ? "var(--primary)" : "var(--fg)" }}>{opt.label}</div>
                   <div className="text-[10px] mt-0.5" style={{ color: "var(--fg-tertiary)" }}>{opt.provider === "openai" ? "OpenAI" : opt.provider === "claude" ? "Anthropic" : opt.provider === "ollama" ? "本地" : "自定义"}</div>
                 </button>
               ))}

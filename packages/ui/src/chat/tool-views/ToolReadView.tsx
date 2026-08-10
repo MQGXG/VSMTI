@@ -47,7 +47,7 @@ export function ToolReadView({ result, args }: Props) {
                 "px-3 py-1 rounded-lg text-[10px] transition-colors",
                 "hover:bg-accent-500/30"
               )}
-              style={{ background: 'rgba(0, 217, 192, 0.2)', color: 'var(--accent)' }}
+              style={{ background: 'color-mix(in srgb, var(--info) 20%, transparent)', color: 'var(--primary)' }}
             >
               展开全部 ({totalLines} lines)
             </button>

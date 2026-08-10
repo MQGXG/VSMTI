@@ -89,7 +89,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--accent, #8b5cf6);
+  background: var(--info, #8b5cf6);
   animation: dot-bounce 1.4s ease-in-out infinite;
 }
 
@@ -138,7 +138,7 @@
   width: 3px;
   height: 3px;
   border-radius: 50%;
-  background: var(--accent, #10b981);
+  background: var(--success, #10b981);
   animation: wave-pulse 0.8s ease-in-out infinite;
 }
 

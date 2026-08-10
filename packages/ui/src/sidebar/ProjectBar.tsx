@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Plus, FolderOpen, Upload } from "lucide-react";
+import { PROJECT_COLORS } from "../theme/data-colors";
 
 interface Project {
   project_id: string;
@@ -17,11 +18,7 @@ interface Props {
   onDeleteProject: (projectId: string) => void;
 }
 
-const SOLID_COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
-  "#f97316", "#eab308", "#22c55e", "#14b8a6",
-  "#06b6d4", "#3b82f6", "#64748b", "#78716c",
-];
+const SOLID_COLORS = PROJECT_COLORS;
 
 function getInitial(name: string): string {
   return name?.[0]?.toUpperCase() || "?";

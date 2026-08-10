@@ -322,7 +322,7 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
               </div>
             </div>
             {fetchError && (
-              <div className="px-3 py-2 rounded-lg text-xs" style={{ background: 'rgba(255, 71, 87, 0.1)', border: '1px solid rgba(255, 71, 87, 0.2)', color: '#FF4757' }}>{fetchError}</div>
+              <div className="px-3 py-2 rounded-lg text-xs" style={{ background: 'color-mix(in srgb, var(--destructive) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--destructive) 20%, transparent)', color: 'var(--destructive)' }}>{fetchError}</div>
             )}
             {editingProvider.models.map((model, index) => (
               <div key={index} className="flex items-center gap-2">

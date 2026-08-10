@@ -37,11 +37,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.classList.remove("dark");
     }
-
-    // 更新 electron 窗口背景色
-    if (window.electronAPI) {
-      document.body.style.backgroundColor = isDark ? "#0c0c14" : "#f8fafc";
-    }
   }, [resolvedTheme]);
 
   useEffect(() => {

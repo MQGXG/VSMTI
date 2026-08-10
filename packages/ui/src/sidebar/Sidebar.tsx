@@ -316,8 +316,8 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
                           <SessionTitle session={session} onRename={handleRename} onSessionChange={onSessionChange} />
                           <div className="text-[10px] mt-0.5 flex items-center gap-1.5" style={{ color: "var(--fg-tertiary)" }}>
                             {isSessionRunning(session.session_id) && (
-                              <span className="flex items-center gap-1" style={{ color: "#22c55e" }}>
-                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#22c55e" }} />
+                              <span className="flex items-center gap-1" style={{ color: "var(--success)" }}>
+                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--success)" }} />
                                 运行中
                               </span>
                             )}

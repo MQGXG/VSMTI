@@ -22,7 +22,7 @@ export function ToolDiffSummary({ files }: Props) {
         className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/[0.03] transition-colors"
         style={{ color: "var(--fg-secondary)" }}
       >
-        <FileEdit className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--accent)" }} />
+        <FileEdit className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--primary)" }} />
         <span className="font-medium" style={{ color: "var(--fg)" }}>
           {files.length} {files.length === 1 ? "file" : "files"} changed
         </span>

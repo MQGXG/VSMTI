@@ -36,7 +36,7 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
       <div className="p-6 space-y-4">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-full shrink-0" style={{ background: "rgba(0, 217, 192, 0.1)" }}>
-            <HelpCircle className="w-5 h-5" style={{ color: "#00D9C0" }} />
+            <HelpCircle className="w-5 h-5" style={{ color: "var(--info)" }} />
           </div>
           <div className="space-y-1">
             <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Agent 提问</h3>
@@ -57,7 +57,7 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
               style={{
                 border: selected === opt ? "1px solid rgba(0, 217, 192, 0.5)" : "1px solid var(--border)",
                 background: selected === opt ? "rgba(0, 217, 192, 0.1)" : "transparent",
-                color: selected === opt ? "var(--accent)" : "var(--text-secondary)",
+                color: selected === opt ? "var(--primary)" : "var(--text-secondary)",
               }}
             >
               {opt}

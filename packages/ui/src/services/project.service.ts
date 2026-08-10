@@ -2,6 +2,8 @@
  * Project Service — 项目管理
  */
 
+import { PROJECT_COLORS } from "../theme/data-colors"
+
 export interface ProjectInfo {
   project_id: string
   name: string
@@ -9,11 +11,7 @@ export interface ProjectInfo {
   color: string
 }
 
-const COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
-  "#f97316", "#eab308", "#22c55e", "#14b8a6",
-  "#06b6d4", "#3b82f6", "#64748b", "#78716c",
-]
+const COLORS = PROJECT_COLORS
 
 function getColorFromStorage(projectId: string): string {
   try {

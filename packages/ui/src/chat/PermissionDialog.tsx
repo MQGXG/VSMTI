@@ -16,7 +16,7 @@ export function PermissionDialog({ toolName, args, reason, onAllow, onDeny, onAl
       <div className="px-6 pt-5 pb-3" style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255, 184, 0, 0.1)" }}>
-            <Shield className="w-5 h-5" style={{ color: "#FFB800" }} />
+            <Shield className="w-5 h-5" style={{ color: "var(--warning)" }} />
           </div>
           <div>
             <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>权限请求</h2>
@@ -27,9 +27,9 @@ export function PermissionDialog({ toolName, args, reason, onAllow, onDeny, onAl
 
       <div className="px-6 py-4 space-y-3">
         <div className="flex items-start gap-2 p-3 rounded-xl" style={{ background: "rgba(255, 184, 0, 0.05)", border: "1px solid rgba(255, 184, 0, 0.1)" }}>
-          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#FFB800" }} />
+          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "var(--warning)" }} />
           <div>
-            <p className="text-sm font-medium" style={{ color: "#FFB800" }}>{reason}</p>
+            <p className="text-sm font-medium" style={{ color: "var(--warning)" }}>{reason}</p>
           </div>
         </div>
 
@@ -62,7 +62,7 @@ export function PermissionDialog({ toolName, args, reason, onAllow, onDeny, onAl
           <button
             onClick={onAlways}
             className="px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
-            style={{ border: "1px solid rgba(0, 217, 192, 0.3)", color: "#00D9C0", background: "rgba(0, 217, 192, 0.05)" }}
+            style={{ border: "1px solid color-mix(in srgb, var(--info) 30%, transparent)", color: "var(--info)", background: "color-mix(in srgb, var(--info) 5%, transparent)" }}
           >
             始终允许
           </button>

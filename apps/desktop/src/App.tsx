@@ -8,6 +8,7 @@ import { SettingsDialog } from "@mira/ui/sidebar/SettingsDialog";
 import { Menu, Plus, Settings, Network } from "lucide-react";
 import { GraphPanel } from "@mira/ui/memory/GraphPanel";
 import { setActiveSessionId } from "@mira/ui/hooks/session-runtime-store";
+import { DEFAULT_PROJECT_COLOR } from "@mira/ui";
 
 interface Project {
   project_id: string;
@@ -65,7 +66,7 @@ export function App() {
             project_id: p.project_id,
             name: p.name,
             workspace_path: defaultPath && isRootWorkspace(p.workspace_path) ? defaultPath : p.workspace_path,
-            color: colorMap[p.project_id] || "#3b3b3b",
+            color: colorMap[p.project_id] || DEFAULT_PROJECT_COLOR,
           }));
         setProjects(mapped);
         if (!activeProject) setActiveProject(mapped[0].project_id);
@@ -80,7 +81,7 @@ export function App() {
       const created = await window.electronAPI.ts.createProject(defaultName, defaultPath);
       const defaultProject: Project = {
         project_id: created.project_id, name: defaultName,
-        workspace_path: defaultPath, color: "#3b3b3b",
+        workspace_path: defaultPath, color: DEFAULT_PROJECT_COLOR,
       };
       setProjects([defaultProject]);
       if (!activeProject) setActiveProject(defaultProject.project_id);

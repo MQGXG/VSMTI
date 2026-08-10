@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Check, Upload, Trash2, FolderOpen } from "lucide-react";
 import { Modal } from "../components/ui/Modal";
+import { PROJECT_COLORS } from "../theme/data-colors";
 
 interface Project {
   project_id: string;
@@ -9,11 +10,7 @@ interface Project {
   color: string;
 }
 
-const COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
-  "#f97316", "#eab308", "#22c55e", "#14b8a6",
-  "#06b6d4", "#3b82f6", "#64748b", "#78716c",
-];
+const COLORS = PROJECT_COLORS;
 
 interface Props {
   project: Project | null;

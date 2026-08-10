@@ -3,6 +3,8 @@
  * 增强版：共现分析 + 层级关系 + 相似度匹配 + 依赖检测
  */
 
+import { GRAPH_NODE_COLORS } from "../theme/data-colors"
+
 export interface GraphNode {
   id: string
   label: string
@@ -25,14 +27,7 @@ export interface GraphData {
   links: GraphLink[]
 }
 
-const NODE_COLORS: Record<GraphNode["type"], string> = {
-  concept: "#3b82f6",
-  file: "#10b981",
-  decision: "#f59e0b",
-  tool: "#8b5cf6",
-  project: "#06b6d4",
-  memory: "#6b7280",
-}
+const NODE_COLORS: Record<GraphNode["type"], string> = GRAPH_NODE_COLORS
 
 // ── 实体提取 ────────────────────────────────────────────────
 

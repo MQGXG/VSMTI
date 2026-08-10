@@ -40,9 +40,9 @@ export function ContextToolGroup({ parts, allDone }: Props) {
         className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/[0.03] transition-colors"
         style={{ color: "var(--fg-secondary)" }}
       >
-        <FileSearch className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--accent)" }} />
+        <FileSearch className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--primary)" }} />
         <span className="font-medium" style={{ color: "var(--fg)" }}>{title}</span>
-        {!allDone && <Loader2 className="w-3 h-3 animate-spin shrink-0" style={{ color: "var(--accent)" }} />}
+        {!allDone && <Loader2 className="w-3 h-3 animate-spin shrink-0" style={{ color: "var(--primary)" }} />}
         {allDone && <CheckCircle2 className="w-3 h-3 shrink-0" style={{ color: "var(--success)" }} />}
         <span className="text-[10px] truncate ml-1" style={{ color: "var(--fg-tertiary)" }}>{summary}</span>
         {expanded ? <ChevronDown className="w-3 h-3 ml-auto shrink-0" /> : <ChevronRight className="w-3 h-3 ml-auto shrink-0" />}
@@ -57,7 +57,7 @@ export function ContextToolGroup({ parts, allDone }: Props) {
             return (
               <div key={part.toolCallId || i} className="flex items-center gap-2 px-3 py-1.5 text-xs">
                 <Icon className="w-3 h-3 shrink-0" style={{ color: "var(--fg-tertiary)" }} />
-                <span className="font-mono font-medium" style={{ color: "var(--accent)" }}>
+                <span className="font-mono font-medium" style={{ color: "var(--primary)" }}>
                   {part.toolName}
                 </span>
                 {subtitle && (

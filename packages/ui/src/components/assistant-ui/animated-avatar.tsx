@@ -78,7 +78,7 @@ export function AnimatedAvatar({ src, state = "idle", size = 48, className }: An
       {state === "error" && (
         <div className="avatar-error-indicator">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <circle cx="6" cy="6" r="5" fill="#ef4444"/>
+            <circle cx="6" cy="6" r="5" fill="var(--destructive)"/>
             <path d="M6 3.5v3M6 8h.01" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
         </div>

@@ -17,8 +17,8 @@ export function ConfigSourceIndicator() {
   if (!info.show) return null;
 
   return (
-    <div className="p-3 rounded-xl flex items-center gap-2" style={{ background: 'rgba(0, 217, 192, 0.05)', border: '1px solid rgba(0, 217, 192, 0.1)' }}>
-      {info.apiKeyFrom === "env" ? <Terminal className="w-4 h-4" style={{ color: '#00D9C0' }} /> : <FileText className="w-4 h-4" style={{ color: '#00D9C0' }} />}
+    <div className="p-3 rounded-xl flex items-center gap-2" style={{ background: 'color-mix(in srgb, var(--info) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--info) 10%, transparent)' }}>
+      {info.apiKeyFrom === "env" ? <Terminal className="w-4 h-4" style={{ color: 'var(--info)' }} /> : <FileText className="w-4 h-4" style={{ color: 'var(--info)' }} />}
       <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
         API Key 来自 <span className="font-medium" style={{ color: 'var(--accent-start)' }}>{info.apiKeyFrom === "env" ? "环境变量" : "配置文件"}</span>
         ，无需在界面中填写

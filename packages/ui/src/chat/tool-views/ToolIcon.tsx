@@ -4,6 +4,7 @@ import {
   Database, Image as ImageIcon, FileEdit, Braces, MessageSquare,
   Clock, Workflow, Users, UserPlus, ListTodo
 } from "lucide-react";
+import { GRAPH_NODE_COLORS } from "../../theme/data-colors";
 
 const toolIconMap: Record<string, LucideIcon> = {
   read_file: FileText,
@@ -55,19 +56,19 @@ export function getToolIcon(toolName: string): LucideIcon {
 
 export function getToolColor(toolName: string): string {
   if (["read_file", "list_files", "glob", "grep", "code_search"].includes(toolName)) {
-    return "var(--accent)";
+    return "var(--primary)";
   }
   if (["bash", "code_exec"].includes(toolName)) {
-    return "#d97706"; // amber
+    return "var(--warning)"; // amber
   }
   if (["web_search", "web_browse", "web_fetch"].includes(toolName)) {
-    return "#3b82f6"; // blue
+    return "var(--info)"; // blue
   }
   if (["write_file", "edit_file", "apply_patch"].includes(toolName)) {
-    return "#10b981"; // emerald
+    return "var(--success)"; // emerald
   }
   if (["image_gen", "data_analysis"].includes(toolName)) {
-    return "#8b5cf6"; // violet
+    return GRAPH_NODE_COLORS.tool; // violet
   }
   return "var(--fg-tertiary)";
 }

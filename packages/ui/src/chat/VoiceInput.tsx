@@ -100,8 +100,8 @@ export function VoiceInput({ onTranscript, disabled = false, className = "" }: V
         disabled={disabled || status === "processing"}
         className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200"
         style={{
-          color: status === "listening" ? "#ef4444" : "var(--text-tertiary)",
-          background: status === "listening" ? "rgba(239,68,68,0.1)" : "transparent",
+          color: status === "listening" ? "var(--destructive)" : "var(--text-tertiary)",
+          background: status === "listening" ? "color-mix(in srgb, var(--destructive) 10%, transparent)" : "transparent",
         }}
         title={status === "listening" ? "停止录音" : "语音输入"}
       >
@@ -117,7 +117,7 @@ export function VoiceInput({ onTranscript, disabled = false, className = "" }: V
       {status === "listening" && (
         <div
           className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse"
-          style={{ background: "#ef4444" }}
+          style={{ background: "var(--destructive)" }}
         />
       )}
 

@@ -4,91 +4,140 @@
 
 @layer base {
   :root {
-    --bg: #f7f6f3;
-    --bg-elevated: #ffffff;
-    --bg-secondary: #eeedea;
-    --bg-tertiary: #e4e3df;
+    /* ── shadcn 标准 Token（唯一事实源）────────────────── */
+    --background: #f7f6f3;
+    --foreground: #1a1a1a;
+    --card: #ffffff;
+    --card-foreground: #1a1a1a;
+    --popover: #ffffff;
+    --popover-foreground: #1a1a1a;
+    --primary: #3b3b3b;
+    --primary-foreground: #ffffff;
+    --secondary: #eeedea;
+    --secondary-foreground: #1a1a1a;
+    --muted: #eeedea;
+    --muted-foreground: #6b6b6b;
+    --accent: #e4e3df;
+    --accent-foreground: #1a1a1a;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #e2e1de;
+    --input: #e2e1de;
+    --ring: #3b3b3b;
+    --radius: 10px;
 
-    --fg: #1a1a1a;
-    --fg-secondary: #6b6b6b;
+    /* ── Mira 扩展 Token ─────────────────────────────── */
     --fg-tertiary: #a0a0a0;
     --fg-quaternary: #c8c8c8;
-
-    --accent: #3b3b3b;
-    --accent-hover: #2a2a2a;
-    --accent-fg: #ffffff;
-
-    --border: #e2e1de;
+    --bg-tertiary: #e4e3df;
     --border-subtle: #eeedea;
-
     --bubble-user-bg: #1a1a1a;
     --bubble-user-fg: #ffffff;
     --bubble-assistant-bg: #ffffff;
-
     --sidebar-bg: #f0efec;
     --sidebar-width: 320px;
-
     --shadow-elevated: 0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
     --shadow-floating: 0 4px 24px rgba(0,0,0,0.1);
     --shadow-drawer: 0 0 40px rgba(0,0,0,0.12);
-
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 16px;
     --radius-xl: 20px;
     --radius-full: 9999px;
+    --code-bg: #f5f4f1;
+    --titlebar-bg: #f7f6f3;
+    --titlebar-border: #e2e1de;
+    --btn-ghost-hover: #eeedea;
 
-    --surface-secondary: var(--bg-secondary);
-    --surface-elevated: var(--bg-elevated);
-    --surface-tertiary: var(--bg-tertiary);
-    --text-primary: var(--fg);
-    --text-secondary: var(--fg-secondary);
+    /* 功能色 */
+    --success: #10b981;
+    --warning: #f59e0b;
+    --info: #0ea5e9;
+    --error: #ef4444;
+
+    /* ── 兼容别名（旧名 → 标准 Token，阶段3 清理后删除）── */
+    --bg: var(--background);
+    --fg: var(--foreground);
+    --bg-elevated: var(--card);
+    --bg-secondary: var(--muted);
+    --fg-secondary: var(--muted-foreground);
+    --accent-fg: var(--primary-foreground);
+    --accent-hover: var(--primary);
+    --accent-start: var(--primary);
+    --text-primary: var(--foreground);
+    --text-secondary: var(--muted-foreground);
     --text-tertiary: var(--fg-tertiary);
     --text-quaternary: var(--fg-quaternary);
-    --input-bg: var(--bg-secondary);
+    --input-bg: var(--muted);
     --input-border: var(--border);
-    --accent-start: var(--accent);
+    --surface-elevated: var(--card);
+    --surface-secondary: var(--muted);
+    --surface-tertiary: var(--bg-tertiary);
     --border-light: var(--border-subtle);
   }
 
   .dark {
-    --bg: #0e0e12;
-    --bg-elevated: #16161d;
-    --bg-secondary: #14141a;
-    --bg-tertiary: #1c1c24;
+    /* ── shadcn 标准 Token ───────────────────────────── */
+    --background: #0e0e12;
+    --foreground: #e8e8ed;
+    --card: #16161d;
+    --card-foreground: #e8e8ed;
+    --popover: #16161d;
+    --popover-foreground: #e8e8ed;
+    --primary: #e8e8ed;
+    --primary-foreground: #0e0e12;
+    --secondary: #14141a;
+    --secondary-foreground: #e8e8ed;
+    --muted: #14141a;
+    --muted-foreground: #9494a0;
+    --accent: #1c1c24;
+    --accent-foreground: #e8e8ed;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #22222a;
+    --input: #22222a;
+    --ring: #e8e8ed;
 
-    --fg: #e8e8ed;
-    --fg-secondary: #9494a0;
+    /* ── Mira 扩展 Token ─────────────────────────────── */
     --fg-tertiary: #62626e;
     --fg-quaternary: #42424e;
-
-    --accent: #e8e8ed;
-    --accent-hover: #ffffff;
-    --accent-fg: #0e0e12;
-
-    --border: #22222a;
+    --bg-tertiary: #1c1c24;
     --border-subtle: #1a1a22;
-
     --bubble-user-bg: #e8e8ed;
     --bubble-user-fg: #0e0e12;
     --bubble-assistant-bg: #16161d;
-
     --sidebar-bg: #111116;
-
     --shadow-elevated: 0 8px 32px rgba(0,0,0,0.5);
     --shadow-floating: 0 4px 24px rgba(0,0,0,0.6);
     --shadow-drawer: 0 0 40px rgba(0,0,0,0.6);
+    --code-bg: #1a1a22;
+    --titlebar-bg: #0e0e12;
+    --titlebar-border: #22222a;
+    --btn-ghost-hover: #14141a;
 
-    --surface-secondary: var(--bg-secondary);
-    --surface-elevated: var(--bg-elevated);
-    --surface-tertiary: var(--bg-tertiary);
-    --text-primary: var(--fg);
-    --text-secondary: var(--fg-secondary);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --info: #0ea5e9;
+    --error: #ef4444;
+
+    /* ── 兼容别名 ───────────────────────────────────── */
+    --bg: var(--background);
+    --fg: var(--foreground);
+    --bg-elevated: var(--card);
+    --bg-secondary: var(--muted);
+    --fg-secondary: var(--muted-foreground);
+    --accent-fg: var(--primary-foreground);
+    --accent-hover: var(--primary);
+    --accent-start: var(--primary);
+    --text-primary: var(--foreground);
+    --text-secondary: var(--muted-foreground);
     --text-tertiary: var(--fg-tertiary);
     --text-quaternary: var(--fg-quaternary);
-    --input-bg: var(--bg-secondary);
+    --input-bg: var(--muted);
     --input-border: var(--border);
-    --accent-start: var(--accent);
+    --surface-elevated: var(--card);
+    --surface-secondary: var(--muted);
+    --surface-tertiary: var(--bg-tertiary);
     --border-light: var(--border-subtle);
   }
 
@@ -122,14 +171,14 @@
     border-radius: var(--radius-md);
     font-size: 13px;
     font-weight: 500;
-    color: var(--fg-secondary);
+    color: var(--muted-foreground);
     background: transparent;
     border: none;
     cursor: pointer;
     transition: all 120ms ease;
     white-space: nowrap;
   }
-  .btn-ghost:hover { background: var(--bg-secondary); color: var(--fg); }
+  .btn-ghost:hover { background: var(--muted); color: var(--foreground); }
 
   .btn-accent {
     display: inline-flex;
@@ -141,16 +190,34 @@
     border-radius: var(--radius-md);
     font-size: 13px;
     font-weight: 500;
-    color: var(--accent-fg);
-    background: var(--accent);
+    color: var(--primary-foreground);
+    background: var(--primary);
     border: none;
     cursor: pointer;
     transition: all 120ms ease;
   }
-  .btn-accent:hover { background: var(--accent-hover); }
+  .btn-accent:hover { background: var(--primary); opacity: 0.9; }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--primary-foreground);
+    background: var(--primary);
+    border: none;
+    cursor: pointer;
+    transition: all 120ms ease;
+  }
+  .btn-primary:hover { background: var(--primary); opacity: 0.9; }
 
   .panel {
-    background: var(--bg-elevated);
+    background: var(--card);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-elevated);
   }
@@ -174,7 +241,7 @@
 
   .bubble-assistant {
     background: var(--bubble-assistant-bg);
-    color: var(--fg);
+    color: var(--foreground);
     border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
     padding: 8px 16px;
     max-width: 85%;
@@ -210,15 +277,15 @@
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 100ms ease;
-    color: var(--fg-secondary);
+    color: var(--muted-foreground);
     font-size: 13px;
     border: none;
     background: transparent;
     width: 100%;
     text-align: left;
   }
-  .sidebar-item:hover { background: var(--bg-secondary); color: var(--fg); }
-  .sidebar-item.active { background: var(--bg-tertiary); color: var(--fg); font-weight: 500; }
+  .sidebar-item:hover { background: var(--muted); color: var(--foreground); }
+  .sidebar-item.active { background: var(--bg-tertiary); color: var(--foreground); font-weight: 500; }
 
   .overlay {
     position: fixed;
@@ -247,7 +314,7 @@
     display: flex;
     gap: 2px;
     padding: 2px;
-    background: var(--bg-secondary);
+    background: var(--muted);
     border-radius: var(--radius-md);
   }
 
@@ -267,11 +334,11 @@
     transition: all 120ms ease;
   }
   .chip.active {
-    background: var(--bg-elevated);
-    color: var(--fg);
+    background: var(--card);
+    color: var(--foreground);
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
-  .chip:hover:not(.active) { color: var(--fg-secondary); }
+  .chip:hover:not(.active) { color: var(--muted-foreground); }
 
   .input-field {
     width: 100%;
@@ -279,7 +346,7 @@
     border: none;
     outline: none;
     font-size: 14px;
-    color: var(--fg);
+    color: var(--foreground);
     line-height: 1.5;
     resize: none;
   }
@@ -301,20 +368,42 @@
   .animate-message { animation: messageIn 250ms cubic-bezier(0.16, 1, 0.3, 1); }
   .animate-progress { animation: progressShimmer 1.5s ease-in-out infinite; }
 
-  .text-primary { color: var(--text-primary); }
-  .text-secondary { color: var(--text-secondary); }
-  .text-tertiary { color: var(--text-tertiary); }
-  .text-quaternary { color: var(--text-quaternary); }
-  .text-accent-start { color: var(--accent-start); }
+  /* 背景/边框工具类（映射标准 Token） */
+  .bg-surface-secondary { background-color: var(--muted); }
+  .bg-surface-elevated { background-color: var(--card); }
+  .bg-surface-tertiary { background-color: var(--bg-tertiary); }
+  .bg-elevated { background-color: var(--card); }
+  .bg-code { background-color: var(--code-bg); }
+
   .border-standard { border-color: var(--border); }
   .border-input { border-color: var(--input-border); }
+
+  .shadow-floating { box-shadow: var(--shadow-floating); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+
+  /* 文字颜色工具类（映射标准 Token） */
+  .text-primary { color: var(--foreground); }
+  .text-secondary { color: var(--muted-foreground); }
+  .text-tertiary { color: var(--fg-tertiary); }
+  .text-quaternary { color: var(--fg-quaternary); }
+  .text-accent-start { color: var(--primary); }
+  .text-success { color: var(--success); }
+  .text-warning { color: var(--warning); }
+  .text-info { color: var(--info); }
+  .text-error { color: var(--error); }
+
+  /* 功能色背景 */
+  .bg-success { background-color: var(--success); }
+  .bg-warning { background-color: var(--warning); }
+  .bg-info { background-color: var(--info); }
+  .bg-error { background-color: var(--error); }
 }
 
 pre { -ms-overflow-style: auto; }
 code { font-family: "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace; font-size: 0.875em; }
 
-html:not(.dark) code:not(pre code) { background: var(--bg-secondary); color: var(--fg); padding: 1px 5px; border-radius: 4px; }
-html.dark code:not(pre code) { background: var(--bg-secondary); color: var(--fg); padding: 1px 5px; border-radius: 4px; }
+html:not(.dark) code:not(pre code) { background: var(--bg-secondary); color: var(--foreground); padding: 1px 5px; border-radius: 4px; }
+html.dark code:not(pre code) { background: var(--bg-secondary); color: var(--foreground); padding: 1px 5px; border-radius: 4px; }
 
 .aui-thread-root { background: transparent !important; }
 .aui-message { padding: 0 !important; }

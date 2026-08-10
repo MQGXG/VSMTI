@@ -112,7 +112,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all duration-200 disabled:opacity-30"
         style={{
           ...btnStyle,
-          color: suggestedTool && !open ? 'var(--accent)' : 'var(--text-tertiary)',
+          color: suggestedTool && !open ? 'var(--primary)' : 'var(--text-tertiary)',
           background: suggestedTool && !open ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
           border: suggestedTool && !open ? '1px solid rgba(0, 217, 192, 0.2)' : '1px solid transparent',
         }}
@@ -140,7 +140,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                     <button key={tool.name} onClick={() => handleSelectTool(tool)}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200"
                       style={{
-                        color: isSuggested ? 'var(--accent)' : 'var(--text-primary)',
+                        color: isSuggested ? 'var(--primary)' : 'var(--text-primary)',
                         background: isSuggested ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
                         border: isSuggested ? '1px solid rgba(0, 217, 192, 0.2)' : 'none',
                       }}>
@@ -176,7 +176,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                     return (
                       <div key={key}>
                         <label className="text-xs block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                          {key}{required.includes(key) && <span className="ml-1" style={{ color: '#FF4757' }}>*</span>}
+                          {key}{required.includes(key) && <span className="ml-1" style={{ color: 'var(--destructive)' }}>*</span>}
                         </label>
                         <input
                           type={prop.type === "number" ? "number" : "text"}

@@ -91,8 +91,8 @@ export function VoiceChatButton({ onSendMessage, assistantText, onStatusChange, 
       title={statusLabel}
       className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 ${className}`}
       style={{
-        color: active ? "#22c55e" : "var(--text-tertiary)",
-        background: active ? "rgba(34,197,94,0.1)" : "transparent",
+        color: active ? "var(--success)" : "var(--text-tertiary)",
+        background: active ? "color-mix(in srgb, var(--success) 10%, transparent)" : "transparent",
       }}
     >
       {status === "processing" || status === "speaking" ? (
@@ -105,7 +105,7 @@ export function VoiceChatButton({ onSendMessage, assistantText, onStatusChange, 
         <Mic className="w-4 h-4" />
       )}
       {active && status !== "processing" && status !== "speaking" && (
-        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse" style={{ background: "#22c55e" }} />
+        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--success)" }} />
       )}
     </button>
   )

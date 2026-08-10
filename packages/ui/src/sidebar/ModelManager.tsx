@@ -70,7 +70,7 @@ export function ModelManager({ providers, onChange }: Props) {
                 <div key={`${model.providerId}-${model.id}`}
                   className="flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 bg-surface-elevated border border-standard">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full" style={{ background: model.enabled ? '#00D9C0' : 'var(--border)' }} />
+                    <div className="w-2 h-2 rounded-full" style={{ background: model.enabled ? 'var(--success)' : 'var(--border)' }} />
                     <div>
                       <div className="text-sm text-primary">{model.name}</div>
                       <div className="text-xs font-mono text-tertiary">{model.id}</div>

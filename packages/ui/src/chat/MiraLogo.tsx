@@ -15,12 +15,12 @@ export function MiraLogo({ size = 64, className = "" }: MiraLogoProps) {
     >
       <defs>
         <linearGradient id="mira-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3b82f6" />
-          <stop offset="100%" stopColor="#06b6d4" />
+          <stop offset="0%" stopColor="var(--primary)" />
+          <stop offset="100%" stopColor="var(--fg-tertiary)" />
         </linearGradient>
         <linearGradient id="mira-inner" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#60a5fa" />
-          <stop offset="100%" stopColor="#22d3ee" />
+          <stop offset="0%" stopColor="var(--fg-secondary)" />
+          <stop offset="100%" stopColor="var(--fg-quaternary)" />
         </linearGradient>
       </defs>
       {/* 背景圆角方形 */}
@@ -54,8 +54,8 @@ export function MiraLogoSmall({ size = 32, className = "" }: MiraLogoProps) {
     >
       <defs>
         <linearGradient id="mira-gradient-sm" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3b82f6" />
-          <stop offset="100%" stopColor="#06b6d4" />
+          <stop offset="0%" stopColor="var(--primary)" />
+          <stop offset="100%" stopColor="var(--fg-tertiary)" />
         </linearGradient>
       </defs>
       <rect x="4" y="4" width="92" height="92" rx="24" fill="url(#mira-gradient-sm)" />

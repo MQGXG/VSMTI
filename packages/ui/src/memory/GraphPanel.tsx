@@ -10,6 +10,7 @@ import type { GraphNode, GraphLink, GraphData } from "./graph-data"
 import { buildGraphFromKnowledgeStore } from "./graph-data"
 import { MemoryService, type GraphDataFromDream } from "../services/memory.service"
 import { ProjectService } from "../services/project.service"
+import { GRAPH_NODE_COLORS } from "../theme/data-colors"
 
 interface GraphPanelProps {
   open: boolean
@@ -44,7 +45,7 @@ export function GraphPanel({ open, onClose, projectId, projectName }: GraphPanel
           // ── 全局模式：多项目根节点 + 跨项目共享节点 ──
           const projects = await ProjectService.list()
           if (projects.length === 0) {
-            setGraphData({ nodes: [{ id: "root", label: "暂无项目", type: "project", size: 20, color: "#06b6d4" }], links: [] })
+            setGraphData({ nodes: [{ id: "root", label: "暂无项目", type: "project", size: 20, color: GRAPH_NODE_COLORS.project }], links: [] })
             return
           }
 
@@ -62,7 +63,7 @@ export function GraphPanel({ open, onClose, projectId, projectName }: GraphPanel
               label: proj.name,
               type: "project",
               size: 24,
-              color: "#06b6d4",
+              color: GRAPH_NODE_COLORS.project,
               description: `${memories.length} 条记忆`,
             }
             allNodes.push(projectRoot)
@@ -94,7 +95,7 @@ export function GraphPanel({ open, onClose, projectId, projectName }: GraphPanel
                   label: entityName,
                   type: entityName.includes(".") ? "file" : "concept",
                   size: 8,
-                  color: entityName.includes(".") ? "#10b981" : "#3b82f6",
+                  color: entityName.includes(".") ? GRAPH_NODE_COLORS.file : GRAPH_NODE_COLORS.concept,
                 }
                 allNodes.push(node)
                 globalEntityMap.set(key, node)
@@ -120,7 +121,7 @@ export function GraphPanel({ open, onClose, projectId, projectName }: GraphPanel
               if (!nodeMap.has(entity.name.toLowerCase())) {
                 const node: GraphNode = {
                   id: `dream-${nid++}`, label: entity.name, type: entity.type as GraphNode["type"],
-                  size: 14, color: { concept: "#3b82f6", file: "#10b981", tool: "#8b5cf6", decision: "#f59e0b", project: "#06b6d4", memory: "#6b7280" }[entity.type] || "#6b7280",
+                  size: 14, color: GRAPH_NODE_COLORS[entity.type] || GRAPH_NODE_COLORS.memory,
                   description: entity.description, source: "dream",
                 }
                 baseGraph.nodes.push(node)
