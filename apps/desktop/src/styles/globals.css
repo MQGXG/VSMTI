@@ -407,3 +407,88 @@ html.dark code:not(pre code) { background: var(--bg-secondary); color: var(--for
 
 .aui-thread-root { background: transparent !important; }
 .aui-message { padding: 0 !important; }
+
+/* ── 启动加载遮罩 ──────────────────────────────── */
+.startup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: var(--bg);
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.startup-overlay--hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* logo 呼吸浮动 */
+.startup-overlay__logo {
+  position: relative;
+  animation: startup-breathe 2.6s ease-in-out infinite;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15));
+}
+
+@keyframes startup-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.04); }
+}
+
+/* 流光扫过 */
+.startup-overlay__shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.startup-overlay__shine::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 50%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: startup-shine 2.6s ease-in-out infinite;
+}
+
+@keyframes startup-shine {
+  0% { left: -60%; }
+  100% { left: 120%; }
+}
+
+.startup-overlay__title {
+  font-size: 14px;
+  color: var(--fg-tertiary);
+  letter-spacing: 0.5px;
+}
+
+/* 加载点 */
+.startup-overlay__dots {
+  display: flex;
+  gap: 6px;
+}
+
+.startup-overlay__dots .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: startup-dot-bounce 1.4s ease-in-out infinite;
+}
+
+.startup-overlay__dots .dot:nth-child(2) { animation-delay: 0.2s; }
+.startup-overlay__dots .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes startup-dot-bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}

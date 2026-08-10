@@ -7,6 +7,7 @@ import { EditProjectDialog } from "@mira/ui/sidebar/EditProjectDialog";
 import { SettingsDialog } from "@mira/ui/sidebar/SettingsDialog";
 import { Menu, Plus, Settings, Network } from "lucide-react";
 import { GraphPanel } from "@mira/ui/memory/GraphPanel";
+import { StartupOverlay } from "./components/StartupOverlay";
 import { setActiveSessionId } from "@mira/ui/hooks/session-runtime-store";
 import { DEFAULT_PROJECT_COLOR } from "@mira/ui";
 
@@ -46,6 +47,8 @@ export function App() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
+  // 启动状态：首次 loadProjects 完成（含等待 Sidecar ready）前显示启动加载动画
+  const [booted, setBooted] = useState(false);
 
   const loadProjects = useCallback(async () => {
     try {
@@ -88,7 +91,15 @@ export function App() {
     } catch { /* 静默 */ }
   }, [activeProject]);
 
-  useEffect(() => { loadProjects(); const timer = setInterval(loadProjects, 15000); return () => clearInterval(timer); }, [loadProjects]);
+  // 首屏加载：loadProjects 完成（loadProjects 内 IPC 会经 waitForReady 等待 Sidecar）
+  // 后置 booted=true 结束启动动画；期间保留 15s 定时刷新
+  useEffect(() => {
+    let active = true;
+    // loadProjects 内部全 try/catch 不会 reject，void 显式标记避免 floating promise
+    void loadProjects().then(() => { if (active) setBooted(true); });
+    const timer = setInterval(loadProjects, 15000);
+    return () => { active = false; clearInterval(timer); };
+  }, [loadProjects]);
 
   // 启动时检查桌宠/悬浮球设置
   useEffect(() => {
@@ -171,6 +182,9 @@ export function App() {
 
   return (
     <div className="h-screen flex flex-col" style={{ background: "var(--bg)", color: "var(--fg)" }}>
+      {/* 启动加载动画（数据就绪后自动淡出） */}
+      <StartupOverlay visible={!booted} />
+
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

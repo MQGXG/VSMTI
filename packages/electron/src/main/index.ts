@@ -26,15 +26,22 @@ async function initializeApp() {
   patchConsole();
   console.log(`[Main] Logger initialized: ${getLogFilePath()}`);
 
-  // 启动 Sidecar Core 服务（独立 HTTP 进程）
-  console.log("[Main] Starting Core Sidecar server...");
-  await startSidecar(0);
-  console.log("[Main] Core Sidecar server ready");
+  // 并行启动 Sidecar Core 服务（独立 HTTP 进程），不阻塞窗口创建
+  // startSidecar 同步段会先赋值 serverManager，故 registerIPCHandlers 可立即安全注册
+  console.log("[Main] Starting Core Sidecar server (async)...");
+  const sidecarPromise = startSidecar(0).catch((err) => {
+    console.error(`[Main] Core Sidecar failed to start: ${err instanceof Error ? err.message : String(err)}`);
+  });
 
   registerIPCHandlers();
 
+  // 主窗口立即创建，启动加载动画覆盖首屏，期间 Sidecar 在后台完成初始化
   await createWindow();
   createTray();
+
+  // 等待 Sidecar 就绪（渲染层首屏动画期间完成，ready 后数据加载自然放行）
+  await sidecarPromise;
+  console.log("[Main] Core Sidecar server ready");
 
   globalShortcut.register("CommandOrControl+Shift+A", () => {
     showMainWindow();

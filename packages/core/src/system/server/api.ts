@@ -67,10 +67,13 @@ for (const mode of getAllModes()) {
 initDatabase().catch((err) => logError("API 初始化失败", err))
 
 // ── 共享 FTS 记忆单例 ────────────────────────────────
-// 每个 Agent 复用同一 FTS 提供者（而非每轮新建重新加载 1.3GB 库），
-// 并在启动时立即赋值 memoryFTS，使知识图谱重启后无需先发消息即可读取。
+// 每个 Agent 复用同一 FTS 提供者（而非每轮新建重新加载 1.3GB 库）。
+// 启动时不再预加载（避免阻塞 Sidecar），改为首次使用（对话/图谱/记忆搜索）时按需懒加载，
+// 保证知识图谱重启后无需先发消息即可读取跨会话记忆。
 
 let sharedMemoryFTS: FTSMemoryProvider | null = null
+// 初始化 in-flight 去重：并发调用（如图谱加载 + 首次对话）共享同一 Promise，避免重复读取大库
+let sharedMemoryFTSPromise: Promise<FTSMemoryProvider | null> | null = null
 
 async function getRecentWorkspace(): Promise<string> {
   try {
@@ -85,24 +88,28 @@ async function getRecentWorkspace(): Promise<string> {
 
 async function ensureSharedMemoryFTS(preferredWorkspace?: string): Promise<FTSMemoryProvider | null> {
   if (sharedMemoryFTS) return sharedMemoryFTS
-  try {
-    const ws = (preferredWorkspace && preferredWorkspace.trim()) || (await getRecentWorkspace())
-    const fts = new FTSMemoryProvider()
-    await fts.initialize("", ws)
-    sharedMemoryFTS = fts
-    setMemoryFTS(fts)
-    setFTSProvider(fts)
-    return fts
-  } catch (err) {
-    logError("[API] 初始化共享 FTS 记忆失败", err)
-    return null
+  if (!sharedMemoryFTSPromise) {
+    sharedMemoryFTSPromise = (async () => {
+      try {
+        const ws = (preferredWorkspace && preferredWorkspace.trim()) || (await getRecentWorkspace())
+        const fts = new FTSMemoryProvider()
+        await fts.initialize("", ws)
+        sharedMemoryFTS = fts
+        setMemoryFTS(fts)
+        setFTSProvider(fts)
+        return fts
+      } catch (err) {
+        logError("[API] 初始化共享 FTS 记忆失败", err)
+        return null
+      }
+    })()
   }
+  return sharedMemoryFTSPromise
 }
 
-// 启动时预初始化，保证重启后图谱/记忆 API 立即可用
-initDatabase()
-  .then(() => ensureSharedMemoryFTS())
-  .catch((err) => logError("启动共享记忆初始化失败", err))
+// 数据库初始化（sessions/projects 首屏必需）；共享 FTS 记忆改为首次 Agent 会话时懒加载，
+// 避免启动阶段同步加载大型 fts-memory.db 阻塞 Sidecar 事件循环（见 ensureSharedMemoryFTS）
+initDatabase().catch((err) => logError("数据库初始化失败", err))
 
 // ── Agent 会话管理 ──────────────────────────────────
 
@@ -351,6 +358,8 @@ export function setMemoryFTS(p: FTSProvider): void {
 }
 
 export async function handleMemorySearch(query: string, type?: string, limit?: number): Promise<{ results: string[]; error: string | null }> {
+  // 首次记忆搜索时按需初始化共享 FTS（启动不预加载，避免阻塞 Sidecar）
+  await ensureSharedMemoryFTS()
   const fts = memoryFTS
   if (!fts) return { results: [], error: "FTS not initialized" }
 
@@ -384,6 +393,8 @@ export async function handleMemorySearchByProject(
   projectId: string,
   limit?: number,
 ): Promise<Array<{ content: string; source: string; sessionId: string }>> {
+  // 首次按项目查询时按需初始化共享 FTS（知识图谱重启后无需先发消息即可读取跨会话记忆）
+  await ensureSharedMemoryFTS()
   const fts = memoryFTS
   if (!fts || !projectId) return []
 

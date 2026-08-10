@@ -91,7 +91,8 @@ export class FTSMemoryProvider implements MemoryProvider {
     const dbPath = this.dbPath()
     if (dbPath) {
       try {
-        const buffer = fss.readFileSync(dbPath)
+        // 异步读取大库文件，避免同步 I/O 阻塞 Sidecar 事件循环（fts-memory.db 可达 GB 级）
+        const buffer = await fsp.readFile(dbPath)
         this.db = new this.SQL.Database(buffer)
       } catch { /* 新数据库 */ }
     }
