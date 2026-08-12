@@ -35,6 +35,8 @@ export interface TurnRunnerInput {
     autoAcceptPermissions?: boolean
     fallbacks?: SDKConfig[]
     visionModel?: SDKConfig["visionModel"]
+    /** 主模型是否支持直接识图（vision/multimodal 直发，其余 false） */
+    modelVision?: boolean
   }
   signal?: AbortSignal
   deps: {
@@ -220,6 +222,7 @@ export async function* runTurn(
     headers: config.headers,
     options: config.options,
     visionModel: config.visionModel,
+    modelVision: config.modelVision,
   }
 
   const client = config.fallbacks && config.fallbacks.length > 0
@@ -513,6 +516,18 @@ export async function* runTurn(
         content: [{ type: "tool-result" as const, toolCallId: tc.id, toolName: tc.name, output: resultText }],
         tool_call_id: tc.id,
       })
+      // 图片工具结果（如 read_file 读取图片）：base64 数据在 metadata 中，
+      // 需以 ImagePart 注入 user 消息，视觉模型才能"看到"图片
+      const imgMeta = result?.metadata as { mime?: string; data?: string; name?: string } | undefined
+      if (result?.success && imgMeta?.mime && imgMeta?.data) {
+        messages.push({
+          role: "user",
+          content: [
+            { type: "text" as const, text: `[图片] ${imgMeta.name || tc.name} 的内容如下，请查看：` },
+            { type: "image" as const, image: `data:${imgMeta.mime};base64,${imgMeta.data}`, mediaType: imgMeta.mime },
+          ],
+        })
+      }
     }
 
     // 持久化到 DB：顺序必须为 assistant(含 tool_calls) → tool 结果，
@@ -634,6 +649,17 @@ export async function* runMaxModeTurn(
         content: [{ type: "tool-result" as const, toolCallId: tc.id, toolName: tc.function.name, output: resultText }],
         tool_call_id: tc.id,
       })
+      // 图片工具结果：以 ImagePart 注入 user 消息，视觉模型才能"看到"图片
+      const imgMeta = result?.metadata as { mime?: string; data?: string; name?: string } | undefined
+      if (result?.success && imgMeta?.mime && imgMeta?.data) {
+        messages.push({
+          role: "user",
+          content: [
+            { type: "text" as const, text: `[图片] ${imgMeta.name || tc.function.name} 的内容如下，请查看：` },
+            { type: "image" as const, image: `data:${imgMeta.mime};base64,${imgMeta.data}`, mediaType: imgMeta.mime },
+          ],
+        })
+      }
       // 落库 tool 结果（顺序在 assistant 之后，与 runTurn 保持一致）
       await appendMessage(input.sessionID, {
         role: "tool",

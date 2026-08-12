@@ -23,6 +23,9 @@ export function convertMessage(message: MiraMessage): ThreadMessageLike {
         toolName: part.toolName!,
         args: part.args as any,
       });
+    } else if (part.type === "file" && part.url) {
+      // 用户上传的图片回显：转为 assistant-ui 的 image content
+      content.push({ type: "image", image: part.url });
     }
   }
 

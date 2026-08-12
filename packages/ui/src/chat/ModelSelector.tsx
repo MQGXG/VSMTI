@@ -1,17 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Brain, Search, Zap, Shield, Cpu, Sparkles } from "lucide-react";
 import type { AgentMode } from "./types";
+import type { ModelType } from "../sidebar/types";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 
-interface StoredProvider { id: string; name: string; displayName: string; enabled: boolean; models: { id: string; name: string; enabled: boolean }[]; }
+interface StoredModel { id: string; name: string; enabled: boolean; type?: ModelType; }
+interface StoredProvider { id: string; name: string; displayName: string; enabled: boolean; models: StoredModel[]; }
 
 function loadProviders(): StoredProvider[] {
   if (typeof window === "undefined") return [];
   try {
     const data = localStorage.getItem("providers_v2");
-    if (data) return (JSON.parse(data) as StoredProvider[]).map((p) => ({ id: p.id, name: p.name, displayName: p.displayName || p.name, enabled: p.enabled, models: p.models?.map((m) => ({ id: m.id, name: m.name, enabled: m.enabled !== false })) || [] }));
+    if (data) return (JSON.parse(data) as StoredProvider[]).map((p) => ({ id: p.id, name: p.name, displayName: p.displayName || p.name, enabled: p.enabled, models: p.models?.map((m) => ({ id: m.id, name: m.name, enabled: m.enabled !== false, type: m.type })) || [] }));
     const oldData = localStorage.getItem("providers");
-    if (oldData) return (JSON.parse(oldData) as StoredProvider[]).map((p) => ({ ...p, displayName: p.name, models: p.models?.map((m) => ({ id: m.id, name: m.name, enabled: true })) || [] }));
+    if (oldData) return (JSON.parse(oldData) as StoredProvider[]).map((p) => ({ ...p, displayName: p.name, models: p.models?.map((m) => ({ id: m.id, name: m.name, enabled: true, type: undefined })) || [] }));
     return [];
   } catch { return []; }
 }
@@ -19,11 +21,11 @@ function loadProviders(): StoredProvider[] {
 function getEnabledModels(): ModelOption[] {
   const providers = loadProviders();
   const options: ModelOption[] = [];
-  for (const p of providers) { if (!p.enabled) continue; for (const m of p.models) { if (!m.enabled) continue; options.push({ label: `${p.displayName || p.name} · ${m.name}`, value: m.id, provider: p.id.startsWith("custom-") ? "custom" : p.id }); } }
+  for (const p of providers) { if (!p.enabled) continue; for (const m of p.models) { if (!m.enabled) continue; options.push({ label: `${p.displayName || p.name} · ${m.name}`, value: m.id, provider: p.id.startsWith("custom-") ? "custom" : p.id, type: m.type }); } }
   return options;
 }
 
-export interface ModelOption { label: string; value: string; provider: string; }
+export interface ModelOption { label: string; value: string; provider: string; type?: ModelType; }
 const DEFAULT_MODEL: ModelOption = { label: "OpenAI · GPT-4o", value: "gpt-4o", provider: "openai" };
 
 const MODE_OPTIONS: { value: AgentMode; label: string; icon: typeof Brain }[] = [

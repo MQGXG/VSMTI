@@ -1,10 +1,12 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ThemeSelector } from "../ThemeSelector";
 import { Switch } from "../../components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { DialogService } from "../../services/dialog.service";
+import { loadProviders } from "../provider-data";
+import type { Provider } from "../types";
 
 interface Props {
   settings: Record<string, any>;
@@ -47,6 +49,22 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
   const { models, add, remove } = useModelList()
   const [newKey, setNewKey] = useState("")
   const [newPath, setNewPath] = useState("")
+
+  // ── 视觉桥模型选项（已启用 + 含 vision 模型的 provider） ──
+  const [visionProviders, setVisionProviders] = useState<Provider[]>([])
+  useEffect(() => { void loadProviders().then(setVisionProviders).catch(() => {}) }, [])
+
+  const override = settings.visionModelOverride
+    ? { provider: settings.visionModelOverride.provider as string, model: settings.visionModelOverride.model as string }
+    : null
+  // 视觉桥模型：不限定内置白名单，允许用户选择任意已启用 provider 的任意已启用模型
+  //（例如智谱 GLM-4V-Flash、GLM-4.6V-Flash 等未列入内置清单的视觉模型）
+  const visionProviderOptions = visionProviders.filter((p) => p.enabled && p.models.some((m) => m.enabled))
+  const currentVisionProvider = visionProviderOptions.find((p) => (p.id.startsWith("custom-") ? "custom" : p.id) === override?.provider)
+  const visionModelOptions = currentVisionProvider
+    ? currentVisionProvider.models.filter((m) => m.enabled)
+    : []
+  const setOverride = (provider: string, model: string) => onUpdate({ visionModelOverride: provider ? { provider, model } : null })
 
   return (
     <div className="space-y-6">
@@ -181,6 +199,63 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
             )}
           </div>
           <p className="text-[11px] text-secondary">新建/打开项目时的默认目录；留空使用系统默认（文档目录/Mira）</p>
+        </div>
+      </div>
+
+      <div className="p-4 rounded-xl bg-surface-secondary border border-standard">
+        <div className="text-sm mb-3 text-primary">图片识别（多模态视觉桥）</div>
+        <div className="space-y-3">
+          <p className="text-[11px] text-secondary">
+            当前模型不支持识别图片时，系统会自动从已配置的模型中找一个支持视觉的模型来分析图片（无需手动配置）。
+            如需指定，可在下方选择。
+          </p>
+          {visionProviderOptions.length > 0 ? (
+            <>
+              <div>
+                <label className="text-xs mb-1 block text-secondary">视觉模型（留空自动选择）</label>
+                <div className="flex items-center gap-2">
+                  <Select value={override?.provider || ""}
+                    onValueChange={(v) => {
+                      const prov = visionProviderOptions.find((p) => (p.id.startsWith("custom-") ? "custom" : p.id) === v)
+                      const firstModel = prov?.models.find((m) => m.enabled)
+                      setOverride(v, firstModel?.id || "")
+                    }}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="自动" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {visionProviderOptions.map((p) => {
+                        const pid = p.id.startsWith("custom-") ? "custom" : p.id
+                        return <SelectItem key={pid} value={pid}>{p.displayName || p.name}</SelectItem>
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {override?.provider && (
+                    <Select value={override.model}
+                      onValueChange={(v) => setOverride(override.provider, v)}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {visionModelOptions.map((m) => (
+                          <SelectItem key={m.id} value={m.id}>{m.name || m.id}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {override?.provider && (
+                    <Button variant="ghost" size="sm" onClick={() => setOverride("", "")} className="text-[11px] shrink-0">
+                      恢复自动
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="text-[11px] text-secondary">
+              未检测到已启用的提供商模型。请先在「提供商」中启用并配置至少一个模型。
+            </p>
+          )}
         </div>
       </div>
 

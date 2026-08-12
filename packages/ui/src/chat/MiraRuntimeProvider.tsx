@@ -42,7 +42,7 @@ export interface MiraRuntimeContext {
   handleQuestionAnswer: (answer: string) => void;
   handleToolResult: (toolName: string, result: any) => void;
   stopStream: () => void;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, images?: string[]) => Promise<void>;
   retryMessage: (assistantMsgId: string) => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<MiraMessage[]>>;
 }
@@ -103,24 +103,31 @@ export function MiraRuntimeProvider({
     messagesRef.current = chat.messages;
   }, [chat.sendMessage, chat.setMessages, chat.messages]);
 
+  /** 从消息附件中提取图片 data URL（仅接受 image 类型的附件） */
+  const extractImages = useCallback((parts: readonly { type: string; image?: string }[]): string[] => {
+    return parts
+      .filter((p): p is { type: string; image: string } => p.type === "image" && typeof p.image === "string" && p.image.length > 0)
+      .map((p) => p.image);
+  }, []);
+
   /** 发送队列 — 运行时允许排队发消息 */
   const [queue] = useState(() =>
     createMessageQueue({
       async run(message: AppendMessage) {
-        if (message.content[0]?.type !== "text") return;
-        let input = message.content[0].text;
+        const images = extractImages(message.content);
+        // 纯图片消息：无文本也允许发送（图片附空提示）
+        const firstText = (message.content.find((p) => p.type === "text") as { text?: string } | undefined)?.text || "";
+        if (message.content[0]?.type !== "text" && images.length === 0) return;
+        let input = firstText;
         const quote = (message.metadata as { custom?: { quote?: { text: string; messageId: string } } })?.custom?.quote;
         if (quote?.text) {
           input = `[引用: "${quote.text}"]\n\n${input}`;
         }
-        const attachmentText = message.content
-          .filter(p => p.type !== "text")
-          .map(p => p.type === "image" ? `[图片附件]` : `[附件]`)
-          .join("\n");
-        if (attachmentText) {
-          input = `${input}\n\n${attachmentText}`;
+        const imageText = images.length > 0 ? `\n\n[图片 ${images.length} 张]` : "";
+        if (imageText) {
+          input = `${input}${imageText}`;
         }
-        await sendMessageRef.current(input);
+        await sendMessageRef.current(input || "请查看图片：", images);
       },
     }),
   )
@@ -138,22 +145,22 @@ export function MiraRuntimeProvider({
 
   const onNew = useCallback(
     async (message: AppendMessage) => {
-      if (message.content[0]?.type !== "text") return;
-      let input = message.content[0].text;
+      const images = extractImages(message.content);
+      // 纯图片消息：无文本也允许发送
+      const firstText = (message.content.find((p) => p.type === "text") as { text?: string } | undefined)?.text || "";
+      if (message.content[0]?.type !== "text" && images.length === 0) return;
+      let input = firstText;
       const quote = (message.metadata as { custom?: { quote?: { text: string; messageId: string } } })?.custom?.quote;
       if (quote?.text) {
         input = `[引用: "${quote.text}"]\n\n${input}`;
       }
-      const attachmentText = message.content
-        .filter(p => p.type !== "text")
-        .map(p => p.type === "image" ? `[图片附件]` : `[附件]`)
-        .join("\n");
-      if (attachmentText) {
-        input = `${input}\n\n${attachmentText}`;
+      const imageText = images.length > 0 ? `\n\n[图片 ${images.length} 张]` : "";
+      if (imageText) {
+        input = `${input}${imageText}`;
       }
-      await sendMessageRef.current(input);
+      await sendMessageRef.current(input || "请查看图片：", images);
     },
-    []
+    [extractImages]
   );
 
   const onCancel = useCallback(() => {

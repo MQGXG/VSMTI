@@ -122,3 +122,27 @@ describe('protocol image serialization', () => {
     expect(typeof createLLMClient).toBe('function')
   })
 })
+
+describe('convertMessages preserves image parts', () => {
+  test('image part survives normalization so vision models receive it', async () => {
+    const { convertMessages } = await import('../llm/client')
+    const out = convertMessages([userMsgWithImage(DATA_URL, 'image/png')])
+    expect(Array.isArray(out[0].content)).toBe(true)
+    const parts = out[0].content as unknown as Array<Record<string, unknown>>
+    expect(parts).toEqual([
+      { type: 'text', text: '看看这张图' },
+      { type: 'image', image: DATA_URL, mediaType: 'image/png' },
+    ])
+  })
+
+  test('normalized image message serializes to openai image_url', async () => {
+    const { convertMessages } = await import('../llm/client')
+    const { serializeMessages } = await import('../llm/protocols/openai-chat')
+    const out = serializeMessages(convertMessages([userMsgWithImage(DATA_URL, 'image/png')]))
+    expect(Array.isArray(out[0].content)).toBe(true)
+    expect(out[0].content).toEqual([
+      { type: 'text', text: '看看这张图' },
+      { type: 'image_url', image_url: { url: DATA_URL } },
+    ])
+  })
+})

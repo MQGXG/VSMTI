@@ -18,6 +18,8 @@ export interface LLMTurnConfig {
     headers?: Record<string, string>
     options?: Record<string, unknown>
   }
+  /** 主模型是否支持直接识图（vision/multimodal 直发，其余 false） */
+  modelVision?: boolean
 }
 
 export interface LLMTurnInput {
@@ -51,6 +53,7 @@ export async function* runLLMTurn(
     headers: config.headers,
     options: config.options,
     visionModel: config.visionModel,
+    modelVision: config.modelVision,
   })
 
   let currentText = ""

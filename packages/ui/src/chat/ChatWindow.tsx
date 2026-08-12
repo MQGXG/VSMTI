@@ -19,7 +19,7 @@ import { ThinkingShimmer, ReasoningBlock } from "./ThinkingBlock";
 import { ProgressBar } from "./ProgressBar";
 import { RenderMessageParts, findDiffSummary } from "./ToolCallView";
 import { loadSettings } from "../sidebar/provider-data";
-import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight, ListOrdered, ThumbsUp, ThumbsDown, Volume2, VolumeX } from "lucide-react";
+import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight, ListOrdered, ThumbsUp, ThumbsDown, Volume2, VolumeX, X } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { AnimatedAvatar, type AvatarState } from "../components/assistant-ui/animated-avatar";
 import "../components/assistant-ui/animated-avatar.css";
@@ -135,6 +135,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   const composerIsEmpty = useAuiState((s) => s.composer.isEmpty);
   const threadEmpty = useAuiState((s) => s.thread.isEmpty);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { setTheme } = useTheme();
 
   const [skills, setSkills] = useState<SkillInfo[]>([]);
@@ -144,6 +145,8 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   const [isFocused, setIsFocused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showGraphPanel, setShowGraphPanel] = useState(false);
+  const [preview, setPreview] = useState<{ images: string[]; index: number } | null>(null);
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
   const dragCounter = useRef(0);
   const settings = useMemo(() => loadSettings(), []);
 
@@ -211,9 +214,28 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   const onDrop = useCallback((e: DragEvent) => {
     e.preventDefault(); e.stopPropagation(); setIsDragging(false); dragCounter.current = 0;
     const files = e.dataTransfer?.files; if (!files || files.length === 0) return;
-    const paths: string[] = []; for (let i = 0; i < files.length; i++) paths.push((files[i] as File & { path?: string }).path || files[i].name);
-    if (paths.length > 0) { aui.composer().setText("读取文件: " + paths.join(", ")); textareaRef.current?.focus(); }
+    // 图片文件：读取 base64 加入待发送队列（输入框上方显示缩略图），非图片保持路径文本
+    const imageFiles: File[] = []; const paths: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i] as File & { path?: string };
+      if (f.type.startsWith("image/")) imageFiles.push(f);
+      else paths.push(f.path || f.name);
+    }
+    if (imageFiles.length > 0) {
+      Promise.all(imageFiles.map((f) => new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(f);
+      }))).then((urls) => {
+        setPendingImages((prev) => [...prev, ...urls]);
+      }).catch(() => { /* 读取失败不阻塞 */ });
+    }
+    if (paths.length > 0) {
+      aui.composer().setText(paths.map((p) => `读取文件: ${p}`).join("\n"));
+      textareaRef.current?.focus();
+    }
   }, [aui]);
+
   useEffect(() => {
     const el = document.body; el.addEventListener("dragenter", onEnter); el.addEventListener("dragleave", onLeave);
     el.addEventListener("dragover", onOver); el.addEventListener("drop", onDrop);
@@ -221,6 +243,19 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   }, [onEnter, onLeave, onOver, onDrop]);
 
   function applyCommand(cmd: SlashCommandDef) { cmd.action(); setShowSkills(false); }
+  /** 发送：文本 + 待发送图片；无图片时走 composer 默认发送 */
+  function handleSend() {
+    if (ctx.isRunning) { ctx.stopStream(); return; }
+    const text = composerText.trim();
+    if (pendingImages.length > 0) {
+      void ctx.sendMessage(text || "请查看图片：", pendingImages);
+      setPendingImages([]);
+      aui.composer().setText("");
+    } else if (text) {
+      aui.composer().send();
+    }
+  }
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (showSkills) {
       if (e.key === "ArrowDown") { e.preventDefault(); setSelectedCommandIndex((p) => Math.min(p + 1, filteredCommands.length - 1)); return; }
@@ -228,10 +263,34 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
       if (e.key === "Enter" && !e.shiftKey && filteredCommands[selectedCommandIndex]) { e.preventDefault(); applyCommand(filteredCommands[selectedCommandIndex]); return; }
       if (e.key === "Escape") { setShowSkills(false); return; }
     }
+    // 有待发送图片时，Enter（非 Shift）走自定义发送，确保图片随消息发送
+    if (e.key === "Enter" && !e.shiftKey && pendingImages.length > 0) {
+      e.preventDefault();
+      handleSend();
+    }
   }
 
+  /** 附件按钮：触发隐藏文件选择（仅图片） */
+  const handlePickImages = () => { fileInputRef.current?.click(); };
+
+  /** 文件选择完成：读取图片 base64 加入待发送队列 */
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) return;
+    Promise.all(files.map((f) => new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(f);
+    }))).then((urls) => {
+      setPendingImages((prev) => [...prev, ...urls]);
+    }).catch(() => { /* 读取失败不阻塞 */ });
+    e.target.value = "";
+  };
+
+  /** 发送：文本 + 待发送图片；无图片时走 composer 默认发送 */
   return (
     <div className="flex-1 flex flex-col min-h-0 relative" style={{ background: "var(--bg)" }}>
+      {preview && <Lightbox images={preview.images} index={preview.index} onClose={() => setPreview(null)} onIndexChange={(i) => setPreview((p) => p ? { ...p, index: i } : p)} />}
       {isDragging && (
         <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}>
           <div className="text-center space-y-4">
@@ -292,6 +351,10 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                 const hasToolCalls = orig?.parts.some((p: any) => p.type === "tool-call");
                 const diffSummaryPart = orig ? findDiffSummary(orig) : null;
                 const hasCustomParts = hasToolCalls || diffSummaryPart;
+                // 用户消息中的全部图片（file parts），供点击放大时左右切换
+                const userImages = isUser
+                  ? (orig?.parts.filter((p: any) => p.type === "file" && typeof p.url === "string" && (p.url as string).length > 0).map((p: any) => p.url as string) || [])
+                  : [];
                 return (
                   <ErrorBoundary
                     fallback={
@@ -315,7 +378,23 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                         {isUser ? (
                           <MessageBubble role="user" className="min-w-0">
                             <MessagePrimitive.Parts>
-                              {({ part }) => { if (part.type === "text") return <p className="whitespace-pre-wrap break-words">{part.text}</p>; return null; }}
+                              {({ part }) => {
+                                if (part.type === "text") return <p className="whitespace-pre-wrap break-words">{part.text}</p>;
+                                if (part.type === "image" && typeof (part as { image?: string }).image === "string") {
+                                  const img = (part as { image: string }).image;
+                                  const idx = userImages.indexOf(img);
+                                  return (
+                                    <img
+                                      src={img}
+                                      alt="图片"
+                                      className="mt-2 max-w-[280px] max-h-[280px] rounded-lg object-cover cursor-zoom-in"
+                                      style={{ border: "1px solid var(--border-subtle)" }}
+                                      onClick={() => setPreview({ images: userImages, index: idx >= 0 ? idx : 0 })}
+                                    />
+                                  );
+                                }
+                                return null;
+                              }}
                             </MessagePrimitive.Parts>
                           </MessageBubble>
                         ) : (
@@ -413,6 +492,25 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-2 rounded-xl px-4 py-3 transition-all duration-200"
                   style={{ background: "var(--bg-elevated)", border: "1px solid", borderColor: isFocused ? "var(--fg)" : "var(--border)", boxShadow: isFocused ? "var(--shadow-elevated)" : "none" }}>
+                  {/* 待发送图片预览（缩略图，可移除 / 点击放大） */}
+                  {pendingImages.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {pendingImages.map((img, i) => (
+                        <div key={i} className="relative group">
+                          <img src={img} alt={`图片 ${i + 1}`}
+                            className="h-12 w-12 object-cover rounded-lg cursor-zoom-in"
+                            style={{ border: "1px solid var(--border-light)" }}
+                            onClick={() => setPreview({ images: pendingImages, index: i })} />
+                          <button
+                            className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full text-white/90 bg-black/60 hover:bg-black/80 transition-colors"
+                            onClick={() => setPendingImages((prev) => prev.filter((_, idx) => idx !== i))}
+                            title="移除">
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <ComposerPrimitive.Quote className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs"
                     style={{ background: "var(--surface-secondary)", border: "1px solid var(--border-light)" }}>
                     <ComposerPrimitive.QuoteText className="flex-1 truncate" />
@@ -422,7 +520,8 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                     </ComposerPrimitive.QuoteDismiss>
                   </ComposerPrimitive.Quote>
                   <div className="flex items-center gap-2">
-                   <Button variant="ghost" size="icon" className="h-7 w-7" title="添加附件">
+                  <input ref={fileInputRef} type="file" accept="image/*" multiple hidden onChange={handleFileInput} />
+                  <Button variant="ghost" size="icon" className="h-7 w-7" title="添加图片" onClick={handlePickImages}>
                     <Paperclip className="h-4 w-4" />
                   </Button>
                   <ComposerPrimitive.Dictate asChild>
@@ -453,11 +552,11 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => ctx.isRunning ? ctx.stopStream() : aui.composer().send()}
+                    onClick={handleSend}
                     title={ctx.isRunning ? "停止" : "发送"}
                     className="h-7 w-7 shrink-0"
                     style={{
-                      color: ctx.isRunning ? "var(--error)" : (composerIsEmpty ? "var(--fg-tertiary)" : "var(--fg)"),
+                      color: ctx.isRunning ? "var(--error)" : (composerIsEmpty && pendingImages.length === 0 ? "var(--fg-tertiary)" : "var(--fg)"),
                       background: ctx.isRunning ? "rgba(239,68,68,0.08)" : "transparent",
                     }}
                   >
@@ -566,4 +665,72 @@ export function ChatWindow({ sessionId, onSessionChange, onNewSession, workspace
   // 注意：不再用 key={sessionId} 强制重建组件树，
   // 会话状态由 session-runtime-store 管理，切换只换视图、不中断后台流
   return <ChatContent sessionId={sessionId} onSessionChange={onSessionChange} onNewSession={onNewSession} workspace={workspace} />;
+}
+
+/** 全屏图片预览（多图左右切换，点击图片/遮罩/Esc/关闭按钮退出） */
+function Lightbox({ images, index, onClose, onIndexChange }: {
+  images: string[];
+  index: number;
+  onClose: () => void;
+  onIndexChange: (i: number) => void;
+}) {
+  const total = images.length;
+  const prev = () => onIndexChange((index - 1 + total) % total);
+  const next = () => onIndexChange((index + 1) % total);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowLeft") prev();
+      else if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose, index, total]);
+
+  const src = images[index] || images[0];
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex items-center justify-center p-6"
+      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}
+    >
+      <img
+        src={src}
+        alt="预览"
+        className="max-h-full max-w-full object-contain rounded-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+      {total > 1 && (
+        <>
+          <button
+            className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+            title="上一张"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            onClick={(e) => { e.stopPropagation(); next(); }}
+            title="下一张"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs text-white/80"
+            style={{ background: "rgba(255,255,255,0.1)" }}>
+            {index + 1} / {total}
+          </div>
+        </>
+      )}
+      <button
+        className="absolute top-4 right-4 flex items-center justify-center w-9 h-9 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+        onClick={onClose}
+        title="关闭"
+      >
+        <X className="w-5 h-5" />
+      </button>
+    </div>
+  );
 }

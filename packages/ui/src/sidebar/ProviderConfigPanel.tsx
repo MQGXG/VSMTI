@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Plus, Trash2, Globe, Key, Server, Download, Save, X } from "lucide-react";
-import type { Provider, ProviderFormData } from "./types";
+import type { Provider, ProviderFormData, ModelType } from "./types";
 import { Switch } from "../components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Input } from "../components/ui/input";
@@ -15,6 +15,16 @@ const EMPTY_FORM: ProviderFormData = {
   id: "", name: "", displayName: "", apiKey: "", baseUrl: "",
   website: "", apiFormat: "openai", headers: [], options: [], models: [],
 };
+
+/** 预置模型类型（下拉展示） */
+const PRESET_TYPES: ModelType[] = ["text", "vision", "multimodal", "voice"];
+
+/** 判断当前 type 在下拉中的选择态："preset" | "custom" | "none" */
+function typeSelectState(type: ModelType | undefined): "preset" | "custom" | "none" {
+  if (!type) return "none";
+  if (PRESET_TYPES.includes(type)) return "preset";
+  return "custom";
+}
 
 function createProviderFromForm(data: ProviderFormData): Provider {
   return {
@@ -37,7 +47,7 @@ function createProviderFromForm(data: ProviderFormData): Provider {
         return [o.key, val];
       })
     ),
-    models: data.models.map((m) => ({ id: m.id, name: m.name, enabled: true })),
+    models: data.models.map((m) => ({ id: m.id, name: m.name, enabled: true, type: m.type })),
   };
 }
 
@@ -48,7 +58,7 @@ function providerToFormData(p: Provider): ProviderFormData {
     apiFormat: p.apiFormat || "openai",
     headers: Object.entries(p.headers || {}).map(([key, value]) => ({ key, value })),
     options: Object.entries(p.options || {}).map(([key, value]) => ({ key, value: String(value) })),
-    models: p.models.map((m) => ({ id: m.id, name: m.name })),
+    models: p.models.map((m) => ({ id: m.id, name: m.name, type: m.type })),
   };
 }
 
@@ -127,13 +137,21 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
 
   const addModel = () => {
     if (!editingProvider) return;
-    setEditingProvider({ ...editingProvider, models: [...editingProvider.models, { id: "", name: "" }] });
+    setEditingProvider({ ...editingProvider, models: [...editingProvider.models, { id: "", name: "", type: "text" }] });
   };
 
   const updateModel = (index: number, field: "id" | "name", value: string) => {
     if (!editingProvider) return;
     const newModels = [...editingProvider.models];
     newModels[index] = { ...newModels[index], [field]: value };
+    setEditingProvider({ ...editingProvider, models: newModels });
+  };
+
+  /** 更新模型类型：支持预置枚举 / 自定义字符串 / 清空（undefined） */
+  const updateModelType = (index: number, type: ModelType | undefined) => {
+    if (!editingProvider) return;
+    const newModels = [...editingProvider.models];
+    newModels[index] = { ...newModels[index], type };
     setEditingProvider({ ...editingProvider, models: newModels });
   };
 
@@ -311,17 +329,43 @@ export function ProviderConfigPanel({ providers, onChange }: Props) {
             {fetchError && (
               <div className="px-3 py-2 rounded-lg text-xs" style={{ background: 'color-mix(in srgb, var(--destructive) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--destructive) 20%, transparent)', color: 'var(--destructive)' }}>{fetchError}</div>
             )}
-            {editingProvider.models.map((model, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Input value={model.id} onChange={(e) => updateModel(index, "id", e.target.value)} placeholder="model-id"
-                  className="flex-1" />
-                <Input value={model.name} onChange={(e) => updateModel(index, "name", e.target.value)} placeholder="显示名称"
-                  className="flex-1" />
-                <button onClick={() => removeModel(index)} className="p-1.5 rounded-lg transition-colors hover:bg-error/10 hover:text-error" style={{ color: 'var(--text-secondary)' }}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+            {editingProvider.models.map((model, index) => {
+              const state = typeSelectState(model.type);
+              return (
+                <div key={index} className="flex items-center gap-2">
+                  <Input value={model.id} onChange={(e) => updateModel(index, "id", e.target.value)} placeholder="model-id"
+                    className="flex-1" />
+                  <Input value={model.name} onChange={(e) => updateModel(index, "name", e.target.value)} placeholder="显示名称"
+                    className="flex-1" />
+                  <Select value={state === "preset" ? model.type : state}
+                    onValueChange={(v) => {
+                      if (v === "none") { updateModelType(index, undefined); return; }
+                      if (v === "custom") { updateModelType(index, model.type && state === "custom" ? model.type : ""); return; }
+                      updateModelType(index, v);
+                    }}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">文本</SelectItem>
+                      <SelectItem value="vision">视觉</SelectItem>
+                      <SelectItem value="multimodal">全模态</SelectItem>
+                      <SelectItem value="voice">语音</SelectItem>
+                      <SelectItem value="none">未指定</SelectItem>
+                      <SelectItem value="custom">自定义...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {state === "custom" && (
+                    <Input value={model.type || ""}
+                      onChange={(e) => updateModelType(index, e.target.value)}
+                      placeholder="自定义类型" className="w-32" />
+                  )}
+                  <button onClick={() => removeModel(index)} className="p-1.5 rounded-lg transition-colors hover:bg-error/10 hover:text-error" style={{ color: 'var(--text-secondary)' }}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4">

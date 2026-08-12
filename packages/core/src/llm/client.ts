@@ -27,6 +27,8 @@ export interface SDKConfig {
     headers?: Record<string, string>
     options?: Record<string, unknown>
   }
+  /** 主模型是否具备直接识图能力（自定义模型按类型标记，vision/multimodal 为 true） */
+  modelVision?: boolean
 }
 
 export type LLMStreamEvent =
@@ -56,7 +58,8 @@ export interface LLMClient {
   complete(request: LLMRequest2): Promise<{ content: string; toolCalls: Array<{ id: string; type: "function"; function: { name: string; arguments: string } }> }>
 }
 
-function convertMessages(messages: LLMMessage[]): LLMMessage[] {
+/** @internal 消息归一化：规范化 content parts，保留图片以便协议层序列化 */
+export function convertMessages(messages: LLMMessage[]): LLMMessage[] {
   return messages.map((m) => ({
     role: m.role,
     content: typeof m.content === "string"
@@ -66,6 +69,8 @@ function convertMessages(messages: LLMMessage[]): LLMMessage[] {
           if (part.type === "reasoning") return { type: "reasoning" as const, text: part.text }
           if (part.type === "tool-call") return { type: "tool-call" as const, toolCallId: part.toolCallId, toolName: part.toolName, args: part.args }
           if (part.type === "tool-result") return { type: "tool-result" as const, toolCallId: part.toolCallId, toolName: part.toolName, output: getToolResultOutput(part.output) }
+          // 保留图片 part，交给协议层序列化为 vision 格式
+          if (part.type === "image") return { type: "image" as const, image: part.image, mediaType: part.mediaType }
           return { type: "text" as const, text: "" }
         }),
     tool_call_id: "tool_call_id" in m ? m.tool_call_id as string : undefined,
@@ -141,7 +146,7 @@ export function createLLMClient(config: SDKConfig): LLMClient {
     try {
       // 多模态视觉桥：主模型无 vision 能力且消息含图片时，先由视觉模型描述替换
       let bridgeMessages = request.messages
-      if (config.visionModel && hasImageContent(request.messages) && !modelHasVision(config.provider, config.model)) {
+      if (config.visionModel && hasImageContent(request.messages) && !modelHasVision(config.provider, config.model, config.modelVision)) {
         try {
           bridgeMessages = await multimodalBridge(request.messages, config.visionModel)
         } catch (bridgeErr) {

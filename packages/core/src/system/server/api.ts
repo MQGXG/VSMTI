@@ -232,6 +232,10 @@ export async function handleStartStream(
     mode: config.mode as any,
     toolAllowlist: modeConfig?.toolAllowlist,
     autoAcceptPermissions: config.autoAcceptPermissions as boolean,
+    // 多模态视觉桥：主模型不支持 vision 时，图片交由此视觉模型描述（由前端推导传入）
+    visionModel: config.visionModel as AgentConfig["visionModel"] | undefined,
+    // 主模型是否支持直接识图（由前端按模型类型标记传入）
+    modelVision: config.modelVision as boolean | undefined,
     onPermissionSave: (rules) => {
       for (const rule of rules) {
         saveWorkspacePermission(workspace, rule)
@@ -252,7 +256,8 @@ export async function handleStartStream(
   })
 
   // 在后台运行 Agent 并通过 ctx 推送事件
-  runAgentInBackground(session, sessionId, processed, effectiveConfig, ctx)
+  const images = Array.isArray(config.images) ? (config.images as string[]) : undefined
+  runAgentInBackground(session, sessionId, processed, effectiveConfig, ctx, images)
 }
 
 async function runAgentInBackground(
@@ -261,10 +266,11 @@ async function runAgentInBackground(
   message: string,
   config: AgentConfig,
   ctx: APIContext,
+  images?: string[],
 ): Promise<void> {
   const { agent } = session
   try {
-    for await (const evt of agent.run(message, [], { ...config, sessionID: sessionId })) {
+    for await (const evt of agent.run(message, [], { ...config, sessionID: sessionId }, images)) {
       ctx.writeEvent(evt)
     }
   } catch (e) {

@@ -45,6 +45,8 @@ export interface AgentConfig {
     headers?: Record<string, string>
     options?: Record<string, unknown>
   }
+  /** 主模型是否具备直接识图能力（由前端按模型类型标记，vision/multimodal 为 true） */
+  modelVision?: boolean
   /** 会话记忆提取是否保留推测性事实（inferred）。默认 false（保守） */
   keepInferredMemories?: boolean
 }

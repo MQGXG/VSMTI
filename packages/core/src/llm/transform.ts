@@ -51,10 +51,12 @@ export function hasImageContent(msgs: LLMMessage[]): boolean {
 }
 
 /**
- * 判断 provider/model 是否具备 vision 能力（依据能力标记）。
+ * 判断 provider/model 是否具备 vision 能力。
+ * 优先级：用户声明的 modelVision（自定义模型按类型标记）> capabilities 标记（内置模型）。
  * 未注册能力的模型视为不支持视觉（需要桥）。
  */
-export function modelHasVision(provider: string, modelId: string): boolean {
+export function modelHasVision(provider: string, modelId: string, declaredVision?: boolean): boolean {
+  if (typeof declaredVision === "boolean") return declaredVision
   const prov = ProviderCatalog.getProvider(provider)
   if (!prov) return false
   const model = prov.models.find((m) => m.id === modelId)

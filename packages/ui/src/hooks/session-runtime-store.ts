@@ -12,9 +12,11 @@
 import {
   createMiraMessage,
   type MiraMessage,
+  type MiraPart,
 } from "../chat/mira-runtime"
 import { handleStreamEvent, clearChannelBuffer, type StreamEventContext } from "./stream-events"
 import { getProviderById, loadSettings as getSettings } from "../sidebar/provider-data"
+import { decideVisionPolicy } from "../sidebar/provider-model"
 import type { ModelOption } from "../chat/ModelSelector"
 import type { AgentMode } from "../chat/types"
 import type { AgentEvent, ToolResult } from "../services/agent.service"
@@ -55,6 +57,7 @@ export interface SessionState {
   timingRef: LiveTiming | null;
   loadingTimeout: ReturnType<typeof setTimeout> | null;
   lastSendOpts: SendOptions | null;
+  lastSendImages: string[] | null;
   lastActivity: number;
 }
 
@@ -112,6 +115,7 @@ export function ensureSession(sessionId: string): SessionState {
       timingRef: null,
       loadingTimeout: null,
       lastSendOpts: null,
+      lastSendImages: null,
       lastActivity: Date.now(),
     };
     sessions.set(sessionId, s);
@@ -278,10 +282,30 @@ function parseStoredMessageContent(content: string): MiraMessage["parts"] {
 
 // ── 发送 / 停止 / 释放 ───────────────────────────────
 
+/** 中止发送：以错误消息回显 assistant 消息，复位运行状态（用于图片校验失败 / 识图不可用） */
+function abortSendWithMessage(sessionId: string, assistantId: string, message: string): void {
+  const s = ensureSession(sessionId);
+  setSessionMessages(sessionId, (prev) => {
+    const idx = prev.findIndex((m) => m.id === assistantId);
+    if (idx >= 0) {
+      const next = [...prev];
+      next[idx] = createMiraMessage("assistant", message, assistantId);
+      return next;
+    }
+    return [...prev, createMiraMessage("assistant", message, assistantId)];
+  });
+  if (s.loadingTimeout) { clearTimeout(s.loadingTimeout); s.loadingTimeout = null; }
+  s.isRunning = false;
+  s.lastSendOpts = null;
+  s.lastSendImages = null;
+  emit();
+}
+
 export async function sendMessageToSession(
   initialSessionId: string,
   content: string,
   opts: SendOptions,
+  images?: string[],
 ): Promise<void> {
   if (!content) return;
   const svc = await getAgentService();
@@ -312,6 +336,7 @@ export async function sendMessageToSession(
     if (!s.pendingQueue.includes(content)) {
       s.pendingQueue.push(content);
       s.lastSendOpts = opts;
+      s.lastSendImages = images || null;
       s.lastActivity = Date.now();
       emit();
     }
@@ -322,13 +347,26 @@ export async function sendMessageToSession(
     ? `[Goal: ${opts.goalCondition}]\n\n${content}`
     : content;
 
-  const userMsg = createMiraMessage("user", effectiveContent);
+  const userParts: MiraPart[] = images && images.length > 0
+    ? [
+        { type: "text", text: effectiveContent },
+        ...images.map((img) => ({
+          type: "file" as const,
+          url: img,
+          name: "图片",
+          mime: img.split(";")[0].replace("data:", ""),
+        })),
+      ]
+    : [{ type: "text", text: effectiveContent }];
+
+  const userMsg = createMiraMessage("user", userParts);
   const assistantId = crypto.randomUUID();
   const assistantMsg = createMiraMessage("assistant", [], assistantId);
 
   s.messages = [...s.messages, userMsg, assistantMsg];
   s.isRunning = true;
   s.lastSendOpts = opts;
+  s.lastSendImages = images || null;
   s.lastActivity = Date.now();
   emit();
 
@@ -345,6 +383,33 @@ export async function sendMessageToSession(
     const settings = getSettings();
 
     if (apiKey) {
+      // 识图策略决策（② 层唯一决策入口）：
+      // - vision/multimodal → direct：图片直发主模型
+      // - text/voice/未知 → bridge：自动推导视觉桥模型描述；无可用桥 → blocked
+      const settings2 = getSettings();
+      const policy = await decideVisionPolicy(
+        opts.selectedModel.provider,
+        opts.selectedModel.value,
+        opts.selectedModel.type,
+        settings2.visionModelOverride
+          ? { provider: settings2.visionModelOverride.provider, model: settings2.visionModelOverride.model }
+          : undefined,
+      );
+
+      // 图片安全校验 + 识图能力校验：不满足则中止发送并提示
+      if (images && images.length > 0) {
+        const { validateImages } = await import("../sidebar/provider-model");
+        const validation = validateImages(images);
+        if (!validation.ok) {
+          abortSendWithMessage(sessionId, assistantId, validation.reason || "图片无效");
+          return;
+        }
+        if (policy.strategy === "blocked") {
+          abortSendWithMessage(sessionId, assistantId, policy.reason);
+          return;
+        }
+      }
+
       const config = {
         sessionID: sessionId,
         workspace: opts.workspace || "",
@@ -358,6 +423,12 @@ export async function sendMessageToSession(
         maxModeCandidates: 3,
         autoAcceptPermissions: settings.autoAcceptPermissions || false,
         options: { ...(provider?.options || {}), shell: settings.terminalShell || "default" },
+        // 模型是否支持直接识图（vision/multimodal 直发，其余 false）
+        modelVision: policy.strategy === "direct",
+        // 非视觉模型自动推导的视觉桥模型
+        ...(policy.strategy === "bridge" ? { visionModel: policy.visionModel } : {}),
+        // 用户上传的图片（data URL 数组，随会话传给 core 注入 ImagePart）
+        ...(images && images.length > 0 ? { images } : {}),
       };
 
       const channel = await svc.startStream(sessionId, effectiveContent, config);
@@ -479,9 +550,10 @@ function drainPending(sessionId: string): void {
   if (!s || s.isRunning || s.pendingQueue.length === 0) return;
   const content = s.pendingQueue.shift()!;
   const opts = s.lastSendOpts;
+  const images = s.lastSendImages || undefined;
   s.lastActivity = Date.now();
   emit();
-  if (opts) void sendMessageToSession(sessionId, content, opts);
+  if (opts) void sendMessageToSession(sessionId, content, opts, images);
 }
 
 export function stopSession(sessionId: string): void {

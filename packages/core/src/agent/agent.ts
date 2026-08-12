@@ -622,9 +622,10 @@ export class Agent {
     userMessage: string,
     history: LLMMessage[],
     config: AgentConfig,
+    images?: string[],
   ): AsyncGenerator<AgentEvent> {
     try {
-      yield* this._runCore(userMessage, history, config)
+      yield* this._runCore(userMessage, history, config, images)
     } finally {
       // 无论正常结束、中断、abort 或异常，都确保清理（移除插件监听器，防止累积泄漏）
       this._preLLMOff?.()
@@ -636,6 +637,7 @@ export class Agent {
     userMessage: string,
     history: LLMMessage[],
     config: AgentConfig,
+    images?: string[],
   ): AsyncGenerator<AgentEvent> {
     const { ctx, toolSet, llmConfig, maxSteps } = await this.prepareRun(config)
 
@@ -650,6 +652,28 @@ export class Agent {
     const restoredHistory = await this.restoreSession(history, config)
     const { enrichedUser, memoryPrompt } = await this.contextManager.prepareContext(userMessage, config.sessionID)
     let messages = await this.buildMessages(config, userMessage, enrichedUser, memoryPrompt, restoredHistory)
+
+    // 用户上传的图片：注入首条 user 消息为 ImagePart（含图片时模型才能识图）
+    if (images && images.length > 0) {
+      const lastUserIdx = messages.findLastIndex((m) => m.role === "user")
+      if (lastUserIdx >= 0) {
+        const baseContent = messages[lastUserIdx].content
+        const textContent = typeof baseContent === "string"
+          ? baseContent
+          : baseContent.filter((p) => p.type === "text").map((p) => (p as { text?: string }).text || "").join("\n")
+        messages[lastUserIdx] = {
+          ...messages[lastUserIdx],
+          content: [
+            { type: "text" as const, text: textContent },
+            ...images.map((img) => {
+              // img 为完整 data URL（data:image/png;base64,...），由协议层序列化为 image_url
+              const mime = /^data:(image\/[a-z0-9.+-]+);/.exec(img)?.[1] || "image/png"
+              return { type: "image" as const, image: img, mediaType: mime }
+            }),
+          ],
+        }
+      }
+    }
 
     const inputQueue = new PendingInputQueue()
     inputQueue.push({ message: userMessage, type: "user" })
@@ -722,7 +746,7 @@ export class Agent {
 
         const turnInput: TurnRunnerInput = {
           messages, tools: toolSet, sessionID: config.sessionID, workspace: config.workspace,
-          config: { ...llmConfig, maxContextTokens: config.maxContextTokens, permissions: config.permissions, onPermissionSave: config.onPermissionSave, autoAcceptPermissions: config.autoAcceptPermissions, fallbacks: config.fallbacks, visionModel: config.visionModel },
+          config: { ...llmConfig, maxContextTokens: config.maxContextTokens, permissions: config.permissions, onPermissionSave: config.onPermissionSave, autoAcceptPermissions: config.autoAcceptPermissions, fallbacks: config.fallbacks, visionModel: config.visionModel, modelVision: config.modelVision },
           deps: { registry: this.registry, stateMachine: this.stateMachine, approvalStore: this.approvalStore, orchestrator: this.orchestrator },
           ctx,
           // 最后一步禁用所有工具定义，强制纯文本收尾（参考 OpenCode MAX_STEPS_PROMPT）

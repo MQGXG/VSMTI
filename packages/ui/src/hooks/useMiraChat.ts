@@ -48,7 +48,7 @@ interface UseMiraChatReturn {
     options: string[];
     request_id: string;
   } | null;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, images?: string[]) => Promise<void>;
   retryMessage: (assistantMsgId: string) => Promise<void>;
   stopStream: () => void;
   handlePermission: (approved: boolean | "always") => Promise<void>;
@@ -94,14 +94,14 @@ export function useMiraChat({
   const state = sessionId ? getSessionState(sessionId) : EMPTY_STATE;
 
   const sendMessage = useCallback(
-    (content: string) =>
+    (content: string, images?: string[]) =>
       sendMessageToSession(sessionId, content, {
         selectedModel,
         agentMode,
         goalCondition,
         workspace,
         onSessionChange,
-      }),
+      }, images),
     [sessionId, selectedModel, agentMode, goalCondition, workspace, onSessionChange]
   );
 

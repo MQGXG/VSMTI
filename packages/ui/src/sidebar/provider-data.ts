@@ -55,6 +55,7 @@ function migrateProviders(data: Array<Record<string, unknown>>): Provider[] {
       id: String(m.id || ""),
       name: typeof m.name === "string" ? m.name : "",
       enabled: m.enabled !== false,
+      type: typeof m.type === "string" && m.type.length > 0 ? m.type : undefined,
     })) : [],
   }));
 }
@@ -65,9 +66,9 @@ export const defaultProviders: Provider[] = [
     apiKey: "", baseUrl: "https://api.openai.com/v1", enabled: true,
     website: "https://openai.com", apiFormat: "openai", headers: {}, options: {},
     models: [
-      { id: "gpt-4o", name: "GPT-4o", enabled: true },
-      { id: "gpt-4o-mini", name: "GPT-4o Mini", enabled: true },
-      { id: "gpt-4-turbo", name: "GPT-4 Turbo", enabled: true },
+      { id: "gpt-4o", name: "GPT-4o", enabled: true, type: "vision" },
+      { id: "gpt-4o-mini", name: "GPT-4o Mini", enabled: true, type: "text" },
+      { id: "gpt-4-turbo", name: "GPT-4 Turbo", enabled: true, type: "vision" },
     ],
   },
   {
@@ -75,8 +76,8 @@ export const defaultProviders: Provider[] = [
     apiKey: "", baseUrl: "https://api.anthropic.com", enabled: false,
     website: "https://anthropic.com", apiFormat: "anthropic", headers: {}, options: {},
     models: [
-      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", enabled: true },
-      { id: "claude-haiku-20241022", name: "Claude Haiku", enabled: true },
+      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", enabled: true, type: "vision" },
+      { id: "claude-haiku-20241022", name: "Claude Haiku", enabled: true, type: "vision" },
     ],
   },
   {
@@ -84,8 +85,8 @@ export const defaultProviders: Provider[] = [
     apiKey: "", baseUrl: "https://api.deepseek.com", enabled: false,
     website: "https://deepseek.com", apiFormat: "openai", headers: {}, options: {},
     models: [
-      { id: "deepseek-chat", name: "DeepSeek V3", enabled: true },
-      { id: "deepseek-reasoner", name: "DeepSeek R1", enabled: true },
+      { id: "deepseek-chat", name: "DeepSeek V3", enabled: true, type: "text" },
+      { id: "deepseek-reasoner", name: "DeepSeek R1", enabled: true, type: "text" },
     ],
   },
   {
@@ -93,8 +94,8 @@ export const defaultProviders: Provider[] = [
     apiKey: "", baseUrl: "http://localhost:11434", enabled: false,
     website: "https://ollama.com", apiFormat: "openai", headers: {}, options: {},
     models: [
-      { id: "llama3.1", name: "Llama 3.1", enabled: true },
-      { id: "qwen2.5", name: "Qwen 2.5", enabled: true },
+      { id: "llama3.1", name: "Llama 3.1", enabled: true, type: "text" },
+      { id: "qwen2.5", name: "Qwen 2.5", enabled: true, type: "text" },
     ],
   },
 ];
@@ -202,3 +203,7 @@ export async function getProviderById(providerId: string): Promise<{ apiKey: str
   }
   return null;
 }
+
+// ── 多模态视觉桥模型解析 ────────────────────────────────
+// 识图策略决策已迁移至 provider-model.ts（② 层唯一决策模块），
+// 此处仅保留数据访问职责：loadProviders / getProviderById / saveProviders 等。
