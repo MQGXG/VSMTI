@@ -18,6 +18,11 @@ import { createWebpageTool } from "../tools/core/create-webpage"
 import { createMockupTool } from "../tools/core/create-mockup"
 import { createSvgTool } from "../tools/core/create-svg"
 import { memorySearchTool, memoryRecallTool } from "../tools/knowledge/memory"
+import { memoryActivateTool } from "../tools/knowledge/memory-activate"
+import {
+  memoryGraphAddNodeTool, memoryGraphAddEdgeTool,
+  memoryGraphQueryTool, memoryGraphDecayTool,
+} from "../tools/knowledge/memory-graph"
 import { dataAnalysisTool } from "../tools/knowledge/data-analysis"
 import { webBrowseTool } from "../tools/knowledge/web-browse"
 import { createChartTool } from "../tools/knowledge/create-chart"
@@ -76,6 +81,11 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(searchHistoryTool)
   registry.register(memorySearchTool)
   registry.register(memoryRecallTool)
+  registry.register(memoryActivateTool)
+  registry.register(memoryGraphAddNodeTool)
+  registry.register(memoryGraphAddEdgeTool)
+  registry.register(memoryGraphQueryTool)
+  registry.register(memoryGraphDecayTool)
   registry.register(spawnAgentTool)
   registry.register(waitAgentsTool)
   registry.register(listSubagentsTool)

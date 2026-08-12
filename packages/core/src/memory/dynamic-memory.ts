@@ -56,8 +56,8 @@ export class DynamicMemoryManager {
     return this.loadPromise
   }
 
-  /** 确保已初始化 */
-  private async ensureInit(): Promise<void> {
+  /** 确保已初始化（public：工具/外部调用前保证已从 SQLite 加载图谱） */
+  async ensureInit(): Promise<void> {
     if (!this.initialized) await this.init()
   }
 

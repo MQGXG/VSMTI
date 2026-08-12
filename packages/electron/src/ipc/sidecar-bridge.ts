@@ -7,6 +7,7 @@
 
 import { ServerManager } from "@mira/core"
 import { ipcMain, BrowserWindow, app } from "electron"
+import { join } from "path"
 
 interface SSESession {
   channel: string
@@ -34,7 +35,12 @@ export async function startSidecar(port = 0): Promise<{ port: number; token: str
   const useTsx = process.env.NODE_ENV !== "production" && !app.isPackaged
   const userData = app.getPath("userData")
 
-  serverManager = new ServerManager({ port, useTsx, userData })
+  // 本地模型资源目录：打包后位于 process.resourcesPath/models，开发时位于仓库内 resources/models
+  const modelDir = app.isPackaged
+    ? join(process.resourcesPath, "models")
+    : join(app.getAppPath(), "resources", "models")
+
+  serverManager = new ServerManager({ port, useTsx, userData, modelDir })
   const info = await serverManager.start()
   console.log(`[Sidecar] Core server ready on port ${info.port}`)
 

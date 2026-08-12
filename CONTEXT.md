@@ -55,6 +55,10 @@ packages/
 | goal_status | 显示 Goal 状态 | 任务完成度验证 |
 | context_rebuild | 显示重建通知 | 上下文窗口重建 |
 | retry | 显示重试标记 | LLM 调用失败自动重试 |
+| reasoning_start | 显示推理开始标记 | 推理内容流开始 |
+| reasoning_delta | 追加推理文本 | 推理内容增量（DeepSeek thinking） |
+| reasoning_end | 显示推理结束标记 | 推理内容流结束 |
+| question | 显示提问弹窗 | Agent 向用户提问 |
 | subagent_status | 显示子 Agent 状态 | 子 Agent 生命周期 |
 
 ## Token 统计
@@ -152,7 +156,7 @@ npx playwright install chromium
 1. 会话标题自动生成（已完成，根据首条消息内容生成）
 2. 模型列表自动获取（拉取供应商可用模型）
 3. Exa/Parallel 搜索 API 的配置 UI
-4. `memory.searchByProject` / `memory.getGraphData` 桥接进 preload（当前 GraphPanel 会报 undefined）
+4. `memory.searchByProject` / `memory.getGraphData` 已桥接进 preload（已完成）
 5. 清理 preload 死 API（`python:*`、`agent.chat` / `runAgentStream`）
 6. 清理未接线模块（provider-chain / fork-cache / system-context / tool-scope / run-coordinator）
 7. 悬浮球 `sendMessage` 接入真实 Agent（当前仅回显）

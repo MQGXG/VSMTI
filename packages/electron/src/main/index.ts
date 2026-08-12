@@ -7,6 +7,7 @@ import { initLogger, patchConsole, getLogFilePath } from "../utils/logger";
 import { injectShellEnv } from "../utils/shell-env";
 import { initPlatformPaths } from "@mira/core";
 import { destroyPetWindow } from "../live2d-pet/pet-manager";
+import { join } from "path";
 
 // 强制 GPU 加速 — 虚拟显卡驱动可能阻挡 Intel 核显检测
 app.commandLine.appendSwitch("disable-gpu-sandbox");
@@ -17,9 +18,14 @@ app.commandLine.appendSwitch("use-angle", "d3d11");
 app.commandLine.appendSwitch("disable-direct-composition");
 
 async function initializeApp() {
+  // 本地模型资源目录：打包后位于 process.resourcesPath/models，开发时位于仓库内 resources/models
+  const modelDir = app.isPackaged
+    ? join(process.resourcesPath, "models")
+    : join(app.getAppPath(), "resources", "models");
   initPlatformPaths({
     userData: app.getPath("userData"),
     home: app.getPath("home"),
+    modelDir,
   })
   injectShellEnv();
   initLogger();

@@ -74,6 +74,26 @@ describe('MemoryExtractor', () => {
     expect(written.map((w) => w.content)).toContain('用户每天跑步半小时')
   })
 
+  test('keepInferred option preserves inferred facts', async () => {
+    const { written, store } = makeStore()
+    const extractor = new MemoryExtractor({
+      store,
+      listMessages: () => messages,
+      keepInferred: true,
+      llmCall: () => JSON.stringify({
+        ops: [
+          { action: 'add', kind: 'stated', content: '用户喜欢读书' },
+          { action: 'add', kind: 'inferred', content: '用户可能工作很忙' },
+          { action: 'add', kind: 'inferred', content: '用户可能经常加班' },
+        ],
+      }),
+    })
+    await extractor.run({ sessionID: 's1', messages })
+    expect(written).toHaveLength(3)
+    expect(written.map((w) => w.content)).toContain('用户可能工作很忙')
+    expect(written.map((w) => w.content)).toContain('用户可能经常加班')
+  })
+
   test('never persists sensitive content', async () => {
     const { written, store } = makeStore()
     const extractor = new MemoryExtractor({

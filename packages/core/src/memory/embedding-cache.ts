@@ -5,6 +5,7 @@
 
 import type { MemoryNode, MemoryGraph } from "./memory-node"
 import { getAllEmbeddings, saveEmbedding } from "./dynamic-memory-store"
+import { configureTransformersEnv, EMBEDDING_MODEL, EMBEDDING_DTYPE } from "./transformers-env"
 
 /** 缓存条目 */
 interface CacheEntry {
@@ -283,7 +284,9 @@ export class EmbeddingCache {
   private async getPipeline(): Promise<any> {
     try {
       const mod = await import("@huggingface/transformers")
-      return await mod.pipeline("feature-extraction", "BAAI/bge-small-zh-v1.5")
+      await configureTransformersEnv()
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- 动态导入的类型不完整，集中豁免
+      return await mod.pipeline("feature-extraction", EMBEDDING_MODEL, { dtype: EMBEDDING_DTYPE })
     } catch {
       return null
     }

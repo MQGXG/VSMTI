@@ -23,6 +23,8 @@ export interface ServerManagerOptions {
   useTsx?: boolean
   /** 数据库路径（主进程 userData） */
   userData?: string
+  /** 本地模型资源目录（打包后 resources/models，开发时仓库内 resources/models） */
+  modelDir?: string
 }
 
 const DEFAULT_OPTIONS: Required<Omit<ServerManagerOptions, "serverEntry">> & { serverEntry: string } = {
@@ -32,6 +34,7 @@ const DEFAULT_OPTIONS: Required<Omit<ServerManagerOptions, "serverEntry">> & { s
   timeout: 15000,
   useTsx: false,
   userData: "",
+  modelDir: "",
 }
 
 export class ServerManager {
@@ -83,6 +86,9 @@ export class ServerManager {
     const baseArgs = ["--port", String(this.options.port || 0)]
     if (this.options.userData) {
       baseArgs.push("--userData", this.options.userData)
+    }
+    if (this.options.modelDir) {
+      baseArgs.push("--modelDir", this.options.modelDir)
     }
     const args = [entry, ...baseArgs]
 

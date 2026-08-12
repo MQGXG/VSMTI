@@ -75,6 +75,8 @@ export const memoryGraphAddEdgeTool = make({
     }
 
     try {
+      // 确保图谱已从 SQLite 加载（检查节点存在性前）
+      await mgr.ensureInit()
       // 检查节点是否存在
       const graph = mgr.getGraph()
       if (!graph.nodes.has(input.source)) {
@@ -122,6 +124,8 @@ export const memoryGraphQueryTool = make({
     }
 
     try {
+      // 确保图谱已从 SQLite 加载（避免查询空图）
+      await mgr.ensureInit()
       const graph = mgr.getGraph()
       const queryType = input.type || "node"
 
@@ -226,6 +230,9 @@ export const memoryGraphDecayTool = make({
 
     try {
       const action = input.action || "stats"
+
+      // 确保图谱已从 SQLite 加载
+      await mgr.ensureInit()
 
       switch (action) {
         case "decay": {

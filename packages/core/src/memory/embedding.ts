@@ -8,6 +8,7 @@ import { saveEmbedding, getAllEmbeddings } from "./dynamic-memory-store"
 import { logError } from "../system/logger"
 import { tokenizeChinese, jaccardSimilarity, fuzzySimilarity } from "./chinese-tokenizer"
 import { expandQuery, synonymJaccardSimilarity } from "./chinese-synonyms"
+import { configureTransformersEnv, EMBEDDING_MODEL, EMBEDDING_DTYPE } from "./transformers-env"
 
 type ExtractPipeline = (texts: string | string[], options?: { pooling?: string; normalize?: boolean }) => Promise<{ data: Float32Array }>
 
@@ -20,8 +21,8 @@ class EmbeddingManager {
   private isChinese: boolean
 
   constructor(modelName?: string) {
-    // 优先使用中文模型
-    this.modelName = modelName || "BAAI/bge-small-zh-v1.5"
+    // 优先使用中文模型（transformers.js ONNX 转换仓库，支持本地/在线两种加载）
+    this.modelName = modelName || EMBEDDING_MODEL
     this.isChinese = true
   }
 
@@ -32,7 +33,9 @@ class EmbeddingManager {
     this.modelLoading = true
     try {
       const mod = await import("@huggingface/transformers")
-      this.extract = await mod.pipeline("feature-extraction", this.modelName) as ExtractPipeline
+      await configureTransformersEnv()
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- 动态导入的类型不完整，集中豁免
+      this.extract = await mod.pipeline("feature-extraction", this.modelName, { dtype: EMBEDDING_DTYPE }) as ExtractPipeline
       this.modelReady = true
       console.log(`[DynamicMemory] Embedding model '${this.modelName}' loaded`)
     } catch (err) {
@@ -40,7 +43,9 @@ class EmbeddingManager {
       console.warn(`[DynamicMemory] Model '${this.modelName}' not available, trying fallback...`)
       try {
         const mod = await import("@huggingface/transformers")
-        this.extract = await mod.pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2") as ExtractPipeline
+        await configureTransformersEnv()
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- 动态导入的类型不完整，集中豁免
+        this.extract = await mod.pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", { dtype: EMBEDDING_DTYPE }) as ExtractPipeline
         this.modelReady = true
         this.isChinese = false
         console.log(`[DynamicMemory] Fallback model 'Xenova/all-MiniLM-L6-v2' loaded`)

@@ -29,12 +29,12 @@ mira/
 ├── packages/
 │   ├── core/                        # @mira/core — Agent Core 核心逻辑
 │   │   └── src/
-│   │       ├── index.ts             # 统一导出（249 行公共 API 面）
-│   │       ├── types.ts             # AgentEvent 类型（11 种事件变体）
+│   │       ├── index.ts             # 统一导出（~240 行公共 API 面）
+│   │       ├── types.ts             # AgentEvent 类型（15 种事件变体）
 │   │       ├── compose-mode.ts      # 组合模式（phase 驱动的软件开发工作流）
 │   │       ├── agent/               # Agent 核心子模块
 │   │       │   ├── index.ts
-│   │       │   ├── agent.ts         #   Agent 核心循环（~610行，5 阶段 run）
+│   │       │   ├── agent.ts         #   Agent 核心循环（~675行，双层 ReAct 循环 + 5 阶段 run）
 │   │       │   ├── constants.ts     #   AgentConfig + DEFAULT_SYSTEM
 │   │       │   ├── context.ts       #   系统提示构建 + SourceManager（7 种 Source）
 │   │       │   ├── state-machine.ts #   生命周期状态机（显式 TRANSITIONS 表）
@@ -61,6 +61,7 @@ mira/
 │   │       │   ├── provider-policy.ts#  Provider 策略引擎（allow/deny 规则）
 │   │       │   ├── provider-chain.ts#   Provider 链（优先级排序，未用于 Agent 循环）
 │   │       │   ├── tool-runtime.ts  #   工具运行时（ToolDef → LLM schema）
+│   │       │   ├── transform.ts     #   消息转换（多模态/推理内容适配）
 │   │       │   ├── schema/          #   消息/事件/错误类型
 │   │       │   │   ├── index.ts
 │   │       │   │   ├── messages.ts  #     LLMMessage 类型（含 reasoning_content）
@@ -95,7 +96,7 @@ mira/
 │   │       │   ├── tool-materializer.ts# 物化 + JSON Schema 转换 + 模型过滤
 │   │       │   ├── tool-scope.ts    #   作用域工具注册表（application/session/mode 等）
 │   │       │   ├── mcp-plugin-registry.ts# MCP/Plugin 生命周期管理
-│   │       │   ├── registry-init.ts #   注册表初始化（45 个默认工具）
+│   │       │   ├── registry-init.ts #   注册表初始化（48 个默认工具）
 │   │       │   ├── server-manager.ts#   服务器管理器（子进程 HTTP + SSE 桥接）
 │   │       │   ├── permission/      #   权限子模块
 │   │       │   │   ├── index.ts     #     PermissionSet（通配符匹配 + 硬拒绝列表）
@@ -138,7 +139,9 @@ mira/
 │   │       │   ├── embedding-cache.ts     #   嵌入缓存
 │   │       │   ├── chinese-tokenizer.ts   #   中文分词
 │   │       │   ├── chinese-synonyms.ts    #   中文同义词
-│   │       │   └── synonym-discovery.ts   #   同义词自动发现
+│   │       │   ├── synonym-discovery.ts   #   同义词自动发现
+│   │       │   ├── memory-extractor.ts    #   记忆提取引擎
+│   │       │   └── recall-budget.ts       #   召回预算控制
 │   │       ├── shared/              # 共享工具模块
 │   │       │   ├── tool.ts          #   工具定义工厂（make/settle）
 │   │       │   ├── tool-executor.ts #   工具执行器（批量并发执行）
@@ -187,17 +190,18 @@ mira/
 │   │       ├── background/          # 后台任务
 │   │       │   ├── index.ts         #   后台任务队列（isSlowOperation 检测）
 │   │       │   ├── cron.ts          #   定时调度（零依赖 cron 解析器）
+│   │       │   ├── notifier.ts      #   后台任务完成通知
 │   │       │   ├── recovery.ts      #   错误恢复（分类 + 退避策略）
 │   │       │   └── worktree.ts      #   Git Worktree 管理
 │   │       ├── skill/               # Skill 系统
 │   │       │   ├── skill-loader.ts  #   动态加载（frontmatter 解析）
 │   │       │   ├── skill-commands.ts#   Slash 命令匹配
 │   │       │   └── skill-tools.ts   #   Skill 工具（skills_list / skill_view）
-│   │       ├── tools/               # 工具层（45 个默认注册工具）
+│   │       ├── tools/               # 工具层（48 个默认注册工具）
 │   │       │   ├── index.ts         #   导出所有工具
-│   │       │   ├── core/            #   文件/代码工具（read/write/edit/grep/glob/git/apply_patch/docx/xlsx/pptx/svg/webpage/mockup）
+│   │       │   ├── core/            #   文件/代码工具（read/write/edit/grep/glob/git/apply_patch/docx/xlsx/pptx/svg/webpage/mockup/todo/change-directory/get-current-time/session-cwd/search-history）
 │   │       │   ├── execution/       #   执行工具（bash/run_code/image_generate）
-│   │       │   ├── knowledge/       #   知识工具（web_search/web_browse/web_fetch/data_analysis/memory/memory-graph/chart）
+│   │       │   ├── knowledge/       #   知识工具（web_search/web_browse/web_fetch/data_analysis/memory/memory-graph/chart + content-filter/ssrf-util）
 │   │       │   ├── orchestrate/     #   编排工具（agent-tools/delegate-task/team-tool/task-tool/cron-tool/worktree-tool/workflow-tool）
 │   │       │   ├── infra/           #   基础设施（lsp-tool）
 │   │       │   ├── interaction/     #   交互工具（question）
@@ -217,19 +221,10 @@ mira/
 │   │       │   ├── types.ts         #   VAD/STT/TTS 类型
 │   │       │   ├── vad.ts           #   语音活动检测（能量分析）
 │   │       │   ├── interruption.ts  #   语音打断管理
+│   │       │   ├── announcement-window.ts # 语音打断公告窗口
 │   │       │   └── voice-session.ts #   语音会话管理
 │   │       ├── types/ambient.d.ts   # 全局类型声明
-│   │       └── __tests__/           # 测试（Vitest，26 个文件 ~290 用例）
-│   │           ├── setup.ts
-│   │           ├── agent.test.ts / benchmark.test.ts / compaction.test.ts
-│   │           ├── context-epoch.test.ts / context-source.test.ts / cost.test.ts
-│   │           ├── create-chart.test.ts / create-doc.test.ts / create-visual.test.ts
-│   │           ├── dynamic-memory.test.ts / failover.test.ts / file-state-cache.test.ts
-│   │           ├── graph.test.ts / llm-sdk.test.ts / memory-manager.test.ts
-│   │           ├── message-utils.test.ts / permission-loop.test.ts / plugin-hooks.test.ts
-│   │           ├── provider-catalog.test.ts / reasoning-content.test.ts
-│   │           ├── session-improvement.test.ts / session-snapshot.test.ts
-│   │           ├── smoke.test.ts / state-machine.test.ts / tool.test.ts / tools-core.test.ts
+│   │       └── __tests__/           # 测试（Vitest，41 个文件 414 用例，core 内）
 │   │
 │   ├── electron/                    # @mira/electron — Electron 主进程
 │   │   └── src/
@@ -349,12 +344,14 @@ mira/
 │           │   └── types.ts
 │           ├── layout/TitleBar.tsx  # 自定义标题栏（未在 App.tsx 中使用）
 │           ├── hooks/               # React Hooks
+│           │   ├── session-runtime-store.ts # 多会话并发全局 Store（useSyncExternalStore）
 │           │   ├── stream-events.ts #   流事件处理器
 │           │   ├── useAgent.ts
 │           │   ├── useMiraChat.ts   #   核心聊天状态机
 │           │   ├── useProjects.ts
 │           │   └── useSessions.ts
 │           ├── contexts/ThemeContext.tsx # React Contexts
+│           ├── theme/data-colors.ts #   项目颜色管理
 │           ├── lib/                 # 工具函数
 │           │   ├── attachment-adapter.ts
 │           │   └── utils.ts
@@ -365,6 +362,7 @@ mira/
 │           │   └── voice/           #   语音服务
 │           │       ├── audio-utils.ts / realtime-voice.ts / stt.ts / tts.ts
 │           │       ├── transformers-loader.ts / types.ts / vad.ts
+│           │       └── lip-sync.ts / motion-manager.ts / motion-plugins.ts
 │           └── types/               # 类型声明
 │               ├── ambient.d.ts / electron.d.ts
 │
@@ -372,6 +370,7 @@ mira/
 │   └── desktop/                     # @mira/desktop — Electron 应用壳
 │       ├── src/
 │       │   ├── App.tsx              # 应用根组件（顶栏 + Sidebar + ChatWindow + 弹窗）
+│       │   ├── components/StartupOverlay.tsx # 启动加载遮罩（数据就绪后淡出）
 │       │   ├── main.tsx             # React 入口
 │       │   ├── pet-main.tsx         # Live2D 桌宠 React 入口
 │       │   ├── pet/                 # 桌宠组件
@@ -446,7 +445,7 @@ mira/
 
 支持通过 `~/.config/mira/agents/` 和 `{project}/.mira/agents/` 目录加载自定义 Agent JSON 配置（`AgentProfileRegistry`，优先级：内置默认 < 全局 < 项目）。
 
-## 工具清单（45 个默认注册）
+## 工具清单（48 个默认注册）
 
 | 分类 | 工具 | 说明 |
 |------|------|------|
@@ -461,6 +460,8 @@ mira/
 | | git_status / git_diff / git_log / git_commit | Git 状态/差异/历史/提交 |
 | | todo_write | Todo 任务管理（创建/更新/列表/完成/删除） |
 | | search_history | 跨会话历史记录搜索 |
+| | get_current_time / change_directory | 获取当前时间 / 会话级目录切换 |
+| | invalid | 非法工具兜底（工具不存在时返回友好错误） |
 | **document** | create_docx | Word .docx 文档生成 |
 | | create_xlsx | Excel .xlsx 多工作表生成 |
 | | create_pptx | PowerPoint .pptx 生成 |
@@ -668,7 +669,7 @@ LLM 生成的 HTML 代码块在沙箱 iframe（`sandbox="allow-scripts"`）中�
 | `openFile` / `openDirectory` / `saveFile` | 文件/目录选择对话框 |
 | `minimizeWindow` / `maximizeWindow` / `closeWindow` | 窗口控制 |
 
-> **注意**：`preload` 中仍暴露 `getPythonStatus` / `getPythonLogs` / `restartPython`（Python 遗留）和 `agent.chat` / `agent.runAgentStream`，但**均无对应 ipcMain handler**（死 API）。真实的流式执行走 `agent.startStream` → `sidecar-bridge` → Core HTTP SSE。`memory.searchByProject` / `memory.getGraphData` 在 `memory-ipc.ts` 已注册但**未桥接进 preload**。
+> **注意**：`preload` 中仍暴露 `getPythonStatus` / `getPythonLogs` / `clearPythonLogs` / `restartPython`（Python 遗留）和 `agent.chat` / `agent.runAgentStream`，但**均无对应 ipcMain handler**（死 API）。真实的流式执行走 `agent.startStream` → `sidecar-bridge` → Core HTTP SSE。`memory.searchByProject` / `memory.getGraphData` 已桥接进 `preload`（经 `memory-ipc.ts` 代理到 sidecar HTTP）。
 
 ## 数据库
 
@@ -718,7 +719,7 @@ pnpm package:mac    # macOS
 pnpm package:linux  # Linux
 
 # 测试
-pnpm test           # Vitest（packages/core/src/__tests__，~290 用例）
+pnpm test           # Vitest（49 个文件，471 用例）
 
 # 类型检查
 pnpm typecheck

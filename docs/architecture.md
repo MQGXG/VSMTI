@@ -27,7 +27,7 @@
 │  │    protocols/     OpenAI/Anthropic/Gemini 等 5 种协议    │  │
 │  │    builtin-providers.ts  12 个 Provider 数据定义          │  │
 │  │    route/         路由客户端                             │  │
-│  │  tools/           45 个工具（默认注册）                   │  │
+│  │  tools/           48 个工具（默认注册）                   │  │
 │  │  memory/          记忆系统（FTS5 + 动态记忆图谱 + 向量）   │  │
 │  │  system/          数据库/权限/注册表/日志/服务            │  │
 │  │    permission/    声明式权限系统（gate/store/approval）   │  │
@@ -211,11 +211,11 @@ export const myTool = make({
 })
 ```
 
-45 个工具通过 `system/registry.ts` + `system/registry-init.ts` 注册（`createDefaultRegistry`），分为 8 类：
+48 个工具通过 `system/registry.ts` + `system/registry-init.ts` 注册（`createDefaultRegistry`），分为 8 类：
 
 | 分类 | 工具 | 说明 |
 |------|------|------|
-| **core** | read_file/write_file/edit_file/list_files/grep/glob/code_search/git_status/git_diff/git_log/git_commit/todo_write/apply_patch/search_history | 文件、搜索、Git、批量编辑 |
+| **core** | read_file/write_file/edit_file/list_files/grep/glob/code_search/git_status/git_diff/git_log/git_commit/todo_write/apply_patch/search_history/get_current_time/change_directory/invalid | 文件、搜索、Git、批量编辑、目录/时间、兜底 |
 | **document** | create_docx/create_xlsx/create_pptx/create_webpage/create_mockup/create_svg | Word/Excel/PPT/HTML/SVG 生成 |
 | **knowledge** | web_search/web_browse/web_fetch/data_analysis/create_chart/memory_search/memory_recall | 网络、数据、记忆 |
 | **execution** | bash/run_code/image_generate | Shell、代码、图片 |
@@ -396,17 +396,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
   config: { get, save, getProviderCatalog, ... },
   graph: { runCodingTask, getStatus, listRuns, stop },
   encryptApiKey / decryptApiKey / isEncryptionAvailable,
-  memory: { search, status },
+  memory: { search, searchByProject, getGraphData, status },
   live2d: { toggle },
   floatingBall: { toggle, wake, hide, updateConfig, onStateChange, ... },
   platform, notify,
   openFile / openDirectory / saveFile,
   minimizeWindow / maximizeWindow / closeWindow,
-  // 死 API（无 ipcMain handler）：getPythonStatus / getPythonLogs / restartPython / agent.chat / runAgentStream
+  // 死 API（无 ipcMain handler）：getPythonStatus / getPythonLogs / clearPythonLogs / restartPython / agent.chat / runAgentStream
 })
 ```
 
-> **注意**：`memory.searchByProject` / `memory.getGraphData` 已在 memory-ipc 注册但**未桥接进 preload**；`python:*`、`agent.chat` / `runAgentStream` 为死 API。
+> `memory.searchByProject` / `memory.getGraphData` 已桥接进 preload（经 `memory-ipc.ts` 代理到 sidecar HTTP）；`python:*`、`agent.chat` / `runAgentStream` 为死 API。
 
 ## 七、数据库
 

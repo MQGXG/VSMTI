@@ -65,6 +65,8 @@ export interface MemoryExtractorOptions {
   debounceMs?: number
   minUserMessages?: number
   maxTranscriptChars?: number
+  /** 是否保留推测性事实（kind: inferred）。默认 false（保守，只保留明确陈述） */
+  keepInferred?: boolean
 }
 
 export function containsSensitiveContent(value: string): boolean {
@@ -187,6 +189,7 @@ export class MemoryExtractor {
   private debounceMs: number
   private minUserMessages: number
   private maxTranscriptChars: number
+  private keepInferred: boolean
   private lastRunAt = new Map<string, number>()
 
   constructor(options: MemoryExtractorOptions) {
@@ -199,6 +202,7 @@ export class MemoryExtractor {
     this.debounceMs = options.debounceMs ?? 30 * 60_000
     this.minUserMessages = options.minUserMessages ?? 4
     this.maxTranscriptChars = options.maxTranscriptChars ?? 6000
+    this.keepInferred = options.keepInferred ?? false
   }
 
   enabled(): boolean {
@@ -256,8 +260,9 @@ export class MemoryExtractor {
     for (const op of ops.slice(0, MAX_OPS_PER_RUN)) {
       const content = cleanFact(op?.content || "")
       if (!content) continue
-      // 默认只保留明确陈述（stated）；推测性事实（inferred）等待未来佐证机制。
-      if (op?.action !== "add" || op?.kind !== "stated") {
+      // 默认只保留明确陈述（stated）；推测性事实（inferred）默认丢弃，
+      // 可通过 keepInferred 开关保留（写入时降低 priority 以区分可信度）。
+      if (op?.action !== "add" || (op.kind !== "stated" && !(this.keepInferred && op.kind === "inferred"))) {
         this.audit?.record({ op: "skip", sessionID, reason: "not_stated" })
         continue
       }

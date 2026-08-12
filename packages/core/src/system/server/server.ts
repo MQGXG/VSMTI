@@ -337,7 +337,7 @@ async function routeRequest(
     // ── Graph data from Dream ──
     case "/api/memory/graph": {
       if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
-      const result = handleGetGraphData()
+      const result = await handleGetGraphData()
       jsonResponse(res, 200, result)
       return
     }

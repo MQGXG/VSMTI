@@ -1,6 +1,7 @@
 import type { ToolRegistry } from "../system/registry"
 import type { AgentEvent } from "../types"
 import { join } from "path"
+import { createHash } from "crypto"
 import type { LLMMessage } from "../llm/client"
 import { estimateTokens, repairMessageSequence } from "../shared/message-utils"
 import { calculateCost, getModelPricing } from "../shared/cost"
@@ -17,6 +18,8 @@ import { FTSMemoryProvider } from "../memory/fts-memory-provider"
 import { CheckpointProvider } from "../memory/checkpoint-provider"
 import { setFTSProvider } from "../tools/knowledge/memory"
 import { MemoryExtractor, createExtractorLlmCall } from "../memory/memory-extractor"
+import { applyRecallBudget } from "../memory/recall-budget"
+import { calculateStrength } from "../memory/memory-strength"
 import { getSessionMessages } from "../session/manager"
 import { ToolOrchestrator } from "../orchestrate/execution"
 import { AgentStateMachine } from "./state-machine"
@@ -80,6 +83,12 @@ export class Agent {
   /** pre_llm 插件钩子取消函数 — run 结束时移除，防内存泄漏 */
   private _preLLMOff: (() => void) | null = null
 
+  /** 同批次提取的记忆节点 id — 用于会话收尾时自动建边（co_occurred 共现） */
+  private graphBatchIds: string[] = []
+
+  /** 上次自动图谱维护时间戳 — 用于低频衰减/固化调度 */
+  private lastGraphMaintenanceAt = 0
+
   get aborted(): boolean { return this.stateMachine.aborted }
   abort(): void { this.stateMachine.stop() }
 
@@ -131,7 +140,11 @@ export class Agent {
     // 保存 pre_llm 监听器取消函数，run 结束时移除，避免插件钩子累积导致内存泄漏
     this._preLLMOff = pluginHooks.on("pre_llm", async (messages: LLMMessage[], config: AgentConfig) => {
       if (!config.sessionID || !config.workspace) return messages
-      return this.contextManager.injectMemories(messages, config.sessionID)
+      // 静态记忆注入（原有链路）
+      let result = await this.contextManager.injectMemories(messages, config.sessionID)
+      // 动态记忆图谱激活召回（图谱沉淀的记忆主动参与本轮推理）
+      result = await this.injectGraphMemory(result)
+      return result
     })
 
     // 注册默认 stop hooks
@@ -160,6 +173,9 @@ export class Agent {
   /** 阶段 1: 初始化所有管理器 + 工具集 */
   private async prepareRun(config: AgentConfig): Promise<{ ctx: ReturnType<typeof buildToolContext>; toolSet: Record<string, any>; llmConfig: LLMTurnConfig; maxSteps: number }> {
     if (!ProviderCatalog.isInitialized()) ProviderCatalog.registerBuiltins()
+
+    // 每次 run 重置图谱共现批次（会话收尾提取的记忆仅与本会话批次互连）
+    this.graphBatchIds = []
 
     const ctx = buildToolContext(config)
     if (config.permissions) this.approvalStore.setPermissions(config.permissions)
@@ -465,8 +481,30 @@ export class Agent {
     // pre_llm 监听器由 run() 的 finally 统一移除（防泄漏），这里只做资源关闭
     // 会话结束自动记忆提取（fire-and-forget，永不阻塞/阻断会话收尾）
     await this.maybeExtractSessionMemory(config)
+    // 自动图谱维护：低频衰减弱记忆 + 固化高频记忆，防止图谱无限膨胀
+    await this.maybeMaintainGraph()
     await this.contextManager.shutdown()
     this.memoryManager.shutdown().catch(() => {})
+  }
+
+  /**
+   * 低频自动图谱维护（D 优化）：距上次维护超过阈值才执行衰减/固化。
+   * 失败静默，绝不阻断会话收尾。
+   */
+  private async maybeMaintainGraph(): Promise<void> {
+    const now = Date.now()
+    const THRESHOLD_MS = 60 * 60 * 1000 // 1 小时
+    if (now - this.lastGraphMaintenanceAt < THRESHOLD_MS) return
+    this.lastGraphMaintenanceAt = now
+    try {
+      const forgotten = await this.dynamicMemory.performDecay()
+      const consolidated = await this.dynamicMemory.performConsolidation()
+      if (forgotten > 0 || consolidated > 0) {
+        pluginHooks.emit("graph_maintenance", { forgotten, consolidated })
+      }
+    } catch {
+      // 维护失败静默，不影响会话收尾
+    }
   }
 
   /**
@@ -490,15 +528,93 @@ export class Agent {
       const extractor = new MemoryExtractor({
         store: {
           list: (sessionID, limit) => fts.listMemories(sessionID, limit),
-          remember: (content, sessionID) => fts.remember(content, sessionID),
+          remember: (content, sessionID) => {
+            // 写入全文搜索记忆（原有链路）
+            fts.remember(content, sessionID)
+            // 同步沉淀进动态记忆图谱（失败静默，不阻断会话收尾）
+            this.rememberExtractedToGraph(content).catch(() => {})
+          },
         },
         listMessages: (sessionID) => getSessionMessages(sessionID),
         llmCall,
         minUserMessages: 4,
+        keepInferred: config.keepInferredMemories,
       })
       await extractor.maybeRun(config.sessionID)
     } catch {
       // 提取失败绝不阻断会话收尾
+    }
+  }
+
+  /**
+   * 将提取的记忆沉淀进动态记忆图谱（M9 扩展）。
+   * 提取器 store.remember 拿到的内容形如 "[persona] 用户……"，
+   * 解析类型前缀后写入图谱节点；id 用内容哈希保证稳定去重。
+   * 失败静默 —— 图谱写入失败不影响会话收尾。
+   */
+  private async rememberExtractedToGraph(content: string): Promise<void> {
+    const raw = String(content || "").trim()
+    if (!raw) return
+    // 解析提取器类型前缀：persona/episodic/instruction（对齐 memory-extractor.ts）
+    const match = /^\[(persona|episodic|instruction)\]\s*(.*)$/.exec(raw)
+    const prefix = match?.[1]
+    const clean = (match?.[2] || raw).trim()
+    if (!clean) return
+    // 映射到图谱 MemoryType：persona→declarative（稳定属性）、instruction→procedural（行为规则）、episodic→episodic（事件）
+    const graphType = prefix === "persona" ? "declarative"
+      : prefix === "instruction" ? "procedural"
+      : "episodic"
+    // 稳定 id：内容哈希（相同内容自然去重，addNode 为覆盖写入）
+    const id = `mem-${createHash("sha256").update(clean).digest("hex").slice(0, 16)}`
+    await this.dynamicMemory.addNode(id, clean, graphType)
+    // 自动建边：与同批次（同一次会话收尾）提取的其它记忆建立共现关系，
+    // 让激活传播沿边扩散，避免图谱全是孤立节点
+    for (const prevId of this.graphBatchIds) {
+      if (prevId !== id) {
+        try {
+          await this.dynamicMemory.addEdge(prevId, id, "co_occurred", 0.5)
+        } catch { /* 建边失败静默，不阻断提取 */ }
+      }
+    }
+    this.graphBatchIds.push(id)
+    // 批次上限保护（防单次提取 5 条全两两互连时 O(n²) 过大）
+    if (this.graphBatchIds.length > 32) this.graphBatchIds.shift()
+  }
+
+  /**
+   * 动态记忆图谱激活召回：在每次 LLM 调用前，用最后一条用户消息激活图谱，
+   * 将高相关记忆以独立 system 消息注入，让长期沉淀的记忆参与本轮推理。
+   * 召回预算受限（单条 300 字符 / 总 3000 字符），失败静默降级为原消息。
+   */
+  private async injectGraphMemory(messages: LLMMessage[]): Promise<LLMMessage[]> {
+    // 取最后一条用户消息作为激活查询
+    let query = ""
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i]
+      if (msg.role === "user" && typeof msg.content === "string") {
+        query = msg.content.slice(0, 200)
+        break
+      }
+    }
+    if (!query) return messages
+
+    try {
+      const result = await this.dynamicMemory.activate(query)
+      if (result.nodes.length === 0) return messages
+
+      const lines = result.nodes.slice(0, 15).map((node) => {
+        const strength = calculateStrength(node).toFixed(2)
+        return `- [${node.type}] ${node.content} (强度 ${strength})`
+      })
+      // 预算保护：截断/丢弃超限内容（对齐 Tencent applyRecallBudget）
+      const budgeted = applyRecallBudget(lines, { maxCharsPerMemory: 300, maxTotalRecallChars: 3000 })
+      if (budgeted.length === 0) return messages
+
+      const memoryPrompt = `## 动态记忆图谱相关记忆\n${budgeted.join("\n")}\n\n（以上为与当前问题相关的长期记忆，可参考其中稳定的用户偏好/决策/规则）`
+      return [{ role: "system", content: memoryPrompt }, ...messages]
+    } catch {
+      // 召回失败静默降级，绝不阻断推理
+      return messages
     }
   }
 

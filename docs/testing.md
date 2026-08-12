@@ -21,7 +21,7 @@ pnpm typecheck
 
 ```
 packages/
-├── core/src/__tests__/           # 核心逻辑测试（26 个文件，~290 用例）
+├── core/src/__tests__/           # 核心逻辑测试（41 个文件，414 用例）
 │   ├── setup.ts                  # 初始化平台路径 + 内存 SQLite
 │   ├── agent.test.ts             # Agent 端到端运行（工具使用、流式）
 │   ├── benchmark.test.ts         # Agent 性能/迭代基准

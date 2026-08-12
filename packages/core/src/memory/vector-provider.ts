@@ -8,6 +8,7 @@ import fs from "fs"
 import type { MemoryProvider } from "./types"
 import { getPlatformPaths } from "../config/paths"
 import { createHash } from "crypto"
+import { configureTransformersEnv, EMBEDDING_MODEL, EMBEDDING_DTYPE } from "./transformers-env"
 
 interface MemoryDocument {
   id: string
@@ -60,7 +61,8 @@ export class VectorMemoryProvider implements MemoryProvider {
   private modelName: string
 
   constructor(config?: { modelName?: string }) {
-    this.modelName = config?.modelName || "Xenova/all-MiniLM-L6-v2"
+    // 统一使用中文嵌入模型（transformers.js ONNX 仓库，支持本地/在线加载）
+    this.modelName = config?.modelName || EMBEDDING_MODEL
   }
 
   async initialize(sessionID: string, _workspace: string): Promise<void> {
@@ -86,7 +88,9 @@ export class VectorMemoryProvider implements MemoryProvider {
     this.modelLoading = true
     try {
       const mod = await import("@huggingface/transformers")
-      this.extract = await mod.pipeline("feature-extraction", this.modelName) as ExtractPipeline
+      await configureTransformersEnv()
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- 动态导入的类型不完整，集中豁免
+      this.extract = await mod.pipeline("feature-extraction", this.modelName, { dtype: EMBEDDING_DTYPE }) as ExtractPipeline
       this.modelReady = true
       console.log(`[VectorMemory] Model '${this.modelName}' loaded`)
     } catch (err) {

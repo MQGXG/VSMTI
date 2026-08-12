@@ -45,6 +45,8 @@ export interface AgentConfig {
     headers?: Record<string, string>
     options?: Record<string, unknown>
   }
+  /** 会话记忆提取是否保留推测性事实（inferred）。默认 false（保守） */
+  keepInferredMemories?: boolean
 }
 
 export const DEFAULT_SYSTEM = `You are Mira, an AI assistant integrated into a desktop application. You help users with questions, tasks, coding, research, and document generation.

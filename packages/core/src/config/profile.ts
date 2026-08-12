@@ -113,6 +113,7 @@ export function createDefaultRegistry(): AgentProfileRegistry {
       "web_search", "web_fetch", "web_browse", "data_analysis", "create_chart",
       "bash", "run_code", "git_status", "git_diff", "git_log", "git_commit",
       "create_docx", "create_xlsx", "create_pptx", "create_webpage", "create_mockup", "create_svg", "memory_search", "memory_recall",
+      "memory_activate", "memory_graph_query", "memory_graph_add_node", "memory_graph_add_edge", "memory_graph_decay",
       "question", "todo_write", "search_history", "skills_list", "skill_view", "get_current_time", "change_directory",
     ],
   })
@@ -149,7 +150,7 @@ export function createDefaultRegistry(): AgentProfileRegistry {
       { action: "bash", resource: "*", effect: "deny" },
       { action: "code_exec", resource: "*", effect: "deny" },
     ],
-    toolAllowlist: ["read_file", "list_files", "grep", "glob", "web_search", "web_browse", "data_analysis", "get_current_time"],
+    toolAllowlist: ["read_file", "list_files", "grep", "glob", "web_search", "web_browse", "data_analysis", "get_current_time", "memory_activate", "memory_graph_query"],
   })
 
   registry.registerBuiltin({
@@ -167,7 +168,7 @@ export function createDefaultRegistry(): AgentProfileRegistry {
       { action: "worktree_tool", resource: "*", effect: "deny" },
       { action: "image_gen", resource: "*", effect: "deny" },
     ],
-    toolAllowlist: ["read_file", "list_files", "grep", "glob", "web_search", "web_browse", "data_analysis", "lsp_definition", "lsp_references", "lsp_hover", "get_current_time"],
+    toolAllowlist: ["read_file", "list_files", "grep", "glob", "web_search", "web_browse", "data_analysis", "lsp_definition", "lsp_references", "lsp_hover", "get_current_time", "memory_activate", "memory_graph_query"],
   })
 
   return registry

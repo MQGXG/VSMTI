@@ -91,9 +91,11 @@ Mira 采用 Electron IPC 通信（**不使用 HTTP API**）。所有通信通过
 | 方法 | 说明 |
 |------|------|
 | `search(query, type?, limit?)` | 记忆全文搜索 |
+| `searchByProject(query, projectId, limit?)` | 按项目记忆搜索（经 sidecar HTTP 代理） |
+| `getGraphData()` | 获取 Dream 记忆图谱实体/关系 |
 | `status()` | 记忆状态 |
 
-> **注意**：`memory:searchByProject` / `memory:getGraphData` 已在 `memory-ipc.ts` 注册，但**未桥接进 preload**，前端调用会 undefined。
+> `memory.*` 全部经 `memory-ipc.ts` 代理到 sidecar HTTP，均已桥接进 preload。
 
 ## `live2d.*`
 
@@ -111,3 +113,5 @@ Mira 采用 Electron IPC 通信（**不使用 HTTP API**）。所有通信通过
 |-----|------|
 | `getPythonStatus` / `getPythonLogs` / `clearPythonLogs` / `restartPython` | Python 遗留（项目零 Python 依赖） |
 | `agent.chat` / `agent.runAgentStream` | 旧执行入口，真实流式走 `agent.startStream` |
+
+> 流式事件监听统一使用 `agent.onEvent(channel, cb)`（preload 内封装，非独立 API）。

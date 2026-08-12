@@ -10,13 +10,15 @@ const args = process.argv.slice(2)
 const portIdx = args.indexOf("--port")
 const tokenIdx = args.indexOf("--token")
 const userDataIdx = args.indexOf("--userData")
+const modelDirIdx = args.indexOf("--modelDir")
 
 const port = portIdx >= 0 ? parseInt(args[portIdx + 1], 10) : 3456
 const authToken = tokenIdx >= 0 ? args[tokenIdx + 1] : undefined
 const userData = userDataIdx >= 0 ? args[userDataIdx + 1] : process.env.MIRA_USER_DATA || ""
+const modelDir = modelDirIdx >= 0 ? args[modelDirIdx + 1] : process.env.MIRA_MODEL_DIR || ""
 
-if (userData) {
-  initPlatformPaths({ userData, home: process.env.HOME || process.env.USERPROFILE || "/tmp" })
+if (userData || modelDir) {
+  initPlatformPaths({ userData, home: process.env.HOME || process.env.USERPROFILE || "/tmp", modelDir })
 }
 
 console.log(`[Sidecar] Starting @mira/core server on port ${port}...`)

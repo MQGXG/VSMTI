@@ -36,6 +36,7 @@ import { loadSession } from "../../session/store"
 import type { LLMMessage } from "../../llm/client"
 import { generateFollowUpSuggestions } from "../../llm/follow-up"
 import { FTSMemoryProvider } from "../../memory/fts-memory-provider"
+import { loadGraph } from "../../memory/dynamic-memory-store"
 import { SubagentManager, type SubagentStatus } from "../../orchestrate/subagent"
 import { setSubagentManager } from "../../tools/orchestrate/agent-tools"
 import { GoalJudge } from "../../orchestrate/goal-judge"
@@ -405,10 +406,26 @@ export async function handleMemorySearchByProject(
   }
 }
 
-export function handleGetGraphData(): { entities: Array<{ id: string; name: string; type: string; description?: string }>; relationships: Array<{ source: string; target: string; relation: string }> } {
-  // DreamDistillManager 的图谱数据在 agent 实例中
-  // 这里返回空结构，实际数据通过 IPC 直接获取
-  return { entities: [], relationships: [] }
+export async function handleGetGraphData(): Promise<{ entities: Array<{ id: string; name: string; type: string; description?: string }>; relationships: Array<{ source: string; target: string; relation: string }> }> {
+  // 从动态记忆图谱（SQLite 持久化）读取真实节点/边，供 UI 3D 图谱渲染
+  try {
+    const graph = await loadGraph()
+    const entities = Array.from(graph.nodes.values()).map((node) => ({
+      id: node.id,
+      name: node.content.slice(0, 40),
+      type: node.type,
+      description: node.content,
+    }))
+    const relationships = graph.edges.map((edge) => ({
+      source: edge.source,
+      target: edge.target,
+      relation: edge.relation,
+    }))
+    return { entities, relationships }
+  } catch (err) {
+    logError("[API] handleGetGraphData 读取图谱失败", err)
+    return { entities: [], relationships: [] }
+  }
 }
 
 /** 用 LLM 为会话生成追问建议 */
