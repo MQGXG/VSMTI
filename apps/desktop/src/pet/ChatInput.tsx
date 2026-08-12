@@ -42,7 +42,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           color: "#fff",
           fontSize: 13,
           outline: "none",
-          fontFamily: "'Hiragino Sans', 'Noto Sans SC', sans-serif",
+          fontFamily: "inherit",
         }}
       />
       <button
@@ -52,8 +52,8 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           padding: "7px 14px",
           borderRadius: 8,
           border: "none",
-          background: disabled ? "rgba(108,92,231,0.4)" : "linear-gradient(135deg, #6c5ce7, #a29bfe)",
-          color: "#fff",
+          background: disabled ? "color-mix(in srgb, var(--primary) 40%, transparent)" : "var(--primary)",
+          color: "var(--primary-foreground)",
           fontSize: 13,
           cursor: disabled ? "default" : "pointer",
           fontWeight: 600,

@@ -24,13 +24,13 @@ export function ToolReadView({ result, args }: Props) {
   const header = contentStart >= 0 ? lines.slice(0, contentStart).join("\n") : lines[0] || "";
 
   return (
-    <div className="glass rounded-xl border border-glass-border overflow-hidden animate-fade-in-up">
+    <div className="rounded-xl border border-standard overflow-hidden animate-fade-in-up" style={{ background: "var(--card)" }}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-2 border-b border-glass-border bg-surface-900/50 text-xs"
+        className="w-full flex items-center gap-2 px-3 py-2 border-b border-standard bg-surface-secondary text-xs"
       >
-        <span className="font-mono text-accent-400 truncate">{filePath}</span>
-        <span className="text-[10px] text-neutral-500">{header.replace(filePath, "").trim()}</span>
+        <span className="font-mono truncate" style={{ color: "var(--primary)" }}>{filePath}</span>
+        <span className="text-[10px]" style={{ color: "var(--fg-tertiary)" }}>{header.replace(filePath, "").trim()}</span>
       </button>
       <div className={cn(expanded ? "" : "max-h-48 overflow-hidden relative")}>
         <pre
@@ -40,13 +40,10 @@ export function ToolReadView({ result, args }: Props) {
           {expanded ? content : preview}
         </pre>
         {!expanded && hasMore && (
-          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-neutral-900/80 to-transparent pt-8 pb-2 flex justify-center">
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent pt-8 pb-2 flex justify-center">
             <button
               onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
-              className={cn(
-                "px-3 py-1 rounded-lg text-[10px] transition-colors",
-                "hover:bg-accent-500/30"
-              )}
+              className="px-3 py-1 rounded-lg text-[10px] transition-colors hover:opacity-80"
               style={{ background: 'color-mix(in srgb, var(--info) 20%, transparent)', color: 'var(--primary)' }}
             >
               展开全部 ({totalLines} lines)
@@ -65,17 +62,17 @@ function DirectoryView({ result }: { result: string }) {
   const footer = lines.filter((l) => l.startsWith("子目录") || l.startsWith("..."));
 
   return (
-    <div className="glass rounded-xl border border-glass-border overflow-hidden animate-fade-in-up">
-      <div className="px-3 py-2 border-b border-glass-border bg-surface-900/50 text-xs text-neutral-400">
+    <div className="rounded-xl border border-standard overflow-hidden animate-fade-in-up" style={{ background: "var(--card)" }}>
+      <div className="px-3 py-2 border-b border-standard bg-surface-secondary text-xs" style={{ color: "var(--fg-secondary)" }}>
         {header}
       </div>
       <div className="px-3 py-2 space-y-0.5 text-xs font-mono">
         {contentLines.map((line, i) => (
-          <div key={i} className="text-neutral-300">{line}</div>
+          <div key={i} style={{ color: "var(--fg)" }}>{line}</div>
         ))}
       </div>
       {footer.length > 0 && (
-        <div className="px-3 py-1.5 border-t border-glass-border text-[10px] text-neutral-500">
+        <div className="px-3 py-1.5 border-t border-standard text-[10px]" style={{ color: "var(--fg-tertiary)" }}>
           {footer.map((l, i) => <div key={i}>{l}</div>)}
         </div>
       )}

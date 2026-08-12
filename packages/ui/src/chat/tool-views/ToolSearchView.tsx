@@ -26,19 +26,20 @@ export function ToolSearchView({ result, args }: Props) {
   });
 
   return (
-    <div className="glass rounded-xl border border-glass-border overflow-hidden animate-fade-in-up">
+    <div className="rounded-xl border border-standard overflow-hidden animate-fade-in-up" style={{ background: "var(--card)" }}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted transition-colors"
+        style={{ color: "var(--fg-secondary)" }}
       >
-        <Globe className="w-3.5 h-3.5 text-blue-400" />
-        <span className="text-blue-300 truncate">{query || "搜索结果"}</span>
-        <span className="text-neutral-600 ml-1">({entries.length} 条结果)</span>
+        <Globe className="w-3.5 h-3.5 text-info" />
+        <span className="truncate" style={{ color: "var(--info)" }}>{query || "搜索结果"}</span>
+        <span className="ml-1" style={{ color: "var(--fg-tertiary)" }}>({entries.length} 条结果)</span>
         {expanded ? <ChevronDown className="w-3 h-3 ml-auto" /> : <ChevronRight className="w-3 h-3 ml-auto" />}
       </button>
 
       {expanded && (
-        <div className="border-t border-glass-border divide-y divide-glass-border">
+        <div className="border-t border-standard divide-y divide-border-standard">
           {entries.map((entry, i) => (
             <div key={i} className="px-3 py-2.5 space-y-1">
               {entry.url ? (
@@ -46,16 +47,17 @@ export function ToolSearchView({ result, args }: Props) {
                   href={entry.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-sm font-medium text-accent-400 hover:text-accent-300 transition-colors"
+                  className="flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
+                  style={{ color: "var(--primary)" }}
                 >
                   {entry.title}
                   <ExternalLink className="w-3 h-3 shrink-0" />
                 </a>
               ) : (
-                <div className="text-sm font-medium text-neutral-200">{entry.title}</div>
+                <div className="text-sm font-medium" style={{ color: "var(--fg)" }}>{entry.title}</div>
               )}
               {entry.snippet && (
-                <p className="text-xs text-neutral-500 leading-relaxed line-clamp-3">{entry.snippet}</p>
+                <p className="text-xs leading-relaxed line-clamp-3" style={{ color: "var(--fg-tertiary)" }}>{entry.snippet}</p>
               )}
             </div>
           ))}

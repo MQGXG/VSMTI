@@ -25,6 +25,15 @@ export function GraphPanel({ open, onClose, projectId, projectName }: GraphPanel
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null)
   const [hiddenRelations, setHiddenRelations] = useState<Set<string>>(new Set(["co_occurs"]))
   const [globalView, setGlobalView] = useState(false)
+  // 图谱高度：动态适配窗口高度（min 400，留出顶部/底部工具栏空间）
+  const [graphHeight, setGraphHeight] = useState(600)
+
+  useEffect(() => {
+    const calc = () => setGraphHeight(Math.max(400, window.innerHeight - 180))
+    calc()
+    window.addEventListener("resize", calc)
+    return () => window.removeEventListener("resize", calc)
+  }, [])
 
   const toggleRelation = (relation: string) => {
     setHiddenRelations(prev => {
@@ -178,7 +187,7 @@ export function GraphPanel({ open, onClose, projectId, projectName }: GraphPanel
             graphData={graphData}
             projectName={projectName}
             onNodeClick={setSelectedNode}
-            height={600}
+            height={graphHeight}
             hiddenRelations={hiddenRelations}
             onToggleRelation={toggleRelation}
           />

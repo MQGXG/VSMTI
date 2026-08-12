@@ -1,6 +1,6 @@
 export function ShortcutsSettings() {
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <h3 className="text-lg font-medium text-primary">快捷键</h3>
       <div className="text-xs text-secondary">以下快捷键可在应用中直接使用</div>
       <div className="space-y-2">

@@ -49,7 +49,7 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
   const [newPath, setNewPath] = useState("")
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <h3 className="text-lg font-medium text-primary">通用设置</h3>
       <ThemeSelector />
 

@@ -1,5 +1,6 @@
 import { Shield, AlertTriangle } from "lucide-react";
 import { Modal } from "../components/ui/Modal";
+import { Button } from "../components/ui/button";
 
 interface Props {
   toolName: string;
@@ -43,7 +44,7 @@ export function PermissionDialog({ toolName, args, reason, onAllow, onDeny, onAl
         {Object.keys(args).length > 0 && (
           <div className="space-y-2">
             <label className="text-[10px] font-medium uppercase tracking-wide" style={{ color: "var(--text-tertiary)" }}>参数</label>
-            <pre className="px-3 py-2 rounded-lg text-xs font-mono max-h-32 overflow-y-auto whitespace-pre-wrap custom-scrollbar" style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text-secondary)" }}>
+            <pre className="px-3 py-2 rounded-lg text-xs font-mono max-h-32 overflow-y-auto whitespace-pre-wrap scrollbar-custom" style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--text-secondary)" }}>
               {JSON.stringify(args, null, 2)}
             </pre>
           </div>
@@ -51,28 +52,29 @@ export function PermissionDialog({ toolName, args, reason, onAllow, onDeny, onAl
       </div>
 
       <div className="flex gap-2 px-6 pb-5 pt-2">
-        <button
+        <Button
+          variant="outline"
+          className="flex-1"
           onClick={onDeny}
-          className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5"
-          style={{ border: "1px solid var(--border)", color: "var(--text-secondary)" }}
         >
           拒绝
-        </button>
+        </Button>
         {onAlways && (
-          <button
+          <Button
+            variant="outline"
+            className="flex-1"
+            style={{ borderColor: "color-mix(in srgb, var(--info) 30%, transparent)", color: "var(--info)", background: "color-mix(in srgb, var(--info) 5%, transparent)" }}
             onClick={onAlways}
-            className="px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
-            style={{ border: "1px solid color-mix(in srgb, var(--info) 30%, transparent)", color: "var(--info)", background: "color-mix(in srgb, var(--info) 5%, transparent)" }}
           >
             始终允许
-          </button>
+          </Button>
         )}
-        <button
+        <Button
+          className="flex-1"
           onClick={onAllow}
-          className="flex-1 px-4 py-2.5 rounded-lg btn-primary text-sm font-medium"
         >
           允许
-        </button>
+        </Button>
       </div>
     </Modal>
   );

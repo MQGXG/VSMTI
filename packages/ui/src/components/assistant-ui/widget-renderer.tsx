@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Copy, Code2, Download } from "lucide-react";
 import { extractWidgetBlocks, prepareWidgetHtml, widgetFileName, wrapStandaloneHtml, copyTextToClipboard } from "./widget-utils";
+import { Button } from "../ui/button";
 import { DialogService } from "../../services/dialog.service";
 
 // 本地库源码（?raw 导入 → iframe 内联注入，离线可用、符合 CSP）
@@ -122,33 +123,36 @@ ${preparedHtml}
       >
         <span className="text-[11px] font-medium" style={{ color: "var(--fg-tertiary)" }}>可视化组件</span>
         <div className="flex-1" />
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setShowCode((v) => !v)}
-          className="btn-ghost inline-flex items-center gap-1 text-[11px]"
-          style={{ padding: "2px 8px" }}
+          className="h-6 text-[11px] px-2"
           title={showCode ? "收起代码" : "查看代码"}
         >
           <Code2 className="w-3 h-3" />
           {showCode ? "收起代码" : "查看代码"}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleCopy}
-          className="btn-ghost inline-flex items-center gap-1 text-[11px]"
-          style={{ padding: "2px 8px" }}
+          className="h-6 text-[11px] px-2"
           title="复制代码"
         >
           <Copy className="w-3 h-3" />
           {copied ? "已复制" : "复制代码"}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleDownload}
-          className="btn-ghost inline-flex items-center gap-1 text-[11px]"
-          style={{ padding: "2px 8px" }}
+          className="h-6 text-[11px] px-2"
           title="下载代码"
         >
           <Download className="w-3 h-3" />
           {downloaded ? "已下载" : "下载代码"}
-        </button>
+        </Button>
       </div>
       <div style={{ height, transition: "height 0.15s ease", background: "#fff" }}>
         <iframe

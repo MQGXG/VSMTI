@@ -1,17 +1,11 @@
 import { useState, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import { MessageSquarePlus, Trash2, MessageSquare, Search, X, FileText, Plus, Check, Pencil } from "lucide-react";
+import { MessageSquarePlus, Trash2, MessageSquare, Search, X, FileText, Check, Pencil } from "lucide-react";
 import { SessionService, type SessionInfo } from "../services/session.service";
-import { ProjectService, type ProjectInfo } from "../services/project.service";
+import { type ProjectInfo } from "../services/project.service";
 import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
 import { subscribe as subscribeRuntime, getVersion as getRuntimeVersion, isSessionRunning, disposeSession } from "../hooks/session-runtime-store";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuPortal,
-} from "../components/ui/dropdown-menu";
+import { ProjectBar } from "./ProjectBar";
 
 interface Props {
   open: boolean;
@@ -133,7 +127,6 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[] | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; project: ProjectInfo } | null>(null);
 
   // 订阅会话运行时 store，用于显示"运行中"徽标
   useSyncExternalStore(subscribeRuntime, getRuntimeVersion);
@@ -182,114 +175,102 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
 
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ "今天": true, "昨天": true, "7天内": true, "30天内": true });
 
+  // L6 侧边栏项目搜索：本地过滤项目名/路径（零延迟），与会话搜索结果并列展示
+  const matchedProjects = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    const q = searchQuery.trim().toLowerCase();
+    return projects.filter((p) =>
+      p.name.toLowerCase().includes(q) || (p.workspace_path || "").toLowerCase().includes(q),
+    );
+  }, [searchQuery, projects]);
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Project header */}
-      <div className="p-4 pb-3 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0" style={{ background: project?.color || "var(--bg-tertiary)", color: project ? "#fff" : "var(--fg-secondary)" }}>
-          {project ? project.name[0].toUpperCase() : "?"}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold truncate" style={{ color: "var(--fg)" }}>{project?.name || "未选择项目"}</span>
-            {project && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: project.color }} />}
-          </div>
-          {project?.workspace_path && <div className="text-[11px] truncate mt-0.5" style={{ color: "var(--fg-tertiary)" }}>{project.workspace_path}</div>}
-        </div>
-      </div>
+    <div className="flex h-full">
+      {/* L1 竖排项目图标栏（拖拽排序 + 分组 + 最近访问排序） */}
+      <ProjectBar
+        projects={projects}
+        activeProject={activeProject}
+        onProjectChange={onProjectChange}
+        onOpenProject={onOpenProject}
+        onEditProject={onEditProject}
+        onDeleteProject={onDeleteProject}
+      />
 
-      {/* Project bar */}
-      <div className="px-3 py-3 flex gap-2 overflow-x-auto scrollbar-custom" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-        {projects.map((p) => {
-          const isActive = activeProject === p.project_id;
-          return (
-            <button key={p.project_id} onClick={() => { onProjectChange(p.project_id); }}
-              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ x: e.clientX, y: e.clientY, project: p }); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0"
-              style={{
-                background: isActive ? "var(--bg)" : "transparent",
-                color: isActive ? "var(--fg)" : "var(--fg-tertiary)",
-                border: "1px solid", borderColor: isActive ? "var(--border)" : "transparent",
-              }}>
-              <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-              {p.name}
-            </button>
-          );
-        })}
-        <button onClick={onOpenProject} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-all shrink-0" style={{ color: "var(--fg-tertiary)", border: "1px dashed var(--border)" }}>
-          <Plus className="w-3 h-3" />
-        </button>
-      </div>
-
-      {/* Context menu */}
-      {contextMenu && (
-        <DropdownMenu open={true} onOpenChange={(open) => { if (!open) setContextMenu(null); }}>
-          <DropdownMenuTrigger asChild>
-            <div style={{ position: 'fixed', left: contextMenu.x, top: contextMenu.y, width: 0, height: 0 }} />
-          </DropdownMenuTrigger>
-          <DropdownMenuPortal>
-            <DropdownMenuContent side="bottom" align="start" className="min-w-[140px] p-1"
-              onCloseAutoFocus={(e) => e.preventDefault()}>
-              <DropdownMenuItem onSelect={() => { onEditProject(contextMenu.project); setContextMenu(null); }}>
-                编辑
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setContextMenu(null)}>
-                启用工作区
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setContextMenu(null)}>
-                清除通知
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => {
-                ProjectService.hide(contextMenu.project.project_id);
-                setContextMenu(null);
-                window.location.reload();
-              }}>
-                关闭
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenuPortal>
-        </DropdownMenu>
-      )}
-
-      {/* Search */}
-      <div className="px-3 pb-2 pt-3 relative">
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--fg-tertiary)" }} />
-          <Input value={searchQuery} onChange={async (e) => {
-            const v = e.target.value; setSearchQuery(v);
-            if (!v.trim()) { setSearchResults(null); return; }
-            try { setSearchResults(await SessionService.search(v)); } catch { setSearchResults([]); }
-          }} placeholder="搜索会话..." className="pl-9 pr-3 py-2 text-xs" />
-          {searchQuery && <button onClick={() => { setSearchQuery(""); setSearchResults(null); }} className="absolute right-2 top-1/2 -translate-y-1/2 btn-ghost p-0.5"><X className="w-3 h-3" /></button>}
-        </div>
-      </div>
-
-      {/* Search results */}
-      {searchResults !== null && (
-        <div className="mx-3 rounded-lg overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", boxShadow: "var(--shadow-floating)", zIndex: 10 }}>
-          <div className="px-3 py-2 text-xs font-medium" style={{ color: "var(--fg-tertiary)", borderBottom: "1px solid var(--border-subtle)" }}>找到 {searchResults.length} 条结果</div>
-          {searchResults.length === 0 ? <p className="text-xs py-6 text-center" style={{ color: "var(--fg-tertiary)" }}>未找到匹配内容</p> : (
-            <div className="max-h-48 overflow-y-auto scrollbar-custom">
-              {searchResults.map((r, i) => (
-                <button key={i} onClick={() => { onSessionChange(String(r.session_id)); setSearchResults(null); setSearchQuery(""); }}
-                  className="w-full text-left px-3 py-2.5 transition-colors hover:bg-black/3 dark:hover:bg-white/3" style={{ borderBottom: i < searchResults.length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
-                  <div className="flex items-center gap-2 text-xs"><MessageSquare className="w-3 h-3 shrink-0" style={{ color: "var(--fg-tertiary)" }} /><span className="font-medium truncate" style={{ color: "var(--fg)" }}>{r.session_title}</span></div>
-                  <p className="text-[11px] line-clamp-2 mt-1 ml-5" style={{ color: "var(--fg-tertiary)" }}>{r.message.content}</p>
-                </button>
-              ))}
+      {/* 右侧内容 */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* 当前项目信息 */}
+        <div className="p-3 pb-2 flex items-center gap-2.5 shrink-0" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold truncate" style={{ color: "var(--fg)" }}>{project?.name || "未选择项目"}</span>
+              {project && <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: project.color }} />}
             </div>
-          )}
+            {project?.workspace_path && <div className="text-[11px] truncate mt-0.5" style={{ color: "var(--fg-tertiary)" }}>{project.workspace_path}</div>}
+          </div>
         </div>
-      )}
 
-      {/* Session list */}
-      <div className="flex-1 overflow-y-auto px-2 py-1 scrollbar-custom">
+        {/* Search */}
+        <div className="px-3 pb-2 pt-3 relative">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--fg-tertiary)" }} />
+            <Input value={searchQuery} onChange={async (e) => {
+              const v = e.target.value; setSearchQuery(v);
+              if (!v.trim()) { setSearchResults(null); return; }
+              try { setSearchResults(await SessionService.search(v)); } catch { setSearchResults([]); }
+            }} placeholder="搜索项目/会话..." className="pl-9 pr-3 py-2 text-xs" />
+            {searchQuery && <Button variant="ghost" size="icon" className="h-6 w-6 absolute right-2 top-1/2 -translate-y-1/2" onClick={() => { setSearchQuery(""); setSearchResults(null); }}><X className="h-3 w-3" /></Button>}
+          </div>
+        </div>
+
+        {/* Search results */}
+        {searchResults !== null && (
+          <div className="mx-3 rounded-lg overflow-hidden" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", boxShadow: "var(--shadow-floating)", zIndex: 10 }}>
+            <div className="px-3 py-2 text-xs font-medium" style={{ color: "var(--fg-tertiary)", borderBottom: "1px solid var(--border-subtle)" }}>
+              {matchedProjects && matchedProjects.length > 0
+                ? `找到 ${matchedProjects.length} 个项目 · ${searchResults.length} 条会话`
+                : `找到 ${searchResults.length} 条结果`}
+            </div>
+            <div className="max-h-48 overflow-y-auto scrollbar-custom">
+              {/* 项目匹配 */}
+              {matchedProjects && matchedProjects.length > 0 && (
+                <>
+                  <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-tertiary)" }}>项目</div>
+                  {matchedProjects.map((p) => (
+                    <button key={p.project_id} onClick={() => { onProjectChange(p.project_id); setSearchResults(null); setSearchQuery(""); }}
+                      className="w-full text-left px-3 py-2 transition-colors hover:bg-black/3 dark:hover:bg-white/3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                      <div className="flex items-center gap-2 text-xs"><span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} /><span className="font-medium truncate" style={{ color: "var(--fg)" }}>{p.name}</span></div>
+                      <p className="text-[11px] truncate mt-0.5 ml-4" style={{ color: "var(--fg-tertiary)" }}>{p.workspace_path}</p>
+                    </button>
+                  ))}
+                </>
+              )}
+              {/* 会话匹配 */}
+              {searchResults.length === 0 && !(matchedProjects && matchedProjects.length > 0) ? (
+                <p className="text-xs py-6 text-center" style={{ color: "var(--fg-tertiary)" }}>未找到匹配内容</p>
+              ) : (
+                searchResults.map((r, i) => (
+                  <button key={i} onClick={() => { onSessionChange(String(r.session_id)); setSearchResults(null); setSearchQuery(""); }}
+                    className="w-full text-left px-3 py-2.5 transition-colors hover:bg-black/3 dark:hover:bg-white/3" style={{ borderBottom: i < searchResults.length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
+                    <div className="flex items-center gap-2 text-xs"><MessageSquare className="w-3 h-3 shrink-0" style={{ color: "var(--fg-tertiary)" }} /><span className="font-medium truncate" style={{ color: "var(--fg)" }}>{r.session_title}</span></div>
+                    <p className="text-[11px] line-clamp-2 mt-1 ml-5" style={{ color: "var(--fg-tertiary)" }}>{r.message.content}</p>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Session list */}
+        <div className="flex-1 overflow-y-auto px-2 py-1 scrollbar-custom">
         {!project && <div className="text-xs py-12 text-center" style={{ color: "var(--fg-tertiary)" }}>请先选择一个项目</div>}
         {project && sessions.length === 0 && (
-          <div className="text-xs py-12 text-center" style={{ color: "var(--fg-tertiary)" }}>
-            <MessageSquare className="w-6 h-6 mx-auto mb-3" style={{ color: "var(--fg-quaternary)" }} />
-            暂无会话
+          <div className="text-xs py-12 text-center flex flex-col items-center gap-3" style={{ color: "var(--fg-tertiary)" }}>
+            <MessageSquare className="w-6 h-6" style={{ color: "var(--fg-quaternary)" }} />
+            <span>暂无会话，开始你的第一次对话吧</span>
+            <Button variant="outline" size="sm" className="text-[11px]" onClick={onNewSession}>
+              <MessageSquarePlus className="w-3.5 h-3.5" />
+              新建会话
+            </Button>
           </div>
         )}
         {Object.entries(groupedSessions).map(([group, groupSessions]) => {
@@ -298,7 +279,7 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
           return (
             <div key={group} className="mb-1">
               <button onClick={() => setExpandedGroups(p => ({ ...p, [group]: !p[group] }))}
-                className="w-full flex items-center gap-2 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-tertiary)" }}>
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-md transition-colors hover:bg-muted" style={{ color: "var(--fg-tertiary)" }}>
                 <svg className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? "" : "-rotate-90"}`} viewBox="0 0 12 12" fill="none"><path d="M4 3l4 3-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 {group}
                 <span className="ml-auto font-normal" style={{ color: "var(--fg-quaternary)" }}>{groupSessions.length}</span>
@@ -309,7 +290,7 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
                   <div key={session.session_id} className={`group flex items-center rounded-lg text-sm ${isActive ? "active sidebar-item" : "sidebar-item"}`}>
                     <button onClick={() => onSessionChange(session.session_id)} className="flex-1 text-left min-w-0">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ background: isActive ? "var(--bg-tertiary)" : "var(--bg)" }}>
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: isActive ? "var(--bg-tertiary)" : "var(--bg)" }}>
                           {session.kind === "task" ? <FileText className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -327,10 +308,10 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
                         </div>
                       </div>
                     </button>
-                    <button onClick={async (e) => { e.stopPropagation(); disposeSession(session.session_id); try { await SessionService.delete(session.session_id); loadSessions(); } catch { /* ignore */ } if (activeSession === session.session_id) onNewSession(); }}
-                      className="p-1 mr-1 rounded-md opacity-0 group-hover:opacity-100 transition-all btn-ghost shrink-0">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+                    <Button variant="ghost" size="icon" onClick={async (e) => { e.stopPropagation(); disposeSession(session.session_id); try { await SessionService.delete(session.session_id); loadSessions(); } catch { /* ignore */ } if (activeSession === session.session_id) onNewSession(); }}
+                      className="h-6 w-6 p-0 mr-1 rounded-md opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 );
               })}
@@ -339,6 +320,7 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
         })}
       </div>
 
+      </div>
     </div>
   );
 }

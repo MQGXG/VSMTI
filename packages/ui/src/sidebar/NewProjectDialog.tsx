@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Folder, Plus } from "lucide-react";
 import { Modal } from "../components/ui/Modal";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import { DialogService } from "../services/dialog.service";
 
 interface Props {
@@ -62,49 +64,49 @@ export function NewProjectDialog({ open, onClose, onCreate }: Props) {
       <div className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-1.5">
+            <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
               项目文件夹
             </label>
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={handleChooseDir}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-glass-border bg-white/5 text-sm text-left text-neutral-300 hover:border-accent-500/50 transition-colors"
+              className="w-full justify-start font-normal text-secondary"
             >
-              <Folder className="w-4 h-4 text-accent-400 shrink-0" />
+              <Folder className="w-4 h-4 shrink-0" />
               <span className="truncate">{workspacePath || "选择项目文件夹"}</span>
-            </button>
+            </Button>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-1.5">
+            <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
               项目名称
             </label>
-            <input
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="项目名称"
-              className="w-full px-3 py-2 rounded-lg border border-glass-border bg-white/5 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:border-accent-500/50 placeholder-neutral-500"
             />
           </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-2">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm text-neutral-400 hover:bg-white/10 transition-colors"
+              className="text-secondary"
             >
               取消
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm btn-gradient text-white"
             >
               <Plus className="w-4 h-4" />
               打开项目
-            </button>
+            </Button>
           </div>
         </form>
       </div>

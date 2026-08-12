@@ -1,6 +1,7 @@
 import { Minus, Square, X, Moon, Sun } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "../contexts/ThemeContext";
+import { Button } from "../components/ui/button";
 import { MiraLogoSmall } from "../chat/MiraLogo";
 import { AgentService } from "../services/agent.service";
 
@@ -35,26 +36,28 @@ export function TitleBar() {
       </div>
 
       <div className="flex items-center gap-0.5 px-2 no-drag">
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={toggleTheme}
-          className="w-8 h-8 flex items-center justify-center rounded-md btn-ghost transition-all duration-200"
+          className="h-8 w-8 rounded-md"
           title={isDark ? "切换亮色模式" : "切换暗色模式"}
         >
           {isDark ? <Sun className="w-4 h-4" style={{ color: "var(--text-secondary)" }} /> : <Moon className="w-4 h-4" style={{ color: "var(--text-secondary)" }} />}
-        </button>
+        </Button>
       </div>
 
       {!isMac && (
         <div className="flex items-center no-drag">
-          <button onClick={() => window.electronAPI.minimizeWindow()} className="w-11 h-10 flex items-center justify-center btn-ghost rounded-none transition-colors hover:bg-black/5 dark:hover:bg-white/5">
-            <Minus className="w-4 h-4" style={{ color: "var(--text-tertiary)" }} />
-          </button>
-          <button onClick={() => window.electronAPI.maximizeWindow()} className="w-11 h-10 flex items-center justify-center btn-ghost rounded-none transition-colors hover:bg-black/5 dark:hover:bg-white/5">
-            <Square className="w-3.5 h-3.5" style={{ color: "var(--text-tertiary)" }} />
-          </button>
-          <button onClick={() => window.electronAPI.closeWindow()} className="w-11 h-10 flex items-center justify-center btn-ghost rounded-none transition-colors hover:bg-red-500/10 hover:text-red-500 group">
-            <X className="w-4 h-4" style={{ color: "var(--text-tertiary)" }} />
-          </button>
+          <Button variant="ghost" size="icon" onClick={() => window.electronAPI.minimizeWindow()} className="w-11 h-10 rounded-none text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5">
+            <Minus className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => window.electronAPI.maximizeWindow()} className="w-11 h-10 rounded-none text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5">
+            <Square className="w-3.5 h-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => window.electronAPI.closeWindow()} className="w-11 h-10 rounded-none text-muted-foreground hover:bg-red-500/10 hover:text-red-500">
+            <X className="w-4 h-4" />
+          </Button>
         </div>
       )}
     </div>

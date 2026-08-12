@@ -39,7 +39,7 @@ export function ModelManager({ providers, onChange }: Props) {
   const totalCount = allModels.length;
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl xl:max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium text-primary">模型</h3>

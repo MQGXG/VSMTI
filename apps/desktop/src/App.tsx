@@ -6,7 +6,9 @@ import { NewProjectDialog } from "@mira/ui/sidebar/NewProjectDialog";
 import { EditProjectDialog } from "@mira/ui/sidebar/EditProjectDialog";
 import { SettingsDialog } from "@mira/ui/sidebar/SettingsDialog";
 import { Menu, Plus, Settings, Network } from "lucide-react";
+import { Button } from "@mira/ui/components/ui/button";
 import { GraphPanel } from "@mira/ui/memory/GraphPanel";
+import { CommandPalette } from "@mira/ui/components/CommandPalette";
 import { StartupOverlay } from "./components/StartupOverlay";
 import { setActiveSessionId } from "@mira/ui/hooks/session-runtime-store";
 import { DEFAULT_PROJECT_COLOR } from "@mira/ui";
@@ -47,6 +49,7 @@ export function App() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   // 启动状态：首次 loadProjects 完成（含等待 Sidecar ready）前显示启动加载动画
   const [booted, setBooted] = useState(false);
 
@@ -143,7 +146,31 @@ export function App() {
   const handleProjectChange = useCallback((projectId: string) => {
     setActiveProject(projectId);
     setActiveSession("");
+    // L4 最近访问记录（用于排序置顶）
+    try {
+      const map = JSON.parse(localStorage.getItem("project_last_accessed") || "{}") as Record<string, number>;
+      map[projectId] = Date.now();
+      localStorage.setItem("project_last_accessed", JSON.stringify(map));
+    } catch { /* ignore */ }
   }, []);
+
+  // L5 Ctrl/Cmd+1~9 快捷切换项目 + Ctrl/Cmd+K 命令面板
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key >= "1" && e.key <= "9") {
+        e.preventDefault();
+        const idx = parseInt(e.key, 10) - 1;
+        if (projects[idx]) handleProjectChange(projects[idx].project_id);
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [projects, handleProjectChange]);
 
   const handleNewSession = async () => {
     if (!activeProject) return;
@@ -200,9 +227,9 @@ export function App() {
       />
 
       <div className="top-bar" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-        <button onClick={() => setSidebarOpen(true)} className="btn-ghost" style={{ padding: "0 8px" }} title="打开侧边栏">
-          <Menu className="w-4 h-4" />
-        </button>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(true)} title="打开侧边栏">
+          <Menu className="h-4 w-4" />
+        </Button>
 
         {/* 项目切换 */}
         <div className="flex items-center gap-1 ml-1">
@@ -218,39 +245,39 @@ export function App() {
             </button>
           ))}
           {projects.length > 4 && (
-            <button onClick={() => setSidebarOpen(true)} className="btn-ghost" style={{ fontSize: 11, padding: "0 6px", color: "var(--fg-tertiary)" }}>
+            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="text-[11px] px-1.5 text-muted-foreground" style={{ color: "var(--fg-tertiary)" }}>
               +{projects.length - 4}
-            </button>
+            </Button>
           )}
         </div>
 
         <div className="flex-1" />
 
-        <button onClick={handleNewSession} className="btn-accent" title="新建会话">
-          <Plus className="w-4 h-4" />
+        <Button onClick={handleNewSession} title="新建会话">
+          <Plus className="h-4 w-4" />
           <span>新建会话</span>
-        </button>
+        </Button>
 
         <div className="w-px h-5" style={{ background: "var(--border)" }} />
 
-        <button onClick={() => setGraphOpen(true)} className="btn-ghost" title="知识图谱">
-          <Network className="w-4 h-4" />
-        </button>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setGraphOpen(true)} title="知识图谱">
+          <Network className="h-4 w-4" />
+        </Button>
 
-        <button onClick={() => setSettingsOpen(true)} className="btn-ghost" title="设置">
-          <Settings className="w-4 h-4" />
-        </button>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSettingsOpen(true)} title="设置">
+          <Settings className="h-4 w-4" />
+        </Button>
 
         <div className="flex items-center no-drag">
-          <button onClick={() => window.electronAPI.minimizeWindow()} className="btn-ghost" style={{ width: 36, padding: 0 }}>
+          <Button variant="ghost" size="icon" className="h-8 w-9 rounded-md" onClick={() => window.electronAPI.minimizeWindow()}>
             <svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor" /></svg>
-          </button>
-          <button onClick={() => window.electronAPI.maximizeWindow()} className="btn-ghost" style={{ width: 36, padding: 0 }}>
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-9 rounded-md" onClick={() => window.electronAPI.maximizeWindow()}>
             <svg width="10" height="10" viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" strokeWidth="1" /></svg>
-          </button>
-          <button onClick={() => window.electronAPI.closeWindow()} className="btn-ghost" style={{ width: 36, padding: 0, color: "var(--fg-tertiary)" }}>
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-9 rounded-md text-muted-foreground" onClick={() => window.electronAPI.closeWindow()}>
             <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" strokeWidth="1.2" fill="none" /></svg>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -263,6 +290,18 @@ export function App() {
       {graphOpen && <GraphPanel open={graphOpen} onClose={() => setGraphOpen(false)} projectId={activeProject} projectName={projects.find(p => p.project_id === activeProject)?.name} />}
       <NewProjectDialog open={newProjectOpen} onClose={() => setNewProjectOpen(false)} onCreate={handleOpenProject} />
       <EditProjectDialog project={editingProject} open={!!editingProject} onClose={() => setEditingProject(null)} onSave={handleEditProject} onDelete={handleDeleteProject} />
+      {paletteOpen && (
+        <CommandPalette
+          projects={projects}
+          activeProject={activeProject}
+          onSelectProject={(id) => { handleProjectChange(id); setPaletteOpen(false); }}
+          onOpenSession={(id) => { setActiveSession(id); setPaletteOpen(false); }}
+          onNewSession={handleNewSession}
+          onOpenSettings={() => { setSettingsOpen(true); setPaletteOpen(false); }}
+          onOpenGraph={() => { setGraphOpen(true); setPaletteOpen(false); }}
+          onClose={() => setPaletteOpen(false)}
+        />
+      )}
     </div>
   );
 }

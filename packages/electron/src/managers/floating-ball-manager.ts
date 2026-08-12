@@ -143,17 +143,17 @@ export class FloatingBallManager {
             width: ${this.size}px;
             height: ${this.size}px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #33333d 0%, #1a1a22 100%);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
             transition: transform 0.2s, box-shadow 0.2s;
           }
           .ball:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
           }
           .ball:active {
             transform: scale(0.95);
@@ -165,8 +165,8 @@ export class FloatingBallManager {
             animation: glow 1s infinite;
           }
           @keyframes pulse {
-            0%, 100% { box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
-            50% { box-shadow: 0 4px 25px rgba(102, 126, 234, 0.8); }
+            0%, 100% { box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); }
+            50% { box-shadow: 0 4px 25px rgba(14, 165, 233, 0.8); }
           }
           @keyframes glow {
             0%, 100% { box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
@@ -401,7 +401,7 @@ export class FloatingBallManager {
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
           }
           .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #3b3b3b;
             color: white;
             padding: 16px;
             display: flex;
@@ -450,11 +450,11 @@ export class FloatingBallManager {
             font-size: 14px;
           }
           .input:focus {
-            border-color: #667eea;
+            border-color: #3b3b3b;
           }
           .send-btn {
             padding: 10px 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #3b3b3b;
             color: white;
             border: none;
             border-radius: 8px;
@@ -471,7 +471,7 @@ export class FloatingBallManager {
             max-width: 80%;
           }
           .message.user {
-            background: #667eea;
+            background: #3b3b3b;
             color: white;
             margin-left: auto;
             border-bottom-right-radius: 4px;

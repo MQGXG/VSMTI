@@ -20,6 +20,7 @@ import { ProgressBar } from "./ProgressBar";
 import { RenderMessageParts, findDiffSummary } from "./ToolCallView";
 import { loadSettings } from "../sidebar/provider-data";
 import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, ChevronRight, ListOrdered, ThumbsUp, ThumbsDown, Volume2, VolumeX } from "lucide-react";
+import { Button } from "../components/ui/button";
 import { AnimatedAvatar, type AvatarState } from "../components/assistant-ui/animated-avatar";
 import "../components/assistant-ui/animated-avatar.css";
 import { Live2DAvatar } from "../components/assistant-ui/live2d-avatar";
@@ -51,7 +52,7 @@ function WelcomeScreen({ onSuggest }: { onSuggest: (text: string) => void }) {
       <div className="flex flex-wrap justify-center gap-2 max-w-sm">
         {["写作", "编程", "分析数据", "搜索信息"].map((label) => (
           <button key={label} onClick={() => onSuggest(label)}
-            className="px-4 py-2 text-xs rounded-full transition-all hover:scale-105"
+            className="px-4 py-2 text-xs rounded-full transition-all cursor-pointer"
             style={{ background: "var(--bg-secondary)", color: "var(--fg-secondary)" }}>
             {label}
           </button>
@@ -90,32 +91,32 @@ function MessageActions({ messageId, ctx }: { messageId: string; ctx: MiraRuntim
   return (
     <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
       <BranchPickerPrimitive.Root hideWhenSingleBranch className="inline-flex items-center gap-1 text-[11px]" style={{ color: "var(--fg-tertiary)" }}>
-        <BranchPickerPrimitive.Previous className="flex size-6 items-center justify-center rounded-md hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-30">
+        <BranchPickerPrimitive.Previous className="flex size-6 items-center justify-center rounded-md hover:bg-muted disabled:opacity-30">
           <ChevronLeft className="w-3 h-3" />
         </BranchPickerPrimitive.Previous>
         <span className="tabular-nums"><BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count /></span>
-        <BranchPickerPrimitive.Next className="flex size-6 items-center justify-center rounded-md hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-30">
+        <BranchPickerPrimitive.Next className="flex size-6 items-center justify-center rounded-md hover:bg-muted disabled:opacity-30">
           <ChevronRight className="w-3 h-3" />
         </BranchPickerPrimitive.Next>
       </BranchPickerPrimitive.Root>
       <div className="w-px h-3 mx-1" style={{ background: "var(--border-subtle)" }} />
       <ActionBarPrimitive.Copy asChild>
-        <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="复制"><Copy className="w-3 h-3" /></button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" title="复制"><Copy className="h-3 w-3" /></Button>
       </ActionBarPrimitive.Copy>
-      <button onClick={() => ctx.retryMessage(messageId)} className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="重试"><RotateCcw className="w-3 h-3" /></button>
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => ctx.retryMessage(messageId)} title="重试"><RotateCcw className="h-3 w-3" /></Button>
       <ActionBarPrimitive.Edit asChild>
-        <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="编辑"><Edit3 className="w-3 h-3" /></button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" title="编辑"><Edit3 className="h-3 w-3" /></Button>
       </ActionBarPrimitive.Edit>
       <ActionBarPrimitive.FeedbackPositive asChild>
-        <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="好评"><ThumbsUp className="w-3 h-3" /></button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" title="好评"><ThumbsUp className="h-3 w-3" /></Button>
       </ActionBarPrimitive.FeedbackPositive>
       <ActionBarPrimitive.FeedbackNegative asChild>
-        <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="差评"><ThumbsDown className="w-3 h-3" /></button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" title="差评"><ThumbsDown className="h-3 w-3" /></Button>
       </ActionBarPrimitive.FeedbackNegative>
       {speaking ? (
-        <button onClick={handleStopSpeak} className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="停止朗读"><VolumeX className="w-3 h-3" /></button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleStopSpeak} title="停止朗读"><VolumeX className="h-3 w-3" /></Button>
       ) : (
-        <button onClick={handleSpeak} disabled={!messageText} className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="朗读"><Volume2 className="w-3 h-3" /></button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSpeak} disabled={!messageText} title="朗读"><Volume2 className="h-3 w-3" /></Button>
       )}
       <MessageTiming />
     </div>
@@ -245,7 +246,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
       {settings.showProgressBar !== false && ctx.isRunning && <ProgressBar />}
 
       {showGraphPanel && (
-        <div className="mx-auto w-full px-6 pt-3" style={{ maxWidth: "760px" }}>
+        <div className="mx-auto w-full px-6 pt-3 max-w-[760px] xl:max-w-[900px] 2xl:max-w-[1100px]">
           <div className="rounded-xl" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
             <GraphPanel
               config={{
@@ -261,7 +262,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
 
       <ThreadPrimitive.Root className="flex-1 flex flex-col min-h-0">
         <ThreadPrimitive.Viewport className={`flex-1 overflow-x-hidden min-h-0 ${threadEmpty ? "overflow-y-hidden" : "overflow-y-auto scrollbar-custom"}`}>
-          <div className="flex flex-col mx-auto py-6 min-h-full px-6" style={{ maxWidth: "900px", width: "100%" }}>
+          <div className="flex flex-col mx-auto py-6 min-h-full px-6 w-full max-w-[760px] xl:max-w-[900px] 2xl:max-w-[1100px]">
             <AuiIf condition={(s) => s.thread.isEmpty}>
               <WelcomeScreen onSuggest={(text) => { aui.composer().setText(text); textareaRef.current?.focus(); }} />
               <div className="flex flex-wrap justify-center gap-2 max-w-sm mx-auto mt-2">
@@ -270,7 +271,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                     <ThreadPrimitive.Suggestion
                       prompt={suggestion.prompt}
                       send
-                      className="px-4 py-2 text-xs rounded-full transition-all hover:scale-105 cursor-pointer"
+                      className="px-4 py-2 text-xs rounded-full transition-all hover:bg-muted cursor-pointer"
                       style={{ background: "var(--bg-secondary)", color: "var(--fg-secondary)", border: "none" }}
                     />
                   )}
@@ -336,8 +337,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                             )}
                             <SelectionToolbarPrimitive.Root>
                               <SelectionToolbarPrimitive.Quote
-                                className="btn-ghost text-[11px]"
-                                style={{ padding: "4px 8px" }}
+                                className="inline-flex h-7 items-center rounded-md px-2 text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors"
                               />
                             </SelectionToolbarPrimitive.Root>
                           </MessageBubble>
@@ -363,7 +363,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                     <ThreadPrimitive.Suggestion
                       prompt={suggestion.prompt}
                       send
-                      className="px-4 py-2 text-xs rounded-full transition-all hover:scale-105 cursor-pointer"
+                      className="px-4 py-2 text-xs rounded-full transition-all hover:bg-muted cursor-pointer"
                       style={{ background: "var(--bg-secondary)", color: "var(--fg-secondary)", border: "none" }}
                     />
                   )}
@@ -391,7 +391,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                           const globalIdx = filteredCommands.indexOf(cmd)
                           return (
                             <button key={cmd.id} onMouseDown={() => applyCommand(cmd)}
-                              className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors ${globalIdx === selectedCommandIndex ? "bg-primary-500/10" : ""}`}
+                              className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors ${globalIdx === selectedCommandIndex ? "bg-primary/10" : ""}`}
                               style={{ color: globalIdx === selectedCommandIndex ? "var(--primary)" : "var(--fg-secondary)" }}>
                               <span className="font-mono font-medium" style={{ color: "var(--primary)" }}>/</span>
                               <span className="font-medium">{cmd.trigger}</span>
@@ -416,23 +416,23 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                   <ComposerPrimitive.Quote className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs"
                     style={{ background: "var(--surface-secondary)", border: "1px solid var(--border-light)" }}>
                     <ComposerPrimitive.QuoteText className="flex-1 truncate" />
-                    <ComposerPrimitive.QuoteDismiss className="shrink-0 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                    <ComposerPrimitive.QuoteDismiss className="shrink-0 p-0.5 rounded hover:bg-muted cursor-pointer"
                       style={{ color: "var(--text-tertiary)" }}>
                       ✕
                     </ComposerPrimitive.QuoteDismiss>
                   </ComposerPrimitive.Quote>
                   <div className="flex items-center gap-2">
-                   <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="添加附件">
-                    <Paperclip className="w-4 h-4" />
-                  </button>
+                   <Button variant="ghost" size="icon" className="h-7 w-7" title="添加附件">
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
                   <ComposerPrimitive.Dictate asChild>
-                    <button className="btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="语音输入">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title="语音输入">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
                         <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                         <line x1="12" y1="19" x2="12" y2="22"/>
                       </svg>
-                    </button>
+                    </Button>
                   </ComposerPrimitive.Dictate>
                   <VoiceChatButton onSendMessage={(t) => void ctx.sendMessage(t)} assistantText={assistantText} />
                   <ComposerPrimitive.DictationTranscript className="text-xs px-2 py-1 rounded" style={{ background: "var(--bg-secondary)", color: "var(--fg-secondary)" }} />
@@ -450,32 +450,34 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                     placeholder="输入消息..." rows={1}
                     className="input-field min-h-[24px] max-h-[200px]" />
                   {/* 合并发送/停止：运行中显示停止方块，空闲显示发送 */}
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => ctx.isRunning ? ctx.stopStream() : aui.composer().send()}
-                    className="btn-ghost shrink-0"
                     title={ctx.isRunning ? "停止" : "发送"}
+                    className="h-7 w-7 shrink-0"
                     style={{
-                      width: 28, height: 28, padding: 0,
                       color: ctx.isRunning ? "var(--error)" : (composerIsEmpty ? "var(--fg-tertiary)" : "var(--fg)"),
                       background: ctx.isRunning ? "rgba(239,68,68,0.08)" : "transparent",
                     }}
                   >
-                    {ctx.isRunning ? <Square className="w-3.5 h-3.5" fill="currentColor" /> : <Send className="w-4 h-4" />}
-                  </button>
+                    {ctx.isRunning ? <Square className="h-3.5 w-3.5" fill="currentColor" /> : <Send className="h-4 w-4" />}
+                  </Button>
                 </div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={() => setShowGraphPanel((v) => !v)}
                       title="编码任务图"
-                      className={`btn-ghost flex items-center gap-1.5 text-[11px] ${showGraphPanel ? "is-active" : ""}`}
-                      style={{ height: 28, padding: "0 10px", color: showGraphPanel ? "var(--primary)" : undefined }}
+                      className="h-7 text-[11px] gap-1.5"
+                      style={{ color: showGraphPanel ? "var(--primary)" : undefined }}
                     >
-                      <ListOrdered className="w-3.5 h-3.5" />
+                      <ListOrdered className="h-3.5 w-3.5" />
                       {showGraphPanel ? "收起图" : "编码图"}
-                    </button>
+                    </Button>
                     <ModelSelector selectedModel={selectedModel} onModelChange={onModelChange} agentMode={agentMode} onModeChange={onModeChange} />
                   </div>
                   <div className="flex items-center gap-2">
@@ -499,7 +501,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.12)" }}>
                     <span className="font-medium" style={{ color: "var(--warning)" }}>Goal</span>
                     <span className="flex-1 truncate" style={{ color: "var(--fg)" }}>{goalCondition}</span>
-                    <button onClick={() => setGoalCondition(null)} className="btn-ghost" style={{ height: 22, padding: "0 8px", fontSize: 11 }}>清除</button>
+                    <Button variant="ghost" onClick={() => setGoalCondition(null)} className="h-[22px] px-2 text-[11px]" >清除</Button>
                   </div>
                 )}
               </div>

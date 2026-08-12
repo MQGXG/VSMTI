@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo } from "react"
 import { Search, FileText, FileEdit, Globe, Code, FolderOpen, Wrench, X, Terminal, Sparkles } from "lucide-react"
 import type { ToolInfo, ToolResult } from "../services/agent.service"
 import { AgentService } from "../services/agent.service"
+import { Button } from "../components/ui/button"
+import { Input } from "../components/ui/input"
 
 interface Props {
   onResult: (toolName: string, result: ToolResult) => void
@@ -108,18 +110,17 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
 
   return (
     <div ref={paletteRef} className="relative">
-      <button onClick={() => setOpen(!open)} disabled={disabled}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all duration-200 disabled:opacity-30"
+      <Button variant="ghost" size="sm" onClick={() => setOpen(!open)} disabled={disabled}
+        className="text-xs"
         style={{
-          ...btnStyle,
           color: suggestedTool && !open ? 'var(--primary)' : 'var(--text-tertiary)',
-          background: suggestedTool && !open ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
-          border: suggestedTool && !open ? '1px solid rgba(0, 217, 192, 0.2)' : '1px solid transparent',
+          background: suggestedTool && !open ? 'color-mix(in srgb, var(--primary) 10%, transparent)' : 'transparent',
+          border: suggestedTool && !open ? '1px solid color-mix(in srgb, var(--primary) 20%, transparent)' : '1px solid transparent',
         }}
         title="工具面板 (可直接执行，不经过 LLM)">
         <Wrench className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">{suggestedTool ? suggestedTool.name : "工具"}</span>
-      </button>
+      </Button>
 
       {open && (
         <div className="absolute bottom-full left-0 mb-2 w-80 rounded-xl overflow-hidden z-50"
@@ -132,7 +133,7 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                 <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>工具面板</div>
                 <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>直接执行，不需要 AI 参与</div>
               </div>
-              <div className="max-h-72 overflow-y-auto custom-scrollbar p-1.5 space-y-0.5">
+              <div className="max-h-72 overflow-y-auto scrollbar-custom p-1.5 space-y-0.5">
                 {tools.map((tool) => {
                   const Icon = toolIcons[tool.name] || Wrench
                   const isSuggested = tool.name === suggestedTool?.name
@@ -141,15 +142,15 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200"
                       style={{
                         color: isSuggested ? 'var(--primary)' : 'var(--text-primary)',
-                        background: isSuggested ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
-                        border: isSuggested ? '1px solid rgba(0, 217, 192, 0.2)' : 'none',
+                        background: isSuggested ? 'color-mix(in srgb, var(--primary) 10%, transparent)' : 'transparent',
+                        border: isSuggested ? '1px solid color-mix(in srgb, var(--primary) 20%, transparent)' : 'none',
                       }}>
-                      <Icon className="w-4 h-4 shrink-0" style={{ color: isSuggested ? 'var(--accent-start)' : 'var(--text-secondary)' }} />
+                      <Icon className="w-4 h-4 shrink-0" style={{ color: isSuggested ? 'var(--primary)' : 'var(--text-secondary)' }} />
                       <div className="min-w-0 flex-1">
                         <div className="font-medium truncate">{tool.name}</div>
                         <div className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>{tool.description}</div>
                       </div>
-                      {isSuggested && <Sparkles className="w-3 h-3 shrink-0" style={{ color: 'var(--accent-start)' }} />}
+                      {isSuggested && <Sparkles className="w-3 h-3 shrink-0" style={{ color: 'var(--primary)' }} />}
                     </button>
                   )
                 })}
@@ -159,10 +160,10 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {(() => { const Icon = toolIcons[selectedTool.name] || Wrench; return <Icon className="w-4 h-4" style={{ color: 'var(--accent-start)' }} /> })()}
+                  {(() => { const Icon = toolIcons[selectedTool.name] || Wrench; return <Icon className="w-4 h-4" style={{ color: 'var(--primary)' }} /> })()}
                   <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{selectedTool.name}</span>
                 </div>
-                <button onClick={() => setSelectedTool(null)} className="p-1.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5">
+                <button onClick={() => setSelectedTool(null)} className="p-1.5 rounded-lg transition-colors hover:bg-muted">
                   <X className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
                 </button>
               </div>
@@ -178,13 +179,12 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
                         <label className="text-xs block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                           {key}{required.includes(key) && <span className="ml-1" style={{ color: 'var(--destructive)' }}>*</span>}
                         </label>
-                        <input
+                        <Input
                           type={prop.type === "number" ? "number" : "text"}
                           value={inputs[key] || ""}
                           onChange={(e) => setInputs((p) => ({ ...p, [key]: e.target.value }))}
                           placeholder={prop.description || key}
-                          className="w-full rounded-xl px-3 py-2 text-sm outline-none transition-all duration-200"
-                          style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+                          className="rounded-xl"
                         />
                       </div>
                     )
@@ -193,15 +193,14 @@ export function ToolPalette({ onResult, disabled, inputHint }: Props) {
               )}
 
               <div className="flex gap-2 pt-2">
-                <button onClick={handleExecute} disabled={loading}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-medium btn-primary disabled:opacity-40">
+                <Button onClick={handleExecute} disabled={loading}
+                  className="flex-1">
                   {loading ? "执行中..." : "执行"}
-                </button>
-                <button onClick={() => setSelectedTool(null)}
-                  className="px-4 py-2.5 rounded-xl text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-                  style={{ color: 'var(--text-secondary)' }}>
+                </Button>
+                <Button variant="ghost" onClick={() => setSelectedTool(null)}
+                  className="flex-1 text-secondary">
                   返回
-                </button>
+                </Button>
               </div>
             </div>
           )}

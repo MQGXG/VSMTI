@@ -352,7 +352,7 @@ export function PetApp() {
       <div style={{
         height: 32, WebkitAppRegion: "drag", cursor: "grab", flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
-        background: "rgba(20,20,30,0.5)",
+        background: "rgba(15,15,20,0.6)",
       }}>
         <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)" }} />
       </div>
@@ -367,7 +367,7 @@ export function PetApp() {
           <div style={{
             position: "absolute", inset: 0, display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
-            background: "rgba(0,0,0,0.6)", color: live2dError ? "#ff6b6b" : "#aaa",
+            background: "rgba(0,0,0,0.6)", color: live2dError ? "var(--error)" : "var(--muted-foreground)",
             fontSize: 11, textAlign: "center", padding: 12, zIndex: 10, pointerEvents: "none",
           }}>
             {live2dError
@@ -379,8 +379,8 @@ export function PetApp() {
       </div>
 
       <div style={{
-        WebkitAppRegion: "no-drag", background: "rgba(20,20,30,0.85)",
-        backdropFilter: "blur(12px)", borderTop: "1px solid rgba(255,255,255,0.08)",
+        WebkitAppRegion: "no-drag", background: "var(--card)",
+        backdropFilter: "blur(12px)", borderTop: "1px solid var(--border)",
         padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6, maxHeight: "45%",
       }}>
         <div style={{

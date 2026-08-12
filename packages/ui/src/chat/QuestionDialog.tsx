@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { HelpCircle, Send } from "lucide-react";
 import { Modal } from "../components/ui/Modal";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 
 interface Props {
   question: string;
@@ -35,8 +37,8 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
     <Modal open={true} onClose={() => onSubmit("")} maxWidth="max-w-md">
       <div className="p-6 space-y-4">
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-full shrink-0" style={{ background: "rgba(0, 217, 192, 0.1)" }}>
-            <HelpCircle className="w-5 h-5" style={{ color: "var(--info)" }} />
+          <div className="p-2 rounded-full shrink-0" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}>
+            <HelpCircle className="w-5 h-5" style={{ color: "var(--primary)" }} />
           </div>
           <div className="space-y-1">
             <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Agent 提问</h3>
@@ -53,10 +55,10 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
                 setCustomAnswer("");
                 onSubmit(opt);
               }}
-              className="w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-150"
+              className="w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-150 cursor-pointer"
               style={{
-                border: selected === opt ? "1px solid rgba(0, 217, 192, 0.5)" : "1px solid var(--border)",
-                background: selected === opt ? "rgba(0, 217, 192, 0.1)" : "transparent",
+                border: selected === opt ? "1px solid color-mix(in srgb, var(--primary) 50%, transparent)" : "1px solid var(--border)",
+                background: selected === opt ? "color-mix(in srgb, var(--primary) 10%, transparent)" : "transparent",
                 color: selected === opt ? "var(--primary)" : "var(--text-secondary)",
               }}
             >
@@ -65,7 +67,7 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
           ))}
 
           <div className="relative">
-            <input
+            <Input
               type="text"
               value={customAnswer}
               onChange={(e) => {
@@ -79,21 +81,20 @@ export function QuestionDialog({ question, options, onSubmit }: Props) {
                 }
               }}
               placeholder="输入自定义回答..."
-              className="w-full px-4 py-2.5 rounded-xl text-sm bg-transparent outline-none transition-all duration-200"
-              style={{ border: "1px solid var(--border)", color: "var(--text-primary)" }}
+              className="py-2.5 rounded-xl"
               autoFocus
             />
           </div>
         </div>
 
-        <button
+        <Button
           onClick={handleSubmit}
           disabled={!selected && !customAnswer.trim()}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl btn-primary text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed"
+          className="w-full"
         >
           <Send className="w-4 h-4" />
           提交回答
-        </button>
+        </Button>
       </div>
     </Modal>
   );

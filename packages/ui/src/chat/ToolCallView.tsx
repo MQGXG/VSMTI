@@ -31,7 +31,7 @@ function RevertButton({ snapshotId, toolName }: { snapshotId?: string; toolName:
   };
   return (
     <button onClick={(e) => { e.stopPropagation(); handleRevert(); }}
-      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] hover:bg-white/10 transition-colors"
+      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] hover:bg-muted transition-colors"
       style={{ color: "var(--fg-tertiary)" }} title="回退到执行前">
       <RotateCcw className="w-2.5 h-2.5" />
       回退

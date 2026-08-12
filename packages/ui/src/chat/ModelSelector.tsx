@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Brain, Search, Zap, Shield, Cpu, Sparkles } from "lucide-react";
 import type { AgentMode } from "./types";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 interface StoredProvider { id: string; name: string; displayName: string; enabled: boolean; models: { id: string; name: string; enabled: boolean }[]; }
 
@@ -70,7 +71,7 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
             <div className="max-h-56 overflow-y-auto scrollbar-custom p-1">
               {availableModels.map((opt) => (
                 <button key={opt.value} onClick={() => { onModelChange(opt); saveModelChoice(opt); setModelOpen(false); }}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all ${selectedModel.value === opt.value ? "bg-primary-500/10" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg text-xs transition-all ${selectedModel.value === opt.value ? "bg-primary/10" : "hover:bg-muted"}`}
                   style={{ color: selectedModel.value === opt.value ? "var(--primary)" : "var(--fg-secondary)" }}>
                   <div className="font-medium" style={{ color: selectedModel.value === opt.value ? "var(--primary)" : "var(--fg)" }}>{opt.label}</div>
                   <div className="text-[10px] mt-0.5" style={{ color: "var(--fg-tertiary)" }}>{opt.provider === "openai" ? "OpenAI" : opt.provider === "claude" ? "Anthropic" : opt.provider === "ollama" ? "本地" : "自定义"}</div>
@@ -82,19 +83,20 @@ export function ModelSelector({ selectedModel, onModelChange, agentMode, onModeC
         )}
       </div>
 
-      <div className="chip-group">
-        {MODE_OPTIONS.map((m) => {
-          const Icon = m.icon;
-          const active = agentMode === m.value;
-          return (
-            <button key={m.value} onClick={() => { onModeChange(m.value); localStorage.setItem("chat_mode", m.value); }}
-              title={m.label} className={`chip ${active ? "active" : ""}`}>
-              <Icon className="w-3 h-3" />
-              <span className="hidden sm:inline">{m.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <Tabs value={agentMode} onValueChange={(v) => { onModeChange(v as AgentMode); localStorage.setItem("chat_mode", v); }}>
+        <TabsList className="h-7 gap-0.5 px-1">
+          {MODE_OPTIONS.map((m) => {
+            const Icon = m.icon;
+            return (
+              <TabsTrigger key={m.value} value={m.value} title={m.label}
+                className="h-6 gap-1 px-2 py-0 text-xs">
+                <Icon className="h-3 w-3" />
+                <span className="hidden sm:inline">{m.label}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
     </div>
   );
 }

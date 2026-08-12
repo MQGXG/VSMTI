@@ -18,6 +18,7 @@ export type { MemoryEntry } from "./services/memory.service"
 
 // ─── 通用 UI 组件 ──────────────────────────────────────────────
 export { Modal } from "./components/ui/Modal"
+export { CommandPalette } from "./components/CommandPalette"
 
 // ─── 聊天组件 ──────────────────────────────────────────────────
 export { ChatWindow } from "./chat/ChatWindow"

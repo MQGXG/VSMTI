@@ -23,9 +23,9 @@ export function ThemeSelector() {
               onClick={() => setTheme(option.value)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200"
               style={{
-                border: isActive ? '1px solid rgba(0, 217, 192, 0.3)' : '1px solid var(--border)',
-                background: isActive ? 'rgba(0, 217, 192, 0.1)' : 'transparent',
-                color: isActive ? 'var(--accent-start)' : 'var(--text-secondary)',
+                border: isActive ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)' : '1px solid var(--border)',
+                background: isActive ? 'color-mix(in srgb, var(--primary) 10%, transparent)' : 'transparent',
+                color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
               }}
             >
               <Icon className="w-4 h-4" />

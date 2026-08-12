@@ -34,10 +34,10 @@ export function ContextToolGroup({ parts, allDone }: Props) {
   }, [parts]);
 
   return (
-    <div className="glass rounded-xl border border-glass-border overflow-hidden animate-fade-in-up">
+    <div className="rounded-xl border border-standard overflow-hidden animate-fade-in-up" style={{ background: "var(--card)" }}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-white/[0.03] transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted transition-colors"
         style={{ color: "var(--fg-secondary)" }}
       >
         <FileSearch className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--primary)" }} />
@@ -49,7 +49,7 @@ export function ContextToolGroup({ parts, allDone }: Props) {
       </button>
 
       {expanded && (
-        <div className="border-t border-glass-border divide-y divide-glass-border/50">
+        <div className="border-t border-standard divide-y divide-border-standard">
           {parts.map((part, i) => {
             if (part.type !== "tool-call") return null;
             const Icon = getToolIcon(part.toolName || "");

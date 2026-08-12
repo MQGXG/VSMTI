@@ -2,12 +2,12 @@ import { Cpu } from "lucide-react";
 
 export function AboutSettings() {
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <h3 className="text-lg font-medium text-primary">关于 Mira</h3>
       <div className="p-6 rounded-xl space-y-4 bg-surface-secondary border border-standard">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0, 217, 192, 0.1)' }}>
-            <Cpu className="w-6 h-6 text-accent-start" />
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--primary) 10%, transparent)' }}>
+            <Cpu className="w-6 h-6" style={{ color: "var(--primary)" }} />
           </div>
           <div>
             <div className="text-lg font-medium text-primary">Mira</div>

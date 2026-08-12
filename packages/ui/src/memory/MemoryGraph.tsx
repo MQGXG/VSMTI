@@ -6,6 +6,7 @@
 import { useRef, useCallback, useMemo, useState, useEffect } from "react"
 import type { GraphData, GraphNode, GraphLink } from "./graph-data"
 import { buildGraphFromKnowledgeStore, buildGraphFromMemories } from "./graph-data"
+import { Button } from "../components/ui/button"
 import { GRAPH_NODE_COLORS, MEMORY_TYPE_COLORS, GRAPH_ACTIVATION_COLOR, GRAPH_LINK_COLORS, GRAPH_LINK_PARTICLE_COLORS } from "../theme/data-colors"
 import type { MemoryNode, ActivationResult } from "@mira/core"
 
@@ -267,7 +268,7 @@ export function MemoryGraph({
         <div className="absolute top-3 right-3 p-3 rounded-lg text-xs max-w-[240px] bg-elevated border border-standard shadow-floating z-10">
           <div className="flex items-center justify-between mb-2">
             <span className="font-medium text-fg">{selectedNode.label}</span>
-            <button onClick={() => setSelectedNode(null)} className="btn-ghost p-0.5 text-tertiary">✕</button>
+            <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground" onClick={() => setSelectedNode(null)}>✕</Button>
           </div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full" style={{ background: selectedNode.color }} />

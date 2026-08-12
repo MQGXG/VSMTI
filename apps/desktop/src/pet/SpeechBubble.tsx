@@ -32,16 +32,16 @@ export function SpeechBubble({ role, content }: SpeechBubbleProps) {
           padding: "6px 11px",
           borderRadius: isUser ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
           background: isUser
-            ? "linear-gradient(135deg, #6c5ce7, #a29bfe)"
-            : "rgba(255,255,255,0.12)",
-          border: isUser ? "none" : "1px solid rgba(255,255,255,0.15)",
+            ? "var(--bubble-user-bg)"
+            : "rgba(255,255,255,0.08)",
+          border: isUser ? "none" : "1px solid rgba(255,255,255,0.12)",
           fontSize: 13,
           lineHeight: 1.5,
-          color: isUser ? "#fff" : "rgba(255,255,255,0.9)",
-          fontFamily: "'Hiragino Sans', 'Noto Sans SC', sans-serif",
+          color: isUser ? "var(--bubble-user-fg)" : "rgba(255,255,255,0.9)",
+          fontFamily: "inherit",
           wordBreak: "break-word",
           boxShadow: isUser
-            ? "0 2px 8px rgba(108,92,231,0.3)"
+            ? "0 1px 4px rgba(0,0,0,0.25)"
             : "0 1px 4px rgba(0,0,0,0.2)",
         }}
       >

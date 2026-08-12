@@ -47,7 +47,6 @@
     --code-bg: #f5f4f1;
     --titlebar-bg: #f7f6f3;
     --titlebar-border: #e2e1de;
-    --btn-ghost-hover: #eeedea;
 
     /* 功能色 */
     --success: #10b981;
@@ -99,8 +98,8 @@
     --ring: #e8e8ed;
 
     /* ── Mira 扩展 Token ─────────────────────────────── */
-    --fg-tertiary: #62626e;
-    --fg-quaternary: #42424e;
+    --fg-tertiary: #8b8b98;
+    --fg-quaternary: #5c5c68;
     --bg-tertiary: #1c1c24;
     --border-subtle: #1a1a22;
     --bubble-user-bg: #e8e8ed;
@@ -113,7 +112,6 @@
     --code-bg: #1a1a22;
     --titlebar-bg: #0e0e12;
     --titlebar-border: #22222a;
-    --btn-ghost-hover: #14141a;
 
     --success: #10b981;
     --warning: #f59e0b;
@@ -145,6 +143,28 @@
   html { color-scheme: light; -webkit-font-smoothing: antialiased; }
   html.dark { color-scheme: dark; }
   html, body { margin: 0; padding: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif; font-size: 14px; line-height: 1.5; }
+
+  /* 可点击元素统一指针（规范：所有 clickable 需 cursor-pointer） */
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]),
+  a[href], label[for], input[type="checkbox"], input[type="radio"] { cursor: pointer; }
+  button:disabled, [role="button"][aria-disabled="true"] { cursor: not-allowed; }
+
+  /* 全局可见焦点样式（键盘导航可访问性） */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* 尊重用户"减弱动态效果"偏好 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer components {
@@ -160,61 +180,6 @@
   }
 
   .top-bar > * { -webkit-app-region: no-drag; }
-
-  .btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 10px;
-    border-radius: var(--radius-md);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--muted-foreground);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: all 120ms ease;
-    white-space: nowrap;
-  }
-  .btn-ghost:hover { background: var(--muted); color: var(--foreground); }
-
-  .btn-accent {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 14px;
-    border-radius: var(--radius-md);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--primary-foreground);
-    background: var(--primary);
-    border: none;
-    cursor: pointer;
-    transition: all 120ms ease;
-  }
-  .btn-accent:hover { background: var(--primary); opacity: 0.9; }
-
-  .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    height: 32px;
-    padding: 0 14px;
-    border-radius: var(--radius-md);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--primary-foreground);
-    background: var(--primary);
-    border: none;
-    cursor: pointer;
-    transition: all 120ms ease;
-  }
-  .btn-primary:hover { background: var(--primary); opacity: 0.9; }
 
   .panel {
     background: var(--card);
@@ -309,36 +274,6 @@
     display: flex;
     flex-direction: column;
   }
-
-  .chip-group {
-    display: flex;
-    gap: 2px;
-    padding: 2px;
-    background: var(--muted);
-    border-radius: var(--radius-md);
-  }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    height: 26px;
-    padding: 0 10px;
-    border-radius: calc(var(--radius-md) - 2px);
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--fg-tertiary);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: all 120ms ease;
-  }
-  .chip.active {
-    background: var(--card);
-    color: var(--foreground);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  }
-  .chip:hover:not(.active) { color: var(--muted-foreground); }
 
   .input-field {
     width: 100%;

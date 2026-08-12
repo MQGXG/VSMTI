@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Check, Upload, Trash2, FolderOpen } from "lucide-react";
 import { Modal } from "../components/ui/Modal";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import { PROJECT_COLORS } from "../theme/data-colors";
 
 interface Project {
@@ -82,14 +84,12 @@ export function EditProjectDialog({ project, open, onClose, onSave, onDelete }: 
         {/* 名称 */}
         <div>
           <label className="block text-sm mb-1.5" style={{ color: 'var(--text-secondary)' }}>名称</label>
-          <input
+          <Input
             autoFocus
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
-            className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all duration-200"
-            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
           />
         </div>
 
@@ -149,13 +149,11 @@ export function EditProjectDialog({ project, open, onClose, onSave, onDelete }: 
         {/* 工作区启动脚本 */}
         <div>
           <label className="block text-sm mb-1.5" style={{ color: 'var(--text-secondary)' }}>工作区启动脚本</label>
-          <input
+          <Input
             type="text"
             value={startupScript}
             onChange={(e) => setStartupScript(e.target.value)}
             placeholder="例如 bun install"
-            className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all duration-200"
-            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
           />
           <p className="text-[11px] mt-1" style={{ color: 'var(--text-tertiary)' }}>
             在创建新的工作区 (worktree) 后运行。
@@ -170,29 +168,28 @@ export function EditProjectDialog({ project, open, onClose, onSave, onDelete }: 
 
         {/* 按钮组 */}
         <div className="flex items-center justify-between pt-2">
-          <button
+          <Button
+            variant="ghost"
             onClick={handleDelete}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-red-500/10"
-            style={{ color: 'var(--error)' }}
+            className="text-error"
           >
             <Trash2 className="w-4 h-4" />
             删除项目
-          </button>
+          </Button>
           <div className="flex gap-2">
-            <button
+            <Button
+              variant="ghost"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-sm transition-colors"
-              style={{ color: 'var(--text-secondary)' }}
+              className="text-secondary"
             >
               取消
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSave}
               disabled={!name.trim()}
-              className="px-4 py-2 rounded-lg text-sm btn-primary text-white disabled:opacity-40 disabled:cursor-not-allowed"
             >
               保存
-            </button>
+            </Button>
           </div>
         </div>
       </div>
