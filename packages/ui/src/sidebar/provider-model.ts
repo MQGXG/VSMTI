@@ -153,9 +153,9 @@ export async function decideVisionPolicy(
 export const MAX_IMAGE_COUNT = 4
 export const MAX_IMAGE_BYTES = 4 * 1024 * 1024 // 4MB
 
-/** 校验图片 data URL：仅接受 data:image/*;base64 格式白名单 */
+/** 校验图片 data URL：接受图片或 PDF（PDF 走视觉桥） */
 export function isValidImageDataUrl(url: string): boolean {
-  return /^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(url)
+  return /^data:(image\/(png|jpe?g|gif|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/.test(url)
 }
 
 /** 校验图片 base64 体积（去除 data URL 前缀后） */
@@ -172,20 +172,23 @@ export interface ImageValidation {
 }
 
 /**
- * 批量校验上传图片（数量 / 大小 / 格式）。
+ * 批量校验上传媒体（图片/PDF）。
  * 失败返回原因，供上层提示并阻止发送。
  */
 export function validateImages(images: string[]): ImageValidation {
   if (images.length === 0) return { ok: true }
   if (images.length > MAX_IMAGE_COUNT) {
-    return { ok: false, reason: `一次最多上传 ${MAX_IMAGE_COUNT} 张图片` }
+    return { ok: false, reason: `一次最多上传 ${MAX_IMAGE_COUNT} 个文件` }
   }
   for (const img of images) {
     if (!isValidImageDataUrl(img)) {
-      return { ok: false, reason: "仅支持 PNG / JPG / GIF / WebP 图片" }
+      return { ok: false, reason: "仅支持 PNG / JPG / GIF / WebP 图片或 PDF 文档" }
     }
-    if (imageDataSize(img) > MAX_IMAGE_BYTES) {
-      return { ok: false, reason: "单张图片不能超过 4MB" }
+    const isPdf = img.startsWith("data:application/pdf;")
+    // PDF 走视觉桥，允许更大体积（受附件总预算约束）
+    const limit = isPdf ? 20 * 1024 * 1024 : MAX_IMAGE_BYTES
+    if (imageDataSize(img) > limit) {
+      return { ok: false, reason: isPdf ? "PDF 不能超过 20MB" : "单张图片不能超过 4MB" }
     }
   }
   return { ok: true }

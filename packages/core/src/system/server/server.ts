@@ -6,6 +6,9 @@
 import * as http from "http"
 import * as url from "url"
 import * as crypto from "crypto"
+import * as fs from "fs"
+import * as pathLib from "path"
+import { getPlatformPaths } from "../../config/paths"
 
 import {
   handleStartStream,
@@ -428,6 +431,30 @@ async function routeRequest(
       if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
       const body = await parseBody(req) as RequestBody
       jsonResponse(res, 200, await handleSearchMessages(body.query as string))
+      return
+    }
+    // 读取会话附件（历史恢复：路径 → base64 data URL）
+    case "/api/attachment": {
+      if (req.method !== "GET") { errorResponse(res, 405, "Method not allowed"); return }
+      const relPath = query.path as string | undefined
+      if (!relPath) { errorResponse(res, 400, "path is required"); return }
+      // 安全校验：relPath 形如 "attachments/{sessionId}/{file}"，仅允许访问 attachments 目录
+      const base = pathLib.resolve(getPlatformPaths().userData)
+      const abs = pathLib.resolve(base, relPath)
+      const attachmentsDir = pathLib.join(base, "attachments")
+      if (!abs.startsWith(attachmentsDir + pathLib.sep)) { errorResponse(res, 403, "Invalid attachment path"); return }
+      try {
+        const data = await fs.promises.readFile(abs)
+        const ext = pathLib.extname(abs).slice(1).toLowerCase()
+        const mime = ext === "pdf" ? "application/pdf"
+          : ext === "jpg" || ext === "jpeg" ? "image/jpeg"
+          : ext === "gif" ? "image/gif"
+          : ext === "webp" ? "image/webp"
+          : "image/png"
+        jsonResponse(res, 200, { data: `data:${mime};base64,${data.toString("base64")}` })
+      } catch {
+        errorResponse(res, 404, "Attachment not found")
+      }
       return
     }
     case "/api/session/update": {

@@ -4,6 +4,7 @@ import * as path from "path";
 import { getMainWindow, minimizeWindow, toggleMaximizeWindow, hideWindow } from "../managers/window-manager";
 import { registerAgentIPCHandlers } from "./index";
 import { getFloatingBallManager } from "../managers/floating-ball-manager";
+import { createAttachmentSelection, assertAttachmentBudget, readAttachment, releaseAttachmentSelection } from "../main/attachment-picker";
 
 export function registerIPCHandlers(): void {
   registerAgentIPCHandlers();
@@ -23,18 +24,44 @@ export function registerIPCHandlers(): void {
     return result.filePaths;
   });
 
-  ipcMain.handle("dialog:openFile", async () => {
+  ipcMain.handle("dialog:openFile", async (event) => {
     const win = getMainWindow();
-    if (!win) return [];
+    if (!win) return { token: "", files: [] };
     const result = await dialog.showOpenDialog(win, {
       properties: ["openFile", "multiSelections"],
       filters: [
         { name: "所有文件", extensions: ["*"] },
-        { name: "文本文件", extensions: ["txt", "md", "csv", "json"] },
-        { name: "代码文件", extensions: ["py", "js", "ts", "java", "cpp"] },
+        { name: "图片", extensions: ["png", "jpg", "jpeg", "gif", "webp"] },
+        { name: "文档", extensions: ["docx", "xlsx", "pptx", "pdf", "txt", "md", "csv"] },
+        { name: "代码文件", extensions: ["py", "js", "ts", "java", "cpp", "rs", "go", "html", "css"] },
       ],
     });
-    return result.filePaths;
+    if (result.canceled || result.filePaths.length === 0) return { token: "", files: [] };
+
+    const files = await Promise.all(
+      result.filePaths.map(async (filePath) => ({
+        path: filePath,
+        name: path.basename(filePath),
+        size: (await fs.stat(filePath)).size,
+      })),
+    );
+    try {
+      assertAttachmentBudget(files);
+    } catch (e) {
+      return { token: "", files: [], error: e instanceof Error ? e.message : String(e) };
+    }
+    const token = createAttachmentSelection(event.sender.id, result.filePaths);
+    return { token, files };
+  });
+
+  // 读取已选择附件（token 授权 + 预算校验）
+  ipcMain.handle("dialog:readFile", async (event, token: string, filePath: string) => {
+    return readAttachment(event.sender.id, token, filePath);
+  });
+
+  // 释放附件授权
+  ipcMain.handle("dialog:releaseFiles", (event, token: string) => {
+    releaseAttachmentSelection(event.sender.id, token);
   });
 
   ipcMain.handle("dialog:saveFile", async (_, defaultName: string) => {
@@ -49,6 +76,25 @@ export function registerIPCHandlers(): void {
     if (!filePath || typeof content !== "string") return false;
     await fs.writeFile(filePath, content, "utf-8");
     return true;
+  });
+
+  // 读取会话附件（历史恢复：相对路径 → base64 data URL）
+  ipcMain.handle("ts:readAttachment", async (_, relPath: string) => {
+    if (!relPath || typeof relPath !== "string") return "";
+    // relPath 形如 "attachments/{sessionId}/{file}"，已含 attachments 前缀
+    const base = path.join(app.getPath("userData"));
+    const abs = path.resolve(base, relPath);
+    if (!abs.startsWith(path.join(app.getPath("userData"), "attachments") + path.sep)) return "";
+    try {
+      const data = await fs.readFile(abs);
+      const ext = path.extname(abs).slice(1).toLowerCase();
+      const mime = ext === "pdf" ? "application/pdf"
+        : ext === "jpg" || ext === "jpeg" ? "image/jpeg"
+        : ext === "gif" ? "image/gif"
+        : ext === "webp" ? "image/webp"
+        : "image/png";
+      return `data:${mime};base64,${data.toString("base64")}`;
+    } catch { return ""; }
   });
 
   // 默认工作目录（Documents/Mira，回退 home/Mira）

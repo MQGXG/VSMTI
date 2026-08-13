@@ -227,16 +227,19 @@ export async function loadHistoryForSession(sessionId: string): Promise<void> {
     const { SessionService } = await import("../services/session.service");
     const tsMsgs = await SessionService.getMessages(sessionId);
     if (tsMsgs && tsMsgs.length > 0) {
-      s.messages = tsMsgs
-        .filter((msg) => msg.role !== "tool")
-        .map((msg) => ({
-          id: `msg-${msg.id}`,
-          dbId: msg.id,
-          role: msg.role as "user" | "assistant",
-          parts: parseStoredMessageContent(msg.content),
-          createdAt: msg.timestamp ? new Date(msg.timestamp) : undefined,
-          retryCount: msg.retryCount || 0,
-        }));
+      const mapped = await Promise.all(
+        tsMsgs
+          .filter((msg) => msg.role !== "tool")
+          .map(async (msg) => ({
+            id: `msg-${msg.id}`,
+            dbId: msg.id,
+            role: msg.role as "user" | "assistant",
+            parts: await parseStoredMessageContent(msg.content),
+            createdAt: msg.timestamp ? new Date(msg.timestamp) : undefined,
+            retryCount: msg.retryCount || 0,
+          })),
+      );
+      s.messages = mapped;
     } else {
       s.messages = [];
     }
@@ -248,7 +251,7 @@ export async function loadHistoryForSession(sessionId: string): Promise<void> {
   }
 }
 
-function parseStoredMessageContent(content: string): MiraMessage["parts"] {
+async function parseStoredMessageContent(content: string): Promise<MiraMessage["parts"]> {
   if (!content) return [];
   const trimmed = content.trim();
   if (trimmed.startsWith("{")) {
@@ -258,6 +261,23 @@ function parseStoredMessageContent(content: string): MiraMessage["parts"] {
         const parts: MiraMessage["parts"] = [];
         if (typeof parsed.text === "string" && parsed.text) {
           parts.push({ type: "text", text: parsed.text });
+        }
+        // 会话附件恢复：读回图片（异步）
+        if (Array.isArray(parsed.images)) {
+          for (const relPath of parsed.images) {
+            if (typeof relPath !== "string") continue;
+            try {
+              const dataUrl = await window.electronAPI.ts.readAttachment(relPath);
+              if (dataUrl) {
+                parts.push({
+                  type: "file",
+                  url: dataUrl,
+                  name: relPath.split("/").pop() || "图片",
+                  mime: dataUrl.split(";")[0].replace("data:", ""),
+                });
+              }
+            } catch { /* 附件读取失败跳过 */ }
+          }
         }
         if (Array.isArray(parsed.tool_calls)) {
           for (const tc of parsed.tool_calls) {

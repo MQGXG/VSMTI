@@ -7,8 +7,18 @@ export const DialogService = {
     return window.electronAPI.openDirectory()
   },
 
-  async openFile(): Promise<string[]> {
+  async openFile(): Promise<{ token: string; files: Array<{ path: string; name: string; size: number }>; error?: string }> {
     return window.electronAPI.openFile()
+  },
+
+  /** 读取已选择附件（token 授权） */
+  async readPickedFile(token: string, filePath: string): Promise<ArrayBuffer> {
+    return window.electronAPI.readPickedFile(token, filePath)
+  },
+
+  /** 释放附件授权 */
+  async releasePickedFiles(token: string): Promise<void> {
+    return window.electronAPI.releasePickedFiles(token)
   },
 
   async saveFile(name: string): Promise<string> {

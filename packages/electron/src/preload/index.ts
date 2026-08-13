@@ -14,6 +14,8 @@ const electronAPI = {
   openFile: () => ipcRenderer.invoke("dialog:openFile"),
   openDirectory: () => ipcRenderer.invoke("dialog:openDirectory"),
   saveFile: (name: string) => ipcRenderer.invoke("dialog:saveFile", name),
+  readPickedFile: (token: string, filePath: string) => ipcRenderer.invoke("dialog:readFile", token, filePath),
+  releasePickedFiles: (token: string) => ipcRenderer.invoke("dialog:releaseFiles", token),
 
   notify: (title: string, body: string) => ipcRenderer.invoke("notify", title, body),
 
@@ -45,6 +47,7 @@ const electronAPI = {
     searchMessages: (query: string) => ipcRenderer.invoke("ts:searchMessages", query),
     restoreSnapshot: (snapshotId: string, workspace: string) => ipcRenderer.invoke("ts:restoreSnapshot", snapshotId, workspace),
     writeFile: (filePath: string, content: string) => ipcRenderer.invoke("ts:writeFile", filePath, content),
+    readAttachment: (relPath: string) => ipcRenderer.invoke("ts:readAttachment", relPath),
     getDefaultWorkspace: () => ipcRenderer.invoke("ts:getDefaultWorkspace"),
   },
 

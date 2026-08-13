@@ -46,6 +46,7 @@ export const fileAttachmentAdapter: AttachmentAdapter = {
     const isImage = attachment.type === "image";
     const contentText = (attachment as any).text || "";
     const attachmentUrl = (attachment as any).url as string | undefined;
+    await Promise.resolve();
 
     return {
       ...attachment,

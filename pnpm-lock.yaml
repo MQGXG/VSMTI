@@ -332,6 +332,9 @@ importers:
       diff:
         specifier: ^7.0.0
         version: 7.0.0
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
       lucide-react:
         specifier: ^0.400.0
         version: 0.400.0(react@18.3.1)

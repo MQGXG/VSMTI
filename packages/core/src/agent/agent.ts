@@ -2,6 +2,8 @@ import type { ToolRegistry } from "../system/registry"
 import type { AgentEvent } from "../types"
 import { join } from "path"
 import { createHash } from "crypto"
+import { promises as fs } from "fs"
+import { getPlatformPaths } from "../config/paths"
 import type { LLMMessage } from "../llm/client"
 import { estimateTokens, repairMessageSequence } from "../shared/message-utils"
 import { calculateCost, getModelPricing } from "../shared/cost"
@@ -264,11 +266,26 @@ export class Agent {
           continue
         }
         const lastAssistant = [...restored].reverse().find(r => r.role === "assistant")
-        if (lastAssistant && !hasToolCalls(lastAssistant.content)) {
+        if (lastAssistant && typeof lastAssistant.content === "string" && !hasToolCalls(lastAssistant.content)) {
           lastAssistant.content += `\n\n[Tool result: ${m.content.slice(0, 500)}]`
           continue
         }
         restored.push({ role: "tool", content: [{ type: "tool-result" as const, toolCallId: m.toolCallId, toolName: "unknown", output: m.content }], tool_call_id: m.toolCallId })
+        continue
+      }
+      // user 消息：若为 JSON {text, images} 则恢复文本并读回图片
+      const parsedUser = tryParseUserWithImages(m.content)
+      if (parsedUser) {
+        const contentParts: Array<{ type: "text"; text: string } | { type: "image"; image: string; mediaType: string }> =
+          [{ type: "text" as const, text: parsedUser.text }]
+        for (const relPath of parsedUser.images) {
+          const dataUrl = await this.readAttachmentDataUrl(relPath)
+          if (dataUrl) {
+            const mime = /^data:(image\/[a-z0-9.+-]+);/.exec(dataUrl)?.[1] || "image/png"
+            contentParts.push({ type: "image" as const, image: dataUrl, mediaType: mime })
+          }
+        }
+        restored.push({ role: "user", content: contentParts })
         continue
       }
       restored.push({ role: "user", content: m.content })
@@ -280,6 +297,47 @@ export class Agent {
     return rebuilt.length > repaired.length ? rebuilt : repaired
   }
 
+  /** 读取附件文件为 data URL（{userData}/{relPath}），失败返回 null */
+  private async readAttachmentDataUrl(relPath: string): Promise<string | null> {
+    try {
+      const abs = join(getPlatformPaths().userData, relPath)
+      const data = await fs.readFile(abs)
+      const ext = relPath.split(".").pop()?.toLowerCase() || "png"
+      const mime = ext === "pdf" ? "application/pdf"
+        : ext === "jpg" || ext === "jpeg" ? "image/jpeg"
+        : ext === "gif" ? "image/gif"
+        : ext === "webp" ? "image/webp"
+        : "image/png"
+      return `data:${mime};base64,${data.toString("base64")}`
+    } catch { return null }
+  }
+
+  /**
+   * 持久化用户上传的图片到 {userData}/attachments/{sessionId}/。
+   * 返回相对路径数组（供数据库落库与历史恢复），失败时返回空数组（不阻断主流程）。
+   */
+  private async persistImages(sessionId: string, images: string[]): Promise<string[]> {
+    const paths: string[] = []
+    try {
+      const baseDir = join(getPlatformPaths().userData, "attachments", sessionId)
+      await fs.mkdir(baseDir, { recursive: true })
+      for (let i = 0; i < images.length; i++) {
+        const dataUrl = images[i]
+        // 解析 data URL → 扩展名 + base64 数据（支持图片与 PDF）
+        const mimeMatch = /^data:((?:image|application)\/[a-z0-9.+-]+);base64,(.*)$/s.exec(dataUrl)
+        if (!mimeMatch) continue
+        const mime = mimeMatch[1]
+        const base64 = mimeMatch[2]
+        const ext = mime === "application/pdf" ? "pdf" : (mime.split("/")[1]?.replace("+", "-") || "png")
+        const fileName = `${Date.now()}_${i}.${ext}`
+        const filePath = join(baseDir, fileName)
+        await fs.writeFile(filePath, Buffer.from(base64, "base64"))
+        paths.push(`attachments/${sessionId}/${fileName}`)
+      }
+    } catch { /* 落盘失败不阻断主流程 */ }
+    return paths
+  }
+
   /** 阶段 3: 构建系统提示和初始消息列表 */
   private async buildMessages(
     config: AgentConfig,
@@ -287,9 +345,14 @@ export class Agent {
     enrichedUser: string,
     memoryPrompt: string,
     history: LLMMessage[],
+    imagePaths?: string[],
   ): Promise<LLMMessage[]> {
+    // 含图片时以 JSON 落库（保存图片路径引用，历史会话可恢复）
+    const storedContent = imagePaths && imagePaths.length > 0
+      ? JSON.stringify({ text: userMessage, images: imagePaths })
+      : userMessage
     await appendMessage(config.sessionID, {
-      role: "user", content: userMessage, timestamp: new Date().toISOString(),
+      role: "user", content: storedContent, timestamp: new Date().toISOString(),
     })
     pluginHooks.emit("user_prompt_submit", { sessionID: config.sessionID, message: userMessage })
 
@@ -650,8 +713,15 @@ export class Agent {
     }
 
     const restoredHistory = await this.restoreSession(history, config)
+
+    // 图片落盘：写入 {userData}/attachments/{sessionId}/，返回相对路径供落库与历史恢复
+    let imagePaths: string[] | undefined
+    if (images && images.length > 0) {
+      imagePaths = await this.persistImages(config.sessionID, images)
+    }
+
     const { enrichedUser, memoryPrompt } = await this.contextManager.prepareContext(userMessage, config.sessionID)
-    let messages = await this.buildMessages(config, userMessage, enrichedUser, memoryPrompt, restoredHistory)
+    let messages = await this.buildMessages(config, userMessage, enrichedUser, memoryPrompt, restoredHistory, imagePaths)
 
     // 用户上传的图片：注入首条 user 消息为 ImagePart（含图片时模型才能识图）
     if (images && images.length > 0) {
@@ -816,6 +886,19 @@ export class Agent {
 }
 
 /* ── 辅助函数 ── */
+
+/** 解析 user 消息 JSON {text, images:[paths]}，非此格式返回 null */
+function tryParseUserWithImages(content: string): { text: string; images: string[] } | null {
+  if (!content.trim().startsWith("{")) return null
+  try {
+    const parsed = JSON.parse(content) as { text?: unknown; images?: unknown }
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.images)) {
+      const images = parsed.images.filter((p: unknown): p is string => typeof p === "string")
+      return { text: typeof parsed.text === "string" ? parsed.text : "", images }
+    }
+  } catch { /* json parse fallback */ }
+  return null
+}
 
 function hasToolCalls(content: string | any[]): boolean {
   if (Array.isArray(content)) return content.some((p) => p.type === "tool-call")

@@ -37,6 +37,8 @@ import { useTheme } from "../contexts/ThemeContext";
 import { buildBuiltinCommands, SOURCE_LABEL, type SlashCommandDef } from "./slash-commands";
 import { createTTSEngine } from "../services/voice/tts";
 import type { TTSEngine } from "../services/voice/types";
+import { parseDroppedFiles, pickAndParseFiles, buildSendContent } from "../lib/attachment-picker-ui";
+import type { PendingAttachment } from "../lib/file-parser";
 
 interface Props { sessionId: string; onSessionChange?: (id: string) => void; onNewSession?: () => void; workspace?: string; }
 interface SkillInfo { name: string; description: string; category: string | null; }
@@ -146,7 +148,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   const [isDragging, setIsDragging] = useState(false);
   const [showGraphPanel, setShowGraphPanel] = useState(false);
   const [preview, setPreview] = useState<{ images: string[]; index: number } | null>(null);
-  const [pendingImages, setPendingImages] = useState<string[]>([]);
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   const dragCounter = useRef(0);
   const settings = useMemo(() => loadSettings(), []);
 
@@ -214,26 +216,10 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   const onDrop = useCallback((e: DragEvent) => {
     e.preventDefault(); e.stopPropagation(); setIsDragging(false); dragCounter.current = 0;
     const files = e.dataTransfer?.files; if (!files || files.length === 0) return;
-    // 图片文件：读取 base64 加入待发送队列（输入框上方显示缩略图），非图片保持路径文本
-    const imageFiles: File[] = []; const paths: string[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i] as File & { path?: string };
-      if (f.type.startsWith("image/")) imageFiles.push(f);
-      else paths.push(f.path || f.name);
-    }
-    if (imageFiles.length > 0) {
-      Promise.all(imageFiles.map((f) => new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(f);
-      }))).then((urls) => {
-        setPendingImages((prev) => [...prev, ...urls]);
-      }).catch(() => { /* 读取失败不阻塞 */ });
-    }
-    if (paths.length > 0) {
-      aui.composer().setText(paths.map((p) => `读取文件: ${p}`).join("\n"));
-      textareaRef.current?.focus();
-    }
+    // 拖拽文件：解析所有支持类型（图片/文本/Excel/Word/PPT/PDF），加入待发送队列
+    void parseDroppedFiles(Array.from(files)).then((atts) => {
+      if (atts.length > 0) setPendingAttachments((prev) => [...prev, ...atts]);
+    }).catch(() => { /* 解析失败不阻塞 */ });
   }, [aui]);
 
   useEffect(() => {
@@ -243,13 +229,19 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
   }, [onEnter, onLeave, onOver, onDrop]);
 
   function applyCommand(cmd: SlashCommandDef) { cmd.action(); setShowSkills(false); }
-  /** 发送：文本 + 待发送图片；无图片时走 composer 默认发送 */
+  /** 发送：文本 + 待发送附件；无附件时走 composer 默认发送 */
   function handleSend() {
     if (ctx.isRunning) { ctx.stopStream(); return; }
     const text = composerText.trim();
-    if (pendingImages.length > 0) {
-      void ctx.sendMessage(text || "请查看图片：", pendingImages);
-      setPendingImages([]);
+    if (pendingAttachments.length > 0) {
+      const { text: sendText, images, rejected } = buildSendContent(pendingAttachments, text);
+      // 不支持的附件：UI 提示，不发送该文件
+      if (rejected.length > 0) {
+        const names = rejected.map((r) => r.name).join("、");
+        alert(`以下文件类型暂不支持解析，已忽略：\n${names}\n（${rejected[0]?.error || ""}）`);
+      }
+      void ctx.sendMessage(sendText || "请查看以下内容：", images);
+      setPendingAttachments([]);
       aui.composer().setText("");
     } else if (text) {
       aui.composer().send();
@@ -263,27 +255,29 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
       if (e.key === "Enter" && !e.shiftKey && filteredCommands[selectedCommandIndex]) { e.preventDefault(); applyCommand(filteredCommands[selectedCommandIndex]); return; }
       if (e.key === "Escape") { setShowSkills(false); return; }
     }
-    // 有待发送图片时，Enter（非 Shift）走自定义发送，确保图片随消息发送
-    if (e.key === "Enter" && !e.shiftKey && pendingImages.length > 0) {
+    // 有待发送附件时，Enter（非 Shift）走自定义发送
+    if (e.key === "Enter" && !e.shiftKey && pendingAttachments.length > 0) {
       e.preventDefault();
       handleSend();
     }
   }
 
-  /** 附件按钮：触发隐藏文件选择（仅图片） */
-  const handlePickImages = () => { fileInputRef.current?.click(); };
+  /** 附件按钮：主进程 dialog 选择文件 */
+  const handlePickImages = () => {
+    void pickAndParseFiles().then((atts) => {
+      if (atts.length > 0) setPendingAttachments((prev) => [...prev, ...atts]);
+    }).catch((err) => {
+      alert(err instanceof Error ? err.message : String(err));
+    });
+  };
 
-  /** 文件选择完成：读取图片 base64 加入待发送队列 */
+  /** 隐藏 input 兜底（保留浏览器选择路径） */
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith("image/"));
+    const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    Promise.all(files.map((f) => new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(f);
-    }))).then((urls) => {
-      setPendingImages((prev) => [...prev, ...urls]);
-    }).catch(() => { /* 读取失败不阻塞 */ });
+    void parseDroppedFiles(files).then((atts) => {
+      if (atts.length > 0) setPendingAttachments((prev) => [...prev, ...atts]);
+    }).catch(() => { /* 解析失败不阻塞 */ });
     e.target.value = "";
   };
 
@@ -492,23 +486,47 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-2 rounded-xl px-4 py-3 transition-all duration-200"
                   style={{ background: "var(--bg-elevated)", border: "1px solid", borderColor: isFocused ? "var(--fg)" : "var(--border)", boxShadow: isFocused ? "var(--shadow-elevated)" : "none" }}>
-                  {/* 待发送图片预览（缩略图，可移除 / 点击放大） */}
-                  {pendingImages.length > 0 && (
+                  {/* 待发送附件预览（图片缩略图 / 文件卡片，可移除 / 图片点击放大） */}
+                  {pendingAttachments.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {pendingImages.map((img, i) => (
-                        <div key={i} className="relative group">
-                          <img src={img} alt={`图片 ${i + 1}`}
-                            className="h-12 w-12 object-cover rounded-lg cursor-zoom-in"
-                            style={{ border: "1px solid var(--border-light)" }}
-                            onClick={() => setPreview({ images: pendingImages, index: i })} />
-                          <button
-                            className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full text-white/90 bg-black/60 hover:bg-black/80 transition-colors"
-                            onClick={() => setPendingImages((prev) => prev.filter((_, idx) => idx !== i))}
-                            title="移除">
-                            <X className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
-                      ))}
+                      {pendingAttachments.map((att, i) => {
+                        const imageUrl = att.kind === "image" ? att.data : undefined;
+                        const fileLabel = att.kind === "image" ? "图片"
+                          : att.kind === "pdf" ? "PDF"
+                          : att.kind === "excel" ? "Excel"
+                          : att.kind === "word" ? "Word"
+                          : att.kind === "ppt" ? "PPT"
+                          : att.kind === "text" ? "文本"
+                          : "文件";
+                        return (
+                          <div key={i} className="relative group flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                            style={{ background: "var(--surface-secondary)", border: "1px solid var(--border-light)" }}>
+                            {imageUrl ? (
+                              <img src={imageUrl} alt={att.name}
+                                className="h-10 w-10 object-cover rounded-md cursor-zoom-in"
+                                onClick={() => setPreview({ images: pendingAttachments.filter(a => a.kind === "image").map(a => a.data), index: pendingAttachments.filter(a => a.kind === "image").map(a => a.data).indexOf(imageUrl) >= 0 ? pendingAttachments.filter(a => a.kind === "image").map(a => a.data).indexOf(imageUrl) : 0 })} />
+                            ) : (
+                              <div className="flex items-center justify-center h-10 w-10 rounded-md text-xs font-medium"
+                                style={{ background: "var(--bg-secondary)", color: "var(--primary)" }}>
+                                {fileLabel.slice(0, 2)}
+                              </div>
+                            )}
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-xs truncate max-w-[120px]" style={{ color: "var(--text-primary)" }}>{att.name}</span>
+                              <span className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                                {att.kind === "image" ? "图片" : `${(att.size / 1024).toFixed(1)} KB`}{att.error ? ` · 解析失败` : ""}
+                              </span>
+                            </div>
+                            <button
+                              className="shrink-0 p-0.5 rounded hover:bg-muted cursor-pointer"
+                              style={{ color: "var(--text-tertiary)" }}
+                              onClick={() => setPendingAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                              title="移除">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                   <ComposerPrimitive.Quote className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs"
@@ -520,8 +538,8 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                     </ComposerPrimitive.QuoteDismiss>
                   </ComposerPrimitive.Quote>
                   <div className="flex items-center gap-2">
-                  <input ref={fileInputRef} type="file" accept="image/*" multiple hidden onChange={handleFileInput} />
-                  <Button variant="ghost" size="icon" className="h-7 w-7" title="添加图片" onClick={handlePickImages}>
+                  <input ref={fileInputRef} type="file" multiple hidden onChange={handleFileInput} />
+                  <Button variant="ghost" size="icon" className="h-7 w-7" title="添加附件" onClick={handlePickImages}>
                     <Paperclip className="h-4 w-4" />
                   </Button>
                   <ComposerPrimitive.Dictate asChild>
@@ -556,7 +574,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                     title={ctx.isRunning ? "停止" : "发送"}
                     className="h-7 w-7 shrink-0"
                     style={{
-                      color: ctx.isRunning ? "var(--error)" : (composerIsEmpty && pendingImages.length === 0 ? "var(--fg-tertiary)" : "var(--fg)"),
+                      color: ctx.isRunning ? "var(--error)" : (composerIsEmpty && pendingAttachments.length === 0 ? "var(--fg-tertiary)" : "var(--fg)"),
                       background: ctx.isRunning ? "rgba(239,68,68,0.08)" : "transparent",
                     }}
                   >

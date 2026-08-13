@@ -19,9 +19,11 @@ export interface ElectronAPI {
   getPythonLogs: () => Promise<LogEntry[]>;
   clearPythonLogs: () => Promise<void>;
   restartPython: () => Promise<{ status: string; port: number; url: string; error?: string }>;
-  openFile: () => Promise<string[]>;
+  openFile: () => Promise<{ token: string; files: Array<{ path: string; name: string; size: number }>; error?: string }>;
   openDirectory: () => Promise<string[]>;
   saveFile: (name: string) => Promise<string>;
+  readPickedFile: (token: string, filePath: string) => Promise<ArrayBuffer>;
+  releasePickedFiles: (token: string) => Promise<void>;
   notify: (title: string, body: string) => Promise<void>;
   encryptApiKey: (text: string) => Promise<string>;
   decryptApiKey: (encrypted: string) => Promise<string>;
@@ -53,6 +55,7 @@ export interface ElectronAPI {
     searchMessages: (query: string) => Promise<Array<{ session_id: string; session_title: string; message: { role: string; content: string; timestamp: string }; context: string }>>;
     restoreSnapshot: (snapshotId: string, workspace: string) => Promise<string[]>;
     writeFile: (filePath: string, content: string) => Promise<boolean>;
+    readAttachment: (relPath: string) => Promise<string>;
     getDefaultWorkspace: () => Promise<string>;
   };
 

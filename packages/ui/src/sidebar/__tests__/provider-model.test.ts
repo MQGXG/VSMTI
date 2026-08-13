@@ -88,6 +88,11 @@ describe("validateImages", () => {
   it("合法图片通过", () => {
     expect(validateImages([DATA_URL]).ok).toBe(true)
   })
+
+  it("PDF 走视觉桥，允许上传", () => {
+    const pdf = "data:application/pdf;base64,JVBERi0xLjQK"
+    expect(validateImages([pdf]).ok).toBe(true)
+  })
 })
 
 describe("imageDataSize", () => {
