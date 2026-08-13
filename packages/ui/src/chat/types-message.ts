@@ -27,6 +27,10 @@ export interface MiraPart {
   mime?: string;
   url?: string;
   name?: string;
+  /** 文件类型（text/excel/word/ppt 等路径引用卡片） */
+  kind?: string;
+  /** 原始文件路径（路径引用） */
+  path?: string;
   /** diff-summary */
   files?: DiffFileEntry[];
   /** compaction */

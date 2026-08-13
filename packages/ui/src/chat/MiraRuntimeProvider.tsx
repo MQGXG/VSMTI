@@ -12,6 +12,7 @@ import { useMiraChat } from "../hooks/useMiraChat";
 import { convertMessage, type MiraMessage } from "./mira-runtime";
 import type { ModelOption } from "./ModelSelector";
 import type { AgentMode } from "./types";
+import type { PendingFileRef } from "../lib/attachment-picker-ui";
 import { fileAttachmentAdapter } from "../lib/attachment-adapter";
 import { generateFollowUpSuggestions } from "./follow-up-suggestions";
 import { loadSettings as getSettings } from "../sidebar/provider-data";
@@ -42,7 +43,7 @@ export interface MiraRuntimeContext {
   handleQuestionAnswer: (answer: string) => void;
   handleToolResult: (toolName: string, result: any) => void;
   stopStream: () => void;
-  sendMessage: (content: string, images?: string[]) => Promise<void>;
+  sendMessage: (content: string, images?: string[], files?: PendingFileRef[]) => Promise<void>;
   retryMessage: (assistantMsgId: string) => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<MiraMessage[]>>;
 }

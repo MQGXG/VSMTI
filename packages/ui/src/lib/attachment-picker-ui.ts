@@ -19,7 +19,7 @@ export async function pickAndParseFiles(): Promise<PendingAttachment[]> {
     for (const fileMeta of result.files) {
       const bytes = await DialogService.readPickedFile(result.token, fileMeta.path);
       const file = new File([bytes], fileMeta.name);
-      const attachment = await parseFile(file);
+      const attachment = await parseFile(file, fileMeta.path);
       attachment.size = fileMeta.size;
       attachments.push(attachment);
     }
@@ -29,24 +29,38 @@ export async function pickAndParseFiles(): Promise<PendingAttachment[]> {
   }
 }
 
-/** 拖拽文件解析（浏览器 File 对象） */
+/** 拖拽文件解析（浏览器 File 对象，Electron 下带 path） */
 export async function parseDroppedFiles(files: File[]): Promise<PendingAttachment[]> {
   const attachments: PendingAttachment[] = [];
   for (const file of files) {
-    const attachment = await parseFile(file);
+    const path = (file as File & { path?: string }).path;
+    const attachment = await parseFile(file, path);
     attachments.push(attachment);
   }
   return attachments;
 }
 
-/** 把解析后的附件转换为发送内容（文本拼接 + 图片列表分离） */
+/** 待发送文件元数据（文本/Office 存路径引用） */
+export interface PendingFileRef {
+  name: string;
+  path?: string;
+  kind: PendingAttachment["kind"];
+}
+
+/**
+ * 把解析后的附件转换为发送内容。
+ * - 图片/PDF → images 数组（base64）
+ * - 文本/Office → files 路径引用（不内联内容，由 core 读取/解析）
+ * - 不支持 → rejected
+ */
 export function buildSendContent(
   attachments: PendingAttachment[],
   userText: string,
-): { text: string; images: string[]; rejected: PendingAttachment[] } {
+): { displayText: string; files: PendingFileRef[]; images: string[]; rejected: PendingAttachment[] } {
   const images: string[] = [];
-  const textParts: string[] = [];
+  const files: PendingFileRef[] = [];
   const rejected: PendingAttachment[] = [];
+  const fileTags: string[] = [];
 
   for (const att of attachments) {
     if (att.kind === "image") {
@@ -62,11 +76,11 @@ export function buildSendContent(
       rejected.push(att);
       continue;
     }
-    if (att.data) {
-      textParts.push(`### ${att.name}\n\n${att.data}`);
-    }
+    // 文本 / Office：存路径引用，消息区域只显示卡片
+    files.push({ name: att.name, path: att.path, kind: att.kind });
+    fileTags.push(`📎 ${att.name}`);
   }
 
-  const joined = [userText, ...textParts].filter(Boolean).join("\n\n");
-  return { text: joined || "请查看以下内容：", images, rejected };
+  const joined = [userText, ...fileTags].filter(Boolean).join("\n");
+  return { displayText: joined || "请查看以下内容：", files, images, rejected };
 }

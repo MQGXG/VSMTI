@@ -6,11 +6,11 @@ import { Input } from "../components/ui/input";
 
 interface Props {
   question: string;
-  options: string[];
+  options?: string[];
   onSubmit: (answer: string) => void;
 }
 
-export function QuestionDialog({ question, options, onSubmit }: Props) {
+export function QuestionDialog({ question, options = [], onSubmit }: Props) {
   const [customAnswer, setCustomAnswer] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
 

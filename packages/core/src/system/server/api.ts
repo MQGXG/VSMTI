@@ -257,7 +257,8 @@ export async function handleStartStream(
 
   // 在后台运行 Agent 并通过 ctx 推送事件
   const images = Array.isArray(config.images) ? (config.images as string[]) : undefined
-  runAgentInBackground(session, sessionId, processed, effectiveConfig, ctx, images)
+  const files = Array.isArray(config.files) ? (config.files as Array<{ name: string; path?: string; kind?: string }>) : undefined
+  runAgentInBackground(session, sessionId, processed, effectiveConfig, ctx, images, files)
 }
 
 async function runAgentInBackground(
@@ -267,10 +268,11 @@ async function runAgentInBackground(
   config: AgentConfig,
   ctx: APIContext,
   images?: string[],
+  files?: Array<{ name: string; path?: string; kind?: string }>,
 ): Promise<void> {
   const { agent } = session
   try {
-    for await (const evt of agent.run(message, [], { ...config, sessionID: sessionId }, images)) {
+    for await (const evt of agent.run(message, [], { ...config, sessionID: sessionId }, images, files)) {
       ctx.writeEvent(evt)
     }
   } catch (e) {

@@ -248,9 +248,13 @@ export function handleStreamEvent(
       });
     }
   } else if (event.type === "question") {
+    // 校验 options 为字符串数组（LLM 可能传非法值）
+    const opts = Array.isArray(event.options)
+      ? event.options.filter((o) => typeof o === "string")
+      : [];
     setQuestionReq({
       question: event.question,
-      options: event.options || [],
+      options: opts,
       request_id: event.id,
     });
   } else if (event.type === "error") {

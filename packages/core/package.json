@@ -52,8 +52,10 @@
   "dependencies": {
     "@huggingface/transformers": "^3.0.0-alpha.2",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@xmldom/xmldom": "^0.8.13",
     "docx": "^9.7.1",
     "effect": "^3.21.4",
+    "jszip": "^3.10.1",
     "parse5": "^7.0.0",
     "pptxgenjs": "^4.0.1",
     "sql.js": "^1.14.1",

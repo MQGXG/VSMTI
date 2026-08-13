@@ -3,6 +3,7 @@ import type { MiraMessage } from "../chat/mira-runtime";
 import type { ModelOption } from "../chat/ModelSelector";
 import type { AgentMode } from "../chat/types";
 import type { ToolResult } from "../services/agent.service";
+import type { PendingFileRef } from "../lib/attachment-picker-ui";
 import {
   ensureSession,
   getSessionState,
@@ -48,7 +49,7 @@ interface UseMiraChatReturn {
     options: string[];
     request_id: string;
   } | null;
-  sendMessage: (content: string, images?: string[]) => Promise<void>;
+  sendMessage: (content: string, images?: string[], files?: PendingFileRef[]) => Promise<void>;
   retryMessage: (assistantMsgId: string) => Promise<void>;
   stopStream: () => void;
   handlePermission: (approved: boolean | "always") => Promise<void>;
@@ -94,14 +95,14 @@ export function useMiraChat({
   const state = sessionId ? getSessionState(sessionId) : EMPTY_STATE;
 
   const sendMessage = useCallback(
-    (content: string, images?: string[]) =>
+    (content: string, images?: string[], files?: PendingFileRef[]) =>
       sendMessageToSession(sessionId, content, {
         selectedModel,
         agentMode,
         goalCondition,
         workspace,
         onSessionChange,
-      }, images),
+      }, images, files),
     [sessionId, selectedModel, agentMode, goalCondition, workspace, onSessionChange]
   );
 

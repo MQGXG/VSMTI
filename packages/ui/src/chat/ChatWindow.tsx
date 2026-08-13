@@ -234,13 +234,13 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
     if (ctx.isRunning) { ctx.stopStream(); return; }
     const text = composerText.trim();
     if (pendingAttachments.length > 0) {
-      const { text: sendText, images, rejected } = buildSendContent(pendingAttachments, text);
+      const { displayText, files, images, rejected } = buildSendContent(pendingAttachments, text);
       // 不支持的附件：UI 提示，不发送该文件
       if (rejected.length > 0) {
         const names = rejected.map((r) => r.name).join("、");
         alert(`以下文件类型暂不支持解析，已忽略：\n${names}\n（${rejected[0]?.error || ""}）`);
       }
-      void ctx.sendMessage(sendText || "请查看以下内容：", images);
+      void ctx.sendMessage(displayText || "请查看以下内容：", images, files);
       setPendingAttachments([]);
       aui.composer().setText("");
     } else if (text) {
@@ -279,6 +279,25 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
       if (atts.length > 0) setPendingAttachments((prev) => [...prev, ...atts]);
     }).catch(() => { /* 解析失败不阻塞 */ });
     e.target.value = "";
+  };
+
+  /** 粘贴图片：检测剪贴板中的图片文件 → 读取 base64 加入待发送队列 */
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items || items.length === 0) return;
+    const imageFiles: File[] = [];
+    for (const item of Array.from(items)) {
+      if (item.kind === "file" && item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) imageFiles.push(file);
+      }
+    }
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      void parseDroppedFiles(imageFiles).then((atts) => {
+        if (atts.length > 0) setPendingAttachments((prev) => [...prev, ...atts]);
+      }).catch(() => { /* 解析失败不阻塞 */ });
+    }
   };
 
   /** 发送：文本 + 待发送图片；无图片时走 composer 默认发送 */
@@ -390,6 +409,18 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                                 return null;
                               }}
                             </MessagePrimitive.Parts>
+                            {/* 文件卡片（文本/Office 路径引用，非图片） */}
+                            {orig?.parts.filter((p: any) => p.type === "file" && !p.url && p.name).map((p: any, i: number) => (
+                              <div key={`fc-${i}`} className="mt-2 flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs"
+                                style={{ background: "var(--surface-secondary)", border: "1px solid var(--border-light)" }}>
+                                <span className="text-base leading-none">📎</span>
+                                <span className="font-medium truncate max-w-[200px]" style={{ color: "var(--text-primary)" }}>{p.name}</span>
+                                <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px]"
+                                  style={{ background: "var(--bg-secondary)", color: "var(--text-tertiary)" }}>
+                                  {p.kind === "excel" ? "Excel" : p.kind === "word" ? "Word" : p.kind === "ppt" ? "PPT" : "文件"}
+                                </span>
+                              </div>
+                            ))}
                           </MessageBubble>
                         ) : (
                           <MessageBubble role="assistant" className="min-w-0">
@@ -562,7 +593,7 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
                       </button>
                     )}
                   </ComposerPrimitive.Queue>
-                  <ComposerPrimitive.Input ref={textareaRef} onKeyDown={handleKeyDown}
+                  <ComposerPrimitive.Input ref={textareaRef} onKeyDown={handleKeyDown} onPaste={handlePaste}
                     onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)}
                     placeholder="输入消息..." rows={1}
                     className="input-field min-h-[24px] max-h-[200px]" />

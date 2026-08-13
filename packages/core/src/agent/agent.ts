@@ -48,7 +48,12 @@ export type { AgentConfig } from "./constants"
 
 export type { AgentEvent } from "../types"
 
-
+/** 用户附带的文件路径引用（文本/Office，不落库内容） */
+export interface FileRef {
+  name: string
+  path?: string
+  kind?: string
+}
 export class Agent {
   private stateMachine = new AgentStateMachine()
   private memoryManager!: MemoryManager
@@ -273,7 +278,7 @@ export class Agent {
         restored.push({ role: "tool", content: [{ type: "tool-result" as const, toolCallId: m.toolCallId, toolName: "unknown", output: m.content }], tool_call_id: m.toolCallId })
         continue
       }
-      // user 消息：若为 JSON {text, images} 则恢复文本并读回图片
+      // user 消息：若为 JSON {text, images, files} 则恢复文本并读回图片/文件提示
       const parsedUser = tryParseUserWithImages(m.content)
       if (parsedUser) {
         const contentParts: Array<{ type: "text"; text: string } | { type: "image"; image: string; mediaType: string }> =
@@ -283,6 +288,14 @@ export class Agent {
           if (dataUrl) {
             const mime = /^data:(image\/[a-z0-9.+-]+);/.exec(dataUrl)?.[1] || "image/png"
             contentParts.push({ type: "image" as const, image: dataUrl, mediaType: mime })
+          }
+        }
+        // 文件路径引用：文本→路径提示（Agent 可 read_file）；Office→仅卡片（内容不可重建）
+        for (const f of parsedUser.files) {
+          if (f.kind === "text" && f.path) {
+            contentParts.push({ type: "text" as const, text: `📎 ${f.name} (${f.path})` })
+          } else if (f.name) {
+            contentParts.push({ type: "text" as const, text: `📎 ${f.name}` })
           }
         }
         restored.push({ role: "user", content: contentParts })
@@ -346,10 +359,16 @@ export class Agent {
     memoryPrompt: string,
     history: LLMMessage[],
     imagePaths?: string[],
+    fileRefs?: FileRef[],
   ): Promise<LLMMessage[]> {
-    // 含图片时以 JSON 落库（保存图片路径引用，历史会话可恢复）
-    const storedContent = imagePaths && imagePaths.length > 0
-      ? JSON.stringify({ text: userMessage, images: imagePaths })
+    // 含图片/文件时以 JSON 落库（保存路径引用，历史会话可恢复；文本/Office 内容不落库）
+    const hasMedia = (imagePaths && imagePaths.length > 0) || (fileRefs && fileRefs.length > 0)
+    const storedContent = hasMedia
+      ? JSON.stringify({
+          text: userMessage,
+          ...(imagePaths && imagePaths.length > 0 ? { images: imagePaths } : {}),
+          ...(fileRefs && fileRefs.length > 0 ? { files: fileRefs } : {}),
+        })
       : userMessage
     await appendMessage(config.sessionID, {
       role: "user", content: storedContent, timestamp: new Date().toISOString(),
@@ -686,9 +705,10 @@ export class Agent {
     history: LLMMessage[],
     config: AgentConfig,
     images?: string[],
+    files?: FileRef[],
   ): AsyncGenerator<AgentEvent> {
     try {
-      yield* this._runCore(userMessage, history, config, images)
+      yield* this._runCore(userMessage, history, config, images, files)
     } finally {
       // 无论正常结束、中断、abort 或异常，都确保清理（移除插件监听器，防止累积泄漏）
       this._preLLMOff?.()
@@ -701,6 +721,7 @@ export class Agent {
     history: LLMMessage[],
     config: AgentConfig,
     images?: string[],
+    files?: FileRef[],
   ): AsyncGenerator<AgentEvent> {
     const { ctx, toolSet, llmConfig, maxSteps } = await this.prepareRun(config)
 
@@ -720,8 +741,29 @@ export class Agent {
       imagePaths = await this.persistImages(config.sessionID, images)
     }
 
-    const { enrichedUser, memoryPrompt } = await this.contextManager.prepareContext(userMessage, config.sessionID)
-    let messages = await this.buildMessages(config, userMessage, enrichedUser, memoryPrompt, restoredHistory, imagePaths)
+    // 文件（文本/Office）：文本存路径提示（Agent 用 read_file）；Office 解析注入一次性
+    const fileRefs = files
+    let fileInjectedText = ""
+    if (files && files.length > 0) {
+      const { parseOfficeFileForModel } = await import("../llm/ooxml-core")
+      const officeTexts: string[] = []
+      for (const f of files) {
+        if (f.kind === "text" && f.path) {
+          // 文本文件：只给路径提示，Agent 通过 read_file 读取
+          officeTexts.push(`📎 ${f.name} (${f.path})`)
+        } else if ((f.kind === "excel" || f.kind === "word" || f.kind === "ppt") && f.path) {
+          const content = await parseOfficeFileForModel(f.path, f.name)
+          if (content) officeTexts.push(`### ${f.name}\n\n${content}`)
+          else officeTexts.push(`📎 ${f.name} (${f.path})`)
+        }
+      }
+      if (officeTexts.length > 0) {
+        fileInjectedText = `\n\n${officeTexts.join("\n\n")}`
+      }
+    }
+
+    const { enrichedUser, memoryPrompt } = await this.contextManager.prepareContext(userMessage + fileInjectedText, config.sessionID)
+    let messages = await this.buildMessages(config, userMessage, enrichedUser, memoryPrompt, restoredHistory, imagePaths, fileRefs)
 
     // 用户上传的图片：注入首条 user 消息为 ImagePart（含图片时模型才能识图）
     if (images && images.length > 0) {
@@ -888,13 +930,20 @@ export class Agent {
 /* ── 辅助函数 ── */
 
 /** 解析 user 消息 JSON {text, images:[paths]}，非此格式返回 null */
-function tryParseUserWithImages(content: string): { text: string; images: string[] } | null {
+function tryParseUserWithImages(content: string): { text: string; images: string[]; files: FileRef[] } | null {
   if (!content.trim().startsWith("{")) return null
   try {
-    const parsed = JSON.parse(content) as { text?: unknown; images?: unknown }
-    if (parsed && typeof parsed === "object" && Array.isArray(parsed.images)) {
-      const images = parsed.images.filter((p: unknown): p is string => typeof p === "string")
-      return { text: typeof parsed.text === "string" ? parsed.text : "", images }
+    const parsed = JSON.parse(content) as { text?: unknown; images?: unknown; files?: unknown }
+    if (parsed && typeof parsed === "object") {
+      const images = Array.isArray(parsed.images)
+        ? parsed.images.filter((p: unknown): p is string => typeof p === "string")
+        : []
+      const files = Array.isArray(parsed.files)
+        ? parsed.files.filter((f): f is FileRef => !!f && typeof f === "object" && typeof (f as FileRef).name === "string")
+        : []
+      if (images.length > 0 || files.length > 0) {
+        return { text: typeof parsed.text === "string" ? parsed.text : "", images, files }
+      }
     }
   } catch { /* json parse fallback */ }
   return null

@@ -409,8 +409,12 @@ export async function* runTurn(
       // question 工具：向用户提问（前端弹窗），回答经 question:answer 回传到 sidecar 进程内 pendingQuestions
       if (event.toolCall.name === "question") {
         try {
-          const qArgs = JSON.parse(event.toolCall.arguments) as { question?: string; options?: string[] }
-          yield { type: "question" as const, id: event.toolCall.id, question: qArgs.question || "请回答", options: qArgs.options }
+          const qArgs = JSON.parse(event.toolCall.arguments) as { question?: string; options?: unknown }
+          // 校验 options 为字符串数组，LLM 可能传字符串/对象等非法值
+          const opts = Array.isArray(qArgs.options)
+            ? qArgs.options.filter((o): o is string => typeof o === "string")
+            : undefined
+          yield { type: "question" as const, id: event.toolCall.id, question: qArgs.question || "请回答", options: opts }
         } catch { /* 参数解析失败忽略 */ }
       }
 

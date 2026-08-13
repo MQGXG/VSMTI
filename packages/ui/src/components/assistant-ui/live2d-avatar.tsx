@@ -31,6 +31,7 @@ interface Live2DModelLike {
   width: number
   setParameterValueById?: (id: string, value: number) => void
   motion?: (group: string, no: number) => void
+  destroy?: () => void
 }
 
 // 状态 → 动作组映射（Hiyori 模型只有 Idle 和 TapBody）
@@ -120,11 +121,26 @@ export function Live2DAvatar({
 
     return () => {
       destroyed = true
+      // 先单独销毁模型（释放 moc），并从 stage 移除，避免 app.destroy 递归重复销毁触发 CSM_ASSERT
+      try {
+        const app = appRef.current
+        const model = spriteRef.current
+        if (app && model) {
+          app.stage.removeChild(model as never)
+        }
+        if (model?.destroy) {
+          model.destroy()
+        }
+        spriteRef.current = null
+      } catch { /* 忽略清理异常 */ }
       if (appRef.current) {
-        appRef.current.destroy(true, { children: true })
+        try {
+          appRef.current.destroy(true, { children: true })
+        } catch {
+          /* Live2D/Pixi 销毁异常不影响组件卸载 */
+        }
         appRef.current = null
       }
-      spriteRef.current = null
     }
   }, [modelPath, size, onReady, onError])
 

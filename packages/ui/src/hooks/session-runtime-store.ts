@@ -19,6 +19,7 @@ import { getProviderById, loadSettings as getSettings } from "../sidebar/provide
 import { decideVisionPolicy } from "../sidebar/provider-model"
 import type { ModelOption } from "../chat/ModelSelector"
 import type { AgentMode } from "../chat/types"
+import type { PendingFileRef } from "../lib/attachment-picker-ui"
 import type { AgentEvent, ToolResult } from "../services/agent.service"
 import type { AgentService as AgentServiceShape } from "../services/agent.service"
 
@@ -58,6 +59,7 @@ export interface SessionState {
   loadingTimeout: ReturnType<typeof setTimeout> | null;
   lastSendOpts: SendOptions | null;
   lastSendImages: string[] | null;
+  lastSendFiles: PendingFileRef[] | null;
   lastActivity: number;
 }
 
@@ -116,6 +118,7 @@ export function ensureSession(sessionId: string): SessionState {
       loadingTimeout: null,
       lastSendOpts: null,
       lastSendImages: null,
+      lastSendFiles: null,
       lastActivity: Date.now(),
     };
     sessions.set(sessionId, s);
@@ -318,6 +321,7 @@ function abortSendWithMessage(sessionId: string, assistantId: string, message: s
   s.isRunning = false;
   s.lastSendOpts = null;
   s.lastSendImages = null;
+  s.lastSendFiles = null;
   emit();
 }
 
@@ -326,6 +330,7 @@ export async function sendMessageToSession(
   content: string,
   opts: SendOptions,
   images?: string[],
+  files?: PendingFileRef[],
 ): Promise<void> {
   if (!content) return;
   const svc = await getAgentService();
@@ -357,6 +362,7 @@ export async function sendMessageToSession(
       s.pendingQueue.push(content);
       s.lastSendOpts = opts;
       s.lastSendImages = images || null;
+      s.lastSendFiles = files || null;
       s.lastActivity = Date.now();
       emit();
     }
@@ -367,17 +373,29 @@ export async function sendMessageToSession(
     ? `[Goal: ${opts.goalCondition}]\n\n${content}`
     : content;
 
-  const userParts: MiraPart[] = images && images.length > 0
-    ? [
-        { type: "text", text: effectiveContent },
-        ...images.map((img) => ({
-          type: "file" as const,
-          url: img,
-          name: "图片",
-          mime: img.split(";")[0].replace("data:", ""),
-        })),
-      ]
-    : [{ type: "text", text: effectiveContent }];
+  // user 消息 parts：文本 + 图片（缩略图）+ 文件卡片（路径引用）
+  const userParts: MiraPart[] = [{ type: "text", text: effectiveContent }];
+  if (images && images.length > 0) {
+    for (const img of images) {
+      userParts.push({
+        type: "file",
+        url: img,
+        name: "图片",
+        mime: img.split(";")[0].replace("data:", ""),
+      });
+    }
+  }
+  if (files && files.length > 0) {
+    for (const f of files) {
+      userParts.push({
+        type: "file",
+        url: "",
+        name: f.name,
+        kind: f.kind,
+        path: f.path,
+      });
+    }
+  }
 
   const userMsg = createMiraMessage("user", userParts);
   const assistantId = crypto.randomUUID();
@@ -387,6 +405,7 @@ export async function sendMessageToSession(
   s.isRunning = true;
   s.lastSendOpts = opts;
   s.lastSendImages = images || null;
+  s.lastSendFiles = files || null;
   s.lastActivity = Date.now();
   emit();
 
@@ -449,6 +468,8 @@ export async function sendMessageToSession(
         ...(policy.strategy === "bridge" ? { visionModel: policy.visionModel } : {}),
         // 用户上传的图片（data URL 数组，随会话传给 core 注入 ImagePart）
         ...(images && images.length > 0 ? { images } : {}),
+        // 文本/Office 文件的路径引用（core 端读取/解析注入）
+        ...(files && files.length > 0 ? { files } : {}),
       };
 
       const channel = await svc.startStream(sessionId, effectiveContent, config);
@@ -571,9 +592,10 @@ function drainPending(sessionId: string): void {
   const content = s.pendingQueue.shift()!;
   const opts = s.lastSendOpts;
   const images = s.lastSendImages || undefined;
+  const files = s.lastSendFiles || undefined;
   s.lastActivity = Date.now();
   emit();
-  if (opts) void sendMessageToSession(sessionId, content, opts, images);
+  if (opts) void sendMessageToSession(sessionId, content, opts, images, files);
 }
 
 export function stopSession(sessionId: string): void {
