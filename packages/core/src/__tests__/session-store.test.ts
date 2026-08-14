@@ -43,9 +43,9 @@ describe('session store loadSession', () => {
   })
 })
 
-afterEach(async () => {
+afterEach(() => {
   for (const sid of used) {
-    await deleteSession(sid)
+    deleteSession(sid)
   }
   used.length = 0
 })

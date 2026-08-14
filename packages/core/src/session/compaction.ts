@@ -7,7 +7,8 @@
  */
 
 import { getToolResultOutput, type ToolResultOutput } from "../llm/schema/messages"
-import { estimateTextTokens } from "../shared/message-utils"
+import { estimateTextBlock, estimateContentBlocks } from "../shared/token-meter"
+import { nearestBalancedCut, nextBalancedCut } from "./tool-pairing"
 
 export type CompactLevel = "none" | "l1_snip" | "l2_micro" | "l3_auto"
 
@@ -46,9 +47,9 @@ const DEFAULT_CONFIG: CompactionConfig = {
   microThreshold: 10,
 }
 
-// 估算 token 数（语言感知：中文 0.6/字，英文 0.3/字）
+// 估算 token 数（固定密度 + 结构感知，与 token-meter 一致）
 function estimateTokens(text: string): number {
-  return estimateTextTokens(text)
+  return estimateTextBlock(text)
 }
 
 function getMessageTokens(msg: Message): number {
@@ -56,18 +57,15 @@ function getMessageTokens(msg: Message): number {
     return estimateTokens(msg.content)
   }
   if (Array.isArray(msg.content)) {
-    return msg.content.reduce((sum, part) => {
-      if (part.type === "text") return sum + estimateTokens(part.text || "")
-      if (part.type === "tool-result") return sum + estimateTokens(getToolResultOutput(part.output) || "")
-      return sum
-    }, 0)
+    return estimateContentBlocks(msg.content)
   }
   return 0
 }
 
 /**
  * L1: Snip Compact - 裁剪中间消息
- * 保留头部和尾部，裁剪中间部分
+ * 保留头部和尾部，裁剪中间部分。
+ * 头/尾切口会调整到工具配对平衡边界，避免切断 tool-call/result 对。
  */
 function snipCompact(messages: Message[], config: CompactionConfig): Message[] {
   if (messages.length <= config.snipThreshold) {
@@ -76,9 +74,18 @@ function snipCompact(messages: Message[], config: CompactionConfig): Message[] {
 
   const headCount = 3
   const tailCount = config.keepRecentCount
-  const head = messages.slice(0, headCount)
-  const tail = messages.slice(-tailCount)
-  const middle = messages.slice(headCount, -tailCount)
+  const len = messages.length
+
+  // 头切口：从 headCount 向后找最近的平衡切口（确保 head 内 tool-call 配对完整）
+  const headCut = nextBalancedCut(messages, headCount, len - tailCount)
+  if (headCut < 0) return messages
+  // 尾切口：从 len - tailCount 向前找最近的平衡切口（确保 tail 内配对完整）
+  const tailCut = nearestBalancedCut(messages, len - tailCount, headCut + 1)
+  if (tailCut < 0) return messages
+
+  const head = messages.slice(0, headCut)
+  const middle = messages.slice(headCut, tailCut)
+  const tail = messages.slice(tailCut)
 
   // 用摘要替代中间消息
   const summary: Message = {
@@ -235,6 +242,7 @@ function extractKeyPoints(messages: Message[]): string {
 /**
  * 渐进式压缩 — 旧接口兼容版
  * 根据上下文压力选择合适的压缩层级
+ * 压缩后校验确实变小（摘要 token 数必须小于被覆盖内容），否则返回原样。
  */
 export function compactMessages(
   messages: Message[],
@@ -267,6 +275,12 @@ export function compactMessages(
   if (level === "l3_auto") {
     result = toolResultBudget(result, 2000)
     appliedLevel = "l3_auto"
+  }
+
+  // 收益校验：压缩后必须比原样更小，否则放弃本次压缩
+  const afterTokens = result.reduce((sum, m) => sum + getMessageTokens(m), 0)
+  if (afterTokens >= totalTokens) {
+    return { messages, level: "none" }
   }
 
   return { messages: result, level: appliedLevel }
@@ -308,6 +322,12 @@ export async function compactMessagesAsync(
   const newTokens = result.reduce((sum, m) => sum + getMessageTokens(m), 0)
   if (newTokens > fullConfig.maxTokens * 0.8) {
     result = await compactHistory(result, llmCall)
+  }
+
+  // 收益校验：压缩后必须比原样更小，否则放弃本次压缩
+  const afterTokens = result.reduce((sum, m) => sum + getMessageTokens(m), 0)
+  if (afterTokens >= totalTokens) {
+    return messages
   }
 
   return result

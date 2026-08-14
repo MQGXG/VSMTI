@@ -43,6 +43,8 @@ packages/
 │   ├── plugin-hooks.test.ts      # 插件钩子
 │   ├── provider-catalog.test.ts  # Provider 目录
 │   ├── reasoning-content.test.ts # 推理内容 Part
+│   ├── event-sourcing.test.ts    # 事件溯源闭环（投影重建/删除事件/Map 扩展）
+│   ├── token-meter-tool-pairing.test.ts # token 估算 + 工具配对平衡 + 压缩收益
 │   ├── session-improvement.test.ts # 会话改进（Source/事件溯源/ScopedToolRegistry）
 │   ├── session-snapshot.test.ts  # 会话快照
 │   ├── smoke.test.ts             # 冒烟测试

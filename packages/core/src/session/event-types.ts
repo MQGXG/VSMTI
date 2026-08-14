@@ -1,42 +1,10 @@
 /**
- * 事件类型定义 — 对标 opencode 的 Event Sourcing 架构
+ * 事件类型定义 — 对标 DeepSeek Harness 的 Map → derived-union 模式
  *
- * 所有会话状态变化都通过事件记录，messages 表变为事件投影。
- * Durable 事件（可持久化）vs Live-only delta（仅流式传播）。
+ * 所有会话状态变化都通过事件记录，messages 表降级为事件投影缓存。
+ * 通过 SessionEventMap 接口 + keyof 派生 EventType，插件可通过
+ * declaration merging 扩展新事件类型（无需修改本文件）。
  */
-
-// ── 事件类型枚举 ────────────────────────────────────────
-
-export type EventType =
-  | "message.appended"
-  | "message.edited"
-  | "message.deleted"
-  | "session.created"
-  | "session.title_updated"
-  | "session.compacted"
-  | "context.rebuilt"
-  | "checkpoint.saved"
-  | "tool.executed"
-  | "goal.created"
-  | "goal.satisfied"
-  | "fork.created"
-
-// ── 事件基础结构 ────────────────────────────────────────
-
-export interface SessionEvent {
-  /** 事件在聚合内的序列号（单调递增） */
-  seq: number
-  /** 会话 ID */
-  session_id: string
-  /** 事件类型 */
-  type: EventType
-  /** 事件负载 */
-  payload: unknown
-  /** 事件创建时间 */
-  timestamp: string
-  /** 事件 schema 版本（用于演进） */
-  version: number
-}
 
 // ── 具体事件负载类型 ────────────────────────────────────
 
@@ -48,12 +16,14 @@ export interface MessageAppendedPayload {
 }
 
 export interface MessageEditedPayload {
+  /** 消息身份（= 追加该消息的事件 seq） */
   messageId: number
   newContent: string
   reason?: string
 }
 
 export interface MessageDeletedPayload {
+  /** 消息身份（= 追加该消息的事件 seq） */
   messageId: number
 }
 
@@ -115,6 +85,54 @@ export interface ForkCreatedPayload {
   atMessageId?: number
 }
 
+// ── SessionEventMap：事件名 → 负载类型的映射 ───────────────
+// 插件扩展新事件类型的方式（无需改动本文件）：
+//   declare module "@mira/core" {
+//     interface SessionEventMap {
+//       "skill.invoked": SkillInvokedPayload
+//     }
+//   }
+
+export interface SessionEventMap {
+  "message.appended": MessageAppendedPayload
+  "message.edited": MessageEditedPayload
+  "message.deleted": MessageDeletedPayload
+  "session.created": SessionCreatedPayload
+  "session.title_updated": SessionTitleUpdatedPayload
+  "session.compacted": SessionCompactedPayload
+  "context.rebuilt": ContextRebuiltPayload
+  "checkpoint.saved": CheckpointSavedPayload
+  "tool.executed": ToolExecutedPayload
+  "goal.created": GoalCreatedPayload
+  "goal.satisfied": GoalSatisfiedPayload
+  "fork.created": ForkCreatedPayload
+}
+
+/** 事件类型 = SessionEventMap 的键 */
+export type EventType = keyof SessionEventMap
+
+/**
+ * 判别联合事件：switch(event.type) 自动收窄 payload。
+ * SessionEvent 是全部事件类型的联合；SessionEvent<"message.appended">
+ * 只表示单一种类。
+ */
+export type SessionEvent<K extends EventType = EventType> = {
+  [T in EventType]: {
+    /** 事件在聚合内的序列号（单调递增） */
+    seq: number
+    /** 会话 ID */
+    session_id: string
+    /** 事件类型 */
+    type: T
+    /** 事件负载（按 type 收窄） */
+    payload: SessionEventMap[T]
+    /** 事件创建时间 */
+    timestamp: string
+    /** 事件 schema 版本（用于演进） */
+    version: number
+  }
+}[K]
+
 // ── 事件快照 ────────────────────────────────────────────
 
 export interface EventSnapshot {
@@ -136,7 +154,7 @@ export function createMessageEvent(
   sessionId: string,
   message: MessageAppendedPayload,
   timestamp?: string,
-): Omit<SessionEvent, "seq"> {
+): Omit<SessionEvent<"message.appended">, "seq"> {
   return {
     session_id: sessionId,
     type: "message.appended",
@@ -146,11 +164,39 @@ export function createMessageEvent(
   }
 }
 
+/** 创建消息编辑事件 */
+export function createMessageEditedEvent(
+  sessionId: string,
+  edit: MessageEditedPayload,
+): Omit<SessionEvent<"message.edited">, "seq"> {
+  return {
+    session_id: sessionId,
+    type: "message.edited",
+    payload: edit,
+    timestamp: new Date().toISOString(),
+    version: 1,
+  }
+}
+
+/** 创建消息删除事件 */
+export function createMessageDeletedEvent(
+  sessionId: string,
+  del: MessageDeletedPayload,
+): Omit<SessionEvent<"message.deleted">, "seq"> {
+  return {
+    session_id: sessionId,
+    type: "message.deleted",
+    payload: del,
+    timestamp: new Date().toISOString(),
+    version: 1,
+  }
+}
+
 /** 创建会话压缩事件 */
 export function createCompactionEvent(
   sessionId: string,
   compaction: SessionCompactedPayload,
-): Omit<SessionEvent, "seq"> {
+): Omit<SessionEvent<"session.compacted">, "seq"> {
   return {
     session_id: sessionId,
     type: "session.compacted",
@@ -164,7 +210,7 @@ export function createCompactionEvent(
 export function createToolEvent(
   sessionId: string,
   tool: ToolExecutedPayload,
-): Omit<SessionEvent, "seq"> {
+): Omit<SessionEvent<"tool.executed">, "seq"> {
   return {
     session_id: sessionId,
     type: "tool.executed",

@@ -5,13 +5,13 @@
  * 支持从快照 + 增量事件重建消息列表，避免全量回放。
  */
 
-import type { SessionEvent, MessageAppendedPayload, SessionCompactedPayload, EventSnapshot } from "./event-types"
+import type { SessionEvent, EventSnapshot } from "./event-types"
 import type { StoredMessage } from "./store"
 
 export class Projector {
   /**
    * 从基础消息 + 增量事件重建消息列表
-   * @param baseMessages 基础消息（通常来自快照）
+   * @param baseMessages 基础消息（通常来自快照，需携带 id=seq）
    * @param events 增量事件
    */
   project(baseMessages: StoredMessage[], events: SessionEvent[]): StoredMessage[] {
@@ -20,8 +20,9 @@ export class Projector {
     for (const event of events) {
       switch (event.type) {
         case "message.appended": {
-          const p = event.payload as MessageAppendedPayload
+          const p = event.payload
           messages.push({
+            id: event.seq,
             role: p.role,
             content: p.content,
             timestamp: event.timestamp,
@@ -32,35 +33,24 @@ export class Projector {
         }
 
         case "message.edited": {
-          const p = event.payload as { messageId: number; newContent: string }
-          // 查找并更新消息（通过索引匹配）
-          const idx = messages.findIndex((_, i) => i === p.messageId)
-          if (idx >= 0 && idx < messages.length) {
+          const p = event.payload
+          const idx = messages.findIndex(m => m.id === p.messageId)
+          if (idx >= 0) {
             messages[idx] = { ...messages[idx], content: p.newContent }
           }
           break
         }
 
         case "message.deleted": {
-          const p = event.payload as { messageId: number }
-          const delIdx = messages.findIndex((_, i) => i === p.messageId)
+          const p = event.payload
+          const delIdx = messages.findIndex(m => m.id === p.messageId)
           if (delIdx >= 0) {
             messages.splice(delIdx, 1)
           }
           break
         }
 
-        case "session.compacted": {
-          const p = event.payload as SessionCompactedPayload
-          // 用压缩后的消息替换全部
-          return p.compactedMessages.map(m => ({
-            role: m.role as StoredMessage["role"],
-            content: m.content,
-            timestamp: event.timestamp,
-          }))
-        }
-
-        // 其他事件类型不影响消息列表，忽略
+        // 其余事件（session.compacted 等）为 log-only 追溯记录，不影响消息列表投影
         default:
           break
       }
@@ -84,7 +74,7 @@ export class Projector {
     snapshot: EventSnapshot,
     events: SessionEvent[],
   ): StoredMessage[] {
-    const baseMessages: StoredMessage[] = JSON.parse(snapshot.messages_json)
+    const baseMessages: StoredMessage[] = JSON.parse(snapshot.messages_json) as StoredMessage[]
     // 过滤出快照之后的事件
     const incrementalEvents = events.filter(e => e.seq > snapshot.up_to_seq)
     return this.project(baseMessages, incrementalEvents)

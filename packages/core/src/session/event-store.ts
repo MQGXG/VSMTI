@@ -6,14 +6,14 @@
  */
 
 import { getDbAsync, runWrite } from "../system/database"
-import type { SessionEvent, EventType, EventSnapshot } from "./event-types"
+import type { SessionEvent, EventType, EventSnapshot, SessionEventMap } from "./event-types"
 
 export class EventStore {
   /**
    * 追加事件到事件流
    * seq 单调递增，替代时间戳排序，解决时钟漂移问题
    */
-  async append(event: Omit<SessionEvent, "seq">): Promise<number> {
+  async append<K extends EventType>(event: Omit<SessionEvent<K>, "seq">): Promise<number> {
     const db = await getDbAsync()
 
     // 获取当前最大 seq
@@ -39,6 +39,21 @@ export class EventStore {
     return seq
   }
 
+  /** 将 DB 行转换为类型化事件（payload 与 type 由写入端保证一致） */
+  private rowToEvent<T extends EventType>(
+    row: unknown[],
+    type: T,
+  ): SessionEvent<T> {
+    return {
+      seq: row[0] as number,
+      session_id: row[1] as string,
+      type,
+      payload: JSON.parse(row[3] as string) as SessionEventMap[T],
+      timestamp: row[4] as string,
+      version: row[5] as number,
+    } as SessionEvent<T>
+  }
+
   /**
    * 读取事件流
    * @param sessionId 会话 ID
@@ -53,14 +68,9 @@ export class EventStore {
     const result = db.exec(sql, params)
     if (result.length === 0) return []
 
-    return result[0].values.map(row => ({
-      seq: row[0] as number,
-      session_id: row[1] as string,
-      type: row[2] as EventType,
-      payload: JSON.parse(row[3] as string) as unknown,
-      timestamp: row[4] as string,
-      version: row[5] as number,
-    }))
+    return result[0].values.map(row =>
+      this.rowToEvent(row, row[2] as EventType),
+    )
   }
 
   /**
@@ -78,7 +88,7 @@ export class EventStore {
   /**
    * 获取指定类型的事件
    */
-  async getEventsByType(sessionId: string, type: EventType): Promise<SessionEvent[]> {
+  async getEventsByType<K extends EventType>(sessionId: string, type: K): Promise<SessionEvent<K>[]> {
     const db = await getDbAsync()
     const result = db.exec(
       "SELECT seq, session_id, type, payload, timestamp, version FROM session_events WHERE session_id = ? AND type = ? ORDER BY seq ASC",
@@ -86,20 +96,13 @@ export class EventStore {
     )
     if (result.length === 0) return []
 
-    return result[0].values.map(row => ({
-      seq: row[0] as number,
-      session_id: row[1] as string,
-      type: row[2] as EventType,
-      payload: JSON.parse(row[3] as string) as unknown,
-      timestamp: row[4] as string,
-      version: row[5] as number,
-    }))
+    return result[0].values.map(row => this.rowToEvent(row, type))
   }
 
   /**
    * 保存事件快照 — 避免每次从头回放
    */
-  async saveSnapshot(snapshot: Omit<EventSnapshot, "snapshot_id">): Promise<string> {
+  saveSnapshot(snapshot: Omit<EventSnapshot, "snapshot_id">): string {
     const id = `snap_${Date.now().toString(36)}`
     runWrite(
       `INSERT INTO event_snapshots (snapshot_id, session_id, up_to_seq, messages_json, metadata_json, created_at)

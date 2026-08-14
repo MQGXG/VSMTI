@@ -434,7 +434,7 @@ export class Agent {
 
     if (turnOutput.signal === "context_overflow") {
       yield { type: "thinking", text: "⚠️ Context too long, performing emergency compaction..." }
-      const compacted = await this.contextManager.reactiveCompact(messages)
+      const compacted = await this.contextManager.reactiveCompact(messages, config.sessionID)
       if (compacted.length < messages.length) {
         messages.length = 0
         messages.push(...compacted)

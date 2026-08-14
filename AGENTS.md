@@ -110,17 +110,18 @@ mira/
 │   │       │       └── cli.ts       #     CLI 入口
 │   │       ├── session/             # 会话管理
 │   │       │   ├── manager.ts       #   项目/会话管理
-│   │       │   ├── store.ts         #   会话持久化
+│   │       │   ├── store.ts         #   会话持久化（事件为事实源 + 投影缓存）
 │   │       │   ├── context.ts       #   上下文窗口管理（checkpoint/rebuild）
-│   │       │   ├── compaction.ts    #   上下文压缩
+│   │       │   ├── compaction.ts    #   上下文压缩（工具配对平衡 + 收益校验）
 │   │       │   ├── context-epoch.ts #   上下文纪元跟踪
 │   │       │   ├── fork.ts          #   会话分支
 │   │       │   ├── snapshot.ts      #   会话快照（磁盘持久化）
 │   │       │   ├── context-source.ts#   系统上下文 Source 管理
 │   │       │   ├── structured-summary.ts# 结构化摘要
-│   │       │   ├── event-store.ts   #   事件存储（Event Sourcing）
-│   │       │   ├── event-types.ts   #   事件类型定义
-│   │       │   └── projector.ts     #   事件投影为消息
+│   │       │   ├── tool-pairing.ts  #   工具配对平衡（压缩切口校验）
+│   │       │   ├── event-store.ts   #   事件存储（事件溯源：追加/读取/快照）
+│   │       │   ├── event-types.ts   #   SessionEventMap 事件映射 + 判别联合（可合并扩展）
+│   │       │   └── projector.ts     #   事件流投影为消息（快照 + 增量重建）
 │   │       ├── memory/              # 记忆系统
 │   │       │   ├── manager.ts       #   记忆管理器
 │   │       │   ├── types.ts         #   记忆类型定义
@@ -148,6 +149,7 @@ mira/
 │   │       │   ├── tool-effect.ts   #   Effect 风格工具定义（define/init）
 │   │       │   ├── zod-converter.ts #   Zod → JSON Schema 转换
 │   │       │   ├── message-utils.ts #   消息工具函数（修复/截断/重建）
+│   │       │   ├── token-meter.ts   #   固定密度 token 估算器（结构感知）
 │   │       │   ├── plugin-hooks.ts  #   插件钩子（emitWaterfall/triggerUntil）
 │   │       │   ├── hooks-setup.ts   #   Hook 默认设置
 │   │       │   ├── cost.ts          #   Token 成本追踪（模型定价表）
@@ -683,12 +685,12 @@ SQLite (sql.js WASM) 表结构（`system/database.ts`）：
 |----|------|------|
 | projects | project_id, name, workspace_path, created_at | 项目 |
 | sessions | session_id, project_id, title, workspace, created_at, updated_at, **cost, tokens_input, tokens_output, tokens_reasoning, tokens_cache_read, tokens_cache_write** | 会话（含成本/token） |
-| messages | id, session_id, role, content, timestamp, tool_call_id, retry_count | 消息历史 |
+| messages | id, session_id, role, content, timestamp, tool_call_id, retry_count | 消息投影缓存（事件为唯一事实源） |
 | permissions | workspace, action, resource, effect | 权限规则 |
 | goals | session_id, id, description, created_at, status, satisfied_at, timeout_ms, evaluations_json | Goal 追踪 |
 | actor_registry | actor_id, session_id, parent_actor_id, mode, status, description, context_mode, agent, result, error, turn_count, time_created, time_updated, time_completed, lifecycle | 子 Agent 注册表 |
-| session_events | seq, session_id, type, payload, timestamp, version | 事件溯源日志 |
-| event_snapshots | snapshot_id, session_id, up_to_seq, messages_json, metadata_json, created_at | 事件快照 |
+| session_events | seq, session_id, type, payload, timestamp, version | 事件溯源日志（唯一事实源，`SessionEventMap` 可合并扩展） |
+| event_snapshots | snapshot_id, session_id, up_to_seq, messages_json, metadata_json, created_at | 事件快照（避免全量回放） |
 | todos | id, session_id, title, status, priority, parent_id, created_at, updated_at, completed_at | Todo 任务 |
 | messages_fts | (FTS5 虚拟表) | 消息全文索引 |
 | memory_nodes | id, content, type, importance, strength, access_count, last_accessed, created_at, community_id, decay_rate, min_strength, metadata_json, related_nodes_json, association_strengths_json | 记忆图谱节点 |
@@ -723,7 +725,7 @@ pnpm package:mac    # macOS
 pnpm package:linux  # Linux
 
 # 测试
-pnpm test           # Vitest 4（55 个文件，529 用例）
+pnpm test           # Vitest 4（56 文件，553 用例）
 
 # 类型检查
 pnpm typecheck

@@ -105,7 +105,7 @@ export async function* runLLMTurn(
           return { text: currentText, toolCalls: [], compacted }
         }
         yield { type: "thinking" as const, text: "⚠️ Context too long, performing emergency compaction..." }
-        const compactedMessages = await contextManager.reactiveCompact(messages)
+        const compactedMessages = await contextManager.reactiveCompact(messages, sessionID)
         if (compactedMessages.length < messages.length) {
           messages.length = 0
           messages.push(...compactedMessages)

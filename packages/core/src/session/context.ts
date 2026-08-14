@@ -1,6 +1,7 @@
 import type { CheckpointProvider } from "../memory/checkpoint-provider"
 import type { MemoryManager } from "../memory/manager"
 import { needsContextRebuild, rebuildContextFromCheckpoint, truncateToBudget, estimateTokens, type CheckpointData } from "../shared/message-utils"
+import { estimateMessagesTokens } from "../shared/token-meter"
 import type { LLMMessage, ToolResultPart } from "../llm/schema/messages"
 import { compactMessages, type CompactLevel } from "./compaction"
 import { IncrementalSummarizer } from "./structured-summary"
@@ -452,7 +453,7 @@ export class ContextManager {
   }
 
   // ─── 紧急压缩 ─────────────────────────────────
-  async reactiveCompact(messages: LLMMessage[]): Promise<LLMMessage[]> {
+  async reactiveCompact(messages: LLMMessage[], sessionID?: string): Promise<LLMMessage[]> {
     this.writeTranscript(messages)
 
     // 使用 Structured Summary 的溢出压缩（单一 LLM 摘要路径）
@@ -467,13 +468,44 @@ export class ContextManager {
       }
     }
 
+    let result: LLMMessage[]
     if (summary) {
-      return this.summarizer.overflowCompact(messages, summary, this.config.maxContextTokens)
+      result = this.summarizer.overflowCompact(messages, summary, this.config.maxContextTokens)
+    } else {
+      // fallback：无 LLM 时保留最近消息 + 简单占位
+      const tailStart = Math.max(0, messages.length - 5)
+      result = messages.slice(tailStart)
     }
 
-    // fallback：无 LLM 时保留最近消息 + 简单占位
-    const tailStart = Math.max(0, messages.length - 5)
-    return messages.slice(tailStart)
+    // 收益校验：压缩结果必须比原内容更小（token 级），否则放弃本次压缩
+    const beforeTokens = estimateMessagesTokens(messages)
+    const afterTokens = estimateMessagesTokens(result)
+    if (afterTokens >= beforeTokens) {
+      return messages
+    }
+
+    // 记录压缩事件（log-only，可追溯但不再影响消息投影）
+    if (sessionID && result.length < messages.length) {
+      try {
+        const { createCompactionEvent } = await import("./event-types")
+        const { getEventStore } = await import("./event-store")
+        await getEventStore().append(createCompactionEvent(sessionID, {
+          reason: "context_overflow",
+          messagesBefore: messages.length,
+          messagesAfter: result.length,
+          tokensBefore: beforeTokens,
+          tokensAfter: afterTokens,
+          compactedMessages: result.slice(0, 5).map(m => ({
+            role: m.role,
+            content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+          })),
+        }))
+      } catch {
+        // 压缩事件写入失败不阻断
+      }
+    }
+
+    return result
   }
 
   // ─── 外部接口 ─────────────────────────────────
