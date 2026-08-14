@@ -1,6 +1,7 @@
 import { BrowserWindow, app } from "electron";
 import { join } from "path";
 import { request } from "http";
+import fs from "fs";
 
 let mainWindow: BrowserWindow | null = null;
 const isDev = !app.isPackaged;
@@ -46,6 +47,10 @@ export async function findVitePort(): Promise<number> {
 }
 
 export async function createWindow(): Promise<BrowserWindow> {
+  // 窗口图标：打包后位于 process.resourcesPath/icon.png，开发时位于仓库内 resources/icon.png
+  const iconPath = app.isPackaged
+    ? join(process.resourcesPath, "icon.png")
+    : join(app.getAppPath(), "resources", "icon.png");
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -55,6 +60,7 @@ export async function createWindow(): Promise<BrowserWindow> {
     titleBarStyle: "hidden",
     trafficLightPosition: { x: 16, y: 16 },
     backgroundColor: "#0a0a0a",
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: join(__dirname, "preload.js"),
       contextIsolation: true,

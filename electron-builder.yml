@@ -21,6 +21,9 @@ extraResources:
     to: models
     filter:
       - "**/*"
+  # 应用图标（托盘/窗口运行时使用）
+  - from: resources/icon.png
+    to: icon.png
 
 win:
   icon: resources/icon.ico
