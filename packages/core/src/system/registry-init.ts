@@ -32,7 +32,7 @@ import { delegateTaskTool } from "../tools/orchestrate/delegate-task"
 import { imageGenTool } from "../tools/execution/image-gen"
 import { worktreeTool } from "../tools/orchestrate/worktree-tool"
 import { teamTool } from "../tools/orchestrate/team-tool"
-import { lspDefinitionTool, lspReferencesTool, lspHoverTool } from "../tools/infra/lsp-tool"
+import { lspDefinitionTool, lspReferencesTool, lspHoverTool, lspSymbolsTool, lspImplementationsTool, lspRenameTool } from "../tools/infra/lsp-tool"
 import { gitStatusTool, gitDiffTool, gitLogTool, gitCommitTool } from "../tools/core/git"
 import { createDocxTool } from "../tools/core/create-docx"
 import { searchHistoryTool } from "../tools/core/search-history"
@@ -73,6 +73,9 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(lspDefinitionTool)
   registry.register(lspReferencesTool)
   registry.register(lspHoverTool)
+  registry.register(lspSymbolsTool)
+  registry.register(lspImplementationsTool)
+  registry.register(lspRenameTool)
   registry.register(gitStatusTool)
   registry.register(gitDiffTool)
   registry.register(gitLogTool)

@@ -155,11 +155,18 @@ export const editFileTool = make({
         // 清除缓存
         invalidateFileState(real)
 
-        // LSP 通知（编辑后刷新诊断）
+        // 编辑后诊断自检（不阻塞主流程，超时/失败静默降级）
+        let diagnosticNote = ""
         if (ctx.workspace) {
-          import("../../lsp/manager").then(({ lspManager }) => {
-            lspManager.touchFile(ctx.workspace, real).catch(() => {})
-          }).catch(() => {})
+          try {
+            const diagResult = await lspManager.getDiagnosticsAfterEdit(ctx.workspace, real)
+            if (diagResult.checked) {
+              const { formatDiagnosticCheck } = await import("../../lsp/diagnostic-check")
+              diagnosticNote = formatDiagnosticCheck(diagResult)
+            }
+          } catch {
+            // 诊断自检失败不影响编辑结果
+          }
         }
 
         const diffOutput = createTwoFilesPatch(
@@ -171,10 +178,17 @@ export const editFileTool = make({
           "",
           { context: 3 },
         )
+        const baseOutput = `Edited ${real}: ${Math.max(count, 1)} replacement(s)\n\n${limitDiffLines(diffOutput, 50)}`
+        const finalOutput = diagnosticNote ? `${baseOutput}\n\n${diagnosticNote}` : baseOutput
         return {
           success: true,
-          output: `Edited ${real}: ${Math.max(count, 1)} replacement(s)\n\n${limitDiffLines(diffOutput, 50)}`,
-          metadata: { replacements: Math.max(count, 1), path: real, snapshotId },
+          output: finalOutput,
+          metadata: {
+            replacements: Math.max(count, 1),
+            path: real,
+            snapshotId,
+            ...(diagnosticNote ? { diagnostics: diagnosticNote } : {}),
+          },
         }
       } catch (e: unknown) {
         return { success: false, error: `Cannot write ${input.path}: ${e}` }

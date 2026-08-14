@@ -168,7 +168,7 @@ export function createDefaultRegistry(): AgentProfileRegistry {
       { action: "worktree_tool", resource: "*", effect: "deny" },
       { action: "image_gen", resource: "*", effect: "deny" },
     ],
-    toolAllowlist: ["read_file", "list_files", "grep", "glob", "web_search", "web_browse", "data_analysis", "lsp_definition", "lsp_references", "lsp_hover", "get_current_time", "memory_activate", "memory_graph_query"],
+    toolAllowlist: ["read_file", "list_files", "grep", "glob", "web_search", "web_browse", "data_analysis", "lsp_definition", "lsp_references", "lsp_hover", "lsp_symbols", "lsp_implementations", "get_current_time", "memory_activate", "memory_graph_query"],
   })
 
   return registry

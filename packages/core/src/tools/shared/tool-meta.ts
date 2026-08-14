@@ -43,6 +43,9 @@ export const toolMetadata: Record<string, ToolMeta> = {
   lsp_definition:  { category: "infrastructure", supportsParallel: true },
   lsp_references:  { category: "infrastructure", supportsParallel: true },
   lsp_hover:       { category: "infrastructure", supportsParallel: true },
+  lsp_symbols:     { category: "infrastructure", supportsParallel: true },
+  lsp_implementations: { category: "infrastructure", supportsParallel: true },
+  lsp_rename:      { category: "infrastructure", supportsParallel: false },
 
   git_status:      { category: "core", timeout: 15000, supportsParallel: true },
   git_diff:        { category: "core", timeout: 15000, supportsParallel: true },

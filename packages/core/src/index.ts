@@ -73,7 +73,7 @@ export { worktreeTool } from "./tools/orchestrate/worktree-tool"
 // 团队工具
 export { teamTool } from "./tools/orchestrate/team-tool"
 // LSP 工具
-export { lspDefinitionTool, lspReferencesTool, lspHoverTool } from "./tools/infra/lsp-tool"
+export { lspDefinitionTool, lspReferencesTool, lspHoverTool, lspSymbolsTool, lspImplementationsTool, lspRenameTool } from "./tools/infra/lsp-tool"
 
 // 系统模块
 export { cronScheduler } from "./background/cron"

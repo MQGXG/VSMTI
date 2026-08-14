@@ -7,6 +7,8 @@
 
 import * as fs from "fs"
 import * as path from "path"
+import { lspManager } from "./manager"
+import { getServerDefForFile } from "./server-defs"
 
 export interface CodeIntel {
   symbols: string[]
@@ -14,9 +16,9 @@ export interface CodeIntel {
 }
 
 export class CodeContext {
-  async getContextForFile(filePath: string): Promise<CodeIntel> {
+  async getContextForFile(filePath: string, workspace?: string): Promise<CodeIntel> {
     try {
-      const symbols = await this.getSymbols(filePath)
+      const symbols = await this.getSymbols(filePath, workspace)
       return { symbols, diagnostics: [] }
     } catch {
       return { symbols: [], diagnostics: [] }
@@ -33,7 +35,7 @@ export class CodeContext {
       }
 
       if (currentFile) {
-        const intel = await this.getContextForFile(currentFile)
+        const intel = await this.getContextForFile(currentFile, workspace)
         if (intel.symbols.length > 0) {
           parts.push(`Current file symbols: ${intel.symbols.slice(0, 20).join(", ")}`)
         }
@@ -45,9 +47,28 @@ export class CodeContext {
     return parts.length > 0 ? `\n[Code Context]\n${parts.join("\n")}` : ""
   }
 
-  private async getSymbols(_filePath: string): Promise<string[]> {
-    // LSP 符号获取功能待完善
-    return []
+  /** 通过 LSP documentSymbols 获取文件符号列表（LSP 未就绪时静默降级为空） */
+  private async getSymbols(filePath: string, workspace?: string): Promise<string[]> {
+    if (!workspace) return []
+
+    // 仅处理受支持的文件类型，避免为无关文件启动 LSP
+    const def = getServerDefForFile(filePath)
+    if (!def) return []
+
+    try {
+      const symbols = await lspManager.getSymbols(workspace, filePath)
+      const names: string[] = []
+      const collect = (list: { name: string; children?: Array<{ name: string }> }[]): void => {
+        for (const sym of list) {
+          if (sym?.name) names.push(sym.name)
+          if (sym.children?.length) collect(sym.children)
+        }
+      }
+      collect(symbols)
+      return names
+    } catch {
+      return []
+    }
   }
 
   private detectLanguages(workspace: string): string[] {

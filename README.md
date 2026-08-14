@@ -93,7 +93,7 @@ mira/
 - Subagent 管理（最大并行 5 个，支持 Actor 模型/任务门控/ReAct 循环/粘滞检测）
 - Graph Engineering（图编排引擎：coding-task 模板 / checkpoint 恢复 / 并行组 / 契约校验）
 - MCP 协议支持（扩展工具能力）
-- LSP 代码智能（定义跳转 / 引用查找 / 悬停信息）
+- LSP 代码智能（定义跳转 / 引用查找 / 悬停 / 符号大纲 / 实现查找，依赖自动安装 + 索引进度等待 + 编辑后诊断自检）
 - Skill 系统（Slash 命令 + 动态加载）
 - API Key 加密存储（Electron safeStorage）
 - 浏览器自动化（Playwright 截图/点击/输入，支持 SPA 页面）
@@ -130,7 +130,7 @@ pnpm package:linux  # Linux
 
 ## 环境要求
 
-- Node.js 18+
-- pnpm 8+
+- Node.js 18+（corepack 随 Node 提供）
+- pnpm 8+（根 `packageManager` 锁定 pnpm@11.9.0，推荐通过 `corepack pnpm` 使用）
 - Windows / macOS / Linux
 - **无需 Python**（Agent Core 完全由 TypeScript 实现）

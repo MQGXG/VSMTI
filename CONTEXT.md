@@ -111,7 +111,7 @@ SQLite 注册表持久化，TaskGate 任务完成验证，标准化返回协议�
 Model Context Protocol（@modelcontextprotocol/sdk），local（stdio）/ remote（HTTP）服务器，运行时注册工具。
 
 ### LSP
-Language Server Protocol，代码智能：定义跳转、引用查找、悬停信息。
+Language Server Protocol，代码智能：定义跳转、引用查找、悬停、文件符号大纲、实现查找。声明式服务器定义（server-defs）+ 依赖自动安装（dependency）+ $/progress 索引进度等待（indexing）+ 编辑前后诊断对比自检（diagnostic-check）。
 
 ### Graph Engineering
 图编排引擎（Planner/Runtime/Recovery 三层分离），支持 coding-task 模板、checkpoint 恢复、并行组、契约校验。

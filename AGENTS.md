@@ -207,8 +207,12 @@ mira/
 │   │       │   ├── interaction/     #   交互工具（question）
 │   │       │   └── shared/          #   工具共享（tool-loader/tool-meta/tool-output-store）
 │   │       ├── lsp/                 # LSP 代码智能
-│   │       │   ├── client.ts        #   LSP 客户端（JSON-RPC over stdio + Content-Length 帧解析）
-│   │       │   ├── manager.ts       #   LSP 管理器（per-workspace 缓存）
+│   │       │   ├── client.ts        #   LSP 客户端（JSON-RPC over stdio + Content-Length 帧解析 + 通知/请求分发）
+│   │       │   ├── manager.ts       #   LSP 管理器（生命周期编排 + 高层查询 API）
+│   │       │   ├── server-defs.ts   #   语言服务器定义（声明式，含版本锁定依赖）
+│   │       │   ├── dependency.ts    #   依赖解析（系统 PATH → 本地缓存 → 自动安装）
+│   │       │   ├── indexing.ts      #   索引进度追踪（$/progress）
+│   │       │   ├── diagnostic-check.ts # 编辑前后诊断对比（编辑后自检）
 │   │       │   └── code-context.ts  #   代码上下文提取
 │   │       ├── mcp/                 # MCP 协议支持
 │   │       │   └── index.ts         #   MCPManager + jsonSchemaToZod
@@ -224,7 +228,7 @@ mira/
 │   │       │   ├── announcement-window.ts # 语音打断公告窗口
 │   │       │   └── voice-session.ts #   语音会话管理
 │   │       ├── types/ambient.d.ts   # 全局类型声明
-│   │       └── __tests__/           # 测试（Vitest，41 个文件 414 用例，core 内）
+│   │       └── __tests__/           # 测试（Vitest 4，55 个文件 529 用例，core 内）
 │   │
 │   ├── electron/                    # @mira/electron — Electron 主进程
 │   │   └── src/
@@ -485,7 +489,7 @@ mira/
 | | worktree | Git Worktree 隔离任务目录 |
 | | workflow_run | Dynamic Workflow 执行 |
 | | spawn_agent / wait_agents / list_subagents | 子 Agent 生命周期管理 |
-| **infra** | lsp_definition / lsp_references / lsp_hover | 代码定义跳转/引用查找/悬停信息 |
+| **infra** | lsp_definition / lsp_references / lsp_hover / lsp_symbols / lsp_implementations | 代码定义跳转/引用查找/悬停/文件符号大纲/实现查找 |
 | **skill** | skills_list / skill_view | 列出/查看 Skill |
 | **interaction** | question | 向用户提问 |
 
@@ -593,7 +597,7 @@ Phase 驱动的软件开发工作流（`compose-mode.ts`）：`plan → execute 
 基于官方 `@modelcontextprotocol/sdk`，支持 `local`（StdioClientTransport）和 `remote`（StreamableHTTPClientTransport）服务器，工具名加 `{server}_` 前缀，运行时注册进 ToolRegistry。
 
 ### LSP（Language Server Protocol）
-代码智能：定义跳转、引用查找、悬停信息。手写 JSON-RPC over stdio 客户端（Content-Length 帧解析），per-workspace 缓存，自动探测并启动 typescript-language-server。
+代码智能：定义跳转、引用查找、悬停、文件符号大纲、实现查找。手写 JSON-RPC over stdio 客户端（Content-Length 帧解析），支持 server→client 请求/通知分发。`server-defs.ts` 声明式定义语言服务器（当前内置 TypeScript，可扩展），`dependency.ts` 自动解析依赖（系统 PATH → 本地缓存 `userData/lsp/<id>/` → 白名单版本锁定自动安装），`indexing.ts` 追踪 `$/progress` 索引进度（跨文件查询前等待索引就绪），`diagnostic-check.ts` 提供编辑前后诊断对比（edit_file 写入后自动自检并返回新增错误/警告）。
 
 ### ACP（Agent Communication Protocol）
 `orchestrate/acp/`：标准化的 Agent 间通信协议，含消息类型（20 个工厂函数）、`WorkStateMachine` 工作状态机 + 全局单例。
@@ -719,7 +723,7 @@ pnpm package:mac    # macOS
 pnpm package:linux  # Linux
 
 # 测试
-pnpm test           # Vitest（49 个文件，471 用例）
+pnpm test           # Vitest 4（55 个文件，529 用例）
 
 # 类型检查
 pnpm typecheck
@@ -731,8 +735,8 @@ pnpm lint:fix
 
 ## 环境要求
 
-- Node.js 18+
-- pnpm 8+
+- Node.js 18+（corepack 随 Node 提供）
+- pnpm 8+（根 `packageManager` 锁定 pnpm@11.9.0，推荐通过 `corepack pnpm` 使用）
 - Windows / macOS / Linux
 - **无需 Python**（Agent Core 完全由 TypeScript 实现）
 
