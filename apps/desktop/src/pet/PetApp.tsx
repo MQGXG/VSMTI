@@ -50,8 +50,19 @@ let msgCounter = 0
 
 function getModels(): Record<string, string> {
   try {
-    return JSON.parse(localStorage.getItem("pet_models") || '{"hiyori":"/models/hiyori/Hiyori.model3.json"}') as Record<string, string>
-  } catch { return { hiyori: "/models/hiyori/Hiyori.model3.json" } }
+    const stored = localStorage.getItem("pet_models")
+    const raw: Record<string, string> = stored ? JSON.parse(stored) : { hiyori: "./models/hiyori/Hiyori.model3.json" }
+    // 迁移：将旧版绝对路径 /models/... 转为相对路径 ./models/...
+    let migrated = false
+    for (const [k, v] of Object.entries(raw)) {
+      if (typeof v === "string" && v.startsWith("/models/")) {
+        raw[k] = "." + v
+        migrated = true
+      }
+    }
+    if (migrated) localStorage.setItem("pet_models", JSON.stringify(raw))
+    return raw
+  } catch { return { hiyori: "./models/hiyori/Hiyori.model3.json" } }
 }
 
 export function PetApp() {
@@ -158,7 +169,7 @@ export function PetApp() {
         if (!(window as any).Live2DCubismCore) {
           const loaded = await new Promise<boolean>((resolve) => {
             const s = document.createElement("script")
-            s.src = "/Core/live2dcubismcore.min.js"
+            s.src = "./Core/live2dcubismcore.min.js"
             s.onload = () => resolve(!!(window as any).Live2DCubismCore)
             s.onerror = () => resolve(false)
             document.head.appendChild(s)

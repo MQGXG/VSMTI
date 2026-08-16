@@ -3,6 +3,7 @@ import type { AgentEvent } from "../types"
 import { join } from "path"
 import { createHash } from "crypto"
 import { promises as fs } from "fs"
+import { logInfo } from "../system/logger"
 import { getPlatformPaths } from "../config/paths"
 import type { LLMMessage } from "../llm/client"
 import { estimateTokens, repairMessageSequence } from "../shared/message-utils"
@@ -877,6 +878,12 @@ export class Agent {
         if (turnOutput.usage) {
           const pricing = getModelPricing(config.model)
           const result = calculateCost(turnOutput.usage, pricing)
+          if (result.cacheReadTokens > 0 || result.cacheWriteTokens > 0) {
+            const hitRate = result.inputTokens > 0
+              ? (result.cacheReadTokens / (result.inputTokens + result.cacheReadTokens + result.cacheWriteTokens) * 100).toFixed(1)
+              : "0"
+            logInfo("Cache", `hit=${result.cacheReadTokens} write=${result.cacheWriteTokens} input=${result.inputTokens} hitRate=${hitRate}% model=${config.model}`)
+          }
           const { accumulateSessionUsage } = await import("../session/manager")
           await accumulateSessionUsage(config.sessionID, {
             cost: result.cost,

@@ -184,9 +184,6 @@ export class EnvSource implements ContextSource {
   }
 
   fingerprint(_ctx: SourceContext): SourceFingerprint {
-    // 环境信息除日期外静态稳定；日期每日变化一次，对 prompt cache 影响最小。
-    // 注意：EnvSource 未实现 loadSnapshot，SourceManager 每次 build 都会重新 generate，
-    // 因此日期总是实时生成。
     return { hash: `env-${new Date().toDateString()}-v1`, updatedAt: Date.now() }
   }
 }
@@ -221,7 +218,7 @@ export class ModeSource implements ContextSource {
 
 export class MemorySource implements ContextSource {
   readonly key: SourceKey = "memory"
-  readonly priority = 40
+  readonly priority = 100
   enabled = true
 
   private memoryContent = ""

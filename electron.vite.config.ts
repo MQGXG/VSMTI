@@ -9,7 +9,11 @@ export default defineConfig({
       outDir: "dist-electron",
       emptyOutDir: false,
       rollupOptions: {
-        input: { main: resolve(__dirname, "packages/electron/src/main/index.ts") },
+        input: {
+          main: resolve(__dirname, "packages/electron/src/main/index.ts"),
+          // Sidecar 独立入口：生产模式下由 ServerManager spawn 该 JS（替代原 tsx 开发路径）
+          sidecar: resolve(__dirname, "packages/core/src/system/server/cli.ts"),
+        },
         external: ["playwright", "playwright-core"],
       },
     },
@@ -39,7 +43,7 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, "index.html"),
-          pet: resolve(__dirname, "apps/desktop/pet.html"),
+          pet: resolve(__dirname, "pet.html"),
           "widget-test": resolve(__dirname, "apps/desktop/widget-test.html"),
         },
       },

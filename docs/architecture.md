@@ -524,3 +524,40 @@ pnpm package:linux # Linux
 | 权限 | 声明式规则 + 硬拒绝 + 运行时审批 | 灵活且安全 |
 | 记忆 | 五层 + 预算注入 + 去重 | 可审查、可扩展、不阻塞主 Agent |
 | 打包 | 便携模式（electron-builder） | 目标电脑无需安装任何运行时 |
+
+## 十一、KV Cache 纪律（提升缓存命中率）
+
+LLM 对话中的"输入（命中缓存）"指服务端复用的前缀 token，价格仅 1/10。要保持高命中率，系统提示和工具 schema 的前缀必须跨 turn 稳定。
+
+### 前缀结构（按 priority 排序）
+
+```
+base(10) → env(20) → mode(30) → knowledge(45) → code(50) → goal(60) → memory(100)
+```
+
+- **稳定段**（base/env/mode/knowledge/code/goal）：跨 turn 不变，是缓存命中的核心
+- **易变段**（memory，priority 100 末尾）：每 turn 可能变化，隔离到尾部避免破坏稳定前缀
+
+### 纪律规则
+
+1. **新增 Source 时声明缓存影响**：在 `ContextSource` 实现中注释说明其对前缀稳定性的影响（仿 dsh `adding-a-package.md:96`）
+2. **稳定内容放前、易变内容放末尾**：系统提示的 `priority` 越低越靠前，优先级越低越稳定
+3. **不注入可变时间戳到稳定段**：日期、时间戳等放系统提示末尾（`EnvSource` priority 20，`MemorySource` priority 100）
+4. **工具 schema 注册顺序稳定**：`ToolRegistry` 注册顺序决定工具列表顺序，顺序变化会破坏前缀
+5. **Anthropic 缓存断点收敛为三锚点**：系统提示断点 + 最后一个 tool 断点 + 最新 user 消息断点（对齐 opencode 策略）
+
+### Anthropic cache_control 策略
+
+- system：每个 system block 打断点（`cache-policy.ts withSystemCache`）
+- tools：只给最后一个 tool 打断点（`cache-policy.ts withToolsCache`）
+- messages：只给最后一条 user 消息打断点（`cache-policy.ts withMessageCache`）
+- DeepSeek/OpenAI：服务端自动缓存，无需注入断点
+
+### 添加新 Source 的检查清单
+
+| 检查项 | 说明 |
+|--------|------|
+| priority 位置 | 易变内容优先级 > 60（末尾），稳定内容 < 50（前段） |
+| fingerprint 稳定性 | 同一内容生成相同 hash，避免随机/时间依赖 |
+| loadSnapshot | 若 Source 无 loadSnapshot，每次 build 重新 generate（性能 OK，不影响缓存） |
+| KV Cache 声明 | 在 Source 实现中注释说明其对缓存前缀的影响 |

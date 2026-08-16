@@ -73,8 +73,19 @@ export function logError(context: string, error?: unknown): void {
     if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true })
     fs.appendFileSync(join(logDir, `error-${date}.log`), line + "\n", "utf-8")
   } catch { /* 日志写入失败时静默 */ }
-  // 开发阶段同时输出到控制台
   console.error(line)
+}
+
+/** 通用信息日志（带时间戳，写入 agent 日志文件） */
+export function logInfo(context: string, detail?: string): void {
+  const line = `[${new Date().toISOString()}] [INFO] ${context}${detail ? `: ${detail}` : ""}`
+  try {
+    const date = new Date().toISOString().slice(0, 10)
+    const logDir = getLogDir()
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true })
+    fs.appendFileSync(join(logDir, `agent-${date}.log`), line + "\n", "utf-8")
+  } catch { /* 静默 */ }
+  console.log(line)
 }
 
 /** 清空日志 */

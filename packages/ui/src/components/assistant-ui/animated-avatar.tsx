@@ -8,6 +8,7 @@
 
 import { useMemo, useState, useEffect } from "react"
 import { cn } from "../../lib/utils"
+import defaultAvatarGif from "../../assets/AI.gif"
 
 export type AvatarState = "idle" | "thinking" | "speaking" | "error"
 
@@ -18,8 +19,8 @@ interface AnimatedAvatarProps {
   className?: string
 }
 
-/** 默认头像（AI.gif，从 public 加载） */
-const DEFAULT_AVATAR = "/AI.gif"
+/** 默认头像（AI.gif，Vite 打包为资源） */
+const DEFAULT_AVATAR = defaultAvatarGif
 
 function getAvatarSrc(): string {
   try {

@@ -9,7 +9,6 @@ directories:
 files:
   - dist-electron/**/*
   - dist/**/*
-  - "!node_modules/**/*"
 
 # tree-sitter 等 WASM 文件 unpack 到 app.asar.unpacked，供 sidecar（纯 Node 子进程）读取
 asarUnpack:
@@ -28,9 +27,17 @@ extraResources:
 win:
   icon: resources/icon.ico
   target:
-    - target: portable
+    - target: nsis
       arch: [x64]
-  artifactName: "${productName}-${version}-portable.${ext}"
+  artifactName: "${productName}-Setup-${version}.${ext}"
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Mira
+  uninstallDisplayName: Mira
 
 mac:
   icon: resources/icon.icns

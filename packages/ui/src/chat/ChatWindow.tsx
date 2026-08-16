@@ -23,7 +23,6 @@ import { Copy, RotateCcw, Edit3, Square, Send, Paperclip, FileUp, ChevronLeft, C
 import { Button } from "../components/ui/button";
 import { AnimatedAvatar, type AvatarState } from "../components/assistant-ui/animated-avatar";
 import "../components/assistant-ui/animated-avatar.css";
-import { Live2DAvatar } from "../components/assistant-ui/live2d-avatar";
 import { VoiceInput } from "./VoiceInput";
 import { VoiceChatButton } from "./VoiceChatButton";
 import { GraphPanel } from "./GraphPanel";
@@ -45,9 +44,9 @@ interface SkillInfo { name: string; description: string; category: string | null
 
 function WelcomeScreen({ onSuggest }: { onSuggest: (text: string) => void }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-full px-4 py-16">
+    <div className="flex flex-col items-center justify-center min-h-full px-4 pt-24 pb-20">
       <div className="mb-8">
-        <Live2DAvatar state="idle" size={120} />
+        <AnimatedAvatar state="idle" size={120} />
       </div>
       <h1 className="text-2xl font-semibold mb-2" style={{ color: "var(--fg)" }}>Mira</h1>
       <p className="text-sm mb-10" style={{ color: "var(--fg-tertiary)" }}>有什么可以帮助你的？</p>

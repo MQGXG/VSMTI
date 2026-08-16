@@ -23,12 +23,33 @@ describe('calculateCost', () => {
     expect(r.inputTokens).toBe(0)
     expect(r.cost).toBeGreaterThanOrEqual(0)
   })
+
+  test('Anthropic 归一化后 promptTokens 含缓存时成本正确', () => {
+    // 归一化后：promptTokens = input + cacheRead + cacheWrite（总输入）
+    // cost.ts freshInput = promptTokens - cacheRead - cacheWrite（= 未命中）
+    const usage = { promptTokens: 15000, completionTokens: 500, totalTokens: 15500, cacheReadTokens: 10000, cacheWriteTokens: 2000 }
+    const pricing = { inputPer1K: 0.003, outputPer1K: 0.015, cacheReadPer1K: 0.0027, cacheWritePer1K: 0.00375 }
+    const r = calculateCost(usage, pricing)
+    // freshInput = 15000-10000-2000 = 3000
+    // cost = 3000*0.003/1000 + 10000*0.0027/1000 + 2000*0.00375/1000 + 500*0.015/1000
+    //      = 0.009 + 0.027 + 0.0075 + 0.0075 = 0.051
+    expect(r.cost).toBeCloseTo(0.051, 4)
+    expect(r.cacheReadTokens).toBe(10000)
+    expect(r.cacheWriteTokens).toBe(2000)
+  })
 })
 
 describe('getModelPricing', () => {
   test('已知模型返回精确定价', () => {
     expect(getModelPricing('deepseek-chat').inputPer1K).toBe(0.00027)
     expect(getModelPricing('gpt-4o').outputPer1K).toBe(0.01)
+  })
+
+  test('已知模型返回缓存单价', () => {
+    expect(getModelPricing('gpt-4o').cacheReadPer1K).toBe(0.00125)
+    expect(getModelPricing('claude-sonnet-4-20250514').cacheReadPer1K).toBe(0.0027)
+    expect(getModelPricing('claude-sonnet-4-20250514').cacheWritePer1K).toBe(0.00375)
+    expect(getModelPricing('deepseek-chat').cacheReadPer1K).toBe(0.000027)
   })
 
   test('未知模型用保守估算兜底', () => {

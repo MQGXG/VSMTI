@@ -47,6 +47,9 @@ importers:
       '@streamdown/mermaid':
         specifier: ^1.0.2
         version: 1.0.2(react@18.3.1)
+      '@xmldom/xmldom':
+        specifier: ^0.8.13
+        version: 0.8.13
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -59,12 +62,21 @@ importers:
       effect:
         specifier: ^3.21.4
         version: 3.22.1
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
       lucide-react:
         specifier: ^0.400.0
         version: 0.400.0(react@18.3.1)
       mermaid:
         specifier: ^11.15.0
         version: 11.16.1
+      parse5:
+        specifier: ^7.0.0
+        version: 7.0.0
+      pptxgenjs:
+        specifier: ^4.0.1
+        version: 4.0.1
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -95,12 +107,18 @@ importers:
       tree-sitter-powershell:
         specifier: ^0.26.4
         version: 0.26.4
+      turndown:
+        specifier: ^7.2.4
+        version: 7.2.4
       untitled-pixi-live2d-engine:
         specifier: ^1.2.2
         version: 1.3.5(@pixi/sound@6.0.1(pixi.js@8.19.0))(pixi.js@8.19.0)
       web-tree-sitter:
         specifier: ^0.26.11
         version: 0.26.11
+      xlsx:
+        specifier: ^0.18.5
+        version: 0.18.5
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -7479,7 +7497,7 @@ snapshots:
     dependencies:
       '@types/http-cache-semantics': 4.2.0
       '@types/keyv': 3.1.4
-      '@types/node': 20.19.43
+      '@types/node': 26.1.2
       '@types/responselike': 1.0.3
 
   '@types/chai@5.2.3':
@@ -7640,7 +7658,7 @@ snapshots:
 
   '@types/keyv@3.1.4':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 26.1.2
 
   '@types/mdast@4.0.4':
     dependencies:
@@ -7688,7 +7706,7 @@ snapshots:
 
   '@types/responselike@1.0.3':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 26.1.2
 
   '@types/sql.js@1.4.11':
     dependencies:
@@ -7720,7 +7738,7 @@ snapshots:
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 26.1.2
     optional: true
 
   '@typescript-eslint/eslint-plugin@8.66.0(@typescript-eslint/parser@8.66.0(eslint@8.57.0)(typescript@5.5.2))(eslint@8.57.0)(typescript@5.5.2)':

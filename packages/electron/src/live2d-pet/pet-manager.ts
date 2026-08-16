@@ -82,9 +82,9 @@ export async function createPetWindow(): Promise<BrowserWindow | null> {
 
   if (isDev) {
     const port = await findVitePort();
-    await petWindow.loadURL(`http://localhost:${port}/apps/desktop/pet.html`);
+    await petWindow.loadURL(`http://localhost:${port}/pet.html`);
   } else {
-    await petWindow.loadFile(join(__dirname, "../dist/apps/desktop/pet.html"));
+    await petWindow.loadFile(join(__dirname, "../dist/pet.html"));
   }
 
   if (isDev) {

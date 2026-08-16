@@ -48,7 +48,8 @@ export class ServerManager {
   constructor(private options: ServerManagerOptions = {}) {
     const merged = { ...DEFAULT_OPTIONS, ...options }
     if (!merged.serverEntry) {
-      merged.serverEntry = path.resolve(__dirname, "../system/server/cli.js")
+      // 生产模式：Sidecar 已由 electron-vite 编译为独立的 sidecar.js（与 main.js 同目录）
+      merged.serverEntry = path.resolve(__dirname, "sidecar.js")
     }
     this.options = merged
     this.timeout = merged.timeout
@@ -92,6 +93,20 @@ export class ServerManager {
     }
     const args = [entry, ...baseArgs]
 
+    // 打包后的独立子进程无法读取 app.asar 内的文件。
+    // 生产模式（非 tsx）用 Electron 自身二进制以 ELECTRON_RUN_AS_NODE=1 运行，保留 asar 读取能力。
+    const isPackaged = !opts.useTsx && !!process.versions.electron
+    if (isPackaged) {
+      this.process = spawn(process.execPath, args, {
+        stdio: ["ignore", "pipe", "pipe"],
+        env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
+        shell: false,
+      })
+      console.log(`[Sidecar] Spawning (electron-as-node): ${process.execPath} ${args.join(" ")}`)
+      this.attachProcessListeners()
+      return this.waitForReady()
+    }
+
     console.log(`[Sidecar] Spawning: ${runner} ${args.join(" ")}`)
 
     this.process = spawn(runner, args, {
@@ -99,6 +114,14 @@ export class ServerManager {
       env: { ...process.env },
       shell: true,
     })
+
+    this.attachProcessListeners()
+    return this.waitForReady()
+  }
+
+  /** 挂载子进程 stdout/stderr/exit/error 监听（两条 spawn 路径共用） */
+  private attachProcessListeners(): void {
+    if (!this.process) return
 
     let buffer = ""
 
@@ -138,8 +161,6 @@ export class ServerManager {
       console.error(`[Sidecar] Process error: ${err.message}`)
       this.resolveReady?.({ port: 0, token: "" })
     })
-
-    return this.readyPromise
   }
 
   /** 等待服务器就绪（如果已 start 则返回已就绪的信息） */

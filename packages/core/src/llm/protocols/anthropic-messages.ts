@@ -112,9 +112,11 @@ export function deserializeStreamEvent(event: AnthropicStreamEvent): LLMEvent | 
         type: "finish",
         reason: (event.delta as any)?.stop_reason || "stop",
         usage: usage ? {
-          promptTokens: usage.input_tokens,
+          // Anthropic input_tokens 本不含缓存，归一化为"含缓存总输入"
+          // 对齐 opencode AI SDK v6：让 cost.ts 统一减法对所有 provider 正确
+          promptTokens: usage.input_tokens + (usage.cache_read_input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0),
           completionTokens: usage.output_tokens,
-          totalTokens: usage.input_tokens + usage.output_tokens,
+          totalTokens: usage.input_tokens + (usage.cache_read_input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0) + usage.output_tokens,
           cacheReadTokens: usage.cache_read_input_tokens,
           cacheWriteTokens: usage.cache_creation_input_tokens,
         } : undefined,

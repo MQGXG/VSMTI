@@ -69,10 +69,10 @@ mira/
 │       ├── src/App.tsx              # 应用根组件
 │       ├── src/pet/                 # Live2D 桌宠
 │       ├── index.html
-│       ├── pet.html                 # 桌宠窗口 HTML
 │       └── widget-test.html         # Widget 测试 HTML
 │
 ├── data/                            # 运行时数据
+├── pet.html                        # 桌宠窗口 HTML
 ├── docs/                            # 文档
 └── package.json                     # 根 package.json（pnpm monorepo）
 ```

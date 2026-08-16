@@ -15,8 +15,8 @@ interface Props {
 
 function useModelList() {
   const [models, setModels] = useState<Record<string, string>>(() => {
-    try { return JSON.parse(localStorage.getItem("pet_models") || '{"hiyori":"/models/hiyori/Hiyori.model3.json"}') as Record<string, string> }
-    catch { return { hiyori: "/models/hiyori/Hiyori.model3.json" } }
+    try { return JSON.parse(localStorage.getItem("pet_models") || '{"hiyori":"./models/hiyori/Hiyori.model3.json"}') as Record<string, string> }
+    catch { return { hiyori: "./models/hiyori/Hiyori.model3.json" } }
   })
   const save = (m: Record<string, string>) => {
     localStorage.setItem("pet_models", JSON.stringify(m))

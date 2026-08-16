@@ -312,7 +312,6 @@ mira/
 │           │   │   ├── tooltip-icon-button.tsx
 │           │   │   ├── animated-avatar.tsx   # CSS 动画头像
 │           │   │   ├── animated-avatar.css   # 头像动画样式
-│           │   │   ├── live2d-avatar.tsx     # Live2D 动态头像
 │           │   │   ├── widget-renderer.tsx   # Widget 渲染器（沙箱 iframe）
 │           │   │   ├── widget-utils.ts       # Widget 提取/本地资源注入
 │           │   │   └── widget-test-main.tsx  # Widget 测试入口
@@ -385,7 +384,6 @@ mira/
 │       │   │   └── SpeechBubble.tsx #   对话气泡
 │       │   └── styles/globals.css   # 全局样式
 │       ├── index.html               # HTML 模板（CSP 配置）
-│       ├── pet.html                 # 桌宠窗口 HTML
 │       ├── widget-test.html         # Widget 测试 HTML
 │       └── electron.vite.config.ts  # Vite 构建配置（备选）
 │
@@ -405,6 +403,7 @@ mira/
 ├── docs/                            # 文档
 ├── resources/                       # 打包资源（图标等）
 ├── logs/                            # 运行日志
+├── pet.html                        # 桌宠窗口 HTML
 ├── scripts/                         # 安装脚本
 ├── package.json                     # 根 package.json
 ├── pnpm-workspace.yaml              # pnpm workspace 配置

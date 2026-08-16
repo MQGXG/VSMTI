@@ -86,24 +86,24 @@ export function addCostResults(a: CostResult, b: CostResult): CostResult {
 }
 
 /**
- * 内置模型的默认定价（美元/千 token，粗略值）
- * 参考 opencode models.dev 定价，未配置 cost 的模型用它兜底
+ * 内置模型的默认定价（美元/千 token）
+ * 参考 opencode models.dev + provider 官方定价
  */
-const DEFAULT_PRICES: Record<string, { input: number; output: number }> = {
-  "gpt-4o": { input: 0.0025, output: 0.01 },
-  "gpt-4o-mini": { input: 0.00015, output: 0.0006 },
-  "gpt-4-turbo": { input: 0.01, output: 0.03 },
+const DEFAULT_PRICES: Record<string, { input: number; output: number; cacheRead?: number; cacheWrite?: number }> = {
+  "gpt-4o": { input: 0.0025, output: 0.01, cacheRead: 0.00125 },
+  "gpt-4o-mini": { input: 0.00015, output: 0.0006, cacheRead: 0.000075 },
+  "gpt-4-turbo": { input: 0.01, output: 0.03, cacheRead: 0.005 },
   "gpt-4": { input: 0.03, output: 0.06 },
   "gpt-3.5-turbo": { input: 0.0005, output: 0.0015 },
   "o1": { input: 0.015, output: 0.06 },
   "o3-mini": { input: 0.0011, output: 0.0044 },
-  "claude-sonnet-4-20250514": { input: 0.003, output: 0.015 },
-  "claude-opus-4-20250514": { input: 0.015, output: 0.075 },
-  "claude-haiku-4-20250514": { input: 0.001, output: 0.005 },
-  "claude-4-20250514": { input: 0.005, output: 0.025 },
-  "deepseek-chat": { input: 0.00027, output: 0.0011 },
-  "deepseek-reasoner": { input: 0.00055, output: 0.00219 },
-  "deepseek-v4-flash": { input: 0.00027, output: 0.0011 },
+  "claude-sonnet-4-20250514": { input: 0.003, output: 0.015, cacheRead: 0.0027, cacheWrite: 0.00375 },
+  "claude-opus-4-20250514": { input: 0.015, output: 0.075, cacheRead: 0.0135, cacheWrite: 0.01875 },
+  "claude-haiku-4-20250514": { input: 0.001, output: 0.005, cacheRead: 0.0009, cacheWrite: 0.00125 },
+  "claude-4-20250514": { input: 0.005, output: 0.025, cacheRead: 0.0045, cacheWrite: 0.00625 },
+  "deepseek-chat": { input: 0.00027, output: 0.0011, cacheRead: 0.000027 },
+  "deepseek-reasoner": { input: 0.00055, output: 0.00219, cacheRead: 0.000055 },
+  "deepseek-v4-flash": { input: 0.00027, output: 0.0011, cacheRead: 0.000027 },
 }
 
 /**
@@ -113,7 +113,12 @@ const DEFAULT_PRICES: Record<string, { input: number; output: number }> = {
 export function getModelPricing(modelId: string): ModelPricing {
   const known = DEFAULT_PRICES[modelId]
   if (known) {
-    return { inputPer1K: known.input, outputPer1K: known.output }
+    return {
+      inputPer1K: known.input,
+      outputPer1K: known.output,
+      cacheReadPer1K: known.cacheRead,
+      cacheWritePer1K: known.cacheWrite,
+    }
   }
   // 未知模型：保守估算（输入 $0.001/K，输出 $0.004/K）
   return { inputPer1K: 0.001, outputPer1K: 0.004 }

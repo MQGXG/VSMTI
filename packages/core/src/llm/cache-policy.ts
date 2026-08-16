@@ -34,11 +34,20 @@ export function withToolsCache(
   if (!tools || tools.length === 0) return undefined
   const cacheable = shouldCache(policy, provider) && provider === "anthropic"
 
-  return tools.map((t) => ({
+  // 对齐 opencode：只给最后一个 tool 打断点，收敛为三锚点（system + 最后 tool + 最新 user）
+  if (!cacheable) {
+    return tools.map((t) => ({
+      name: t.name,
+      description: t.description,
+      input_schema: t.parameters,
+    }))
+  }
+  const lastIdx = tools.length - 1
+  return tools.map((t, i) => ({
     name: t.name,
     description: t.description,
     input_schema: t.parameters,
-    ...(cacheable ? { cache_control: { type: "ephemeral" } } : {}),
+    ...(i === lastIdx ? { cache_control: { type: "ephemeral" } } : {}),
   }))
 }
 
