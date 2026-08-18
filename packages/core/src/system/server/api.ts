@@ -88,7 +88,7 @@ async function getRecentWorkspace(): Promise<string> {
   return process.cwd()
 }
 
-async function ensureSharedMemoryFTS(preferredWorkspace?: string): Promise<FTSMemoryProvider | null> {
+export async function ensureSharedMemoryFTS(preferredWorkspace?: string): Promise<FTSMemoryProvider | null> {
   if (sharedMemoryFTS) return sharedMemoryFTS
   if (!sharedMemoryFTSPromise) {
     sharedMemoryFTSPromise = (async () => {

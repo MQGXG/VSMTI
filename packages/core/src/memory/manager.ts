@@ -16,6 +16,11 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4)
 }
 
+/** 查询归一化：去空白/小写/截断，用于 prefetch 缓存 key */
+function normalizeQuery(query: string): string {
+  return query.replace(/\s+/g, " ").trim().slice(0, 200).toLowerCase()
+}
+
 interface NotesEntry {
   user: string
   assistant: string
@@ -30,6 +35,13 @@ export class MemoryManager {
   private seenFactsMaxSize = 1000
   private notesBuffer: NotesEntry[] = []
   private flushBatchSize = 3
+  /**
+   * P1 优化：prefetch 结果 TTL 缓存。
+   * 同 session 内相同（归一化）查询在 5s 内复用结果，避免 ReAct 多步/重试时
+   * 重复执行 provider prefetch + FTS5 不可用时的 LIKE 全表扫描（首 token 提速）。
+   */
+  private prefetchCache = new Map<string, { content: string; at: number }>()
+  private prefetchCacheTTL = 5000
 
   addProvider(provider: MemoryProvider): void {
     this.providers.push(provider)
@@ -107,6 +119,14 @@ export class MemoryManager {
    * 支持跨 session 搜索（FTS 提供）
    */
   async prefetch(query: string, sessionID: string, tokenBudget = 2000): Promise<string> {
+    // P1：TTL 缓存命中时直接复用，跳过全部 provider 检索与跨会话扫描
+    const cacheKey = `${sessionID}:${normalizeQuery(query)}`
+    const now = Date.now()
+    const cached = this.prefetchCache.get(cacheKey)
+    if (cached && now - cached.at < this.prefetchCacheTTL) {
+      return cached.content
+    }
+
     const results = await Promise.all(
       this.providers.map(async (p) => {
         try {
@@ -119,14 +139,21 @@ export class MemoryManager {
       }),
     )
 
-    const ftsProvider = this.getFTSProvider()
-    if (ftsProvider) {
-      try {
-        const crossSessionContent = await ftsProvider.prefetchMemory(query)
-        if (crossSessionContent) {
-          results.push({ name: "fts-memory", content: crossSessionContent, priority: PROVIDER_PRIORITY["fts-memory"] })
-        }
-      } catch { /* 跨 session 搜索失败不阻塞 */ }
+    // P2：本地记忆已足够时跳过跨会话 LIKE 全表扫描（FTS5 不可用时该扫描最耗时）
+    const localTokens = results.reduce(
+      (sum, r) => sum + (r ? estimateTokens(r.content) : 0),
+      0,
+    )
+    if (localTokens < tokenBudget * 0.5) {
+      const ftsProvider = this.getFTSProvider()
+      if (ftsProvider) {
+        try {
+          const crossSessionContent = await ftsProvider.prefetchMemory(query)
+          if (crossSessionContent) {
+            results.push({ name: "fts-memory", content: crossSessionContent, priority: PROVIDER_PRIORITY["fts-memory"] })
+          }
+        } catch { /* 跨 session 搜索失败不阻塞 */ }
+      }
     }
 
     const sorted = results
@@ -151,12 +178,16 @@ export class MemoryManager {
       usedTokens += itemTokens
     }
 
-    return parts.join("\n\n")
+    const content = parts.join("\n\n")
+    this.prefetchCache.set(cacheKey, { content, at: now })
+    return content
   }
 
   /** Single-writer: 追加到 notes 缓冲区，批量刷新到 providers */
   async syncTurn(user: string, assistant: string, sessionID: string): Promise<void> {
     this.turnCount++
+    // 新记忆写入会使 prefetch 结果过期，清除缓存
+    this.prefetchCache.clear()
     this.notesBuffer.push({ user, assistant })
 
     if (this.notesBuffer.length >= this.flushBatchSize) {
@@ -217,6 +248,7 @@ export class MemoryManager {
   /** 清理去重缓存（session 切换时调用） */
   clearDedupCache(): void {
     this.seenFacts.clear()
+    this.prefetchCache.clear()
   }
 
   async shutdown(): Promise<void> {

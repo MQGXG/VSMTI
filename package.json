@@ -20,7 +20,8 @@
   "lint:fix": "eslint . --ext .ts,.tsx --fix",
   "verify:deps": "tsx scripts/verify-deps.ts",
   "gen:catalog": "tsx scripts/gen-catalog.ts",
-  "verify:catalog": "tsx scripts/gen-catalog.ts --check"
+    "verify:catalog": "tsx scripts/gen-catalog.ts --check",
+    "models:refresh": "node scripts/refresh-model-catalog.mjs"
   },
   "dependencies": {
     "@assistant-ui/react": "^0.14.26",

@@ -122,33 +122,37 @@ export async function activateMemory(
   }
 
   // 5. 突然想起（弱记忆通过强关联重新激活）
-  for (const [nodeId, node] of graph.nodes) {
-    if (node.strength >= config.spontaneousRecallThreshold || activatedNodes.has(nodeId)) continue
+  // P3：图谱节点过多时跳过该 O(n) 全量遍历（收益低成本高，避免拖慢首 token）
+  const SPONTANEOUS_RECALL_MAX_NODES = 1000
+  if (graph.nodes.size <= SPONTANEOUS_RECALL_MAX_NODES) {
+    for (const [nodeId, node] of graph.nodes) {
+      if (node.strength >= config.spontaneousRecallThreshold || activatedNodes.has(nodeId)) continue
 
-    const neighbors = adjacencyList.get(nodeId) || []
-    const strongActivatedNeighbors = neighbors.filter(n => {
-      const activated = activatedNodes.get(n.neighborId)
-      return activated && activated.strength > 0.5
-    })
+      const neighbors = adjacencyList.get(nodeId) || []
+      const strongActivatedNeighbors = neighbors.filter(n => {
+        const activated = activatedNodes.get(n.neighborId)
+        return activated && activated.strength > 0.5
+      })
 
-    if (strongActivatedNeighbors.length > 0) {
-      const maxStrength = Math.max(
-        ...strongActivatedNeighbors.map(n => activatedNodes.get(n.neighborId)?.strength || 0)
-      )
-      const spontaneousStrength = maxStrength * 0.3
+      if (strongActivatedNeighbors.length > 0) {
+        const maxStrength = Math.max(
+          ...strongActivatedNeighbors.map(n => activatedNodes.get(n.neighborId)?.strength || 0)
+        )
+        const spontaneousStrength = maxStrength * 0.3
 
-      if (spontaneousStrength >= config.activationThreshold) {
-        activatedNodes.set(nodeId, {
-          node,
-          strength: spontaneousStrength,
-          depth: config.maxDepth,
-        })
-        spontaneousRecall = true
-        paths.push({
-          from: strongActivatedNeighbors[0].neighborId,
-          to: nodeId,
-          strength: spontaneousStrength,
-        })
+        if (spontaneousStrength >= config.activationThreshold) {
+          activatedNodes.set(nodeId, {
+            node,
+            strength: spontaneousStrength,
+            depth: config.maxDepth,
+          })
+          spontaneousRecall = true
+          paths.push({
+            from: strongActivatedNeighbors[0].neighborId,
+            to: nodeId,
+            strength: spontaneousStrength,
+          })
+        }
       }
     }
   }

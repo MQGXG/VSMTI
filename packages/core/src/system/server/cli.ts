@@ -4,6 +4,7 @@
  */
 
 import { startServer } from "./server"
+import { ensureSharedMemoryFTS } from "./api"
 import { initPlatformPaths } from "../../config/paths"
 import { registerDefaultInvariants } from "../../invariants"
 
@@ -39,6 +40,8 @@ startServer({ port, authToken })
   .then(({ port, token }) => {
     // 输出 JSON 供父进程读取
     console.log(JSON.stringify({ event: "ready", port, token }))
+    // P4 优化：后台预热共享 FTS 记忆，避免首条消息等待初始化（不阻塞 ready）
+    void ensureSharedMemoryFTS().catch(() => {})
   })
   .catch((err) => {
     console.error(`[Sidecar] Failed to start: ${err.message}`)

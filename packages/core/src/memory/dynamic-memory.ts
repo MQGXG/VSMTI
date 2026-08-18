@@ -10,7 +10,7 @@ import { decayStrength, batchDecay } from "./decay-curve"
 import { activateMemory, simpleTextRelevance, DEFAULT_ACTIVATION_CONFIG, type ActivationConfig } from "./memory-activation"
 import type { DecayConfig } from "./memory-node"
 import {
-  loadGraph, saveNode, saveEdge, deleteNode,
+  loadGraph, saveNode, saveNodesBulk, saveEdge, deleteNode,
   saveMetadata, saveCommunities, clearAll,
   searchNodesFTS,
 } from "./dynamic-memory-store"
@@ -137,12 +137,14 @@ export class DynamicMemoryManager {
     const relevanceFn = queryRelevance || simpleTextRelevance
     const result = await activateMemory(query, this.graph, relevanceFn, this.activationConfig)
 
-    // 更新激活节点的强度
+    // 更新激活节点的强度（P3：批量事务写，替代逐个 saveNode，减少首 token 前落盘次数）
+    const updatedNodes: MemoryNode[] = []
     for (const node of result.nodes) {
       const updated = updateStrengthAfterAccess(node)
       this.graph.nodes.set(node.id, updated)
-      try { await saveNode(updated) } catch { /* 静默 */ }
+      updatedNodes.push(updated)
     }
+    try { saveNodesBulk(updatedNodes) } catch { /* 静默 */ }
 
     return result
   }
@@ -320,8 +322,8 @@ export class DynamicMemoryManager {
     // 恢复节点
     this.graph.nodes = new Map()
     if (data.nodes && typeof data.nodes === "object") {
-      for (const [id, node] of Object.entries(data.nodes)) {
-        this.graph.nodes.set(id, node as MemoryNode)
+      for (const [id, node] of Object.entries(data.nodes as Record<string, MemoryNode>)) {
+        this.graph.nodes.set(id, node)
       }
     }
 
@@ -331,8 +333,8 @@ export class DynamicMemoryManager {
     // 恢复社区
     this.graph.communities = new Map()
     if (data.communities && typeof data.communities === "object") {
-      for (const [id, nodes] of Object.entries(data.communities)) {
-        this.graph.communities.set(id, nodes as string[])
+      for (const [id, nodes] of Object.entries(data.communities as Record<string, string[]>)) {
+        this.graph.communities.set(id, nodes)
       }
     }
 

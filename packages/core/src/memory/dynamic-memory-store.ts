@@ -10,6 +10,13 @@ import { DECAY_PROFILES } from "./memory-node"
 import { createEmptyGraph } from "./memory-node"
 import { logError } from "../system/logger"
 
+/** P3 优化：邻接表缓存（激活路径避免每次全量查询 memory_edges；边变更时失效） */
+let adjacencyCache: Map<string, Array<{ neighborId: string; relation: string; strength: number }>> | null = null
+
+export function invalidateAdjacencyCache(): void {
+  adjacencyCache = null
+}
+
 const SCHEMA = `
   -- 主节点表
   CREATE TABLE IF NOT EXISTS memory_nodes (
@@ -143,8 +150,8 @@ function nodeToRow(node: MemoryNode): Record<string, unknown> {
 /** 将行转为 MemoryNode */
 function rowToNode(row: Record<string, unknown>): MemoryNode {
   const relatedNodes: string[] = JSON.parse(row.related_nodes_json as string || "[]")
-  const assocObj = JSON.parse(row.association_strengths_json as string || "{}")
-  const associationStrengths = new Map(Object.entries(assocObj).map(([k, v]) => [k, v as number]))
+  const assocObj = JSON.parse(row.association_strengths_json as string || "{}") as Record<string, number>
+  const associationStrengths = new Map(Object.entries(assocObj))
 
   return {
     id: row.id as string,
@@ -218,12 +225,17 @@ export async function getNeighborsFast(nodeId: string): Promise<Array<{ neighbor
 
 /** 批量获取所有邻居（构建邻接表） */
 export async function buildAdjacencyList(): Promise<Map<string, Array<{ neighborId: string; relation: string; strength: number }>>> {
+  if (adjacencyCache) return adjacencyCache
+
   await ensureSchema()
   const db = await getDbAsync()
   const adj = new Map<string, Array<{ neighborId: string; relation: string; strength: number }>>()
 
   const result = db.exec("SELECT source, target, relation, strength FROM memory_edges")
-  if (result.length === 0) return adj
+  if (result.length === 0) {
+    adjacencyCache = adj
+    return adj
+  }
 
   for (const row of result[0].values) {
     const source = row[0] as string
@@ -238,6 +250,7 @@ export async function buildAdjacencyList(): Promise<Map<string, Array<{ neighbor
     adj.get(target)!.push({ neighborId: source, relation, strength })
   }
 
+  adjacencyCache = adj
   return adj
 }
 
@@ -265,7 +278,7 @@ export async function getEmbedding(nodeId: string): Promise<number[] | null> {
   )
 
   if (result.length === 0 || result[0].values.length === 0) return null
-  return JSON.parse(result[0].values[0][0] as string)
+  return JSON.parse(result[0].values[0][0] as string) as number[]
 }
 
 /** 批量获取所有嵌入（用于向量搜索） */
@@ -365,6 +378,33 @@ export async function saveNode(node: MemoryNode): Promise<void> {
   )
 }
 
+/** 批量保存节点（事务，激活路径用：一次 COMMIT 替代逐个写库，避免首 token 前多次落盘） */
+export function saveNodesBulk(nodes: MemoryNode[]): void {
+  if (nodes.length === 0) return
+  try {
+    runWrite("BEGIN")
+    for (const node of nodes) {
+      const row = nodeToRow(node)
+      runWrite(
+        `INSERT OR REPLACE INTO memory_nodes
+         (id, content, type, importance, strength, access_count, last_accessed, created_at,
+          community_id, decay_rate, min_strength, metadata_json, related_nodes_json, association_strengths_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          row.id, row.content, row.type, row.importance, row.strength,
+          row.access_count, row.last_accessed, row.created_at,
+          row.community_id, row.decay_rate, row.min_strength,
+          row.metadata_json, row.related_nodes_json, row.association_strengths_json,
+        ]
+      )
+    }
+    runWrite("COMMIT")
+  } catch (err) {
+    runWrite("ROLLBACK")
+    logError("[DynamicMemory] saveNodesBulk failed", err)
+  }
+}
+
 /** 保存单条边 */
 export async function saveEdge(edge: MemoryEdge): Promise<void> {
   await ensureSchema()
@@ -372,12 +412,14 @@ export async function saveEdge(edge: MemoryEdge): Promise<void> {
     "INSERT INTO memory_edges (source, target, relation, strength) VALUES (?, ?, ?, ?)",
     [edge.source, edge.target, edge.relation, edge.strength]
   )
+  invalidateAdjacencyCache()
 }
 
 /** 删除节点的所有边 */
 export async function deleteEdgesForNode(nodeId: string): Promise<void> {
   await ensureSchema()
   runWrite("DELETE FROM memory_edges WHERE source = ? OR target = ?", [nodeId, nodeId])
+  invalidateAdjacencyCache()
 }
 
 /** 删除节点 */

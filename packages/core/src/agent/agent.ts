@@ -155,9 +155,13 @@ export class Agent {
     this._preLLMOff = pluginHooks.on("pre_llm", async (messages: LLMMessage[], config: AgentConfig) => {
       if (!config.sessionID || !config.workspace) return messages
       // 静态记忆注入（原有链路）
+      const tMem = Date.now()
       let result = await this.contextManager.injectMemories(messages, config.sessionID)
+      const memMs = Date.now() - tMem
       // 动态记忆图谱激活召回（图谱沉淀的记忆主动参与本轮推理）
+      const tGraph = Date.now()
       result = await this.injectGraphMemory(result)
+      logInfo("Perf", `pre_llm injectMemories ${memMs}ms injectGraphMemory ${Date.now() - tGraph}ms`)
       return result
     })
 
@@ -748,7 +752,9 @@ export class Agent {
     images?: string[],
     files?: FileRef[],
   ): AsyncGenerator<AgentEvent> {
+    const perfStart = Date.now()
     const { ctx, toolSet, llmConfig, maxSteps } = await this.prepareRun(config)
+    logInfo("Perf", `agent.run prepareRun ${Date.now() - perfStart}ms`)
     // 图片传递诊断：确认渲染进程是否把图片 data URL 传入 agent
     if (images && images.length > 0) {
       logInfo("Image", `agent.run received ${images.length} image(s), first=${images[0]?.slice(0, 60)}...`)
@@ -765,6 +771,7 @@ export class Agent {
     }
 
     const restoredHistory = await this.restoreSession(history, config)
+    logInfo("Perf", `agent.run restoreSession ${Date.now() - perfStart}ms`)
 
     // 图片落盘：写入 {userData}/attachments/{sessionId}/，返回相对路径供落库与历史恢复
     let imagePaths: string[] | undefined
@@ -795,7 +802,9 @@ export class Agent {
     }
 
     const { enrichedUser, memoryPrompt } = await this.contextManager.prepareContext(userMessage + fileInjectedText, config.sessionID)
+    logInfo("Perf", `agent.run prepareContext ${Date.now() - perfStart}ms`)
     let messages = await this.buildMessages(config, userMessage, enrichedUser, memoryPrompt, restoredHistory, imagePaths, fileRefs)
+    logInfo("Perf", `agent.run buildMessages ${Date.now() - perfStart}ms`)
 
     // 用户上传的图片：注入首条 user 消息为 ImagePart（含图片时模型才能识图）
     if (images && images.length > 0) {
