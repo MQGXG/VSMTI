@@ -20,7 +20,7 @@ function contains(root: string, target: string): boolean {
 
 export const createWebpageTool = make({
   name: "create_webpage",
-  description: "Create an interactive HTML page (.html) with embedded CSS and JavaScript. Supports: clickable tabs, sliders, forms, charts (canvas), interactive components, single-page apps. Use when: user wants interactive content, data dashboards, clickable prototypes, form widgets, mini web apps.",
+  description: "Create an interactive HTML page (.html) with embedded CSS and JavaScript. Supports: clickable tabs, sliders, forms, charts (canvas), interactive components, single-page apps. Use when: user wants interactive content, data dashboards, clickable prototypes, form widgets, mini web apps. IMPORTANT: only use this tool when an interactive .html page is truly required — for static SVG illustrations, flowcharts, diagrams, or cover art, output the SVG inside a ```svg fenced code block in your reply instead (the app renders a live preview).",
   inputSchema: z.object({
     path: z.string().describe("Output file path (absolute or relative to workspace), should end with .html"),
     title: z.string().optional().describe("Page title"),

@@ -64,7 +64,7 @@ function generateArt(style: string, title: string, width: number, height: number
 
 export const createSvgTool = make({
   name: "create_svg",
-  description: "Create an abstract SVG illustration / cover art. Generates gradient backgrounds, geometric shapes, decorative patterns, concept covers. Use when: user wants visual covers, abstract images, decorative graphics, concept illustrations, brand visuals.",
+  description: "Create an abstract SVG illustration / cover art. Generates gradient backgrounds, geometric shapes, decorative patterns, concept covers. Use when: user wants visual covers, abstract images, decorative graphics, concept illustrations, brand visuals. IMPORTANT: after generating, output the SVG in your reply inside a ```svg fenced code block so the app renders a live preview below the source code.",
   inputSchema: z.object({
     title: z.string().optional().describe("Text to include in the illustration"),
     style: z.enum(["gradient", "minimal"]).optional().describe("Style: gradient (彩色渐变) or minimal (简洁)，默认 gradient"),

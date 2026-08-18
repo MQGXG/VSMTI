@@ -203,11 +203,14 @@ export class ServerManager {
     })
   }
 
-  /** 等待服务器就绪（如果已 start 则返回已就绪的信息） */
+  /**
+   * 等待本次 start 的 ready JSON。
+   * 修改点：移除"resolvedPort > 0 则短路返回"的优化路径。
+   * 原因：多 start() 竞态下 resolvedPort 可能残留旧端口（06:04 连环重连死循环根因），
+   * 短路会返回陈旧端口导致 health 打错误端口而 ECONNREFUSED；readyPromise 在每次
+   * start() 重建，直接 await 它始终拿到本次进程的端口（已 resolve 的 promise 复用结果，无性能损失）。
+   */
   async waitForReady(): Promise<{ port: number; token: string }> {
-    if (this.process && this.resolvedPort > 0) {
-      return { port: this.resolvedPort, token: this.resolvedToken }
-    }
     return this.readyPromise!
   }
 

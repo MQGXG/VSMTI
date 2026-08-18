@@ -63,29 +63,52 @@ export class RouteClient {
 
   async *postStream(path: string, body: unknown): AsyncGenerator<Uint8Array> {
     const url = `${this.getBaseUrl()}${path}`
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { ...this.getHeaders(), Accept: "text/event-stream" },
-      body: JSON.stringify(body),
-    })
+    const controller = new AbortController()
+    // 修改点：为 SSE 读循环加"读空闲超时"（默认 60s），防止 provider 建立连接后挂起
+    // 导致 reader.read() 无限等待、长期占用 Core 单线程事件循环（health 偶发 ECONNRESET 的诱因）。
+    const idleMs = this.config.timeout ?? 60_000
+
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: { ...this.getHeaders(), Accept: "text/event-stream" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      })
+    } catch (err) {
+      controller.abort()
+      throw err
+    }
 
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`[RouteClient] HTTP ${response.status} from ${url}: ${errorText.slice(0, 500)}`)
-      const sanitized = sanitizeBody(typeof body === "object" ? JSON.stringify(body) : String(body))
+      const sanitized = sanitizeBody(typeof body === "string" ? body : (JSON.stringify(body) ?? "undefined"))
       console.debug(`[RouteClient] Request body (sanitized): ${sanitized.slice(0, 2000)}`)
+      controller.abort()
       throw new Error(`HTTP ${response.status}: ${errorText.slice(0, 1000)}`)
     }
 
     const reader = response.body?.getReader()
-    if (!reader) throw new Error("No response body")
+    if (!reader) {
+      controller.abort()
+      throw new Error("No response body")
+    }
 
     const decoder = new TextDecoder()
     let buffer = ""
+    let idleTimer: ReturnType<typeof setTimeout> | undefined
+    const resetIdleTimer = (): void => {
+      if (idleTimer) clearTimeout(idleTimer)
+      idleTimer = setTimeout(() => controller.abort(), idleMs)
+    }
 
     try {
+      resetIdleTimer()
       while (true) {
         const { done, value } = await reader.read()
+        resetIdleTimer()
         if (done) break
 
         buffer += decoder.decode(value, { stream: true })
@@ -100,8 +123,15 @@ export class RouteClient {
           }
         }
       }
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        throw new Error(`SSE read timed out after ${idleMs}ms of inactivity`)
+      }
+      throw err
     } finally {
+      if (idleTimer) clearTimeout(idleTimer)
       reader.releaseLock()
+      controller.abort()
     }
   }
 }

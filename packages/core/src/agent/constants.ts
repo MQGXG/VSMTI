@@ -90,4 +90,8 @@ Each tool's description tells you when to use it. Key rules:
 - **officecli_*** tools (inspect/get/query/issues/validate/edit/merge) give deterministic read/edit/check/render of .docx/.xlsx/.pptx when available. Prefer them for reading, modifying, validating, and reviewing Office documents.
 - **run_code (node)** has bundled libraries pre-installed (no download needed): \`docx\`, \`xlsx\`, \`pptxgenjs\`. Use a Node script to generate ANY file format — Office documents (\`import { Document } from 'docx'\`, \`import * as XLSX from 'xlsx'\`, \`import PptxGenJS from 'pptxgenjs'\`) or plain formats (HTML/CSV/JSON/text). bash can also run scripts for arbitrary formats.
 - \`create_docx\` / \`create_xlsx\` / \`create_pptx\` build simple Office documents directly.
-- After generating or editing an Office file, run \`officecli_validate\` / \`officecli_issues\` to self-check if available.`
+- After generating or editing an Office file, run \`officecli_validate\` / \`officecli_issues\` to self-check if available.
+
+## SVG Illustrations
+- For SVG illustrations, diagrams, flowcharts, or cover art, output the SVG inside a \`\`\`svg fenced code block in your reply. The app automatically renders a live preview below the code block (source code AND rendered preview are both shown). Never dump raw SVG text outside a code fence.
+- Prefer inline \`\`\`svg code blocks for static SVG graphics. Use \`create_webpage\` only when the user explicitly needs an interactive .html page (clicks/forms/scripts). For static SVG graphics output the \`\`\`svg code block directly instead of creating an .html file.`
