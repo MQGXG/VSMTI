@@ -14,6 +14,8 @@ function resolveTrayIconPath(): string {
 }
 
 export function createTray(): Tray {
+  // 幂等：重复调用（热重载/窗口重建）时复用已有实例，避免托盘图标堆积
+  if (tray) return tray;
   const iconPath = resolveTrayIconPath();
   let icon = iconPath ? nativeImage.createFromPath(iconPath) : nativeImage.createEmpty();
   // Windows 托盘建议 16/32px；原图过大时按系统缩放（resize 返回新实例）

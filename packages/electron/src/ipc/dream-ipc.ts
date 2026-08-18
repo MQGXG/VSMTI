@@ -1,6 +1,6 @@
 import { ipcMain } from "electron"
-import { DreamDistillManager } from "@mira/core/orchestrate/dream"
-import type { LLMMessage } from "@mira/core/llm/schema/messages"
+import { DreamDistillManager } from "@mira/core"
+import type { LLMMessage } from "@mira/core"
 
 const dreamDistillManager = new DreamDistillManager()
 

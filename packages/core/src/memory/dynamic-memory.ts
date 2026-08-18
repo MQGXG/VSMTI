@@ -3,8 +3,8 @@
  * 整合记忆节点、强度计算、衰减曲线、激活传播 + SQLite 持久化
  */
 
-import type { MemoryNode, MemoryEdge, MemoryGraph, ActivationResult, MemoryType } from "./memory-node"
-import { createEmptyGraph, createMemoryNode, createMemoryEdge, DECAY_PROFILES } from "./memory-node"
+import type { MemoryNode, MemoryEdge, MemoryGraph, ActivationResult, MemoryType , DECAY_PROFILES } from "./memory-node"
+import { createEmptyGraph, createMemoryNode, createMemoryEdge } from "./memory-node"
 import { calculateStrength, updateStrengthAfterAccess, shouldConsolidate } from "./memory-strength"
 import { decayStrength, batchDecay } from "./decay-curve"
 import { activateMemory, simpleTextRelevance, DEFAULT_ACTIVATION_CONFIG, type ActivationConfig } from "./memory-activation"

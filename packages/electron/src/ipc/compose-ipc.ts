@@ -1,5 +1,5 @@
 import { ipcMain } from "electron"
-import { ComposeModeManager, type ComposePhase, type ComposeState } from "@mira/core/compose-mode"
+import { ComposeModeManager, type ComposePhase, type ComposeState } from "@mira/core"
 
 const composeModeManager = new ComposeModeManager()
 

@@ -34,7 +34,7 @@ import type { MiraRuntimeContext } from "./MiraRuntimeProvider";
 import { AgentService } from "../services/agent.service";
 import { useTheme } from "../contexts/ThemeContext";
 import { buildBuiltinCommands, SOURCE_LABEL, type SlashCommandDef } from "./slash-commands";
-import { createTTSEngine } from "../services/voice/tts";
+import { getTTSEngine } from "../services/voice/engine-registry";
 import type { TTSEngine } from "../services/voice/types";
 import { parseDroppedFiles, pickAndParseFiles, buildSendContent } from "../lib/attachment-picker-ui";
 import type { PendingAttachment } from "../lib/file-parser";
@@ -77,10 +77,13 @@ function MessageActions({ messageId, ctx }: { messageId: string; ctx: MiraRuntim
 
   const handleSpeak = useCallback(async () => {
     if (!ttsEngineRef.current) {
-      ttsEngineRef.current = createTTSEngine((loadSettings().ttsEngine as "webspeech" | "local") || "webspeech");
+      // TTS 引擎来自目录（voice.json 默认选中），缓存复用避免重复实例化
+      ttsEngineRef.current = await getTTSEngine();
     }
+    const engine = ttsEngineRef.current;
+    if (!engine) return;
     setSpeaking(true);
-    await ttsEngineRef.current.speak(messageText, { onEnd: () => setSpeaking(false) });
+    await engine.speak(messageText, { onEnd: () => setSpeaking(false) });
     setSpeaking(false);
   }, [messageText]);
 
@@ -280,20 +283,19 @@ function ChatInner({ ctx, selectedModel, onModelChange, agentMode, onModeChange,
     e.target.value = "";
   };
 
-  /** 粘贴图片：检测剪贴板中的图片文件 → 读取 base64 加入待发送队列 */
+  /** 粘贴文件/图片：剪贴板中的任意文件（截图图片、资源管理器复制的文件）→ 统一解析加入待发送队列 */
   const handlePaste = (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (!items || items.length === 0) return;
-    const imageFiles: File[] = [];
+    const pastedFiles: File[] = [];
     for (const item of Array.from(items)) {
-      if (item.kind === "file" && item.type.startsWith("image/")) {
-        const file = item.getAsFile();
-        if (file) imageFiles.push(file);
-      }
+      if (item.kind !== "file") continue;
+      const file = item.getAsFile();
+      if (file) pastedFiles.push(file);
     }
-    if (imageFiles.length > 0) {
+    if (pastedFiles.length > 0) {
       e.preventDefault();
-      void parseDroppedFiles(imageFiles).then((atts) => {
+      void parseDroppedFiles(pastedFiles).then((atts) => {
         if (atts.length > 0) setPendingAttachments((prev) => [...prev, ...atts]);
       }).catch(() => { /* 解析失败不阻塞 */ });
     }

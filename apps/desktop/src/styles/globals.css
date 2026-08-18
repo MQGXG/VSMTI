@@ -427,3 +427,12 @@ html.dark code:not(pre code) { background: var(--bg-secondary); color: var(--for
   0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
   40% { transform: scale(1); opacity: 1; }
 }
+
+/* ── SVG 内嵌渲染（```svg 代码块 → 内嵌图片） ─────────── */
+.mira-svg-inline {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.5rem 0;
+  border-radius: 8px;
+}

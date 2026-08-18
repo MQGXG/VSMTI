@@ -8,7 +8,7 @@ import { z } from 'zod'
 import type { AgentEvent } from '../types'
 
 const mockState = vi.hoisted(() => ({
-  toolCall: { name: 'bash', arguments: JSON.stringify({ command: 'echo hi' }) } as { name: string; arguments: string } | null,
+  toolCall: { name: 'bash', arguments: JSON.stringify({ command: 'echo hi' }) },
   streamCount: 0,
 }))
 
@@ -112,10 +112,7 @@ describe('permission deny reason injection', () => {
     }
     resetMock()
 
-    const toolResult = events.find((e) => e.type === 'tool_result') as Extract<
-      AgentEvent,
-      { type: 'tool_result' }
-    > | undefined
+    const toolResult = events.find((e) => e.type === 'tool_result')
     expect(toolResult).toBeDefined()
     expect(toolResult!.result.success).toBe(false)
     expect(toolResult!.result.error).toContain('Permission denied')
@@ -147,10 +144,7 @@ describe('permission deny reason injection', () => {
     resetMock()
 
     expect(events.some((e) => e.type === 'permission_request')).toBe(false)
-    const toolResult = events.find((e) => e.type === 'tool_result') as Extract<
-      AgentEvent,
-      { type: 'tool_result' }
-    > | undefined
+    const toolResult = events.find((e) => e.type === 'tool_result')
     expect(toolResult).toBeDefined()
     expect(toolResult!.result.success).toBe(false)
     expect(toolResult!.result.error).toContain('Permission denied')
@@ -184,10 +178,7 @@ describe('permission deny reason injection', () => {
     }
     resetMock()
 
-    const toolResult = events.find((e) => e.type === 'tool_result') as Extract<
-      AgentEvent,
-      { type: 'tool_result' }
-    > | undefined
+    const toolResult = events.find((e) => e.type === 'tool_result')
     expect(toolResult).toBeDefined()
     expect(toolResult!.result.success).toBe(false)
     expect(toolResult!.result.error).toContain('Permission denied')

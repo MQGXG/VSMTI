@@ -61,6 +61,8 @@ export class ContextManager {
   private workspace = ""
   private summarizer = new IncrementalSummarizer()
   private epochTracker = getContextEpochTracker()
+  /** provider 实测的最近一次 prompt 占用（含缓存流量），用于校准本地估算 */
+  private lastProviderTokens = 0
 
   // ─── 构造 & 初始化 ─────────────────────────────
   constructor(
@@ -71,6 +73,13 @@ export class ContextManager {
     this.checkpointProvider = checkpointProvider
     this.memoryManager = memoryManager
     this.config = { ...DEFAULT_CONFIG, ...config }
+  }
+
+  /** 注入 provider 实测的 prompt 占用（对齐 dsh contextPressure），校准压缩决策 */
+  setProviderTokens(promptTokens: number): void {
+    if (Number.isFinite(promptTokens) && promptTokens > 0) {
+      this.lastProviderTokens = promptTokens
+    }
   }
 
   setLLMConfig(config: { apiKey: string; apiUrl: string; model: string; provider: string }): void {
@@ -234,7 +243,9 @@ export class ContextManager {
     messages = this.microCompact(messages)
 
     const currentTokens = estimateTokens(messages)
-    const usage = currentTokens / this.config.maxContextTokens
+    // 用 provider 实测校准：实测 prompt 占用（含系统提示/工具）通常 ≥ 本地估算
+    const calibratedTokens = Math.max(currentTokens, this.lastProviderTokens)
+    const usage = calibratedTokens / this.config.maxContextTokens
 
     if (usage >= this.config.rebuildThreshold) {
       this.writeTranscript(messages)

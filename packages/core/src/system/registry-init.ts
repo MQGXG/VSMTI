@@ -40,9 +40,32 @@ import { spawnAgentTool, waitAgentsTool, listSubagentsTool } from "../tools/orch
 import { workflowRunTool } from "../tools/orchestrate/workflow-tool"
 import { applyPatchTool } from "../tools/core/apply-patch"
 import { todoTool } from "../tools/core/todo-tool"
+import { registerOfficeCapability } from "../capability/office-cli-provider"
+import { getOffice } from "../capability/office"
+import {
+  officecliInspectTool, officecliGetTool, officecliQueryTool,
+  officecliIssuesTool, officecliValidateTool, officecliEditTool, officecliMergeTool,
+} from "../tools/office/officecli-tools"
 import type { MCPServerConfig } from "../mcp/index"
 
+/**
+ * 条件注册 officecli_* 工具（对齐 dsh 条件注入）
+ * office 能力缝无 provider 或二进制不可用时，这些工具不注册（Agent 看不到，fail-closed）。
+ */
+export function registerOfficeTools(registry: ToolRegistry): void {
+  if (!getOffice()?.isAvailable()) return
+  registry.register(officecliInspectTool)
+  registry.register(officecliGetTool)
+  registry.register(officecliQueryTool)
+  registry.register(officecliIssuesTool)
+  registry.register(officecliValidateTool)
+  registry.register(officecliEditTool)
+  registry.register(officecliMergeTool)
+}
+
 export function createDefaultRegistry(): ToolRegistry {
+  // 注册 office 能力缝 provider（可逆卸载、幂等；生命周期=应用生命周期）
+  registerOfficeCapability()
   const registry = new ToolRegistry()
   registry.register(readFileTool)
   registry.register(invalidTool)
@@ -100,6 +123,7 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(createWebpageTool)
   registry.register(createMockupTool)
   registry.register(createSvgTool)
+  registerOfficeTools(registry)
   return registry
 }
 

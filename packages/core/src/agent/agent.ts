@@ -4,6 +4,7 @@ import { join } from "path"
 import { createHash } from "crypto"
 import { promises as fs } from "fs"
 import { logInfo } from "../system/logger"
+import { TokenUsageAccumulator } from "../session/token-projection"
 import { getPlatformPaths } from "../config/paths"
 import type { LLMMessage } from "../llm/client"
 import { estimateTokens, repairMessageSequence } from "../shared/message-utils"
@@ -11,7 +12,8 @@ import { calculateCost, getModelPricing } from "../shared/cost"
 import { pluginHooks } from "../shared/plugin-hooks"
 import type { PermissionSet, PermissionRule } from "../system/permission"
 import { MemoryManager } from "../memory/manager"
-import { DynamicMemoryManager, createDynamicMemory } from "../memory/dynamic-memory"
+import type { DynamicMemoryManager} from "../memory/dynamic-memory";
+import { createDynamicMemory } from "../memory/dynamic-memory"
 import { setDynamicMemoryManager } from "../tools/knowledge/memory-activate"
 import { BuiltinMemoryProvider } from "../memory/builtin-provider"
 import { appendMessage, loadSession } from "../session/store"
@@ -38,6 +40,7 @@ import type { AgentMode } from "../config/modes"
 import { DEFAULT_SYSTEM, type AgentConfig } from "./constants"
 
 import { classifyStep, isTerminal, isRecovery, MAX_STEPS_WARNING, MAX_STEPS_REACHED } from "./turn-classifier"
+import { modelHasVision } from "../llm/transform"
 import { ProviderCatalog } from "../llm/provider-catalog"
 import { runTurn, runMaxModeTurn, type TurnRunnerInput, type TurnRunnerOutput } from "./turn-runner"
 import { runStopHooks, registerStopHook, autoDreamHook, memoryPromoteHook } from "./stop-hooks"
@@ -96,6 +99,9 @@ export class Agent {
 
   /** 上次自动图谱维护时间戳 — 用于低频衰减/固化调度 */
   private lastGraphMaintenanceAt = 0
+
+  /** 会话级 Token 四桶投影（对齐 dsh token-meter） */
+  private tokenAccumulators = new Map<string, TokenUsageAccumulator>()
 
   get aborted(): boolean { return this.stateMachine.aborted }
   abort(): void { this.stateMachine.stop() }
@@ -180,7 +186,7 @@ export class Agent {
 
   /** 阶段 1: 初始化所有管理器 + 工具集 */
   private async prepareRun(config: AgentConfig): Promise<{ ctx: ReturnType<typeof buildToolContext>; toolSet: Record<string, any>; llmConfig: LLMTurnConfig; maxSteps: number }> {
-    if (!ProviderCatalog.isInitialized()) ProviderCatalog.registerBuiltins()
+    if (!ProviderCatalog.isInitialized()) ProviderCatalog.initProviderCatalog()
 
     // 每次 run 重置图谱共现批次（会话收尾提取的记忆仅与本会话批次互连）
     this.graphBatchIds = []
@@ -284,12 +290,20 @@ export class Agent {
       if (parsedUser) {
         const contentParts: Array<{ type: "text"; text: string } | { type: "image"; image: string; mediaType: string }> =
           [{ type: "text" as const, text: parsedUser.text }]
-        for (const relPath of parsedUser.images) {
-          const dataUrl = await this.readAttachmentDataUrl(relPath)
-          if (dataUrl) {
-            const mime = /^data:(image\/[a-z0-9.+-]+);/.exec(dataUrl)?.[1] || "image/png"
-            contentParts.push({ type: "image" as const, image: dataUrl, mediaType: mime })
+        // 历史图片按主模型视觉能力分流（与 client.ts 视觉桥触发判断一致）：
+        // 全模态模型保留读回（模型直接识图，无桥参与）；非视觉模型改为文本占位，
+        // 避免视觉桥每轮重描述旧图导致"没问却复述上一张图"。
+        const modelCanSeeImages = modelHasVision(config.provider || "", config.model, config.modelVision)
+        if (modelCanSeeImages) {
+          for (const relPath of parsedUser.images) {
+            const dataUrl = await this.readAttachmentDataUrl(relPath)
+            if (dataUrl) {
+              const mime = /^data:(image\/[a-z0-9.+-]+);/.exec(dataUrl)?.[1] || "image/png"
+              contentParts.push({ type: "image" as const, image: dataUrl, mediaType: mime })
+            }
           }
+        } else if (parsedUser.images.length > 0) {
+          contentParts.push({ type: "text" as const, text: `[用户在此条消息附了 ${parsedUser.images.length} 张图片，如需回顾请用 read_file 查看附件：${parsedUser.images.join(", ")}]` })
         }
         // 文件路径引用：文本→路径提示（Agent 可 read_file）；Office→仅卡片（内容不可重建）
         for (const f of parsedUser.files) {
@@ -380,16 +394,26 @@ export class Agent {
     let systemContent: string
     if (this.sourceManager && this.sourceManagerSources) {
       await prepareSourceManagerContext(this.sourceManager, this.sourceManagerSources, config, memoryPrompt, goalPrompt)
-      systemContent = await this.sourceManager.build({
+      // C1: 分离式构建 — 稳定段 + 独立 context（memory 等动态内容不污染稳定前缀）
+      const separated = await this.sourceManager.buildSeparated({
         sessionID: config.sessionID, workspace: config.workspace, mode: config.mode,
         customSystemPrompt: config.systemPrompt || DEFAULT_SYSTEM, currentFile: config.currentFile,
       })
+      systemContent = separated.context
+        ? `${separated.system}\n\n${separated.context}`
+        : separated.system
     } else {
       const modeSuffix = getModeSystemPromptSuffix(config.mode || "assistant")
       const baseSystem = await buildSystemMessage(config, memoryPrompt, DEFAULT_SYSTEM)
       const systemWithMode = modeSuffix ? `${baseSystem}\n\n[MODE: ${config.mode}]\n${modeSuffix}` : baseSystem
       systemContent = goalPrompt ? `${systemWithMode}\n\n${goalPrompt}` : systemWithMode
     }
+
+    // 模型身份注入：让 Agent 能如实回答"你是什么模型/哪个提供方"（避免模型凭训练数据自称别的模型）
+    const modelLine = config.model
+      ? `Running model: ${config.model}${config.provider ? ` (provider: ${config.provider})` : ""}`
+      : ""
+    systemContent = modelLine ? `${systemContent}\n\n<model>\n  ${modelLine}\n</model>` : systemContent
 
     return [
       { role: "system", content: systemContent },
@@ -725,6 +749,12 @@ export class Agent {
     files?: FileRef[],
   ): AsyncGenerator<AgentEvent> {
     const { ctx, toolSet, llmConfig, maxSteps } = await this.prepareRun(config)
+    // 图片传递诊断：确认渲染进程是否把图片 data URL 传入 agent
+    if (images && images.length > 0) {
+      logInfo("Image", `agent.run received ${images.length} image(s), first=${images[0]?.slice(0, 60)}...`)
+    } else {
+      logInfo("Image", "agent.run received NO images")
+    }
 
     if (this.dreamDistillManager && this.contextManager.shouldAutoDream?.()) {
       try {
@@ -749,13 +779,14 @@ export class Agent {
       const { parseOfficeFileForModel } = await import("../llm/ooxml-core")
       const officeTexts: string[] = []
       for (const f of files) {
-        if (f.kind === "text" && f.path) {
-          // 文本文件：只给路径提示，Agent 通过 read_file 读取
-          officeTexts.push(`📎 ${f.name} (${f.path})`)
-        } else if ((f.kind === "excel" || f.kind === "word" || f.kind === "ppt") && f.path) {
+        if (!f.path) continue
+        if (f.kind === "excel" || f.kind === "word" || f.kind === "ppt") {
           const content = await parseOfficeFileForModel(f.path, f.name)
           if (content) officeTexts.push(`### ${f.name}\n\n${content}`)
           else officeTexts.push(`📎 ${f.name} (${f.path})`)
+        } else {
+          // 文本/未知/任意文件：给路径提示，Agent 通过 read_file 读取
+          officeTexts.push(`📎 ${f.name} (${f.path})`)
         }
       }
       if (officeTexts.length > 0) {
@@ -770,6 +801,7 @@ export class Agent {
     if (images && images.length > 0) {
       const lastUserIdx = messages.findLastIndex((m) => m.role === "user")
       if (lastUserIdx >= 0) {
+        logInfo("Image", `injecting ${images.length} image part(s) into user message idx=${lastUserIdx}`)
         const baseContent = messages[lastUserIdx].content
         const textContent = typeof baseContent === "string"
           ? baseContent
@@ -791,8 +823,11 @@ export class Agent {
     const inputQueue = new PendingInputQueue()
     inputQueue.push({ message: userMessage, type: "user" })
 
+    let turnIndex = 0
+
     while (inputQueue.hasPending()) {
       const currentInput = inputQueue.next()!
+      turnIndex++
       const isFirstInput = currentInput.message === userMessage
       if (!isFirstInput) {
         messages.push({ role: "user", content: currentInput.message })
@@ -878,12 +913,24 @@ export class Agent {
         if (turnOutput.usage) {
           const pricing = getModelPricing(config.model)
           const result = calculateCost(turnOutput.usage, pricing)
-          if (result.cacheReadTokens > 0 || result.cacheWriteTokens > 0) {
-            const hitRate = result.inputTokens > 0
-              ? (result.cacheReadTokens / (result.inputTokens + result.cacheReadTokens + result.cacheWriteTokens) * 100).toFixed(1)
+
+          // 会话级四桶投影（uncachedInput/output/cacheRead/cacheWrite）
+          const accumulator = this.tokenAccumulators.get(config.sessionID)
+            ?? (this.tokenAccumulators.set(config.sessionID, new TokenUsageAccumulator()).get(config.sessionID)!)
+          const proj = accumulator.add({ turn: turnIndex, step, usage: turnOutput.usage })
+
+          // 注入 provider 实测 prompt 占用（校准压缩决策）
+          this.contextManager.setProviderTokens(turnOutput.usage.promptTokens || 0)
+
+          // 缓存命中率诊断日志（投影桶）
+          const totalInput = proj.uncachedInputTokens + proj.cacheReadTokens + proj.cacheWriteTokens
+          if (proj.cacheReadTokens > 0 || proj.cacheWriteTokens > 0) {
+            const hitRate = totalInput > 0
+              ? (proj.cacheReadTokens / totalInput * 100).toFixed(1)
               : "0"
-            logInfo("Cache", `hit=${result.cacheReadTokens} write=${result.cacheWriteTokens} input=${result.inputTokens} hitRate=${hitRate}% model=${config.model}`)
+            logInfo("Cache", `hit=${proj.cacheReadTokens} write=${proj.cacheWriteTokens} uncached=${proj.uncachedInputTokens} hitRate=${hitRate}% model=${config.model}`)
           }
+
           const { accumulateSessionUsage } = await import("../session/manager")
           await accumulateSessionUsage(config.sessionID, {
             cost: result.cost,

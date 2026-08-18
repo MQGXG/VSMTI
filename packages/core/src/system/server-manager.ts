@@ -42,7 +42,9 @@ export class ServerManager {
   private resolvedPort = 0
   private resolvedToken = ""
   private resolveReady: ((value: { port: number; token: string }) => void) | null = null
+  private rejectReady: ((err: Error) => void) | null = null
   private readyPromise: Promise<{ port: number; token: string }> | null = null
+  private startupTimer: ReturnType<typeof setTimeout> | null = null
   private timeout: number
 
   constructor(private options: ServerManagerOptions = {}) {
@@ -61,12 +63,22 @@ export class ServerManager {
 
   /** 启动 Core 服务进程 */
   async start(): Promise<{ port: number; token: string }> {
-    if (this.process) throw new Error("Server already running")
+    // 幂等：若已有存活进程先停止（避免孤儿进程阻塞故障恢复）
+    if (this.process) {
+      await this.stop()
+    }
 
+    // 重置已解析信息，强制 waitForReady 等待新进程的 ready JSON
+    //（修复：重建时陈旧端口短路，导致所有请求打向旧端口而永远失败）
+    this.resolvedPort = 0
+    this.resolvedToken = ""
     this.readyPromise = new Promise((resolve, reject) => {
       this.resolveReady = resolve
+      this.rejectReady = reject
 
-      setTimeout(() => {
+      this.startupTimer = setTimeout(() => {
+        this.resolveReady = null
+        this.rejectReady = null
         reject(new Error("Server startup timed out"))
       }, this.timeout)
     })
@@ -79,11 +91,6 @@ export class ServerManager {
       ? path.join(projectRoot, "packages/core/src/system/server/cli.ts")
       : opts.serverEntry
 
-    // 使用本地 tsx（避免 Electron 的 PATH 找不到 npx）
-    const tsxPath = path.join(projectRoot, "node_modules/.bin/tsx.cmd")
-    const hasTsx = fs.existsSync(tsxPath)
-
-    const runner = opts.useTsx && hasTsx ? tsxPath : "node"
     const baseArgs = ["--port", String(this.options.port || 0)]
     if (this.options.userData) {
       baseArgs.push("--userData", this.options.userData)
@@ -91,28 +98,37 @@ export class ServerManager {
     if (this.options.modelDir) {
       baseArgs.push("--modelDir", this.options.modelDir)
     }
-    const args = [entry, ...baseArgs]
 
     // 打包后的独立子进程无法读取 app.asar 内的文件。
     // 生产模式（非 tsx）用 Electron 自身二进制以 ELECTRON_RUN_AS_NODE=1 运行，保留 asar 读取能力。
     const isPackaged = !opts.useTsx && !!process.versions.electron
     if (isPackaged) {
-      this.process = spawn(process.execPath, args, {
+      this.process = spawn(process.execPath, [entry, ...baseArgs], {
         stdio: ["ignore", "pipe", "pipe"],
         env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
         shell: false,
+        windowsHide: true,
       })
-      console.log(`[Sidecar] Spawning (electron-as-node): ${process.execPath} ${args.join(" ")}`)
+      console.log(`[Sidecar] Spawning (electron-as-node): ${process.execPath} ${entry} ${baseArgs.join(" ")}`)
       this.attachProcessListeners()
       return this.waitForReady()
     }
 
-    console.log(`[Sidecar] Spawning: ${runner} ${args.join(" ")}`)
+    // 开发模式：优先直启 node + tsx CLI（shell:false，子进程即真实 node server，
+    // kill 有效且无 cmd 壳孤儿）；无 cli.mjs 时退回 tsx.cmd（保留旧路径）
+    const tsxCli = path.join(projectRoot, "node_modules/tsx/dist/cli.mjs")
+    const hasTsxCli = fs.existsSync(tsxCli)
+    const runner = hasTsxCli ? process.execPath : path.join(projectRoot, "node_modules/.bin/tsx.cmd")
+    const devArgs = hasTsxCli ? [tsxCli, entry, ...baseArgs] : [entry, ...baseArgs]
 
-    this.process = spawn(runner, args, {
+    console.log(`[Sidecar] Spawning (${hasTsxCli ? "node+tsx" : "tsx.cmd"}): ${runner} ${devArgs.join(" ")}`)
+
+    this.process = spawn(runner, devArgs, {
       stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env },
-      shell: true,
+      // process.execPath 是 Electron 二进制，需 ELECTRON_RUN_AS_NODE=1 才表现为 node
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
+      shell: !hasTsxCli,
+      windowsHide: true,
     })
 
     this.attachProcessListeners()
@@ -139,7 +155,15 @@ export class ServerManager {
           if (data.event === "ready") {
             this.resolvedPort = data.port
             this.resolvedToken = data.token || this.options.authToken || ""
-            this.resolveReady?.({ port: this.resolvedPort, token: this.resolvedToken })
+            // 已就绪：清理启动超时定时器，避免 resolve 后残留的 reject 触发 unhandledRejection
+            if (this.startupTimer) {
+              clearTimeout(this.startupTimer)
+              this.startupTimer = null
+            }
+            const ready = this.resolveReady
+            this.resolveReady = null
+            this.rejectReady = null
+            ready?.({ port: this.resolvedPort, token: this.resolvedToken })
           }
         } catch {
           // 非 JSON 输出（如 console.log）忽略
@@ -153,13 +177,29 @@ export class ServerManager {
 
     this.process.on("exit", (code) => {
       console.log(`[Sidecar] Process exited with code ${code}`)
+      if (this.startupTimer) {
+        clearTimeout(this.startupTimer)
+        this.startupTimer = null
+      }
       this.process = null
+      // 若进程在就绪前退出，reject 等待方，避免 request/waitForReady 永久挂起
+      const reject = this.rejectReady
       this.resolveReady = null
+      this.rejectReady = null
+      reject?.(new Error(`Sidecar process exited before ready (code ${code})`))
     })
 
     this.process.on("error", (err) => {
       console.error(`[Sidecar] Process error: ${err.message}`)
-      this.resolveReady?.({ port: 0, token: "" })
+      if (this.startupTimer) {
+        clearTimeout(this.startupTimer)
+        this.startupTimer = null
+      }
+      this.process = null
+      const reject = this.rejectReady
+      this.resolveReady = null
+      this.rejectReady = null
+      reject?.(err)
     })
   }
 
@@ -183,6 +223,9 @@ export class ServerManager {
         port,
         path: apiPath,
         method,
+        // agent:false 每次新建连接：避免复用被服务端 keepAliveTimeout 关闭的
+        // 空闲 socket（复用时触发 ECONNRESET/socket hang up，造成健康检查假阴性）
+        agent: false,
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -229,11 +272,15 @@ export class ServerManager {
       port,
       path: apiPath,
       method: "POST",
+      // agent:false：避免复用被服务端关闭的空闲 keep-alive socket（同 request）
+      agent: false,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
         "Content-Length": Buffer.byteLength(postData),
       },
+      // SSE 底层 socket 超时：core 每 15s 发心跳，60s 空闲才视为失联
+      timeout: 60_000,
     }
 
       const req = http.request(options, (res) => {
@@ -271,6 +318,11 @@ export class ServerManager {
     })
 
     req.on("error", (err) => { console.error(`[Sidecar] connectSSE ${apiPath} error: ${err.message} (code=${(err as NodeJS.ErrnoException).code})`); onError?.(err) })
+    req.on("timeout", () => {
+      console.error(`[Sidecar] connectSSE ${apiPath} timed out`)
+      req.destroy()
+      onError?.(new Error("SSE connection timed out"))
+    })
     req.on("close", () => console.log(`[Sidecar] connectSSE ${apiPath} closed`))
     req.write(postData)
     req.end()
@@ -280,23 +332,37 @@ export class ServerManager {
 
   /** 停止 Core 服务进程 */
   async stop(): Promise<void> {
-    if (!this.process) return
+    const proc = this.process
+    this.process = null
+    if (!proc) return
 
-    this.process.kill("SIGTERM")
+    // Windows 先杀整个进程树（兜底清理 tsx.cmd → node 孙进程等孤儿），POSIX 发 SIGTERM
+    try {
+      if (process.platform === "win32" && proc.pid) {
+        await new Promise<void>((res) => {
+          const tk = spawn("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" })
+          tk.on("exit", () => res())
+          tk.on("error", () => res())
+        })
+      } else {
+        proc.kill("SIGTERM")
+      }
+    } catch { /* ignore */ }
 
-    // 等待进程退出
+    // 等待进程退出，超时 5s 强杀
     await new Promise<void>((resolve) => {
+      if (proc.exitCode !== null || proc.signalCode !== null) {
+        resolve()
+        return
+      }
       const timer = setTimeout(() => {
-        this.process?.kill("SIGKILL")
+        try { proc.kill("SIGKILL") } catch { /* ignore */ }
         resolve()
       }, 5000)
-
-      this.process?.on("exit", () => {
+      proc.once("exit", () => {
         clearTimeout(timer)
         resolve()
       })
     })
-
-    this.process = null
   }
 }

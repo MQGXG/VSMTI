@@ -23,6 +23,16 @@ extraResources:
   # 应用图标（托盘/窗口运行时使用）
   - from: resources/icon.png
     to: icon.png
+  # OfficeCLI 二进制（officecli_* 工具，win32/macOS/linux 各平台捆绑对应二进制）
+  - from: resources/officecli
+    to: officecli
+    filter:
+      - "**/*"
+  # 动态 Office 库兜底（docx/xlsx/pptxgenjs，run_code node 脚本免下载使用）
+  - from: resources/office-libs
+    to: office-libs
+    filter:
+      - "**/*"
 
 win:
   icon: resources/icon.ico

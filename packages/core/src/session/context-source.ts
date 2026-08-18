@@ -136,6 +136,32 @@ export class SourceManager {
     return new Map(this.fingerprints)
   }
 
+  /**
+   * 分离式系统提示构建（对齐 dsh renderPrompt + renderContextSnapshot）
+   *
+   * 稳定 Source（priority < 90）→ system；动态 Source（priority >= 90，如 memory）
+   * → 独立 context 块。动态内容变化不再污染稳定前缀，缓存命中更高。
+   */
+  async buildSeparated(ctx: SourceContext): Promise<{ system: string; context: string }> {
+    const sorted = [...this.sources.values()]
+      .filter((s) => s.enabled)
+      .sort((a, b) => a.priority - b.priority)
+
+    const systemParts: string[] = []
+    const contextParts: string[] = []
+    for (const source of sorted) {
+      const content = await source.generate(ctx)
+      if (!content) continue
+      if (source.priority >= 90) contextParts.push(content)
+      else systemParts.push(content)
+    }
+
+    const context = contextParts.length > 0
+      ? `Current runtime context. This snapshot supersedes earlier runtime-context snapshots.\n\n${contextParts.join("\n\n")}`
+      : ""
+    return { system: systemParts.join("\n\n"), context }
+  }
+
   /** 重置所有 fingerprint（强制全量重建） */
   resetFingerprints(): void {
     this.fingerprints.clear()

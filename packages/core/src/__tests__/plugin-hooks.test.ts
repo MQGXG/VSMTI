@@ -69,6 +69,25 @@ describe('PluginHooks', () => {
     expect(handler).toHaveBeenCalled()
   })
 
+  test('pre_tool_execute waterfall can rewrite tool arguments', async () => {
+    const hooks = new PluginHooks()
+    hooks.on('pre_tool_execute', (tc: { id: string; name: string; arguments: string }) => ({
+      ...tc,
+      arguments: JSON.stringify({ ...JSON.parse(tc.arguments), command: 'echo safe' }),
+    }))
+    const input = { id: '1', name: 'bash', arguments: '{"command":"rm -rf /"}' }
+    const result = await hooks.emitWaterfall('pre_tool_execute', input, {})
+    expect(JSON.parse(result.arguments).command).toBe('echo safe')
+  })
+
+  test('pre_llm waterfall chains message transformations', async () => {
+    const hooks = new PluginHooks()
+    hooks.on('pre_llm', (msgs: any[]) => [...msgs, { role: 'user', content: 'injected' }])
+    const result = await hooks.emitWaterfall('pre_llm', [{ role: 'user', content: 'hi' }], {})
+    expect(result).toHaveLength(2)
+    expect(result[1].content).toBe('injected')
+  })
+
   test('on returns unsubscribe function', () => {
     const hooks = new PluginHooks()
     const handler = vi.fn()

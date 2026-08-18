@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Mic, MicOff, Loader2 } from "lucide-react"
-import { createSTTEngine } from "../services/voice/stt"
+import { getDictationEngine } from "../services/voice/engine-registry"
 import type { STTEngine } from "../services/voice/types"
 
 interface VoiceInputProps {
@@ -18,15 +18,6 @@ export function VoiceInput({ onTranscript, disabled = false, className = "" }: V
   const statusRef = useRef<VoiceStatus>("idle")
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const engine = useCallback((): STTEngine => {
-    if (!engineRef.current) {
-      // 优先本地（Whisper 离线），不可用时降级 Web Speech
-      const local = createSTTEngine("local")
-      engineRef.current = local.isAvailable() ? local : createSTTEngine("webspeech")
-    }
-    return engineRef.current
-  }, [])
-
   const clearErrorTimer = useCallback(() => {
     if (errorTimerRef.current) {
       clearTimeout(errorTimerRef.current)
@@ -34,17 +25,26 @@ export function VoiceInput({ onTranscript, disabled = false, className = "" }: V
     }
   }, [])
 
+  // 听写引擎来自目录（defaults.dictation；通常为本地 Whisper，兜底 Web Speech）
   useEffect(() => {
+    let disposed = false
+    void getDictationEngine().then((e) => {
+      if (!disposed) engineRef.current = e
+    })
     return () => {
+      disposed = true
       clearErrorTimer()
       engineRef.current?.stop()
       engineRef.current = null
     }
   }, [clearErrorTimer])
 
+  const engine = useCallback((): STTEngine | null => engineRef.current, [])
+
   const startListening = useCallback(() => {
     if (disabled) return
     const e = engine()
+    if (!e) return
     if (!e.isAvailable()) { setError("unsupported"); return }
 
     clearErrorTimer()
@@ -75,7 +75,7 @@ export function VoiceInput({ onTranscript, disabled = false, className = "" }: V
   }, [engine, disabled, onTranscript, clearErrorTimer])
 
   const stopListening = useCallback(() => {
-    engine().stop()
+    engine()?.stop()
     setStatus("idle")
     statusRef.current = "idle"
   }, [engine])

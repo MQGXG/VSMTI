@@ -8,6 +8,7 @@ import { makeRoute } from "./route/route"
 import type { RouteInstance } from "./route/types"
 import type { Auth, Endpoint, Framing, Protocol } from "./route/types"
 import { BUILTIN_PROVIDERS, type ProviderDef, type ModelDef } from "./builtin-providers"
+import { loadUserModelConfig } from "../config/models-config"
 
 export type { ProviderDef, ModelDef } from "./builtin-providers"
 
@@ -17,7 +18,7 @@ export interface ProviderUserConfig {
   headers?: Record<string, string>
   options?: Record<string, unknown>
   enabled?: boolean
-  models?: Record<string, { name?: string; enabled?: boolean; context?: number }>
+  models?: Record<string, { name?: string; enabled?: boolean; context?: number; capabilities?: string[] }>
 }
 
 const providers = new Map<string, ProviderDef>()
@@ -31,13 +32,18 @@ function getProtocol(protocolName: string): Protocol {
     case "openai-compatible": return OpenAICompatibleChatProtocol
     case "gemini": return GeminiProtocol
     case "openai-responses": return OpenAIResponsesProtocol
+    // 别名容错：用户/插件配置可能使用简写协议名
+    case "openai": return OpenAICompatibleChatProtocol
+    case "anthropic": return AnthropicMessagesProtocol
     default: throw LLMError.invalidRequest(`Unknown protocol: ${protocolName}`)
   }
 }
 
 function getEndpoint(def: ProviderDef, baseUrl?: string): Endpoint {
   const url = baseUrl || def.defaultBaseUrl
-  const path = def.path || (def.protocol === "anthropic-messages" ? "/v1/messages" : "/chat/completions")
+  // 别名（openai/anthropic 简写）与全名统一判定默认 path
+  const isAnthropic = def.protocol === "anthropic-messages" || def.protocol === "anthropic"
+  const path = def.path || (isAnthropic ? "/v1/messages" : "/chat/completions")
   return { baseUrl: url, path }
 }
 
@@ -56,10 +62,33 @@ function getExtraHeaders(def: ProviderDef): Record<string, string> | undefined {
 
 export class ProviderCatalog {
   static registerBuiltins(): void {
+    // 幂等：已初始化直接返回，避免重复注册
+    if (initialized) return
     for (const def of BUILTIN_PROVIDERS) {
       providers.set(def.id, { ...def, models: [...def.models] })
     }
     initialized = true
+  }
+
+  private static userConfigApplied = false
+
+  /** 应用用户层 models.json（新增 provider / 覆盖内置能力）。幂等。 */
+  static applyUserModelConfig(): void {
+    if (ProviderCatalog.userConfigApplied) return
+    ProviderCatalog.userConfigApplied = true
+    const userConfig = loadUserModelConfig()
+    ProviderCatalog.applyUserDefs(userConfig.providers || [])
+    ProviderCatalog.applyUserConfig(userConfig.overrides || {})
+  }
+
+  /**
+   * 完整初始化入口：内置目录 + 用户层 models.json + 插件注册。
+   * 生产链路（agent 循环 / IPC / createRoute）统一走此入口；
+   * 测试直接调用 registerBuiltins 以隔离用户配置文件。
+   */
+  static initProviderCatalog(): void {
+    ProviderCatalog.registerBuiltins()
+    ProviderCatalog.applyUserModelConfig()
   }
 
   static register(id: string, def: ProviderDef): void {
@@ -99,10 +128,24 @@ export class ProviderCatalog {
         if (cfg.models) {
           for (const [mid, mc] of Object.entries(cfg.models)) {
             const model = existing.models.find(m => m.id === mid)
-            if (model && mc.name) model.label = mc.name
+            if (!model) continue
+            if (mc.name) model.label = mc.name
+            if (mc.context !== undefined) model.context = mc.context
+            if (mc.capabilities) model.capabilities = [...new Set([...(model.capabilities || []), ...mc.capabilities])]
           }
         }
       }
+    }
+  }
+
+  /**
+   * 注册用户自定义 provider（完整定义，含模型能力）。
+   * 用于用户层 models.json / 插件层，可覆盖内置 provider。
+   */
+  static applyUserDefs(defs: ProviderDef[]): void {
+    for (const def of defs) {
+      if (!def || typeof def.id !== "string" || !Array.isArray(def.models)) continue
+      providers.set(def.id, { ...def, models: [...def.models] })
     }
   }
 
@@ -111,7 +154,7 @@ export class ProviderCatalog {
   }
 
   static createRoute(providerId: string, apiKey: string, baseUrl?: string, extraHeaders?: Record<string, string>): RouteInstance {
-    if (!initialized) ProviderCatalog.registerBuiltins()
+    if (!initialized) ProviderCatalog.initProviderCatalog()
     const def = providers.get(providerId)
     if (!def) {
       if (baseUrl) {
@@ -148,12 +191,12 @@ export class ProviderCatalog {
   static getCatalogForUI(): Array<{
     id: string; label: string; website?: string
     defaultBaseUrl: string; authType: string
-    models: Array<{ id: string; label?: string; context?: number }>
+    models: Array<{ id: string; label?: string; context?: number; capabilities?: string[] }>
   }> {
     return Array.from(providers.values()).map(p => ({
       id: p.id, label: p.label, website: p.website,
       defaultBaseUrl: p.defaultBaseUrl, authType: p.authType,
-      models: p.models.map(m => ({ id: m.id, label: m.label, context: m.context })),
+      models: p.models.map(m => ({ id: m.id, label: m.label, context: m.context, capabilities: m.capabilities })),
     }))
   }
 

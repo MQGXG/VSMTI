@@ -4,6 +4,92 @@
  */
 
 // ============================================================================
+// 引擎接口（可插拔 — 注册表驱动，一切皆插件）
+// 引擎定义在 voice-catalog.ts 注册，实现工厂按 kind 分派。
+// ============================================================================
+
+export type STTType = "local" | "webspeech" | "custom"
+
+export type TTSType = "webspeech" | "local" | "custom"
+
+export type VoiceEngineKind = "stt" | "tts" | "vad"
+
+/** 内置实现名（可被用户 voice.json / 插件扩展） */
+export type VoiceEngineImplementation =
+  | "whisper"
+  | "webspeech-stt"
+  | "kokoro"
+  | "webspeech-tts"
+  | "energy-vad"
+
+/** 引擎目录条目（三层合并：内置 JSON < 用户 voice.json < 插件 registerVoice） */
+export interface VoiceEngineDef {
+  /** 全局唯一 id（如 whisper-base / webspeech-stt / kokoro） */
+  id: string
+  kind: VoiceEngineKind
+  label: string
+  /** 映射到已注册的实现工厂 */
+  implementation: VoiceEngineImplementation | string
+  /** 模型仓库 id（本地推理引擎，如 Whisper/Kokoro ONNX） */
+  model?: string
+  /** 实现参数（阈值、dtype、language 等） */
+  params?: Record<string, unknown>
+}
+
+/** STT 引擎接口 */
+export interface STTEngine {
+  readonly type: STTType
+  /** 是否可用（如本地模型未加载/浏览器不支持 Web Speech） */
+  isAvailable(): boolean
+  /** 开始监听；onResult 在识别出结果时回调（可多次） */
+  start(options: { onResult: (text: string) => void; onError?: (err: string) => void; onEnd?: () => void }): void
+  stop(): void
+  /** 函数式转写一段已采集音频（供统一编排 VoiceSession 使用；录音式引擎可省略） */
+  transcribe?(audio: Float32Array): Promise<string>
+}
+
+/** TTS 引擎接口 */
+export interface TTSEngine {
+  readonly type: TTSType
+  isAvailable(): boolean
+  /** 朗读文本；返回 Promise 在朗读完成/停止时 resolve */
+  speak(text: string, options?: { onStart?: () => void; onEnd?: () => void }): Promise<void>
+  stop(): void
+}
+
+/** VAD 检测结果 */
+export interface VADResult {
+  /** 当前是否有语音 */
+  speaking: boolean
+  /** 语音活动开始时间（ms） */
+  speechStart?: number
+  /** 语音活动结束时间（ms） */
+  speechEnd?: number
+}
+
+/** VAD 引擎参数（缺省值取引擎 def.params） */
+export interface VADOptions {
+  speechThreshold?: number
+  silenceThreshold?: number
+  silenceDurationMs?: number
+  speechDurationMs?: number
+  onStateChange: (result: VADResult) => void
+}
+
+/** VAD 控制器 */
+export interface VADController {
+  /** 处理一帧音量（每帧调用，通常在 rAF 循环里） */
+  process(volume: number): void
+  reset(): void
+}
+
+/** 引擎工厂签名（实现层注册到 VoiceRegistry） */
+export type STTEngineFactory = (def: VoiceEngineDef) => STTEngine
+export type TTSEngineFactory = (def: VoiceEngineDef) => TTSEngine
+/** VAD 工厂：先按 def 得到默认参数，返回可注入运行时 options 的构造器 */
+export type VADEngineFactory = (def: VoiceEngineDef) => (options: VADOptions) => VADController
+
+// ============================================================================
 // VAD (Voice Activity Detection) 语音活动检测
 // ============================================================================
 
@@ -135,6 +221,18 @@ export interface VoiceSessionConfig {
   enableInterruption?: boolean
   /** 是否启用自动 VAD */
   enableAutoVAD?: boolean
+  /** 引擎 id（从 VoiceRegistry 选取；缺省用 voice.json 默认选中项） */
+  engineIds?: { stt?: string; tts?: string; vad?: string }
+  /** 引擎直接注入（插件化；优先于 engineIds / Registry 解析） */
+  engines?: {
+    stt?: STTEngine
+    tts?: TTSEngine
+    vad?: (options: VADOptions) => VADController
+    /** 函数式转写（自定义离线 STT 场景），缺省用 stt.transcribe */
+    transcribe?: (audio: Float32Array) => Promise<string>
+  }
+  /** 一段语音识别完成后的回调（转发给 Agent / UI） */
+  onUserSpeech?: (text: string) => void
 }
 
 /** 语音会话事件 */

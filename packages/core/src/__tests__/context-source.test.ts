@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { EnvSource, SourceManager, BaseSource, type SourceContext } from '../session/context-source'
+import { EnvSource, SourceManager, BaseSource, MemorySource, type SourceContext } from '../session/context-source'
 
 function makeCtx(overrides?: Partial<SourceContext>): SourceContext {
   return {
@@ -34,5 +34,32 @@ describe('EnvSource 缓存稳定性', () => {
     const first = await sm.build(ctx)
     const second = await sm.build(ctx)
     expect(first).toBe(second)
+  })
+})
+
+describe('SourceManager buildSeparated（C1 分离）', () => {
+  test('稳定 source 进 system，memory 进独立 context', async () => {
+    const sm = new SourceManager('/test/workspace')
+    const base = new BaseSource()
+    sm.register(base)
+    sm.register(new EnvSource())
+    const mem = new MemorySource()
+    mem.setMemoryContent('user prefers TypeScript')
+    sm.register(mem)
+
+    const result = await sm.buildSeparated(makeCtx())
+    expect(result.system).toContain('Working directory')
+    expect(result.system).not.toContain('TypeScript')
+    expect(result.context).toContain('TypeScript')
+    expect(result.context).toContain('Current runtime context.')
+  })
+
+  test('无动态 source 时 context 为空', async () => {
+    const sm = new SourceManager('/test/workspace')
+    sm.register(new BaseSource())
+    sm.register(new EnvSource())
+    const result = await sm.buildSeparated(makeCtx())
+    expect(result.context).toBe('')
+    expect(result.system.length).toBeGreaterThan(0)
   })
 })

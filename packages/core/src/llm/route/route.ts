@@ -2,6 +2,9 @@ import { LLMError, type LLMEvent } from "../schema"
 import type { RouteConfig, RouteInstance, Protocol, Auth, Framing, Endpoint } from "./types"
 import type { LLMMessage } from "../schema"
 
+/** LLM 请求默认超时（未显式配置时使用，防流式请求永久挂起） */
+export const DEFAULT_LLM_TIMEOUT = 120_000
+
 function buildHeaders(auth: Auth, framing: Framing, extra?: Record<string, string>): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -171,9 +174,11 @@ function computeUrl(endpoint: Endpoint): string {
 export function makeRoute(config: RouteConfig): RouteInstance {
   const headers = buildHeaders(config.auth, config.framing, config.headers)
   const url = computeUrl(config.endpoint)
+  // 未配置超时时用默认值，保证流式/完整请求不会无限挂起
+  const timeout = config.timeout ?? DEFAULT_LLM_TIMEOUT
 
-  const stream = makeStream(config.protocol, url, headers, config.timeout)
-  const complete = makeComplete(config.protocol, url, headers, config.timeout)
+  const stream = makeStream(config.protocol, url, headers, timeout)
+  const complete = makeComplete(config.protocol, url, headers, timeout)
 
   const instance: RouteInstance = {
     name: config.protocol.name,
@@ -182,7 +187,7 @@ export function makeRoute(config: RouteConfig): RouteInstance {
     endpoint: config.endpoint,
     auth: config.auth,
     headers,
-    timeout: config.timeout,
+    timeout,
     stream,
     complete,
 
@@ -193,7 +198,7 @@ export function makeRoute(config: RouteConfig): RouteInstance {
       const newAuth = overrides.auth ?? config.auth
       const newFraming = overrides.framing ?? config.framing
       const newHeaders = { ...config.headers, ...overrides.headers }
-      const newTimeout = overrides.timeout ?? config.timeout
+      const newTimeout = overrides.timeout ?? timeout
 
       return makeRoute({
         protocol: config.protocol,

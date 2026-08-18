@@ -33,7 +33,7 @@ export const memoryGraphAddNodeTool = make({
       const node = await mgr.addNode(
         input.id,
         input.content,
-        (input.type || "semantic") as MemoryType,
+        (input.type || "semantic"),
         input.decayProfile || "documentation"
       )
 

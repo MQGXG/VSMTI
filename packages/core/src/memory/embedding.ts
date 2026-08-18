@@ -137,7 +137,7 @@ export async function hybridSearch(
   const expandedQuery = expandedTerms.join(" ")
 
   // 2. 向量搜索（如果模型可用）
-  let vectorScores = new Map<string, number>()
+  const vectorScores = new Map<string, number>()
   const queryEmbedding = await manager.embed(expandedQuery)
   if (queryEmbedding) {
     try {

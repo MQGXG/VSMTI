@@ -54,6 +54,10 @@ export function registerSessionIPC(): void {
     return await sm().request("POST", "/api/session/delete", { sessionId })
   })
 
+  ipcMain.handle("ts:deleteSessions", async (_, sessionIds: string[]) => {
+    return await sm().request("POST", "/api/session/delete-many", { sessionIds })
+  })
+
   ipcMain.handle("ts:deleteMessage", async (_, sessionId: string, messageId: number) => {
     return await sm().request("POST", "/api/message/delete", { sessionId, messageId })
   })

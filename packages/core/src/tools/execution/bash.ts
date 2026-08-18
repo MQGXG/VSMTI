@@ -1,121 +1,20 @@
-import { spawn, execSync } from "child_process"
 import { z } from "zod"
 import { make } from "../../shared/tool"
 import path from "path"
-import * as fs from "fs"
 import { checkCommand, normalizeCommand, splitSubCommands, isReadOnlyCommand } from "../core/bash-security"
 import { getSessionCwd } from "../core/session-cwd"
 import { parseExternalDirs } from "./bash-ast"
+import { getSubprocess, type SubprocessResult } from "../../capability/subprocess"
+import { getShell } from "../../capability/shell"
 
 const MAX_OUTPUT_LENGTH = 50000
 const MAX_CAPTURE_BYTES = 1024 * 1024
 
-/**
- * Windows 上探测 Git Bash（参考 opencode shell.gitbash）：
- * 从 git 安装目录的 ../../bin/bash.exe 定位 bash，而非 WSL。
- */
-function findGitBash(): string | undefined {
-  if (process.platform !== "win32") return undefined
-  try {
-    const git = execSync("where git", { encoding: "utf8" })
-      .split(/\r?\n/)[0]?.trim()
-    if (!git) return undefined
-    const bash = path.join(git, "..", "..", "bin", "bash.exe")
-    return fs.existsSync(bash) ? bash : undefined
-  } catch {
-    return undefined
-  }
-}
-
-/**
- * 按 shell 生成启动参数（参考 opencode shell.args）：
- * - bash：login shell + source .bashrc + eval 命令
- * - cmd：/c
- * - powershell/pwsh：-NoProfile -Command
- * - wsl：bash -c
- */
-function buildShellArgs(shell: string, command: string): string[] {
-  const n = path.basename(shell).replace(/\.exe$/i, "").toLowerCase()
-  if (n === "bash") {
-    const script = `shopt -s expand_aliases\n[[ -f ~/.bashrc ]] && source ~/.bashrc >/dev/null 2>&1 || true\neval ${JSON.stringify(command)}`
-    return ["-l", "-c", script]
-  }
-  if (n === "wsl") return ["bash", "-c", command]
-  if (n === "cmd") return ["/c", command]
-  if (n === "powershell" || n === "pwsh") return ["-NoProfile", "-Command", command]
-  return ["-c", command]
-}
-
-interface RunResult {
-  stdout: string
-  stderr: string
-  exitCode: number | null
-  stdoutTruncated: boolean
-  stderrTruncated: boolean
-  timedOut: boolean
-  signal?: boolean
-}
+type RunResult = SubprocessResult
 
 function runCommand(shell: string, args: string[], timeoutMs: number, signal?: AbortSignal, cwd?: string): Promise<RunResult> {
-  return new Promise((resolve) => {
-    const child = spawn(shell, args, {
-      shell: false,
-      stdio: ["ignore", "pipe", "pipe"],
-      windowsHide: true,
-      signal,
-      cwd,
-    })
-
-    let stdout = ""
-    let stderr = ""
-    let stdoutTruncated = false
-    let stderrTruncated = false
-    let timedOut = false
-
-    const timeout = setTimeout(() => {
-      timedOut = true
-      child.kill("SIGTERM")
-      setTimeout(() => { try { child.kill("SIGKILL") } catch {} }, 2000)
-    }, timeoutMs)
-
-    child.stdout?.on("data", (chunk: Buffer) => {
-      if (stdout.length < MAX_CAPTURE_BYTES) {
-        const remaining = MAX_CAPTURE_BYTES - stdout.length
-        stdout += chunk.slice(0, remaining).toString("utf8")
-        if (stdout.length >= MAX_CAPTURE_BYTES) stdoutTruncated = true
-      }
-    })
-
-    child.stderr?.on("data", (chunk: Buffer) => {
-      if (stderr.length < MAX_CAPTURE_BYTES) {
-        const remaining = MAX_CAPTURE_BYTES - stderr.length
-        stderr += chunk.slice(0, remaining).toString("utf8")
-        if (stderr.length >= MAX_CAPTURE_BYTES) stderrTruncated = true
-      }
-    })
-
-    const onAbort = () => {
-      clearTimeout(timeout)
-      child.kill("SIGKILL")
-      resolve({ stdout, stderr, exitCode: null, stdoutTruncated, stderrTruncated, timedOut: false, signal: true })
-    }
-    signal?.addEventListener("abort", onAbort, { once: true })
-
-    child.on("error", (err: any) => {
-      clearTimeout(timeout)
-      signal?.removeEventListener("abort", onAbort)
-      const errorMsg = err.code === "ENOENT"
-        ? `Shell not found: "${shell}". Make sure it is installed and in your PATH.`
-        : `Failed to start shell: ${err.message}`
-      resolve({ stdout, stderr: stderr || errorMsg, exitCode: null, stdoutTruncated, stderrTruncated, timedOut })
-    })
-
-    child.on("close", (code) => {
-      clearTimeout(timeout)
-      signal?.removeEventListener("abort", onAbort)
-      resolve({ stdout, stderr, exitCode: code, stdoutTruncated, stderrTruncated, timedOut })
-    })
-  })
+  // C2: 子进程执行经 subprocess 缝（可替换 provider 迁移到远程沙箱）
+  return getSubprocess().run(shell, args, { timeoutMs, signal, cwd })
 }
 
 function compactOutput(stdout: string, stderr: string): string {
@@ -183,27 +82,14 @@ export const bashTool = make({
 
     const cwd = getSessionCwd(ctx.sessionID) || ctx.workspace || process.cwd()
     const timeout = Math.min(input.timeout || 30, 600)
-    const isWin = process.platform === "win32"
 
-    let shell: string
-
-    if (isWin) {
-      if (ctx?.shell === "bash") {
-        // Bash：Git Bash 优先，回退 WSL（对齐 opencode，而非之前错误的回退到 PowerShell）
-        const gitBash = findGitBash()
-        shell = gitBash || "wsl"
-      } else if (ctx?.shell === "cmd") {
-        shell = "cmd"
-      } else {
-        shell = "powershell"
-      }
-    } else {
-      shell = ctx?.shell || "/bin/sh"
-    }
-    const shellArgs = buildShellArgs(shell, input.command)
+    // C2: shell 解析经 shell 缝（平台探测 + 参数构建可替换）
+    const shell = getShell().resolve(ctx?.shell)
+    const shellArgs = getShell().buildArgs(shell, input.command)
 
     // 路径级权限检测：tree-sitter AST（识别文件命令参数）+ token 匹配合并，
     // 覆盖 bash 与 powershell 两类语法，避免任一路径漏检
+    const isWin = process.platform === "win32"
     const isPs = isWin && path.basename(shell).toLowerCase().startsWith("powershell")
     const astDirs = (await parseExternalDirs(input.command, cwd, isPs)) || []
     const tokenDirs = externalCommandDirs(input.command, cwd)

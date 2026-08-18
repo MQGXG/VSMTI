@@ -66,9 +66,9 @@ export const defaultProviders: Provider[] = [
     apiKey: "", baseUrl: "https://api.openai.com/v1", enabled: true,
     website: "https://openai.com", apiFormat: "openai", headers: {}, options: {},
     models: [
-      { id: "gpt-4o", name: "GPT-4o", enabled: true, type: "vision" },
-      { id: "gpt-4o-mini", name: "GPT-4o Mini", enabled: true, type: "text" },
-      { id: "gpt-4-turbo", name: "GPT-4 Turbo", enabled: true, type: "vision" },
+      { id: "gpt-4o", name: "GPT-4o", enabled: true },
+      { id: "gpt-4o-mini", name: "GPT-4o Mini", enabled: true },
+      { id: "gpt-4-turbo", name: "GPT-4 Turbo", enabled: true },
     ],
   },
   {
@@ -76,8 +76,8 @@ export const defaultProviders: Provider[] = [
     apiKey: "", baseUrl: "https://api.anthropic.com", enabled: false,
     website: "https://anthropic.com", apiFormat: "anthropic", headers: {}, options: {},
     models: [
-      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", enabled: true, type: "vision" },
-      { id: "claude-haiku-20241022", name: "Claude Haiku", enabled: true, type: "vision" },
+      { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", enabled: true },
+      { id: "claude-haiku-20241022", name: "Claude Haiku", enabled: true },
     ],
   },
   {
@@ -85,8 +85,8 @@ export const defaultProviders: Provider[] = [
     apiKey: "", baseUrl: "https://api.deepseek.com", enabled: false,
     website: "https://deepseek.com", apiFormat: "openai", headers: {}, options: {},
     models: [
-      { id: "deepseek-chat", name: "DeepSeek V3", enabled: true, type: "text" },
-      { id: "deepseek-reasoner", name: "DeepSeek R1", enabled: true, type: "text" },
+      { id: "deepseek-chat", name: "DeepSeek V3", enabled: true },
+      { id: "deepseek-reasoner", name: "DeepSeek R1", enabled: true },
     ],
   },
   {
@@ -94,8 +94,8 @@ export const defaultProviders: Provider[] = [
     apiKey: "", baseUrl: "http://localhost:11434", enabled: false,
     website: "https://ollama.com", apiFormat: "openai", headers: {}, options: {},
     models: [
-      { id: "llama3.1", name: "Llama 3.1", enabled: true, type: "text" },
-      { id: "qwen2.5", name: "Qwen 2.5", enabled: true, type: "text" },
+      { id: "llama3.1", name: "Llama 3.1", enabled: true },
+      { id: "qwen2.5", name: "Qwen 2.5", enabled: true },
     ],
   },
 ];

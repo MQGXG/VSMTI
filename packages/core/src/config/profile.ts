@@ -114,6 +114,7 @@ export function createDefaultRegistry(): AgentProfileRegistry {
       "bash", "run_code", "git_status", "git_diff", "git_log", "git_commit",
       "create_docx", "create_xlsx", "create_pptx", "create_webpage", "create_mockup", "create_svg", "memory_search", "memory_recall",
       "memory_activate", "memory_graph_query", "memory_graph_add_node", "memory_graph_add_edge", "memory_graph_decay",
+      "officecli_inspect", "officecli_get", "officecli_query", "officecli_issues", "officecli_validate", "officecli_edit", "officecli_merge",
       "question", "todo_write", "search_history", "skills_list", "skill_view", "get_current_time", "change_directory",
     ],
   })

@@ -1,5 +1,5 @@
 import { ipcMain } from "electron"
-import { scanSkills } from "@mira/core/skill/skill-loader"
+import { scanSkills } from "@mira/core"
 
 export function registerSkillIPC(): void {
   ipcMain.handle("skill:listSkills", () => {

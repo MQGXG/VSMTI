@@ -1,5 +1,3 @@
-import * as fs from "fs/promises"
-import * as fsSync from "fs"
 import * as path from "path"
 import { z } from "zod"
 import { make, type Content } from "../../shared/tool"
@@ -7,6 +5,7 @@ import { lspManager } from "../../lsp/manager"
 import { realPath, contains, isBinaryExt, isDeviceFile } from "./path-util"
 import { setFileState, getFileState, isDuplicateRead } from "./file-state-cache"
 import { resolveSessionPath } from "./session-cwd"
+import { getFs } from "../../capability/fs"
 
 const MAX_READ_BYTES = 50 * 1024 // 50KB 上限
 const MAX_LINE_LENGTH = 2000
@@ -76,7 +75,7 @@ function isBinaryByContent(buffer: Buffer): boolean {
 
 export const readFileTool = make({
   name: "read_file",
-  description: "Read file content or list directory contents. Use this BEFORE modifying any file to understand its current state. Supports text files (with line offset/limit pagination, UTF-8 byte-accurate truncation, encoding detection), images (returned as viewable content), and directory listing. Use when: reading file content, checking code before editing, examining config files, listing directory contents, viewing images.",
+  description: "Read file content or list directory contents. Use this BEFORE modifying any file to understand its current state. Supports text files (with line offset/limit pagination, UTF-8 byte-accurate truncation, encoding detection), images (returned as viewable content), and directory listing. Use when: reading file content, checking code before editing, examining config files, listing directory contents, viewing images. After reading, present the actual content (or a faithful summary) directly in your reply — never narrate the reading process or add placeholder/meta notes.",
   inputSchema: z.object({
     path: z.string().describe("File or directory path (absolute, or relative to current directory which can be changed via change_directory)"),
     offset: z.number().optional().default(1).describe("1-based line or entry offset to start reading from"),
@@ -106,11 +105,11 @@ export const readFileTool = make({
       return { success: false, error: `无法读取设备文件: ${input.path}` }
     }
 
-    const stat = await fs.stat(real).catch(() => null)
+    const stat = await getFs().stat(real)
     if (!stat) return { success: false, error: `Path does not exist: ${input.path}` }
 
     // 目录
-    if (stat.isDirectory()) {
+    if (stat.isDirectory) {
       return await readDirectory(real, input, root)
     }
 
@@ -133,7 +132,7 @@ export const readFileTool = make({
           output: `${real}\n${"─".repeat(40)}\n[图片] 文件过大 (${(stat.size / 1024 / 1024).toFixed(1)}MB)，超过 20MB 限制，无法读取。`,
         }
       }
-      const buffer = await fs.readFile(real)
+      const buffer = await getFs().readFile(real)
       const mime = SUPPORTED_IMAGE_MIMES[ext] || "image/png"
       return {
         success: true,
@@ -150,7 +149,7 @@ export const readFileTool = make({
       }
     }
 
-    const buffer = await fs.readFile(real)
+    const buffer = await getFs().readFile(real)
     const magicType = detectMagicType(buffer)
     if (magicType && !SUPPORTED_IMAGE_EXTS.has(ext)) {
       const knownBinaryFormats: Record<string, string> = {
@@ -252,13 +251,27 @@ async function streamingPath(
     let foundUtf8Error = false
     let truncated = false
     let error: string | undefined
+    let resolved = false
 
-    const stream = fsSync.createReadStream(real, {
-      encoding: enc === "utf-8" ? "utf-8" : undefined,
-      highWaterMark: 64 * 1024,
-    })
+    // 读整个文件流，按行过滤分页（offset/limit 是行号，不能作为字节 start/end）
+    const stream = getFs().createReadStream(real)
 
     let leftover = ""
+
+    // 完成处理：end 或提前截断（destroy）时统一收尾，防重入
+    const finish = () => {
+      if (leftover.length > 0 && lineIndex >= offset && lineIndex < targetEnd && !truncated) {
+        const line = leftover.length > MAX_LINE_LENGTH ? leftover.slice(0, MAX_LINE_LENGTH) + MAX_LINE_SUFFIX : leftover
+        lines.push(line)
+      }
+      const totalLines = lineIndex + (leftover.length > 0 ? 1 : 0)
+      if (error) {
+        resolve({ success: true, output: `${real}\n${"-".repeat(40)}\n${error}\n\n${lines.join("\n").slice(0, 50000)}` })
+        return
+      }
+      resolve(buildOutput(real, lines, totalLines, offset, truncated ? offset + lines.length : totalLines, input, workspace))
+    }
+    const done = () => { if (!resolved) { resolved = true; finish() } }
 
     stream.on("data", (chunk: string | Buffer) => {
       if (error || truncated) return
@@ -282,7 +295,7 @@ async function streamingPath(
       leftover = parts.pop() || ""
 
       for (const part of parts) {
-        if (lineIndex >= targetEnd) { truncated = true; return }
+        if (lineIndex >= targetEnd) { truncated = true; stream.destroy(); done(); return }
 
         if (lineIndex >= offset) {
           const line = part.length > MAX_LINE_LENGTH ? part.slice(0, MAX_LINE_LENGTH) + MAX_LINE_SUFFIX : part
@@ -292,6 +305,7 @@ async function streamingPath(
           if (lines.length >= maxLines || byteAccum > MAX_READ_BYTES) {
             truncated = true
             stream.destroy()
+            done()
             return
           }
         }
@@ -300,29 +314,17 @@ async function streamingPath(
     })
 
     stream.on("end", () => {
-      if (leftover.length > 0 && lineIndex >= offset && lineIndex < targetEnd && !truncated) {
-        const line = leftover.length > MAX_LINE_LENGTH ? leftover.slice(0, MAX_LINE_LENGTH) + MAX_LINE_SUFFIX : leftover
-        lines.push(line)
-      }
-
-      const totalLines = lineIndex + (leftover.length > 0 ? 1 : 0)
-
-      if (error) {
-        resolve({
-          success: true,
-          output: `${real}\n${"-".repeat(40)}\n${error}\n\n${lines.join("\n").slice(0, 50000)}`,
-        })
-        return
-      }
-
-      resolve(buildOutput(real, lines, totalLines, offset, truncated ? offset + lines.length : totalLines, input, workspace))
+      done()
     })
 
     stream.on("error", (err: NodeJS.ErrnoException) => {
-      if (err.code === "ENOENT") {
-        resolve({ success: false, error: `Path does not exist: ${requestPath || real}` })
-      } else {
-        resolve({ success: false, error: `读取失败: ${err.message}` })
+      if (!resolved) {
+        resolved = true
+        if (err.code === "ENOENT") {
+          resolve({ success: false, error: `Path does not exist: ${requestPath || real}` })
+        } else {
+          resolve({ success: false, error: `读取失败: ${err.message}` })
+        }
       }
     })
   })
@@ -380,7 +382,7 @@ async function buildOutput(
   // 存入文件状态缓存
   setFileState(real, {
     content: output,
-    mtimeMs: (await fs.stat(real).catch(() => null))?.mtimeMs || Date.now(),
+    mtimeMs: (await getFs().stat(real))?.mtimeMs || Date.now(),
     byteLength: contentBytes,
     offset: input.offset,
     limit: input.limit,
@@ -395,7 +397,7 @@ async function buildOutput(
 }
 
 async function readDirectory(real: string, input: { offset?: number; limit?: number }, root: string): Promise<{ success: boolean; output: string }> {
-  const allEntries = await fs.readdir(real, { withFileTypes: true })
+  const allEntries = await getFs().readdir(real)
   const filtered = allEntries.filter((e) => !IGNORE_DIRS.has(e.name) && !e.name.startsWith("."))
   const total = filtered.length
   const offset = (input.offset || 1) - 1
@@ -403,9 +405,9 @@ async function readDirectory(real: string, input: { offset?: number; limit?: num
 
   const selected = filtered.slice(offset, offset + limit)
 
-  // 并发 stat 确定类型（readdir 的 withFileTypes 已提供，无需额外 stat）
+  // 并发 stat 确定类型（readdir 已提供类型信息，无需额外 stat）
   const lines = selected.map((e) => {
-    const icon = e.isDirectory() ? "📁" : e.isFile() ? "📄" : "🔗"
+    const icon = e.isDirectory ? "📁" : e.isFile ? "📄" : "🔗"
     return `${icon}  ${e.name}`
   })
 
@@ -416,7 +418,7 @@ async function readDirectory(real: string, input: { offset?: number; limit?: num
   if (offset + limit < total) {
     output += `\n... (${total - offset - limit} more, use read_file with offset=${offset + limit + 1} to continue)`
   }
-  const subdirs = selected.filter((e) => e.isDirectory() && !IGNORE_DIRS.has(e.name))
+  const subdirs = selected.filter((e) => e.isDirectory && !IGNORE_DIRS.has(e.name))
   if (subdirs.length > 0) {
     output += `\n\n子目录: ${subdirs.map((e) => e.name).join(", ")}`
   }

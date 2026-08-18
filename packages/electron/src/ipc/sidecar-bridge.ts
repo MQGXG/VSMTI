@@ -24,7 +24,24 @@ let healthCheckTimer: ReturnType<typeof setInterval> | null = null
 
 const HEALTH_CHECK_INTERVAL = 10_000
 const RECONNECT_DELAY = 2_000
+/** 连续失败达到该次数才强制重建（避免瞬时抖动触发重启） */
+const MAX_HEALTH_FAILURES = 2
+/** 自动重连最大尝试次数，超限后停止并提示用户重启（避免无限进程风暴） */
+const MAX_RECONNECT_ATTEMPTS = 5
+/** 重连退避封顶（毫秒） */
+const MAX_RECONNECT_DELAY = 30_000
 let isReconnecting = false
+let consecutiveFailures = 0
+let reconnectAttempts = 0
+
+/** 向所有窗口广播 sidecar 状态（断连/重连/恢复），供前端显示遮罩与自动刷新 */
+function broadcastSidecarStatus(status: "connected" | "reconnecting"): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) {
+      win.webContents.send("sidecar:status", status)
+    }
+  }
+}
 
 // ── 生命周期 ──────────────────────────────────────────
 
@@ -43,6 +60,7 @@ export async function startSidecar(port = 0): Promise<{ port: number; token: str
   serverManager = new ServerManager({ port, useTsx, userData, modelDir })
   const info = await serverManager.start()
   console.log(`[Sidecar] Core server ready on port ${info.port}`)
+  broadcastSidecarStatus("connected")
 
   // 诊断：启动后立即自测健康检查，区分"启动即不通" vs "运行中变不通"
   try {
@@ -75,13 +93,21 @@ function startHealthCheck(): void {
   stopHealthCheck()
   healthCheckTimer = setInterval(async () => {
     const sm = serverManager
-    if (!sm || !sm.running) return
+    if (!sm) return
 
     try {
       await sm.request("GET", "/api/health", undefined, 5_000)
+      if (consecutiveFailures > 0) {
+        consecutiveFailures = 0
+        broadcastSidecarStatus("connected")
+      }
     } catch {
-      console.warn("[Sidecar] Health check failed, attempting reconnect...")
-      reconnect()
+      consecutiveFailures++
+      console.warn(`[Sidecar] Health check failed (${consecutiveFailures}/${MAX_HEALTH_FAILURES}), attempting reconnect...`)
+      if (consecutiveFailures >= MAX_HEALTH_FAILURES) {
+        consecutiveFailures = 0
+        void reconnect()
+      }
     }
   }, HEALTH_CHECK_INTERVAL)
 }
@@ -96,23 +122,41 @@ function stopHealthCheck(): void {
 async function reconnect(): Promise<void> {
   if (isReconnecting) return
   isReconnecting = true
+  broadcastSidecarStatus("reconnecting")
+  reconnectAttempts++
 
   try {
     await new Promise((r) => setTimeout(r, RECONNECT_DELAY))
     const sm = serverManager
     if (!sm) return
 
-    if (!sm.running) {
-      await sm.start()
-    }
+    // 强制重建：不依赖 running 判断（壳进程存活不代表底层服务可用）
+    await sm.stop()
+    const info = await sm.start()
+    console.log(`[Sidecar] Core server restarted on port ${info.port}`)
 
-    // 验证恢复
+    // Core 重启后旧 channel 全部失效，清理残留 SSE 会话
+    sseSessions.forEach((s) => s.destroy())
+    sseSessions.clear()
+
+    // 验证恢复（sm.start 等待新进程 ready，这里打到的是新端口）
     await sm.request("GET", "/api/health", undefined, 5_000)
     console.log("[Sidecar] Reconnected to Core server")
+    reconnectAttempts = 0
+    broadcastSidecarStatus("connected")
   } catch (err) {
     console.error(`[Sidecar] Reconnect failed: ${String(err)}`)
-    // 继续重试
-    setTimeout(() => { isReconnecting = false; reconnect() }, RECONNECT_DELAY)
+    broadcastSidecarStatus("reconnecting")
+
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      console.error(`[Sidecar] Reconnect aborted after ${reconnectAttempts} attempts; please restart the app`)
+      isReconnecting = false
+      return
+    }
+
+    // 指数退避：2s → 4s → 8s → 16s → 30s（封顶）
+    const delay = Math.min(RECONNECT_DELAY * 2 ** (reconnectAttempts - 1), MAX_RECONNECT_DELAY)
+    setTimeout(() => { isReconnecting = false; void reconnect() }, delay)
     return
   }
 

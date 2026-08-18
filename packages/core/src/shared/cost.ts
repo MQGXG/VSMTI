@@ -10,6 +10,18 @@
  * 注意：input tokens 通常已包含 cache read/write，计算成本时分开计价避免重复。
  */
 
+import pricingSnapshot from "../assets/models-pricing.json"
+
+/** models.dev 定价快照条目（美元/千 token） */
+interface SnapshotPricing {
+  input: number
+  output: number
+  cacheRead?: number
+  cacheWrite?: number
+}
+
+const PRICING_SNAPSHOT = pricingSnapshot as Record<string, SnapshotPricing>
+
 /** 单次 LLM 调用用量 */
 export interface UsageRecord {
   promptTokens: number
@@ -108,9 +120,18 @@ const DEFAULT_PRICES: Record<string, { input: number; output: number; cacheRead?
 
 /**
  * 根据模型 ID 获取定价（美元/千 token）
- * 优先用 DEFAULT_PRICES 的精确值，未收录模型用通用估算
+ * 优先读取 models.dev 定价快照，其次 DEFAULT_PRICES 兜底，未知模型用通用估算
  */
 export function getModelPricing(modelId: string): ModelPricing {
+  const fromSnapshot = PRICING_SNAPSHOT[modelId]
+  if (fromSnapshot) {
+    return {
+      inputPer1K: fromSnapshot.input,
+      outputPer1K: fromSnapshot.output,
+      cacheReadPer1K: fromSnapshot.cacheRead,
+      cacheWritePer1K: fromSnapshot.cacheWrite,
+    }
+  }
   const known = DEFAULT_PRICES[modelId]
   if (known) {
     return {

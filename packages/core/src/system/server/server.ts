@@ -31,6 +31,7 @@ import {
   handleListSessions,
   handleGetSessionMessages,
   handleDeleteSession,
+  handleDeleteSessions,
   handleDeleteMessage,
   handleSearchMessages,
   handleUpdateSession,
@@ -99,6 +100,7 @@ interface RequestBody {
   args?: Record<string, unknown>
   calls?: Array<{ name: string; args: Record<string, unknown> }>
   sessionId?: string
+  sessionIds?: string[]
   message?: string
   config?: Record<string, unknown>
   channel?: string
@@ -183,6 +185,12 @@ export function createServer(options: ServerOptions): http.Server {
       errorResponse(res, 500, message || "Internal server error")
     }
   })
+
+  // 延长空闲 keep-alive 关闭阈值（Node 默认 5s）：主进程每次请求都是新连接，
+  // 避免已建立的空闲连接被过早关闭而引发竞态；headersTimeout 需大于 keepAliveTimeout
+  server.keepAliveTimeout = 60_000
+  server.headersTimeout = 65_000
+  server.requestTimeout = 300_000
 
   return server
 }
@@ -417,6 +425,13 @@ async function routeRequest(
       if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
       const body = await parseBody(req) as RequestBody
       await handleDeleteSession(body.sessionId as string)
+      jsonResponse(res, 200, { ok: true })
+      return
+    }
+    case "/api/session/delete-many": {
+      if (req.method !== "POST") { errorResponse(res, 405, "Method not allowed"); return }
+      const body = await parseBody(req) as RequestBody
+      await handleDeleteSessions((body.sessionIds as string[]) || [])
       jsonResponse(res, 200, { ok: true })
       return
     }

@@ -440,6 +440,11 @@ export async function sendMessageToSession(
         const { validateImages } = await import("../sidebar/provider-model");
         const validation = validateImages(images);
         if (!validation.ok) {
+          // [附件校验诊断] 打印被拒图片的 data URL 前缀（定位 MIME / base64 字符集问题）
+          console.warn(
+            `[附件校验] 拒绝 ${images.length} 张图片: ${validation.reason}; ` +
+              `示例前缀: ${String(images[0]).slice(0, 120)}`,
+          );
           abortSendWithMessage(sessionId, assistantId, validation.reason || "图片无效");
           return;
         }

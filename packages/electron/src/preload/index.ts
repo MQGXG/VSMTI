@@ -1,10 +1,13 @@
 import type { IpcRendererEvent } from "electron";
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 
 const electronAPI = {
   minimizeWindow: () => ipcRenderer.send("window:minimize"),
   maximizeWindow: () => ipcRenderer.send("window:maximize"),
   closeWindow: () => ipcRenderer.send("window:close"),
+
+  /** 拖拽/粘贴 File 的原始路径（官方 API，替代已弃用的 File.path） */
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
 
   getPythonStatus: () => ipcRenderer.invoke("python:status"),
   getPythonLogs: () => ipcRenderer.invoke("python:logs"),
@@ -30,6 +33,10 @@ const electronAPI = {
     get: (workspace?: string) => ipcRenderer.invoke("config:get", workspace),
     save: (config: Record<string, unknown>) => ipcRenderer.invoke("config:save", config),
     getProviderCatalog: () => ipcRenderer.invoke("config:getProviderCatalog"),
+    // 语音引擎目录与默认选中项（一切皆插件）
+    getVoiceCatalog: () => ipcRenderer.invoke("config:getVoiceCatalog"),
+    saveVoiceConfig: (defaults: Record<string, string | undefined>) =>
+      ipcRenderer.invoke("config:saveVoiceConfig", defaults),
   },
 
   // TS Core 会话/项目
@@ -42,6 +49,7 @@ const electronAPI = {
     listSessions: (projectId?: string) => ipcRenderer.invoke("ts:listSessions", projectId),
     getSessionMessages: (sessionId: string) => ipcRenderer.invoke("ts:getSessionMessages", sessionId),
     deleteSession: (sessionId: string) => ipcRenderer.invoke("ts:deleteSession", sessionId),
+    deleteSessions: (sessionIds: string[]) => ipcRenderer.invoke("ts:deleteSessions", sessionIds),
     deleteMessage: (sessionId: string, messageId: number) => ipcRenderer.invoke("ts:deleteMessage", sessionId, messageId),
     updateSession: (sessionId: string, data: { title?: string }) => ipcRenderer.invoke("ts:updateSession", sessionId, data),
     searchMessages: (query: string) => ipcRenderer.invoke("ts:searchMessages", query),
@@ -208,6 +216,13 @@ const electronAPI = {
       ipcRenderer.on("floating-ball:message", handler)
       return () => ipcRenderer.removeListener("floating-ball:message", handler)
     },
+  },
+
+  /** 监听 Core sidecar 连接状态（断连/重连中/恢复），供前端显示遮罩并自动刷新 */
+  onSidecarStatus: (callback: (status: "connected" | "reconnecting") => void) => {
+    const handler = (_event: IpcRendererEvent, status: "connected" | "reconnecting") => callback(status)
+    ipcRenderer.on("sidecar:status", handler)
+    return () => ipcRenderer.removeListener("sidecar:status", handler)
   },
 };
 

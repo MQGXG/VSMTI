@@ -1,12 +1,6 @@
-import { execFile } from "child_process"
-import { promisify } from "util"
-import * as fs from "fs/promises"
-import * as path from "path"
-import * as os from "os"
 import { z } from "zod"
 import { make } from "../../shared/tool"
-
-const execFileAsync = promisify(execFile)
+import { getCodeRuntime } from "../../capability/code-runtime"
 
 export const codeExecTool = make({
   name: "run_code",
@@ -19,26 +13,17 @@ export const codeExecTool = make({
   permission: "run_code",
 
   async execute(input, _ctx) {
-    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "omni-"))
-    const isNode = input.language === "node"
-    const filePath = path.join(tmpDir, isNode ? "script.mjs" : "script.py")
-    await fs.writeFile(filePath, input.code, "utf-8")
-
-    try {
-      const { stdout, stderr } = await execFileAsync(isNode ? process.execPath : "python", [filePath], {
-        timeout: 30000,
-        maxBuffer: 1024 * 1024,
-        env: { ...process.env, PYTHONIOENCODING: "utf-8" },
-      })
-      const output = (stdout || stderr).slice(0, 10000)
-      return { success: true, output: output || "(no output)" }
-    } catch (e) {
-      const err = e as { stderr?: string; stdout?: string; message?: string }
-      const msg = err.stderr || err.stdout || err.message
-      return { success: false, error: msg?.slice(0, 5000) }
-    } finally {
-      await fs.rm(tmpDir, { recursive: true, force: true })
+    // C2: 代码执行经 code-runtime 缝（可替换 provider 迁移到远程沙箱）
+    const result = await getCodeRuntime().run({
+      code: input.code,
+      language: input.language ?? "python",
+      timeoutMs: 30000,
+    })
+    const output = (result.stdout || result.stderr).slice(0, 10000)
+    if (result.exitCode !== 0) {
+      return { success: false, error: (result.stderr || output || "(no output)").slice(0, 5000) }
     }
+    return { success: true, output: output || "(no output)" }
   },
 })
 

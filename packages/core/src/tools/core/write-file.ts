@@ -1,10 +1,10 @@
-import * as fs from "fs/promises"
 import * as path from "path"
 import { z } from "zod"
 import { make, type Content } from "../../shared/tool"
 import { getSnapshotManager } from "../../session/snapshot"
 import { realPath, contains } from "./path-util"
 import { isFileChanged, setFileState } from "./file-state-cache"
+import { getFs } from "../../capability/fs"
 
 /** 进程级文件写入锁 — 同一文件串行写入 */
 const writeLocks = new Map<string, Promise<void>>()
@@ -45,13 +45,13 @@ export const writeFileTool = make({
     const snapshotId = await snapshotMgr.capture([resolved], `write_file: ${input.path}`)
 
     return withFileLock(resolved, async () => {
-      await fs.mkdir(path.dirname(resolved), { recursive: true })
+      await getFs().mkdir(path.dirname(resolved), true)
 
       // BOM 保留：检测原文件 BOM，新内容保留
       let content = input.content
       let existingContent = ""
       try {
-        const raw = await fs.readFile(resolved, "utf-8")
+        const raw = (await getFs().readFile(resolved)).toString("utf-8")
         existingContent = raw
         if (hasBom(raw) && !hasBom(content)) {
           content = BOM + content
@@ -63,8 +63,8 @@ export const writeFileTool = make({
       // Stale 检测：文件被缓存标记为已变更则拒绝写入
       if (existingContent) {
         try {
-          const stat = await fs.stat(resolved)
-          if (isFileChanged(resolved, stat.mtimeMs)) {
+          const stat = await getFs().stat(resolved)
+          if (stat && isFileChanged(resolved, stat.mtimeMs)) {
             return {
               success: false,
               error: `File ${input.path} has been modified externally since it was last read. Read it again before writing.`,
@@ -78,7 +78,7 @@ export const writeFileTool = make({
       // 额外 stale 检测：内容级对比（解决 Windows mtime 抖动）
       if (existingContent) {
         try {
-          const currentRaw = await fs.readFile(resolved, "utf-8")
+          const currentRaw = (await getFs().readFile(resolved)).toString("utf-8")
           if (currentRaw !== existingContent) {
             return {
               success: false,
@@ -88,11 +88,11 @@ export const writeFileTool = make({
         } catch {}
       }
 
-      await fs.writeFile(resolved, content, "utf-8")
+      await getFs().writeFile(resolved, content)
 
       // 更新缓存：写入后记录新内容哈希作为 CAS 版本号
-      const stat = await fs.stat(resolved)
-      setFileState(resolved, { content, mtimeMs: stat.mtimeMs, byteLength: Buffer.byteLength(content, "utf-8") })
+      const stat = await getFs().stat(resolved)
+      setFileState(resolved, { content, mtimeMs: stat?.mtimeMs ?? Date.now(), byteLength: Buffer.byteLength(content, "utf-8") })
 
       // LSP 通知（写后刷新诊断）
       if (ctx.workspace) {

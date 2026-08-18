@@ -160,7 +160,7 @@ function rowToNode(row: Record<string, unknown>): MemoryNode {
       decayRate: row.decay_rate as number,
       minStrength: row.min_strength as number,
       consolidationThreshold: 0.5,
-    } as DecayConfig,
+    },
     metadata: JSON.parse(row.metadata_json as string || "{}"),
     relatedNodes,
     associationStrengths,

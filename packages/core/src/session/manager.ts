@@ -303,12 +303,8 @@ export async function searchMessages(query: string): Promise<Array<{ session_id:
   return results
 }
 
-export async function deleteSessionById(sessionId: string): Promise<void> {
-  const db = await getDbAsync()
-  runWrite("DELETE FROM messages WHERE session_id = ?", [sessionId])
-  runWrite("DELETE FROM sessions WHERE session_id = ?", [sessionId])
-
-  // 清理关联的记忆文件
+/** 清理单个会话关联的记忆/检查点文件（失败不阻塞主流程） */
+function cleanupSessionMemoryFiles(sessionId: string): void {
   try {
     const baseDir = getPlatformPaths().userData
     // 清理 BuiltinMemoryProvider JSON
@@ -321,19 +317,43 @@ export async function deleteSessionById(sessionId: string): Promise<void> {
     const checkpointDir = join(baseDir, "checkpoints", sessionId)
     if (fs.existsSync(checkpointDir)) fs.rmSync(checkpointDir, { recursive: true, force: true })
   } catch { /* 文件清理失败不阻塞主流程 */ }
+}
 
-  // 清理 FTS 记忆索引
+/** 清理 FTS 记忆索引（共享文件，一次打开批量删除指定会话） */
+async function cleanupFTSMemoryIndex(sessionIds: string[]): Promise<void> {
+  if (sessionIds.length === 0) return
   try {
     const sqlModule = await import("sql.js")
     const _SQL = await sqlModule.default()
     const ftsPath = join(getPlatformPaths().userData, "fts-memory.db")
-    if (fs.existsSync(ftsPath)) {
-      const buffer = fs.readFileSync(ftsPath)
-      const ftsDb = new _SQL.Database(buffer)
+    if (!fs.existsSync(ftsPath)) return
+    const buffer = fs.readFileSync(ftsPath)
+    const ftsDb = new _SQL.Database(buffer)
+    for (const sessionId of sessionIds) {
       ftsDb.run("DELETE FROM fts_memory WHERE session_id = ?", [sessionId])
       ftsDb.run("DELETE FROM fts_memory_fts WHERE session_id = ?", [sessionId])
-      fs.writeFileSync(ftsPath, Buffer.from(ftsDb.export()))
-      ftsDb.close()
     }
+    fs.writeFileSync(ftsPath, Buffer.from(ftsDb.export()))
+    ftsDb.close()
   } catch { /* FTS 清理失败不阻塞 */ }
+}
+
+export async function deleteSessionById(sessionId: string): Promise<void> {
+  const db = await getDbAsync()
+  runWrite("DELETE FROM messages WHERE session_id = ?", [sessionId])
+  runWrite("DELETE FROM sessions WHERE session_id = ?", [sessionId])
+  cleanupSessionMemoryFiles(sessionId)
+  await cleanupFTSMemoryIndex([sessionId])
+}
+
+/** 批量删除会话（单次 SQL 批量 + 逐会话清理记忆文件） */
+export async function deleteSessionsById(sessionIds: string[]): Promise<void> {
+  const ids = Array.from(new Set(sessionIds.filter(Boolean)))
+  if (ids.length === 0) return
+  const db = await getDbAsync()
+  const placeholders = ids.map(() => "?").join(", ")
+  runWrite(`DELETE FROM messages WHERE session_id IN (${placeholders})`, ids)
+  runWrite(`DELETE FROM sessions WHERE session_id IN (${placeholders})`, ids)
+  for (const id of ids) cleanupSessionMemoryFiles(id)
+  await cleanupFTSMemoryIndex(ids)
 }

@@ -6,11 +6,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Mic, MicOff, Loader2, Volume2 } from "lucide-react"
+import { PhoneCall, PhoneOff, Loader2 } from "lucide-react"
 import { RealtimeVoice, type RealtimeStatus } from "../services/voice/realtime-voice"
-import { createTTSEngine } from "../services/voice/tts"
-import { loadASRPipeline } from "../services/voice/transformers-loader"
-import { WHISPER_MODEL } from "../services/voice/stt"
+import { getTTSEngine, getDictationEngine } from "../services/voice/engine-registry"
 import { loadSettings } from "../sidebar/provider-data"
 
 interface VoiceChatButtonProps {
@@ -35,23 +33,22 @@ export function VoiceChatButton({ onSendMessage, assistantText, onStatusChange, 
     onStatusChange?.(s)
   }, [onStatusChange])
 
-  const ensureVoice = useCallback((): RealtimeVoice => {
-    if (!voiceRef.current) {
-      const tts = createTTSEngine((loadSettings().ttsEngine as "webspeech" | "local") || "webspeech")
-      voiceRef.current = new RealtimeVoice({
-        tts,
-        transcribe: async (audio) => {
-          const p = await loadASRPipeline(WHISPER_MODEL)
-          const out = await p(audio, { return_timestamps: false })
-          const first = Array.isArray(out) ? out[0] : out
-          return first?.text ?? ""
-        },
-        onUserSpeech: (text) => { void onSendMessage(text) },
-        onStatusChange: handleStatus,
-      })
-    }
+  const ensureVoice = useCallback(async (): Promise<RealtimeVoice> => {
+    if (voiceRef.current) return voiceRef.current
+    // 引擎来自目录（voice.json 默认选中 + 内置/用户/插件注册）
+    const tts = await getTTSEngine()
+    const stt = await getDictationEngine()
+    voiceRef.current = new RealtimeVoice({
+      tts,
+      transcribe: async (audio) => {
+        const text = typeof stt.transcribe === "function" ? await stt.transcribe(audio) : undefined
+        return text ?? ""
+      },
+      onUserSpeech: (text) => { void onSendMessage(text) },
+      onStatusChange: handleStatus,
+    })
     return voiceRef.current
-  }, [onSendMessage])
+  }, [handleStatus, onSendMessage])
 
   const toggle = useCallback(async () => {
     if (disabled) return
@@ -60,7 +57,7 @@ export function VoiceChatButton({ onSendMessage, assistantText, onStatusChange, 
       setActive(false)
     } else {
       try {
-        await ensureVoice().start()
+        await (await ensureVoice()).start()
         setActive(true)
       } catch (err) {
         console.error("[voice] 启动语音对话失败:", err)
@@ -98,11 +95,11 @@ export function VoiceChatButton({ onSendMessage, assistantText, onStatusChange, 
       {status === "processing" || status === "speaking" ? (
         <Loader2 className="w-4 h-4 animate-spin" />
       ) : active ? (
-        <Volume2 className="w-4 h-4" />
-      ) : status === "listening" ? (
-        <Mic className="w-4 h-4" />
+        // 对话进行中：显示"挂断"图标（点击即停止）
+        <PhoneOff className="w-4 h-4" />
       ) : (
-        <Mic className="w-4 h-4" />
+        // 未开始：显示"拨号/通话"图标（点击即开始语音对话）
+        <PhoneCall className="w-4 h-4" />
       )}
       {active && status !== "processing" && status !== "speaking" && (
         <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--success)" }} />

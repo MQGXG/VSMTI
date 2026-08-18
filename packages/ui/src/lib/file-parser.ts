@@ -6,7 +6,7 @@
  * - pdf    → base64 原样（走视觉桥，零依赖）
  * - text   → 存路径引用（Agent 通过 read_file 工具读取）
  * - excel/word/ppt → 存路径引用（core 发送时解析注入）
- * - unknown→ 拒绝（不发送）
+ * - unknown→ 存路径引用（任意文件均可上传，Agent 通过 read_file 读取）
  */
 
 import { compressImage } from "./image-compress";
@@ -31,7 +31,7 @@ export const TEXT_EXTENSIONS = new Set([
   "sql", "gql", "graphql", "env", "properties",
 ]);
 
-export const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp"]);
+export const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "avif", "tiff", "tif", "heic", "heif"]);
 
 export const OFFICE_EXTENSIONS = new Set(["xlsx", "xls", "xlsm", "ods", "docx", "pptx"]);
 
@@ -40,9 +40,30 @@ function extOf(name: string): string {
   return idx >= 0 ? name.slice(idx + 1).toLowerCase() : "";
 }
 
+/** 按扩展名推断 MIME（File.type 缺失时兜底，保证 data URL 前缀带正确 image/xxx） */
+export function mimeFromName(name: string): string {
+  const map: Record<string, string> = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    webp: "image/webp",
+    bmp: "image/bmp",
+    avif: "image/avif",
+    tiff: "image/tiff",
+    tif: "image/tiff",
+    heic: "image/heic",
+    heif: "image/heif",
+    pdf: "application/pdf",
+  };
+  return map[extOf(name)] || "";
+}
+
 /** 按扩展名/MIME 判断附件类型（不读内容，仅分类） */
 export function classifyFile(name: string, mime = ""): PendingAttachment["kind"] {
   const ext = extOf(name);
+  // SVG 是 XML 文本：走路径引用（Agent read_file 读取），避免脚本注入 + 视觉链路校验拒绝
+  if (ext === "svg" || mime === "image/svg+xml") return "text";
   if (IMAGE_EXTENSIONS.has(ext) || mime.startsWith("image/")) return "image";
   if (ext === "pdf" || mime === "application/pdf") return "pdf";
   if (["xlsx", "xls", "xlsm", "ods"].includes(ext)) return "excel";
@@ -85,15 +106,17 @@ export async function parseFile(
     return { kind, name: file.name, size: file.size, data: "", path };
   }
 
-  // 不支持的格式
-  return { kind: "unknown", name: file.name, size: file.size, data: "", path, error: "该文件类型暂不支持解析" };
+  // 其他任意文件：降级为路径引用（Agent 通过 read_file 读取），不拒绝
+  return { kind: "unknown", name: file.name, size: file.size, data: "", path };
 }
 
 export function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    // File.type 缺失时按扩展名补 MIME，否则 data URL 前缀无 image/... 会被校验拒绝
+    const target = file.type ? file : new File([file], file.name, { type: mimeFromName(file.name) });
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = () => reject(reader.error ? new Error(reader.error.message) : new Error("文件读取失败"));
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(target);
   });
 }

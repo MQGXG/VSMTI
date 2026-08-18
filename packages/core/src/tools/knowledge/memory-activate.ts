@@ -5,7 +5,8 @@
 
 import { z } from "zod"
 import { make } from "../../shared/tool"
-import { DynamicMemoryManager, createDynamicMemory } from "../../memory/dynamic-memory"
+import type { DynamicMemoryManager} from "../../memory/dynamic-memory";
+import { createDynamicMemory } from "../../memory/dynamic-memory"
 import { simpleTextRelevance, semanticRelevance } from "../../memory/memory-activation"
 import { calculateStrength } from "../../memory/memory-strength"
 import type { MemoryNode } from "../../memory/memory-node"

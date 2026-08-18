@@ -49,6 +49,11 @@ export const SessionService = {
     return window.electronAPI.ts.deleteSession(sessionId)
   },
 
+  async deleteMany(sessionIds: string[]): Promise<void> {
+    if (!sessionIds.length) return;
+    return window.electronAPI.ts.deleteSessions(sessionIds)
+  },
+
   async deleteMessage(sessionId: string, messageId: number): Promise<void> {
     return window.electronAPI.ts.deleteMessage(sessionId, messageId)
   },

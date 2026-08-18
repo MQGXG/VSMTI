@@ -237,10 +237,13 @@ export async function* runTurn(
   const startToolExecution = async (tc: { id: string; name: string; arguments: string }) => {
     await concurrencyGate.acquire(tc.name)
     try {
-      const result = await executeTool(tc, input)
+      // C4: 工具执行前 waterfall（对齐 dsh tools/pre-execute），插件可改写工具名/参数
+      const effectiveTc = (await pluginHooks.emitWaterfall("pre_tool_execute", tc, input)) as
+        { id: string; name: string; arguments: string } | undefined
+      const result = await executeTool(effectiveTc ?? tc, input)
       toolResults.push({ id: tc.id, result })
       toolDoneQueue.push({ id: tc.id, result })
-      pluginHooks.emitAsync("post_tool_use", [tc], new Map([[tc.id, result]]))
+      pluginHooks.emitAsync("post_tool_use", [effectiveTc ?? tc], new Map([[tc.id, result]]))
     } catch (err) {
       const result = { success: false, error: err instanceof Error ? err.message : String(err) } as ToolResult
       toolResults.push({ id: tc.id, result })

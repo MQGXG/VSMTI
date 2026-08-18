@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ChatWindow } from "@mira/ui/chat/ChatWindow";
 import { Sidebar } from "@mira/ui/sidebar/Sidebar";
@@ -52,6 +52,9 @@ export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   // 启动状态：首次 loadProjects 完成（含等待 Sidecar ready）前显示启动加载动画
   const [booted, setBooted] = useState(false);
+  // Core sidecar 断连遮罩：reconnecting 时显示"连接中断，正在重连"
+  const [sidecarReconnecting, setSidecarReconnecting] = useState(false);
+  const sidecarWasDown = useRef(false);
 
   const loadProjects = useCallback(async () => {
     try {
@@ -116,6 +119,24 @@ export function App() {
       }
     } catch { /* ignore */ }
   }, []);
+
+  // 监听 Core sidecar 连接状态：断连显示遮罩，恢复后刷新项目列表
+  // （会话列表由 useSessions 10s 轮询自动恢复，无需额外处理）
+  useEffect(() => {
+    const off = window.electronAPI.onSidecarStatus((status) => {
+      if (status === "reconnecting") {
+        sidecarWasDown.current = true;
+        setSidecarReconnecting(true);
+      } else if (status === "connected") {
+        if (sidecarWasDown.current) {
+          sidecarWasDown.current = false;
+          void loadProjects();
+        }
+        setSidecarReconnecting(false);
+      }
+    });
+    return off;
+  }, [loadProjects]);
   useEffect(() => { if (!activeProject && projects.length > 0) setActiveProject(projects[0].project_id); }, [projects, activeProject]);
 
   // 同步当前激活会话到运行时 Store（用于后台会话的通知判断）
@@ -211,6 +232,25 @@ export function App() {
     <div className="h-screen flex flex-col" style={{ background: "var(--bg)", color: "var(--fg)" }}>
       {/* 启动加载动画（数据就绪后自动淡出） */}
       <StartupOverlay visible={!booted} />
+
+      {/* Core 断连遮罩：自动重连中，阻止误操作 */}
+      {sidecarReconnecting && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(2px)" }}
+        >
+          <div
+            className="flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg"
+            style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", color: "var(--fg)" }}
+          >
+            <span
+              className="inline-block w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+              style={{ borderColor: "var(--accent)" }}
+            />
+            <span className="text-sm">连接中断，正在重连…</span>
+          </div>
+        </div>
+      )}
 
       <Sidebar
         open={sidebarOpen}

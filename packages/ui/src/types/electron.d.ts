@@ -15,6 +15,7 @@ export interface ElectronAPI {
   minimizeWindow: () => void;
   maximizeWindow: () => void;
   closeWindow: () => void;
+  getPathForFile: (file: File) => string;
   getPythonStatus: () => Promise<{ status: string; port: number; url: string; error?: string }>;
   getPythonLogs: () => Promise<LogEntry[]>;
   clearPythonLogs: () => Promise<void>;
@@ -36,8 +37,14 @@ export interface ElectronAPI {
     save: (config: Record<string, unknown>) => Promise<void>;
     getProviderCatalog: () => Promise<Array<{
       id: string; label: string; website?: string; defaultBaseUrl: string; authType: string
-      models: Array<{ id: string; label?: string; context?: number }>
+      models: Array<{ id: string; label?: string; context?: number; capabilities?: string[] }>
     }>>;
+    // 语音引擎目录与默认选中项（一切皆插件）
+    getVoiceCatalog: () => Promise<{
+      catalog: Array<{ id: string; kind: "stt" | "tts" | "vad"; label: string; implementation: string; model?: string; params?: Record<string, unknown> }>;
+      defaults: Partial<Record<"stt" | "tts" | "vad" | "dictation", string>>;
+    }>;
+    saveVoiceConfig: (defaults: Record<string, string | undefined>) => Promise<void>;
   };
 
   // TS Core 会话/项目管理
@@ -50,6 +57,7 @@ export interface ElectronAPI {
     listSessions: (projectId?: string) => Promise<Array<{ session_id: string; title: string; kind: string; workspace_path: string; message_count: number; updated_at: string; cost?: number; tokens?: { input: number; output: number; cacheRead: number; cacheWrite: number } }>>;
     getSessionMessages: (sessionId: string) => Promise<Array<{ id: number; role: string; content: string }>>;
     deleteSession: (sessionId: string) => Promise<void>;
+    deleteSessions: (sessionIds: string[]) => Promise<void>;
     deleteMessage: (sessionId: string, messageId: number) => Promise<void>;
     updateSession: (sessionId: string, data: { title?: string }) => Promise<void>;
     searchMessages: (query: string) => Promise<Array<{ session_id: string; session_title: string; message: { role: string; content: string; timestamp: string }; context: string }>>;
@@ -171,6 +179,9 @@ export interface ElectronAPI {
     updateConfig: (config: Record<string, unknown>) => Promise<unknown>;
     onStateChange: (callback: (state: { state: string; reason: string }) => void) => () => void;
   };
+
+  /** 监听 Core sidecar 连接状态（断连/重连中/恢复），供前端显示遮罩并自动刷新 */
+  onSidecarStatus: (callback: (status: "connected" | "reconnecting") => void) => () => void;
 
   /** Graph 图编排 */
   graph: {

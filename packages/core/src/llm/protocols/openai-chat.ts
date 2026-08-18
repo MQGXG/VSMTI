@@ -58,7 +58,7 @@ export function serializeMessages(messages: LLMMessage[]): OpenAIMessage[] {
       if (msg.role === "tool" && msg.tool_call_id) out.tool_call_id = msg.tool_call_id
       // 回传 reasoning_content（DeepSeek thinking 模式必需）
       if (msg.role === "assistant" && msg.reasoning_content) {
-        ;(out as any).reasoning_content = msg.reasoning_content
+        (out as any).reasoning_content = msg.reasoning_content
       }
       return out
     }

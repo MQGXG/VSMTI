@@ -11,8 +11,7 @@ import { registerQuestionIPC } from "./question-ipc"
 import { registerMemoryIPC } from "./memory-ipc"
 import { registerLive2dIPC } from "./live2d-ipc"
 import { registerGraphIPC } from "./graph-ipc"
-import { setupDefaultHooks } from "@mira/core/shared/hooks-setup"
-import { cronScheduler } from "@mira/core/background/cron"
+import { setupDefaultHooks, cronScheduler } from "@mira/core"
 
 export function registerAgentIPCHandlers(): void {
   setupDefaultHooks()

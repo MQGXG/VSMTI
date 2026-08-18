@@ -32,6 +32,14 @@ const defaultFlags: Record<string, FeatureFlag> = {
     defaultValue: true,
   },
 
+  // 运行时契约校验（对齐 dsh invariant），默认关闭避免性能开销
+  "invariants": {
+    name: "invariants",
+    description: "启用运行时 invariant 校验（事件/数据关系一致性）",
+    enabled: false,
+    defaultValue: false,
+  },
+
   // 记忆相关
   "memory-search": {
     name: "memory-search",

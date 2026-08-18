@@ -80,6 +80,60 @@ describe('ProviderCatalog', () => {
     ProviderCatalog.unregister('cfg-test')
   })
 
+  test('applyUserConfig 合并模型能力（capabilities 并集）', () => {
+    ProviderCatalog.register('cap-test', {
+      id: 'cap-test', label: 'Cap Test',
+      protocol: 'openai-compatible', defaultBaseUrl: 'https://default.url',
+      authType: 'bearer', defaultModel: 'm',
+      models: [{ id: 'm', label: 'M', capabilities: ['chat'] }],
+    })
+    ProviderCatalog.applyUserConfig({
+      'cap-test': { models: { m: { capabilities: ['vision'] } } },
+    })
+    const m = ProviderCatalog.getModel('cap-test', 'm')
+    expect(m!.capabilities).toContain('chat')
+    expect(m!.capabilities).toContain('vision')
+    ProviderCatalog.unregister('cap-test')
+  })
+
+  test('applyUserDefs 注册用户 provider（含能力，一切皆插件）', () => {
+    ProviderCatalog.applyUserDefs([{
+      id: 'mimo', label: 'Mimo', protocol: 'openai-compatible',
+      defaultBaseUrl: 'https://api.mimo.ai/v1', authType: 'bearer', defaultModel: 'mimo-v2.5',
+      models: [{ id: 'mimo-v2.5', label: 'Mimo 2.5', context: 128000, capabilities: ['chat', 'vision'] }],
+    }])
+    expect(ProviderCatalog.getProvider('mimo')).toBeDefined()
+    expect(ProviderCatalog.getModel('mimo', 'mimo-v2.5')!.capabilities).toContain('vision')
+    const ui = ProviderCatalog.getCatalogForUI()
+    const mimo = ui.find(p => p.id === 'mimo')
+    expect(mimo).toBeDefined()
+    expect(mimo!.models[0].capabilities).toContain('vision')
+    ProviderCatalog.unregister('mimo')
+  })
+
+  test('协议名别名容错（openai/anthropic 简写可创建 Route）', () => {
+    ProviderCatalog.applyUserDefs([
+      {
+        id: 'alias-openai', label: 'Alias OpenAI', protocol: 'openai',
+        defaultBaseUrl: 'https://api.example.com/v1', authType: 'bearer', defaultModel: 'm',
+        models: [{ id: 'm', label: 'M' }],
+      },
+      {
+        id: 'alias-anthropic', label: 'Alias Anthropic', protocol: 'anthropic',
+        defaultBaseUrl: 'https://api.example.com', authType: 'api-key', defaultModel: 'm',
+        models: [{ id: 'm', label: 'M' }],
+      },
+    ])
+    const route1 = ProviderCatalog.createRoute('alias-openai', 'sk-key')
+    expect(route1).toBeDefined()
+    expect(typeof route1.stream).toBe('function')
+    const route2 = ProviderCatalog.createRoute('alias-anthropic', 'sk-ant-key')
+    expect(route2).toBeDefined()
+    expect(typeof route2.stream).toBe('function')
+    ProviderCatalog.unregister('alias-openai')
+    ProviderCatalog.unregister('alias-anthropic')
+  })
+
   test('createRoute 为已知 Provider 创建 Route', () => {
     const route = ProviderCatalog.createRoute('openai', 'sk-test-key')
     expect(route).toBeDefined()

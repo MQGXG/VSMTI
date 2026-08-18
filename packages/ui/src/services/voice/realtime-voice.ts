@@ -1,15 +1,19 @@
 /**
- * 实时语音对话编排 — VAD + 录音 + Whisper STT + Agent 回调 + TTS
+ * 实时语音对话 — 薄封装 core 统一编排 VoiceSessionManager
  *
- * 组合 voice 模块各引擎实现连续对话：说话 → 识别 → 回调 Agent → TTS 播放回复。
- * 零 React 依赖，可复用于主聊天窗口与桌宠。
+ * 引擎（VAD/STT/TTS）由目录解析（voice.json 插件化），
+ * 编排（检话/采集/转写/打断/turn 世代）下沉 core；本层只做：
+ *   - core 事件 → onStatusChange 回调
+ *   - options 注入（TTS / 转写 / Agent 回调）
  *
- * 参考 webai-realtime-voice-chat 的 VAD→ASR→Chat→TTS 链路。
+ * 零 React 依赖，可复用于主聊天窗口与桌宠。API 与旧版保持一致：
+ * start / speak / stop。
  */
 
-import { startMicRecording, recordChunk, mergeChunks } from "./audio-utils"
-import { createVAD, runVADLoop } from "./vad"
+import { VoiceSessionManager } from "@mira/core/voice"
+import type { VADOptions, VADController } from "@mira/core/voice"
 import type { TTSEngine } from "./types"
+import { getVADEngine } from "./engine-registry"
 
 export type RealtimeStatus = "idle" | "listening" | "processing" | "speaking"
 
@@ -22,101 +26,57 @@ export interface RealtimeVoiceOptions {
   onUserSpeech: (text: string) => void
   /** 对话状态变化（UI 展示） */
   onStatusChange?: (status: RealtimeStatus) => void
+  /** 可选注入 VAD 工厂（默认从目录解析默认选中项） */
+  vadFactory?: (options: VADOptions) => VADController
 }
 
 export class RealtimeVoice {
-  private ctx: AudioContext | null = null
-  private stream: MediaStream | null = null
-  private recorder: { stop: () => void } | null = null
-  private vadStop: (() => void) | null = null
-  private vad: ReturnType<typeof createVAD> | null = null
-  private currentChunk: Float32Array[] = []
-  private collecting = false
-  private busy = false
-  private speaking = false
+  private session: VoiceSessionManager | null = null
+  private status: RealtimeStatus = "idle"
 
   constructor(private options: RealtimeVoiceOptions) {}
 
-  /** 启动：开启麦克风 + VAD 循环，进入连续监听 */
-  async start(): Promise<void> {
-    if (this.stream) return
-    this.options.onStatusChange?.("idle")
-
-    const mic = await startMicRecording()
-    this.ctx = mic.ctx
-    this.stream = mic.stream
-
-    // 持续采集 16k 音频；仅在 collecting（说话中）且未在播放时写入当前段
-    this.recorder = recordChunk(mic.ctx, mic.stream, 16000, (c) => {
-      if (this.collecting && !this.speaking) this.currentChunk.push(c)
-    })
-
-    this.vad = createVAD({
-      onStateChange: (r) => {
-        if (r.speaking) {
-          if (!this.busy && !this.speaking) {
-            this.collecting = true
-            this.currentChunk = []
-            this.options.onStatusChange?.("listening")
-          }
-        } else if (this.collecting) {
-          this.collecting = false
-          this.flush()
-        }
+  /** 懒构建编排会话：首次 start/speak 前解析 VAD 引擎（目录驱动） */
+  private async ensureSession(): Promise<VoiceSessionManager> {
+    if (this.session) return this.session
+    const vadFactory: (options: VADOptions) => VADController = this.options.vadFactory ?? (await getVADEngine())
+    const session = new VoiceSessionManager({
+      engines: {
+        tts: this.options.tts,
+        transcribe: this.options.transcribe,
+        vad: vadFactory,
       },
+      onUserSpeech: this.options.onUserSpeech,
     })
 
-    this.vadStop = runVADLoop(mic.analyser, this.vad)
+    session.on("state_change", (e) => {
+      const state = (e as { data?: { state?: string } }).data?.state
+      const status: RealtimeStatus = state === "interrupted" ? "speaking" : ((state as RealtimeStatus) ?? "idle")
+      this.status = status
+      this.options.onStatusChange?.(status)
+    })
+    this.session = session
+    return session
   }
 
-  /** 一段语音结束：拼接音频 → 识别 → 回调 Agent */
-  private flush(): void {
-    if (this.currentChunk.length === 0) return
-    const audio = mergeChunks(this.currentChunk, 16000)
-    this.currentChunk = []
-    if (audio.length < 1600) return // <0.1s 视为无效
-
-    this.busy = true
-    this.options.onStatusChange?.("processing")
-    this.options
-      .transcribe(audio)
-      .then((text) => {
-        this.busy = false
-        if (text.trim()) this.options.onUserSpeech(text.trim())
-        this.options.onStatusChange?.("idle")
-      })
-      .catch(() => {
-        this.busy = false
-        this.options.onStatusChange?.("idle")
-      })
+  /** 启动：开启麦克风 + VAD 循环，进入连续监听 */
+  async start(): Promise<void> {
+    const s = await this.ensureSession()
+    await s.start()
   }
 
   /** 播放 Agent 回复（TTS），播放期间暂停 VAD 采集避免回声误判 */
   async speak(text: string): Promise<void> {
-    if (!text.trim()) return
-    this.speaking = true
-    this.options.onStatusChange?.("speaking")
-    try {
-      await this.options.tts.speak(text)
-    } finally {
-      this.speaking = false
-      this.options.onStatusChange?.("idle")
-    }
+    const s = await this.ensureSession()
+    await s.speak(text)
   }
 
   stop(): void {
-    this.vadStop?.()
-    this.recorder?.stop()
-    this.stream?.getTracks().forEach((t) => t.stop())
-    this.vad?.reset()
-    this.options.tts.stop()
-    this.stream = null
-    this.recorder = null
-    this.vadStop = null
-    this.currentChunk = []
-    this.collecting = false
-    this.busy = false
-    this.speaking = false
-    this.options.onStatusChange?.("idle")
+    this.session?.stop()
+  }
+
+  /** 当前状态（供 UI 同步展示） */
+  getStatus(): RealtimeStatus {
+    return this.status
   }
 }

@@ -1,6 +1,6 @@
 import { app, BrowserWindow, globalShortcut } from "electron";
 import { createWindow, showMainWindow } from "../managers/window-manager";
-import { createTray } from "../managers/tray-manager";
+import { createTray, destroyTray } from "../managers/tray-manager";
 import { registerIPCHandlers } from "../ipc/handlers";
 import { startSidecar, stopSidecar } from "../ipc/sidecar-bridge";
 import { initLogger, patchConsole, getLogFilePath } from "../utils/logger";
@@ -60,10 +60,24 @@ async function initializeApp() {
   });
 }
 
+// 单实例锁：二次启动时激活已有窗口并退出新实例，避免开发时多实例/多托盘图标
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on("second-instance", async () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      await createWindow();
+    } else {
+      showMainWindow();
+    }
+  });
+}
+
 app.whenReady().then(initializeApp);
 
 app.on("before-quit", async () => {
   globalShortcut.unregisterAll();
   destroyPetWindow();
+  destroyTray();
   await stopSidecar();
 });

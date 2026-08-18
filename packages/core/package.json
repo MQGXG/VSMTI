@@ -34,7 +34,8 @@
     "./system/server-manager": "./src/system/server-manager.ts",
     "./task/tracker": "./src/task/tracker.ts",
     "./tools/interaction/question": "./src/tools/interaction/question.ts",
-    "./tools/orchestrate/agent-tools": "./src/tools/orchestrate/agent-tools.ts"
+    "./tools/orchestrate/agent-tools": "./src/tools/orchestrate/agent-tools.ts",
+    "./voice": "./src/voice/index.ts"
   },
   "files": [
     "dist",
@@ -50,7 +51,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@huggingface/transformers": "^3.0.0-alpha.2",
+    "@huggingface/transformers": "^3.5.2",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@xmldom/xmldom": "^0.8.13",
     "docx": "^9.7.1",

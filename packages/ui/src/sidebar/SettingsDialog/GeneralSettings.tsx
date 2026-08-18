@@ -6,6 +6,8 @@ import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { DialogService } from "../../services/dialog.service";
 import { loadProviders } from "../provider-data";
+import { loadVoiceCatalog, saveVoiceDefaults as persistVoiceDefaults } from "../../services/voice/engine-registry";
+import type { VoiceEngineDef } from "@mira/core/voice";
 import type { Provider } from "../types";
 
 interface Props {
@@ -49,6 +51,18 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
   const { models, add, remove } = useModelList()
   const [newKey, setNewKey] = useState("")
   const [newPath, setNewPath] = useState("")
+
+  // ── 语音引擎目录（一切皆插件：内置 + 用户 voice.json + 插件注册） ──
+  const [voiceCatalog, setVoiceCatalog] = useState<{ catalog: VoiceEngineDef[]; defaults: Partial<Record<"stt" | "tts" | "vad" | "dictation", string>> } | null>(null)
+  useEffect(() => {
+    void loadVoiceCatalog().then(setVoiceCatalog).catch(() => {})
+  }, [])
+  const saveVoiceDefaults = async (patch: Partial<Record<"stt" | "tts" | "vad" | "dictation", string>>) => {
+    await persistVoiceDefaults(patch)
+    setVoiceCatalog((v) => (v ? { ...v, defaults: { ...v.defaults, ...patch } } : v))
+  }
+  const sttEngines = voiceCatalog?.catalog.filter((e) => e.kind === "stt") ?? []
+  const ttsEngines = voiceCatalog?.catalog.filter((e) => e.kind === "tts") ?? []
 
   // ── 视觉桥模型选项（已启用 + 含 vision 模型的 provider） ──
   const [visionProviders, setVisionProviders] = useState<Provider[]>([])
@@ -145,21 +159,37 @@ export function GeneralSettings({ settings, onUpdate }: Props) {
         <label className="flex items-center justify-between cursor-pointer mb-3">
           <div>
             <div className="text-sm text-primary">实时语音对话</div>
-            <div className="text-xs mt-0.5 text-secondary">语音对话模式：说话→识别→回复→朗读（本地 Whisper，离线可用）</div>
+            <div className="text-xs mt-0.5 text-secondary">语音对话模式：说话→识别→回复→朗读（默认本地引擎，离线可用）</div>
           </div>
           <Switch checked={settings.voiceChatEnabled !== false}
             onCheckedChange={(v) => onUpdate({ voiceChatEnabled: v })} />
         </label>
-        <div>
-          <label className="text-xs mb-1 block text-secondary">朗读引擎</label>
-          <Select value={settings.ttsEngine || "webspeech"}
-            onValueChange={(v) => onUpdate({ ttsEngine: v })}>
+        <div className="mb-3">
+          <label className="text-xs mb-1 block text-secondary">识别引擎（STT）</label>
+          <Select value={voiceCatalog?.defaults.stt ?? ""}
+            onValueChange={(v) => void saveVoiceDefaults({ stt: v, dictation: v })}>
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue placeholder="默认" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="webspeech">系统语音（WebSpeech）</SelectItem>
-              <SelectItem value="local">本地（Kokoro，离线）</SelectItem>
+              {sttEngines.map((e) => (
+                <SelectItem key={e.id} value={e.id}>{e.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] mt-1 text-secondary">听写（按住说话）默认跟随识别引擎</p>
+        </div>
+        <div>
+          <label className="text-xs mb-1 block text-secondary">朗读引擎（TTS）</label>
+          <Select value={voiceCatalog?.defaults.tts ?? ""}
+            onValueChange={(v) => void saveVoiceDefaults({ tts: v })}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="默认" />
+            </SelectTrigger>
+            <SelectContent>
+              {ttsEngines.map((e) => (
+                <SelectItem key={e.id} value={e.id}>{e.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <p className="text-[11px] mt-1 text-secondary">本地引擎首次使用需下载模型（约 80MB），之后可离线朗读</p>

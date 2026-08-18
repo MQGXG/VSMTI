@@ -31,9 +31,9 @@ export function registerIPCHandlers(): void {
       properties: ["openFile", "multiSelections"],
       filters: [
         { name: "所有文件", extensions: ["*"] },
-        { name: "图片", extensions: ["png", "jpg", "jpeg", "gif", "webp"] },
-        { name: "文档", extensions: ["docx", "xlsx", "pptx", "pdf", "txt", "md", "csv"] },
-        { name: "代码文件", extensions: ["py", "js", "ts", "java", "cpp", "rs", "go", "html", "css"] },
+        { name: "图片", extensions: ["png", "jpg", "jpeg", "gif", "webp", "bmp", "avif", "tiff", "tif", "heic", "heif"] },
+        { name: "文档", extensions: ["docx", "xls", "xlsx", "xlsm", "ods", "pptx", "pdf", "txt", "md", "markdown", "csv", "json", "yaml", "yml", "xml", "log", "ini", "conf"] },
+        { name: "代码文件", extensions: ["py", "js", "ts", "tsx", "jsx", "java", "c", "cpp", "h", "hpp", "rs", "go", "rb", "sh", "bash", "sql", "html", "htm", "css", "scss", "sass", "php"] },
       ],
     });
     if (result.canceled || result.filePaths.length === 0) return { token: "", files: [] };

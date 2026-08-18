@@ -3,7 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest"
-import { DynamicMemoryManager, createDynamicMemory } from "../memory/dynamic-memory"
+import type { DynamicMemoryManager} from "../memory/dynamic-memory";
+import { createDynamicMemory } from "../memory/dynamic-memory"
 import { calculateStrength, updateStrengthAfterAccess } from "../memory/memory-strength"
 import { retentionRate, decayStrength, hoursToDecay } from "../memory/decay-curve"
 import { activateMemory, simpleTextRelevance } from "../memory/memory-activation"

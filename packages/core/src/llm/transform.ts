@@ -34,7 +34,7 @@ export function collectImages(msgs: LLMMessage[]): ImageAnalysis[] {
     if (msg.role !== "user" || !Array.isArray(msg.content)) continue
     for (const part of msg.content) {
       if (part.type !== "image") continue
-      const img = part as ImagePart
+      const img = part
       const imageStr = String(img.image)
       const mediaType = img.mediaType ?? (imageStr.startsWith("data:")
         ? imageStr.split(";")[0].replace("data:", "")
@@ -103,9 +103,10 @@ export async function multimodalBridge(
     })),
     {
       type: "text" as const,
-      text: "请详细描述以上所有图片的内容，保留对编程和代码相关的重要细节。" +
-        "包括：代码片段、错误信息、UI 布局、文件结构、终端输出、数据可视化等任何与软件开发相关的信息。" +
-        "如果有多张图片，请分别描述每张图片的内容。",
+      text:
+        "请仔细查看以上所有图片，并完整描述每张图片的实际内容：场景、人物、物体、文字、布局、色彩、氛围等所有可见细节。" +
+        "图片可以是任意内容，不限于软件开发相关。若图片包含编程或代码相关内容，请额外保留这些细节（代码、报错、UI、文件结构、终端输出、数据可视化等）。" +
+        "无论图片内容是什么，都必须完整描述图片本身，不得只判断'与软件开发无关'而不展开描述。如果有多张图片，请分别描述每张图片的内容。",
     },
   ]
 
@@ -115,6 +116,10 @@ export async function multimodalBridge(
       messages: [{ role: "user", content: visionContent }],
     })
     description = result.content || ""
+    // 兜底：视觉桥返回过短内容（如仅"无软件开发相关细节"）视为分析失败，走回落逻辑而非注入无意义文本
+    if (description.trim().length < 10) {
+      throw new Error(`vision description too short (${description.trim().length} chars)`)
+    }
   } catch (err) {
     throw LLMError.provider(visionModel.provider, `Vision model analysis failed: ${err instanceof Error ? err.message : String(err)}`)
   }

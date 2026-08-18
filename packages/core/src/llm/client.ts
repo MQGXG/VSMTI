@@ -7,6 +7,7 @@ import { multimodalBridge, hasImageContent, modelHasVision } from "./transform"
 import type { LLMRequest as LLMRequestSchema } from "./schema/options"
 import { zodToJsonSchema } from "../shared/zod-converter"
 import { isRetryableError as isUnifiedRetryable } from "../shared/errors"
+import { logInfo } from "../system/logger"
 
 export type ProviderType = string
 export type { LLMMessage }
@@ -155,6 +156,21 @@ export function createLLMClient(config: SDKConfig): LLMClient {
         }
       }
 
+      // [Vision] 请求诊断：确认图片是否真正进入 LLM 请求
+      let imgCount = 0
+      let imgBytes = 0
+      for (const m of request.messages) {
+        if (Array.isArray(m.content)) {
+          for (const p of m.content) {
+            if (p.type === "image" && p.image) {
+              imgCount++
+              imgBytes += p.image.length
+            }
+          }
+        }
+      }
+      logInfo("Vision", `request provider=${config.provider} model=${config.model} modelVision=${String(config.modelVision)} bridge=${String(!!config.visionModel)} images=${imgCount} bytes=${imgBytes} hasImage=${String(hasImageContent(request.messages))}`)
+
       const llmRequest: LLMRequestSchema = {
         model: config.model,
         messages: convertMessages(bridgeMessages),
@@ -207,11 +223,13 @@ export function createLLMClient(config: SDKConfig): LLMClient {
             } : undefined }
             break
           case "error":
+            logInfo("Vision", `provider stream error: ${event.message}`)
             yield { type: "error", error: { message: event.message } }
             break
         }
       }
     } catch (err: any) {
+      logInfo("Vision", `provider stream threw: ${err?.message || String(err)}`)
       if (err instanceof LLMError) {
         yield { type: "error", error: { message: err.message } }
       } else {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import { MessageSquarePlus, Trash2, MessageSquare, Search, X, FileText, Check, Pencil } from "lucide-react";
+import { MessageSquarePlus, Trash2, MessageSquare, Search, X, FileText, Check, Pencil, ListChecks } from "lucide-react";
 import { SessionService, type SessionInfo } from "../services/session.service";
 import { type ProjectInfo } from "../services/project.service";
 import { Input } from "../components/ui/input";
@@ -175,6 +175,42 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
 
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ "今天": true, "昨天": true, "7天内": true, "30天内": true });
 
+  // ── 批量管理模式：多选会话后一次性删除 ────────────────
+  const [manageMode, setManageMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const enterManage = () => { setSearchQuery(""); setSearchResults(null); setManageMode(true); };
+  const exitManage = () => { setManageMode(false); setSelectedIds(new Set()); };
+
+  const toggleSelect = (sessionId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sessionId)) next.delete(sessionId); else next.add(sessionId);
+      return next;
+    });
+  };
+
+  /** 全选/全不选切换（作用于当前项目全部会话） */
+  const handleSelectAll = () => {
+    if (selectedIds.size === sessions.length) { setSelectedIds(new Set()); return; }
+    setSelectedIds(new Set(sessions.map((s) => s.session_id)));
+  };
+
+  /** 批量删除选中会话 */
+  const handleDeleteSelected = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!window.confirm(`确定删除选中的 ${ids.length} 个会话吗？此操作不可恢复。`)) return;
+    try {
+      ids.forEach((id) => disposeSession(id));
+      await SessionService.deleteMany(ids);
+      if (activeSession && ids.includes(activeSession)) onNewSession();
+    } catch { /* ignore */ } finally {
+      exitManage();
+      loadSessions();
+    }
+  };
+
   // L6 侧边栏项目搜索：本地过滤项目名/路径（零延迟），与会话搜索结果并列展示
   const matchedProjects = useMemo(() => {
     if (!searchQuery.trim()) return null;
@@ -260,6 +296,33 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
           </div>
         )}
 
+        {/* 会话列表工具条（批量管理入口） */}
+        {project && (
+          <div className="px-3 pb-1.5 pt-0.5 flex items-center gap-2 shrink-0">
+            {manageMode ? (
+              <>
+                <Button variant="ghost" size="sm" className="text-[11px] px-2" onClick={handleSelectAll}>
+                  {selectedIds.size === sessions.length && sessions.length > 0 ? "取消全选" : "全选"}
+                </Button>
+                <span className="text-[11px] ml-auto" style={{ color: "var(--fg-tertiary)" }}>已选 {selectedIds.size} 项</span>
+                <Button variant="destructive" size="sm" className="text-[11px] px-2" disabled={selectedIds.size === 0} onClick={handleDeleteSelected}>
+                  <Trash2 className="w-3 h-3" />
+                  删除
+                </Button>
+                <Button variant="ghost" size="sm" className="text-[11px] px-2" onClick={exitManage}>完成</Button>
+              </>
+            ) : (
+              <>
+                <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--fg-tertiary)" }}>会话列表</span>
+                <Button variant="ghost" size="sm" className="text-[11px] px-2 ml-auto" onClick={enterManage} title="批量管理会话">
+                  <ListChecks className="w-3.5 h-3.5" />
+                  管理
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Session list */}
         <div className="flex-1 overflow-y-auto px-2 py-1 scrollbar-custom">
         {!project && <div className="text-xs py-12 text-center" style={{ color: "var(--fg-tertiary)" }}>请先选择一个项目</div>}
@@ -286,6 +349,23 @@ function SidebarContent({ activeProject, activeSession, projects, onProjectChang
               </button>
               {isExpanded && groupSessions.map((session) => {
                 const isActive = activeSession === session.session_id;
+                // 批量管理模式：复选框条目（点击整行切换选中）
+                if (manageMode) {
+                  const checked = selectedIds.has(session.session_id);
+                  return (
+                    <div key={session.session_id}
+                      onClick={() => toggleSelect(session.session_id)}
+                      className={`flex items-center gap-2 rounded-lg text-sm cursor-pointer px-2 py-1.5 transition-colors ${checked ? "bg-muted" : "sidebar-item hover:bg-muted/50"}`}>
+                      <div className="w-4 h-4 rounded shrink-0 flex items-center justify-center border" style={{ borderColor: checked ? "var(--success)" : "var(--border)", background: checked ? "var(--success)" : "transparent" }}>
+                        {checked && <Check className="w-3 h-3" style={{ color: "var(--bg)" }} />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium truncate" style={{ color: "var(--fg)" }}>{session.title || "新会话"}</div>
+                        <div className="text-[10px] mt-0.5 truncate" style={{ color: "var(--fg-tertiary)" }}>{session.message_count || 0} 条 · {formatTime(session.updated_at)}</div>
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <div key={session.session_id} className={`group flex items-center rounded-lg text-sm ${isActive ? "active sidebar-item" : "sidebar-item"}`}>
                     <button onClick={() => onSessionChange(session.session_id)} className="flex-1 text-left min-w-0">

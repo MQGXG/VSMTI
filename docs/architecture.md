@@ -561,3 +561,29 @@ base(10) → env(20) → mode(30) → knowledge(45) → code(50) → goal(60) �
 | fingerprint 稳定性 | 同一内容生成相同 hash，避免随机/时间依赖 |
 | loadSnapshot | 若 Source 无 loadSnapshot，每次 build 重新 generate（性能 OK，不影响缓存） |
 | KV Cache 声明 | 在 Source 实现中注释说明其对缓存前缀的影响 |
+
+## 十二、依赖纪律（verify:deps）
+
+用 `scripts/verify-deps.ts` 强制依赖方向（`pnpm verify:deps`），规则：
+
+| 规则 | 内容 |
+|------|------|
+| 1. 跨包钻取 | `packages/electron`、`packages/ui` 禁止 import `@mira/core/<子路径>`，只允许 `@mira/core` 顶层导出（core 内部文件移动不破坏外部） |
+| 2. 反向依赖 | `packages/core/src/system/` 下**非 API 层**（非 `server/`）禁止反向依赖底层模块（agent/session/tools/graph/memory/orchestrate/task/skill）；**API 层（`system/server/`）豁免**——聚合底层服务是 handler 分发的合理分层 |
+| 3. 三级深路径 | `../..` 深路径仅报告（不阻塞），提示模块边界可优化 |
+
+**设计说明**：`system/server/api.ts` 是 API 聚合层（714 行、25+ 依赖），依赖底层是合理分层而非耦合问题；其体积问题属"拆分 handler"范畴（api-agent/api-session/...），留待后续演进。
+
+## 十三、能力缝（Capability Seams）
+
+`packages/core/src/capability/` 实现 Service Definition / Provider / Consumer 三角色（对齐 dsh capability-seams）：
+
+| 缝 | Provider | 消费端 | 说明 |
+|----|---------|--------|------|
+| `fs` | `LocalFileSystemProvider` | read_file / write_file | 文件 IO |
+| `subprocess` | `LocalSubprocessProvider` | bash 执行 | 命令执行（含 sandbox 包封） |
+| `code-runtime` | `LocalCodeRuntimeProvider` | run_code | Python/Node 沙箱执行 |
+| `shell` | `LocalShellProvider` | bash shell 解析 | 平台探测 + 参数构建 |
+| `sandbox` | `NoopSandboxProvider` | subprocess 包封 | 进程限制（默认透传） |
+
+**注册可逆**：`capabilityRegistry.register(name, provider)` 返回卸载函数。换任意 provider（如远程沙箱）即让对应工具链整体迁移，消费端零改动。

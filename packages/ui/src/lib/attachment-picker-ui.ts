@@ -5,7 +5,7 @@
  */
 
 import { DialogService } from "../services/dialog.service";
-import { parseFile, type PendingAttachment } from "./file-parser";
+import { parseFile, mimeFromName, type PendingAttachment } from "./file-parser";
 
 /** 通过主进程 dialog 选择文件并解析 */
 export async function pickAndParseFiles(): Promise<PendingAttachment[]> {
@@ -18,7 +18,8 @@ export async function pickAndParseFiles(): Promise<PendingAttachment[]> {
     const attachments: PendingAttachment[] = [];
     for (const fileMeta of result.files) {
       const bytes = await DialogService.readPickedFile(result.token, fileMeta.path);
-      const file = new File([bytes], fileMeta.name);
+      // 显式传 type：主进程 File 构造默认 type 为空，会导致 data URL 无 image/xxx MIME 被校验拒绝
+      const file = new File([bytes], fileMeta.name, { type: mimeFromName(fileMeta.name) });
       const attachment = await parseFile(file, fileMeta.path);
       attachment.size = fileMeta.size;
       attachments.push(attachment);
@@ -33,7 +34,9 @@ export async function pickAndParseFiles(): Promise<PendingAttachment[]> {
 export async function parseDroppedFiles(files: File[]): Promise<PendingAttachment[]> {
   const attachments: PendingAttachment[] = [];
   for (const file of files) {
-    const path = (file as File & { path?: string }).path;
+    // 优先官方 API webUtils.getPathForFile；File.path 兼容兜底（Electron 32 已弃用）
+    const raw = file as File & { path?: string };
+    const path = window.electronAPI?.getPathForFile?.(file) || raw.path || undefined;
     const attachment = await parseFile(file, path);
     attachments.push(attachment);
   }
@@ -72,11 +75,11 @@ export function buildSendContent(
       images.push(att.data);
       continue;
     }
-    if (att.kind === "unknown" || att.error) {
+    if (att.error) {
       rejected.push(att);
       continue;
     }
-    // 文本 / Office：存路径引用，消息区域只显示卡片
+    // 文本 / Office / 未知（任意文件）：存路径引用，消息区域只显示卡片，Agent 用 read_file 读取
     files.push({ name: att.name, path: att.path, kind: att.kind });
     fileTags.push(`📎 ${att.name}`);
   }

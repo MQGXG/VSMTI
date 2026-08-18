@@ -22,13 +22,14 @@ import {
   listSessions,
   getSessionMessages,
   deleteSessionById,
+  deleteSessionsById,
   deleteMessageById,
   searchMessages,
   updateSession,
   restoreSnapshot,
 } from "../../session/manager"
 import { AgentRegistry } from "../../agent/registry"
-import { logError } from "../logger"
+import { logError, logInfo } from "../logger"
 import { taskTracker } from "../../task/tracker"
 import { setParentConfig } from "../../tools/orchestrate/agent-tools"
 import { setFTSProvider } from "../../tools/knowledge/memory"
@@ -172,8 +173,21 @@ export async function handleStartStream(
   channel: string,
 ): Promise<void> {
   const workspace = (config.workspace as string) || process.cwd()
+  // [SSE 卡点诊断] 记录 startStream 请求关键字段，定位 30s 无数据时的卡点
+  logInfo(
+    "[stream] handleStartStream begin",
+    JSON.stringify({
+      sessionId,
+      provider: config.provider,
+      model: config.model,
+      mode: config.mode,
+      imageCount: Array.isArray(config.images) ? config.images.length : 0,
+      messageLen: message.length,
+    }),
+  )
 
   await taskTracker.initialize(sessionId)
+  logInfo("[stream] taskTracker.initialize ok")
 
   const mergedConfig = resolveRuntimeConfig({
     provider: config.provider as string,
@@ -185,8 +199,10 @@ export async function handleStartStream(
     mode: config.mode as string,
     workspace,
   })
+  logInfo("[stream] resolveRuntimeConfig ok")
 
   const sharedFTS = await ensureSharedMemoryFTS(workspace)
+  logInfo("[stream] ensureSharedMemoryFTS ok")
   const agent = new Agent(
     registry,
     mergedConfig.apiKey,
@@ -194,6 +210,7 @@ export async function handleStartStream(
     workspace,
     sharedFTS ? { ftsProvider: sharedFTS } : undefined,
   )
+  logInfo("[stream] Agent created")
   // 将 FTS provider 注册到模块级单例（供 memory 工具和 HTTP 端点使用）
   const fts = agent.getFTSProvider()
   if (fts) {
@@ -207,6 +224,7 @@ export async function handleStartStream(
   const permissions = config.permissions
     ? new PermissionSet((config.permissions as any[]).map((r: any) => ({ action: r.action, resource: r.resource, effect: r.effect as "allow" | "deny" | "ask" })))
     : await buildPermissions(workspace, config.mode as string, undefined, hardRules)
+  logInfo("[stream] permissions ok")
 
   const instructions = buildInstructionSystemPrompt(workspace)
   const baseSystem = (config.systemPrompt as string) || DEFAULT_SYSTEM
@@ -494,6 +512,10 @@ export function handleGetSessionMessages(sessionId: string): Promise<Awaited<Ret
 
 export function handleDeleteSession(sessionId: string): Promise<void> {
   return deleteSessionById(sessionId)
+}
+
+export function handleDeleteSessions(sessionIds: string[]): Promise<void> {
+  return deleteSessionsById(sessionIds)
 }
 
 export function handleDeleteMessage(sessionId: string, messageId: number): Promise<void> {

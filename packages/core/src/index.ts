@@ -28,6 +28,7 @@ export { ContextManager, type ContextConfig, type ContextStats } from "./session
 export { GoalJudge, type Goal, type GoalConfig, type GoalEvaluation } from "./orchestrate/goal-judge"
 export { createLLMClient } from "./llm/client"
 export type { SDKConfig as ClientConfig } from "./llm/client"
+export type { LLMMessage } from "./llm/schema/messages"
 export type { ToolDef, ToolContext, ToolResult, ToolCall, Content, Settlement, TruncatedOutput, TruncateOutputOptions } from "./shared/tool"
 export * as ToolEffect from "./shared/tool-effect"
 export { lspManager } from "./lsp/manager"
@@ -77,6 +78,18 @@ export { lspDefinitionTool, lspReferencesTool, lspHoverTool, lspSymbolsTool, lsp
 
 // 系统模块
 export { cronScheduler } from "./background/cron"
+export { scanSkills } from "./skill/skill-loader"
+export { ComposeModeManager, type ComposePhase, type ComposeState } from "./compose-mode"
+export { DreamDistillManager } from "./orchestrate/dream"
+export { invariantRegistry, registerDefaultInvariants, type Invariant, type InvariantContext } from "./invariants"
+export { capabilityRegistry, type CapabilityDefinition } from "./capability"
+export { getFs, LocalFileSystemProvider, FS_CAPABILITY, defaultFsProvider, type FileSystemProvider, type FsStats, type FsEntry } from "./capability/fs"
+export { getSubprocess, LocalSubprocessProvider, SUBPROCESS_CAPABILITY, defaultSubprocessProvider, type SubprocessProvider, type SubprocessResult, type SubprocessOptions } from "./capability/subprocess"
+export { getCodeRuntime, LocalCodeRuntimeProvider, CODE_RUNTIME_CAPABILITY, defaultCodeRuntimeProvider, type CodeRuntimeProvider, type CodeRuntimeRequest, type CodeRuntimeResult } from "./capability/code-runtime"
+export { getShell, LocalShellProvider, SHELL_CAPABILITY, defaultShellProvider, type ShellProvider } from "./capability/shell"
+export { getSandbox, NoopSandboxProvider, SANDBOX_CAPABILITY, defaultSandboxProvider, type SandboxProvider, type SandboxedCommand, type SandboxOptions } from "./capability/sandbox"
+export { getOffice, OFFICE_CAPABILITY, type OfficeProvider, type OfficeResult, type OfficeRunOptions } from "./capability/office"
+export { OfficeCliProvider, createOfficeCliProvider, registerOfficeCapability } from "./capability/office-cli-provider"
 export { TaskPlanner } from "./task/planner"
 export { PluginHooks, pluginHooks } from "./shared/plugin-hooks"
 export { SubagentManager, type SubagentInfo, type SubagentStatus, type SubagentEvent, type SubagentEventType } from "./orchestrate/subagent"
@@ -85,11 +98,19 @@ export { setupDefaultHooks } from "./shared/hooks-setup"
 export { sendMessage, readInbox } from "./orchestrate/team-bus"
 export { createWorktree, listWorktrees } from "./background/worktree"
 
-export { createDefaultRegistry } from "./system/registry-init"
+export { createDefaultRegistry, registerOfficeTools } from "./system/registry-init"
+export {
+  officecliInspectTool, officecliGetTool, officecliQueryTool,
+  officecliIssuesTool, officecliValidateTool, officecliEditTool, officecliMergeTool,
+} from "./tools/office/officecli-tools"
 
 // 配置系统
 export { loadConfig, saveGlobalConfig, resolveRuntimeConfig, getConfigForRenderer } from "./config/index"
 export type { MiraConfig, ResolvedConfig } from "./config/index"
+
+// 语音引擎用户配置（voice.json 读写）
+export { saveUserVoiceDefaults, loadUserVoiceConfig, getGlobalVoiceConfigPath } from "./config/voice-config"
+export type { UserVoiceConfig } from "./config/voice-config"
 
 // 平台路径抽象
 export { initPlatformPaths, getPlatformPaths } from "./config/paths"
@@ -224,6 +245,20 @@ export {
 // 语音交互模块
 export {
   // 类型
+  type STTType,
+  type TTSType,
+  type VoiceEngineKind,
+  type VoiceEngineImplementation,
+  type VoiceEngineDef,
+  type STTEngine,
+  type TTSEngine,
+  type VADResult,
+  type VADOptions,
+  type VADController,
+  type STTEngineFactory,
+  type TTSEngineFactory,
+  type VADEngineFactory,
+
   type VADConfig,
   type VADEvent,
   type VADEventType,
@@ -247,13 +282,43 @@ export {
   type VoiceManagerEventType,
 
   // 类
-  VoiceActivityDetector,
-  InterruptionManager,
   VoiceSessionManager,
-  AnnouncementWindow,
-  type ResponseInfo,
-  type SpeechOrigin,
+
+  // 引擎实现
+  BUILTIN_ENGINE_FACTORIES,
+  createWhisperSTTEngine,
+  DEFAULT_WHISPER_MODEL,
+  createWebSpeechSTTEngine,
+  createKokoroTTSEngine,
+  DEFAULT_KOKORO_MODEL,
+  createWebSpeechTTSEngine,
+  createEnergyVADEngine,
+  DEFAULT_ENERGY_VAD_PARAMS,
+
+  // 音频/模型加载工具
+  float32ToAudioBuffer,
+  playFloat32,
+  startMicRecording,
+  getCurrentVolume,
+  recordChunk,
+  mergeChunks,
+  loadASRPipeline,
+  loadTTSPipeline,
+  type ASRPipeline,
+  type TTSPipeline,
+
+  // 引擎目录
+  VoiceRegistry,
 } from "./voice"
+
+// 引擎目录 Node 加载器（主进程/sidecar 生产链路初始化；含 fs，不进 renderer 纯入口）
+export { initVoiceCatalog, loadBuiltinVoiceCatalog, applyUserVoiceConfig } from "./voice/catalog-loader"
+
+// Node 侧语音模块（依赖 Node events/fs，仅在主进程/sidecar 使用）
+export { VoiceActivityDetector } from "./voice/vad"
+export { InterruptionManager } from "./voice/interruption"
+export { AnnouncementWindow } from "./voice/announcement-window"
+export type { ResponseInfo, SpeechOrigin } from "./voice/announcement-window"
 
 
 

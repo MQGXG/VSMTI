@@ -5,6 +5,7 @@
 
 import { startServer } from "./server"
 import { initPlatformPaths } from "../../config/paths"
+import { registerDefaultInvariants } from "../../invariants"
 
 const args = process.argv.slice(2)
 const portIdx = args.indexOf("--port")
@@ -22,6 +23,9 @@ if (userData || modelDir) {
 }
 
 console.log(`[Sidecar] Starting @mira/core server on port ${port}...`)
+
+// 注册运行时 invariant（默认关闭，由 "invariants" flag 控制）
+registerDefaultInvariants()
 
 // 全局异常保护：防止单个未捕获异常导致整个 Sidecar 进程崩溃（导致 SSE 通道中断/超时）
 process.on("uncaughtException", (err) => {

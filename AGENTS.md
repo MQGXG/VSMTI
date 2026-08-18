@@ -54,7 +54,7 @@ mira/
 │   │       ├── llm/                 # LLM 分层架构
 │   │       │   ├── index.ts
 │   │       │   ├── client.ts        #   LLM 客户端（createLLMClient + 统一事件归一化）
-│   │       │   ├── builtin-providers.ts# 12 种 Provider 数据定义
+│   │       │   ├── builtin-providers.ts# 模型目录加载器（加载 model-catalog.json 为 TS 数据）
 │   │       │   ├── provider-catalog.ts# Provider 目录（createRoute + getCatalogForUI）
 │   │       │   ├── cache-policy.ts  #   缓存策略（Anthropic cache_control 注入）
 │   │       │   ├── follow-up.ts     #   LLM 生成追问建议
@@ -222,13 +222,17 @@ mira/
 │   │       │   └── index.ts         #   PluginManager（动态 import 加载）
 │   │       ├── workflow/            # Dynamic Workflow 编排
 │   │       │   └── index.ts         #   WorkflowEngine（agent/bash/parallel/pipeline/transform）
-│   │       ├── voice/               # 语音模块
-│   │       │   ├── index.ts
-│   │       │   ├── types.ts         #   VAD/STT/TTS 类型
-│   │       │   ├── vad.ts           #   语音活动检测（能量分析）
-│   │       │   ├── interruption.ts  #   语音打断管理
-│   │       │   ├── announcement-window.ts # 语音打断公告窗口
-│   │       │   └── voice-session.ts #   语音会话管理
+│   │       ├── voice/               # 语音模块（renderer-safe 纯入口）
+│   │       │   ├── index.ts         #   renderer-safe 导出（引擎/注册表/编排/工具，无 Node）
+│   │       │   ├── types.ts         #   引擎接口（STT/TTS/VAD 可插拔）+ VoiceSessionConfig
+│   │       │   ├── engines/         #   内置引擎实现（whisper / webspeech-stt / kokoro / webspeech-tts / energy-vad）
+│   │       │   ├── registry.ts      #   纯注册表 VoiceRegistry（工厂/引擎缓存/默认选中项）
+│   │       │   ├── catalog-loader.ts#   Node 加载器（内置 voice-catalog.json + 用户 voice.json，initVoiceCatalog）
+│   │       │   ├── voice-session.ts #   统一编排（VAD 检话/采集/转写/打断/turn 世代）
+│   │       │   ├── emitter.ts       #   LightEmitter（纯 TS 事件，替代 Node events）
+│   │       │   ├── audio-utils.ts / transformers-loader.ts # 音频播放/录制 + transformers.js 加载
+│   │       │   ├── vad.ts           #   语音活动检测（能量分析，Node 侧，经 core/index 导出）
+│   │       │   ├── interruption.ts / announcement-window.ts # 语音打断管理（Node 侧，经 core/index 导出）
 │   │       ├── types/ambient.d.ts   # 全局类型声明
 │   │       └── __tests__/           # 测试（Vitest 4，55 个文件 529 用例，core 内）
 │   │
@@ -364,10 +368,12 @@ mira/
 │           │   ├── agent.service.ts / config.service.ts / dialog.service.ts
 │           │   ├── graph.service.ts / memory.service.ts
 │           │   ├── project.service.ts / session.service.ts / index.ts
-│           │   └── voice/           #   语音服务
-│           │       ├── audio-utils.ts / realtime-voice.ts / stt.ts / tts.ts
-│           │       ├── transformers-loader.ts / types.ts / vad.ts
-│           │       └── lip-sync.ts / motion-manager.ts / motion-plugins.ts
+│           │   └── voice/           #   语音服务（引擎获取层 + 薄封装 core）
+│           │       ├── engine-registry.ts # 目录驱动引擎获取（IPC catalog → core 工厂）
+│           │       ├── realtime-voice.ts  # 实时语音对话薄封装（VoiceSessionManager）
+│           │       ├── stt.ts / tts.ts / transformers-loader.ts # 旧 API 薄代理（向后兼容）
+│           │       ├── types.ts / lip-sync.ts / motion-manager.ts / motion-plugins.ts
+│           │       └── __tests__/         # tts 薄代理 / lip-sync / motion-manager 测试
 │           └── types/               # 类型声明
 │               ├── ambient.d.ts / electron.d.ts
 │
@@ -515,7 +521,14 @@ mira/
 | Vertex | 协议适配 | Vertex AI API |
 | Custom | 兼容 | 用户自定义 URL |
 
-Provider 数据定义在 `llm/builtin-providers.ts`（含 models + 上下文窗口 + 成本 + 能力），`ProviderCatalog` 负责路由到对应协议。
+Provider 数据定义在 `resources/models/model-catalog.json`（内置目录，含 models + 上下文窗口 + 成本 + 能力），由 `builtin-providers.ts` 加载为 TS 数据，`ProviderCatalog` 负责路由到对应协议。
+
+> **模型目录可插拔（一切皆插件）**：能力数据统一收敛到 `ProviderCatalog`（Core 单一数据源）。三层合并：
+> 1. **内置** `resources/models/model-catalog.json`（打包经 `electron-builder.yml` 的 `resources/models → models` extraResources 分发）
+> 2. **全局用户** `~/.config/mira/models.json`（`config/models-config.ts` 加载）：`providers`（完整 ProviderDef，新增 provider 或整体覆盖内置）+ `overrides`（对已注册 provider 增量覆盖，如为模型追加 `capabilities: ["vision"]`）
+> 3. **插件** `PluginContext.registerProvider(def)`（`plugin/index.ts`）
+>
+> 生产链路统一走 `ProviderCatalog.initProviderCatalog()`（内置 + 用户配置，幂等）；UI 经 `config:getProviderCatalog` IPC 拉取目录，视觉能力判断（`ui/src/sidebar/provider-model.ts`）直接查目录 `capabilities`，不再维护本地白名单（`VISION_MODELS` 已移除；`isVisionModel` = 目录能力优先，用户声明的 type 兜底）。
 
 ## 高级特性
 
@@ -604,7 +617,9 @@ Phase 驱动的软件开发工作流（`compose-mode.ts`）：`plan → execute 
 `orchestrate/acp/`：标准化的 Agent 间通信协议，含消息类型（20 个工厂函数）、`WorkStateMachine` 工作状态机 + 全局单例。
 
 ### 语音模块（Voice）
-`voice/` + `ui/services/voice/`：能量检测 VAD + 语音打断管理 + Whisper STT（本地 ONNX）+ Kokoro TTS，`VoiceChatButton` 一键实时语音对话。
+`voice/`（renderer-safe 纯入口 `@mira/core/voice`，可插拔引擎）+ `ui/services/voice/`（IPC 目录驱动获取层）：能量检测 VAD + 语音打断管理 + Whisper STT（本地 ONNX）+ Kokoro TTS，`VoiceChatButton` 一键实时语音对话。
+
+**一切皆插件（引擎目录）**：引擎实现全部下沉 core（`voice/engines/`），目录数据三层合并（内置 `resources/models/voice-catalog.json` → 用户 `~/.config/mira/voice.json` → 插件 `PluginContext.registerVoice`），`VoiceRegistry`（纯注册表，无 Node）+ `catalog-loader`（Node fs，`initVoiceCatalog` 幂等装配）。UI 经 `config:getVoiceCatalog` / `config:saveVoiceConfig` IPC 拉取目录与默认选中项（`voice.json` 只存 `defaults` 装配，UI 开关 `voiceChatEnabled` 留在 localStorage）。Node 侧模块（`VoiceActivityDetector` / `InterruptionManager` / `AnnouncementWindow` / `catalog-loader`）仅经 `core/index` 导出，渲染进程经 `@mira/core/voice` 使用纯 TS 子集（`LightEmitter` 替代 Node events）。
 
 ### Widget 渲染
 LLM 生成的 HTML 代码块在沙箱 iframe（`sandbox="allow-scripts"`）中渲染，自动注入本地 chart.js，支持查看代码/复制/下载。`widget-test.html` 提供测试入口。
@@ -662,7 +677,7 @@ LLM 生成的 HTML 代码块在沙箱 iframe（`sandbox="allow-scripts"`）中�
 | `agent.dreamDistill.*` | Dream/Distill 记忆进化 |
 | `agent.compose.*` | 组合模式全流程（17 个方法） |
 | `agent.onEvent` | 监听 Agent 流式事件（按 channel 过滤） |
-| `config.*` | 配置读写（全局 JSON + 项目 JSON + Provider 目录） |
+| `config.*` | 配置读写（全局 JSON + 项目 JSON + Provider 目录 + 语音引擎目录 getVoiceCatalog / saveVoiceConfig） |
 | `ts.*` | 项目/会话 CRUD、消息搜索、快照恢复、文件写入 |
 | `memory.*` | 记忆搜索与状态查询（经 sidecar HTTP 代理） |
 | `graph.*` | Graph 图编排执行（runCodingTask/状态/停止） |

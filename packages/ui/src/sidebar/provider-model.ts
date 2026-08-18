@@ -2,31 +2,59 @@
  * 模型识图策略决策模块（② 应用逻辑层唯一决策点）
  *
  * 职责：
- * - 判断模型类型（用户声明优先，内置模型查 VISION_MODELS 兜底）
+ * - 判断模型类型（Core 模型目录能力优先，用户声明的 type 兜底）
  * - 决策识图策略：direct（直发图片）/ bridge（视觉桥描述）/ blocked（阻止发送）
  * - 图片安全校验（数量 / 大小 / 格式白名单）
  *
  * 分层约定：
  * - 只依赖 provider-data.ts 的数据访问，不触碰 IPC / 核心层
  * - 决策结果由上层（session-runtime-store / useVisionPolicy）装配成 config
+ * - 模型能力（vision 等）来自 Core 目录（getProviderCatalog，含内置 JSON + 用户 models.json + 插件注册），
+ *   本地不再维护白名单（一切皆插件，与 Core 单一数据源对齐）
  */
 import type { Provider, ModelType } from "./types"
 import { getProviderById, loadProviders } from "./provider-data"
-
-/** 内置支持视觉（vision）的模型清单（provider → model ids） */
-const VISION_MODELS: Record<string, string[]> = {
-  openai: ["gpt-4o", "gpt-4-turbo"],
-  anthropic: [
-    "claude-sonnet-4-20250514", "claude-4-20250514", "claude-opus-4-20250514",
-    "claude-haiku-4-20250514", "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022",
-  ],
-  gemini: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.5-pro-preview-03-25"],
-  vertex: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
-}
+import { ConfigService } from "../services/config.service"
 
 /** 归一化 provider id：custom- 前缀映射为 custom */
 function normalizeProviderId(id: string): string {
   return id.startsWith("custom-") ? "custom" : id
+}
+
+// ── Core 模型目录能力缓存（providerId → modelId → capabilities[]）─────────
+
+let catalogCapabilities: Record<string, Record<string, string[]>> = {}
+let catalogPromise: Promise<void> | null = null
+
+/** 从 Core 拉取模型目录能力（一次性缓存；失败则保持空目录不阻塞） */
+async function ensureCatalogLoaded(): Promise<void> {
+  if (catalogPromise) return catalogPromise
+  catalogPromise = (async () => {
+    try {
+      const catalog = await ConfigService.getProviderCatalog()
+      catalogCapabilities = {}
+      for (const p of catalog) {
+        catalogCapabilities[p.id] = {}
+        for (const m of p.models) {
+          catalogCapabilities[p.id][m.id] = m.capabilities || []
+        }
+      }
+    } catch {
+      catalogCapabilities = {}
+    }
+  })()
+  return catalogPromise
+}
+
+/** 同步查询目录缓存：provider/model 是否具备 vision 能力（容忍 custom- 前缀） */
+export function hasCatalogVision(provider: string, modelId: string): boolean {
+  for (const key of [provider, provider.replace(/^custom-/, "")]) {
+    const models = catalogCapabilities[key]
+    if (!models) continue
+    const caps = models[modelId]
+    if (caps && caps.includes("vision")) return true
+  }
+  return false
 }
 
 /** 模型类型是否支持直接识图（vision / multimodal） */
@@ -36,20 +64,16 @@ export function isVisionType(type?: ModelType): boolean {
 
 /**
  * 判断 provider/model 是否具备视觉能力。
- * 优先级：内置白名单（权威）> 用户声明的 type（vision/multimodal）。
- * 内置模型即使被历史数据默认标记为 "text"，白名单仍能正确识别（避免识图误判）。
+ * 优先级：Core 目录能力（vision）> 用户声明的 type（vision/multimodal）。
+ * 目录能力为权威（含用户 models.json / 插件注册的能力），用户 type 仅作兜底覆盖。
  */
 export function isVisionModel(
   provider: string,
   modelId: string,
   modelType?: ModelType,
 ): boolean {
-  // ① 内置白名单命中 → 支持视觉（权威，优先于默认 "text" 污染）
-  const list = VISION_MODELS[provider]
-  if (list && list.includes(modelId)) return true
-  // ② 用户显式声明 vision/multimodal → 支持视觉
+  if (hasCatalogVision(provider, modelId)) return true
   if (isVisionType(modelType)) return true
-  // ③ 其余（text/voice/未知）→ 不支持
   return false
 }
 
@@ -71,17 +95,17 @@ export type VisionPolicy =
 
 /**
  * 从已配置 provider 中寻找可用的视觉模型（启用 + 有 apiKey）。
- * 优先用户声明的 vision/multimodal 类型，其次内置 VISION_MODELS 白名单。
+ * 优先用户声明的 vision/multimodal 类型，其次 Core 目录能力（vision）。
  */
 export async function findVisionBridgeModel(providers: Provider[]): Promise<VisionBridgeCandidate | null> {
+  await ensureCatalogLoaded()
   for (const p of providers) {
     if (!p.enabled) continue
     const pid = normalizeProviderId(p.id)
-    const visionIds = VISION_MODELS[pid] || []
     const visionModel = p.models.find((m) => {
       if (!m.enabled) return false
       if (m.type && isVisionType(m.type)) return true
-      return visionIds.includes(m.id)
+      return hasCatalogVision(pid, m.id)
     })
     if (!visionModel) continue
     const info = await getProviderById(pid)
@@ -104,7 +128,7 @@ export async function findVisionBridgeModel(providers: Provider[]): Promise<Visi
  *
  * 规则：
  * 1. 用户手动指定的视觉桥模型（override）优先
- * 2. 当前模型 type 为 vision/multimodal（或内置白名单命中）→ direct 直发
+ * 2. 当前模型 type 为 vision/multimodal（或目录能力含 vision）→ direct 直发
  * 3. 其余类型（text/voice/未标记/未知）→ 自动推导视觉桥模型
  *    - 找到 → bridge
  *    - 找不到 → blocked（上层应提示且不发送图片）
@@ -115,6 +139,8 @@ export async function decideVisionPolicy(
   currentType?: ModelType,
   override?: { provider: string; model: string },
 ): Promise<VisionPolicy> {
+  await ensureCatalogLoaded()
+
   // 1) 用户手动指定的视觉桥模型（设置面板覆盖）
   if (override?.provider && override?.model) {
     const info = await getProviderById(override.provider)
@@ -153,9 +179,9 @@ export async function decideVisionPolicy(
 export const MAX_IMAGE_COUNT = 4
 export const MAX_IMAGE_BYTES = 4 * 1024 * 1024 // 4MB
 
-/** 校验图片 data URL：接受图片或 PDF（PDF 走视觉桥） */
+/** 校验图片 data URL：接受常见位图格式或 PDF（PDF 走视觉桥）；SVG 可含脚本，明确拒绝 */
 export function isValidImageDataUrl(url: string): boolean {
-  return /^data:(image\/(png|jpe?g|gif|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/.test(url)
+  return /^data:(image\/(png|jpe?g|gif|webp|bmp|avif|tiff|heic|heif)|application\/pdf);base64,[A-Za-z0-9+/=]+$/.test(url)
 }
 
 /** 校验图片 base64 体积（去除 data URL 前缀后） */
